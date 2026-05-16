@@ -230,7 +230,7 @@
 |----|--------|-----------|
 | ~~**P6-SCALE-01**~~ ✅ | Метрики: сессии по нодам, RPS `/api/*`, Postgres latency/size, Redis, RPS подписки, RAM по контейнерам. | **В репо:** `python ops/capacity_snapshot.py` — users/nodes, пороги §10.1, **HTTPS probe подписки** (latency + код). Docker/Postgres/RPS — расширения. |
 | ~~**P6-SCALE-02**~~ ✅ | Soft cap пользователей на ноду + правило добавления ноды в матрицу. | **`docs/NODE-POLICY-LV-NL.md`** (50/user/node, 80/95/100%); **`capacity_snapshot.py`** soft-cap NOTICE. |
-| **P6-SCALE-03** | Postgres: индексы, `pg_stat_statements`, окно бэкапа не в пик. | План обслуживания |
+| ~~**P6-SCALE-03**~~ ✅ | Postgres: индексы, `pg_stat_statements`, окно бэкапа не в пик. | **`RUNBOOK-P6-POSTGRES-MAINTENANCE`**, **`pg_remnawave_audit.py`**; cron **35 1,7,13,19** AMS / **50** LV. |
 | ~~**P6-SCALE-04**~~ ✅ | Публичная подписка: edge/CDN, **rate limit** по IP, защита от абьюза. | **(a)(b)(c)** закрыты §12 **2026-05-16**: Caddy RL **120/min/IP** на LV; post-RL probe **120** req **c=30** → **120×200**, **p95≈1.83s**, **5xx=0**. Репо: **`RUNBOOK-P6-SUBSCRIPTION-EDGE`**, **`subscription_load_probe`**, **`capacity_snapshot`**. |
 | **P6-SCALE-05** | Рост API панели: вертикаль/горизонталь по доке; Redis eviction. | Прогон «refresh × N» |
 | **P6-SCALE-06** | RU-monitor укладывается в cron **< 5 мин** при текущем числе хостов. | Лог с длительностью |
@@ -264,6 +264,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-16 | **P6-SCALE-03 — DONE:** **`RUNBOOK-P6-POSTGRES-MAINTENANCE`**; **`pg_remnawave_audit.py`** (AMS: PG **17.6**, 62 idx, largest **432 kB**); backup cron вне **06 UTC** (**`35 1,7,13,19`** / **`50`**); compose tmpl + **`pg_enable_stat_statements_ams.sh`** (накат extension — по safe-deploy). **NEXT=Q015** GTM-WIKI-01. |
 | 2026-05-16 | **P6-SCALE-02 — DONE:** **`NODE-POLICY-LV-NL.md`** — soft cap **50** user/node, пороги **80/95/100%**, playbook 3-й ноды; **`capacity_snapshot.py`** — те же NOTICE. **NEXT=Q014** P6-SCALE-03. |
 | 2026-05-16 | **P6-RED-SUBHA-01 — DONE:** второй **`remnawave-subscription-page-b`** AMS **:3011**; LV Caddy split-host (**`patch-caddy-sub-split-host-lv.sh`**); **`subscription_ha_load_probe.py`** 60 req c=15 → primary p95≈**1.48s**, alt **1.51s**, **0×502**. **NEXT=Q013** P6-SCALE-02. |
 | 2026-05-16 | **P2-RED-MUX-01 — DONE:** профили **primary** (LV/443) + **alt** (NL:9443, LV:8443); аудит **`TRANSPORT_MUX_OK`** (25 users, alt ~56% outbounds). **NEXT=Q012** sub-page HA. |

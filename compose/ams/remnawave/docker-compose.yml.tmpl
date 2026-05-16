@@ -27,6 +27,17 @@ services:
         container_name: 'remnawave-db'
         hostname: remnawave-db
         <<: [*common, *logging, *env]
+        # P6-SCALE-03: query stats (requires one-time recreate; see RUNBOOK-P6-POSTGRES-MAINTENANCE)
+        command:
+            - postgres
+            - -c
+            - shared_preload_libraries=pg_stat_statements
+            - -c
+            - pg_stat_statements.max=10000
+            - -c
+            - pg_stat_statements.track=all
+            - -c
+            - track_io_timing=on
         environment:
             - POSTGRES_USER=${POSTGRES_USER}
             - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

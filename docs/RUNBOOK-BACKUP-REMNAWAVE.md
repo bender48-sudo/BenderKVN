@@ -15,8 +15,10 @@
 
 | Хост | Периодичность | Задача |
 |------|-----------------|--------|
-| **AMS** | каждые 6 ч (пример: `5 */6 * * *`) | Вызов **`pg_dump_remnawave.sh`**, лог в файл по выбору (`/var/log/pg_dump_remnawave.log`). |
-| **LV** | каждые 6 ч, **смещение +10–15 мин** после AMS | Вызов **`pull-latest-dump-ams-to-lv.sh`**, лог → `/var/log/remnawave-pull.log` (имя на усмотрение). |
+| **AMS** | **4×/сутки** вне утреннего пика (**P6-SCALE-03**): `35 1,7,13,19 * * *` UTC | **`pg_dump_remnawave.sh`** → `/var/log/pg_dump_remnawave.log` |
+| **LV** | **+15 мин** после AMS: `50 1,7,13,19 * * *` UTC | **`pull-latest-dump-ams-to-lv.sh`** → `/var/log/remnawave-pull.log` |
+
+Старый вариант `5 */6` / `15 */6` попадал в **06:xx UTC** (~утро MSK, пик refresh подписок). Миграция: **`ops/install-remnawave-backup-cron.sh ams|lv`**. См. **`docs/RUNBOOK-P6-POSTGRES-MAINTENANCE.md` §4**.
 
 Чертёж примеров смотри в **`ops/crontab-remnawave-backup.example`**.
 

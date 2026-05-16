@@ -1,6 +1,8 @@
-# Пример строк crontab для P2-BAK-01 (подставьте свои пути логов).
-# AMS — сначала дамп:
-# 5 */6 * * *  /bin/bash /opt/scripts/pg_dump_remnawave.sh >> /var/log/pg_dump_remnawave.log 2>&1
+# Пример строк crontab для P2-BAK-01 + P6-SCALE-03 (окно вне утреннего пика подписок MSK).
+# AMS — дамп (01:35, 07:35, 13:35, 19:35 UTC):
+# 35 1,7,13,19 * * * /bin/bash /opt/scripts/pg_dump_remnawave.sh >> /var/log/pg_dump_remnawave.log 2>&1
 #
-# LV — затем копия off-host (через 10 минут после часа «5», т.е. 15,35,55… — поправьте под ваш offset):
-# 15 */6 * * * /bin/bash /opt/scripts/pull-latest-dump-ams-to-lv.sh >> /var/log/remnawave-pull.log 2>&1
+# LV — pull +15 мин (01:50, 07:50, 13:50, 19:50 UTC):
+# 50 1,7,13,19 * * * /bin/bash /opt/scripts/pull-latest-dump-ams-to-lv.sh >> /var/log/remnawave-pull.log 2>&1
+#
+# Идемпотентная установка: ops/install-remnawave-backup-cron.sh ams|lv
