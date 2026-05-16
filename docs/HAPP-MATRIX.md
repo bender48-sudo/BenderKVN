@@ -40,3 +40,7 @@
 Аудит доли alt в подписке: **`python ops/transport_mux_audit.py`**.
 
 Нет «магии в чате» — только снапшот + скрипт + проверка.
+
+## TLS / sing-box (P2-RED-TLS-01)
+
+Квартальный обзор **Xray / sing-box / uTLS / ECH**: **`docs/TLS-CLIENT-STACK-REVIEW.md`**, **`ops/tls_client_stack_audit.py`**.

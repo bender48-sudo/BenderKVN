@@ -40,7 +40,8 @@
 | 018 | **P6-SCALE-05** | **DONE** | API панели: refresh × N; Redis eviction | **100×200** p95≈**1.4s**; Valkey **allkeys-lru** §12 | **`RUNBOOK-P6-PANEL-API-SCALE`** |
 | 019 | **P6-SCALE-07** | **DONE** | Поддержка: шаблоны + SLA при росте очереди | **`SUPPORT_QUEUE_OK`** §12 | **`RUNBOOK-P6-SUPPORT-SCALE`** |
 | 020 | **P2-RED-BOOT-01** | **DONE** | Резервный канал статуса (не только TG) | **`STATUS_CHANNELS_OK`** §12 | **`RUNBOOK-P2-STATUS-BOOT-CHANNEL`** |
-| 021 | **P2-RED-TLS-01** | **NEXT** | Квартальный обзор sing-box / uTLS / ECH | чеклист в wiki + §12 | **§5.1** |
+| 021 | **P2-RED-TLS-01** | **DONE** | Квартальный обзор sing-box / uTLS / ECH | **`TLS-QUARTERLY-2026-Q2`** + audit OK §12 | **`TLS-CLIENT-STACK-REVIEW`** |
+| 022 | **P6-RED-PG-01** | **NEXT** | Postgres read replicas / pool limit / load test | отчёт теста | **§5.1** |
 **Gate (не отдельный Q):** любой накат AMS compose/env — только по **`RUNBOOK-AMS-SAFE-DEPLOY`** (**`P2-OPS-AMS-SAFE-DEPLOY-01`**, runbook в репо ✅).
 
 **Параллельно (другой человек, не трогать NEXT):** **P4-DNS-01…03**.
@@ -70,6 +71,7 @@
 | 018 | `ops: P6-SCALE-05 — panel refresh load probe + Valkey allkeys-lru` |
 | 019 | `ops: P6-SCALE-07 — support queue metric + SLA templates + bot timestamps` |
 | 020 | `ops: P2-RED-BOOT-01 — HTTPS status JSON mirror + dual-channel smoke` |
+| 021 | `docs: P2-RED-TLS-01 — quarterly TLS/sing-box review checklist + audit` |
 
 После коммита с закрытием задачи — в **`BACKLOG-QUEUE.md`**: сменить статусы и при необходимости добавить подстроку в §12 бэклога (в том же коммите).
 
@@ -99,3 +101,4 @@
 | 2026-05-16 | **Q018** P6-SCALE-05 | **Q019** P6-SCALE-07 |
 | 2026-05-16 | **Q019** P6-SCALE-07 | **Q020** P2-RED-BOOT-01 |
 | 2026-05-16 | **Q020** P2-RED-BOOT-01 | **Q021** P2-RED-TLS-01 |
+| 2026-05-16 | **Q021** P2-RED-TLS-01 | **Q022** P6-RED-PG-01 |
