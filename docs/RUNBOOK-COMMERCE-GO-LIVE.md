@@ -2,7 +2,7 @@
 
 **Задачи бэклога:** **`P2-COM-MONETIZE-01` … `04`**, перед массовым привлечением — **до** или **вместе с** **`P6-RED-PAY-01`**.
 
-**Текущее состояние (репо):** **`BOT_PAYMENTS_LIVE`** пустой в **`compose/ams/remna-shop/bot.env.tmpl`**; в **`bot_src/config.py`** тариф **1 месяц = 1.00 ₽** (тест); **`TERMS_URL` / `PRIVACY_URL` / `SUPPORT_USER`** — заглушки до настройки в админке бота.
+**Текущее состояние (репо):** **`BOT_PAYMENTS_LIVE`** пустой в **`compose/ams/remna-shop/bot.env.tmpl`**; **`bot_src/config.py`** — **1 месяц = 50 ₽** (прод AMS **2026-05-16**, **`ops/deploy-bot-config-ams.ps1`**); **`TERMS_URL` / `PRIVACY_URL` / `SUPPORT_USER`** — заглушки (**Q007**).
 
 ---
 
@@ -41,7 +41,7 @@
 
 - [ ] **`P2-OPS-AMS-SAFE-DEPLOY-01`** — runbook известен команде
 - [x] **`P6-SCALE-04`**: green **`subscription_load_probe`** + edge RL/CDN (см. **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`**, §12 **2026-05-16**)
-- [ ] **`P2-OPS-RESTORE-TEST-01`**: дата restore test в **`docs/RUNBOOK-BACKUP-REMNAWAVE.md` §4**
+- [x] **`P2-OPS-RESTORE-TEST-01`**: дата restore test в **`docs/RUNBOOK-BACKUP-REMNAWAVE.md` §4** (**2026-05-16**)
 - [ ] **`docs/GTM-GROWTH-OUTLINE.md`** — wiki заполнен, owner GTM
 - [ ] Пороги §10.1 понятны (план апгрейда AMS при **2k** users)
 

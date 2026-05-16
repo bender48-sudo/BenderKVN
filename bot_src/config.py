@@ -13,7 +13,7 @@ REMNA_TRIAL_DAYS = int(
 BOT_PAYMENTS_LIVE = os.getenv("BOT_PAYMENTS_LIVE", "").strip().lower() in ("1", "true", "yes")
 
 PLANS = {
-    "buy_1_month": (f"Подписка 1 месяц", "1.00", 1),
+    "buy_1_month": (f"Подписка 1 месяц", "50.00", 1),
     "buy_3_months": (f"Подписка 3 месяца", "135.00", 3),
     "buy_6_months": (f"Подписка 6 месяцев", "240.00", 6),
     "buy_12_months": (f"Подписка 12 месяцев", "450.00", 12),
