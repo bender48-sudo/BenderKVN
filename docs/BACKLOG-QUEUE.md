@@ -37,7 +37,8 @@
 | 015 | **GTM-WIKI-01** | **DONE** | Wiki по **`GTM-GROWTH-OUTLINE`**; URL в §1 бэклога | шаблон + **`GTM-WIKI.md`** §12 | **`RUNBOOK-GTM-WIKI`** |
 | 016 | **P2-OPS-IMAGE-PIN-01** | **DONE** | Digest pin postgres/valkey/caddy/adguard | `check_compose_image_pins.py` OK §12 | **§6**, **`IMAGE-PINS.md`** |
 | 017 | **P6-SCALE-06** | **DONE** | RU-monitor цикл **< 5 мин**; лог **`duration_sec`** | probe **`RU_MONITOR_CYCLE_OK`** §12 | **`RUNBOOK-P6-RU-MONITOR-SCALE`** |
-| 018 | **P6-SCALE-05** | **NEXT** | API панели: refresh × N; Redis eviction | прогон refresh × N | **§11** |
+| 018 | **P6-SCALE-05** | **DONE** | API панели: refresh × N; Redis eviction | **100×200** p95≈**1.4s**; Valkey **allkeys-lru** §12 | **`RUNBOOK-P6-PANEL-API-SCALE`** |
+| 019 | **P6-SCALE-07** | **NEXT** | Поддержка: шаблоны + SLA при росте очереди | метрика очереди | **§10.2** |
 **Gate (не отдельный Q):** любой накат AMS compose/env — только по **`RUNBOOK-AMS-SAFE-DEPLOY`** (**`P2-OPS-AMS-SAFE-DEPLOY-01`**, runbook в репо ✅).
 
 **Параллельно (другой человек, не трогать NEXT):** **P4-DNS-01…03**.
@@ -64,6 +65,7 @@
 | 015 | `docs: GTM-WIKI-01 — GTM wiki template + registry + runbook` |
 | 016 | `ops: P2-OPS-IMAGE-PIN-01 — digest pin postgres/valkey/adguard + IMAGE-PINS` |
 | 017 | `ops: P6-SCALE-06 — ru-monitor cycle duration log + probe; GTM owner gate closed` |
+| 018 | `ops: P6-SCALE-05 — panel refresh load probe + Valkey allkeys-lru` |
 
 После коммита с закрытием задачи — в **`BACKLOG-QUEUE.md`**: сменить статусы и при необходимости добавить подстроку в §12 бэклога (в том же коммите).
 
@@ -90,3 +92,4 @@
 | 2026-05-16 | **Q015** GTM-WIKI-01 | **Q016** P2-OPS-IMAGE-PIN-01 |
 | 2026-05-16 | **Q016** P2-OPS-IMAGE-PIN-01 | **Q017** §11 (P1-RED / P6-SCALE-05…) |
 | 2026-05-16 | **Q017** P6-SCALE-06 (+ GTM gate) | **Q018** P6-SCALE-05 |
+| 2026-05-16 | **Q018** P6-SCALE-05 | **Q019** P6-SCALE-07 |

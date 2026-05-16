@@ -86,7 +86,8 @@ services:
             valkey-server
             --save ""
             --appendonly no
-            --maxmemory-policy noeviction
+            --maxmemory 256mb
+            --maxmemory-policy allkeys-lru
             --loglevel warning
         healthcheck:
             test: ['CMD', 'valkey-cli', 'ping']

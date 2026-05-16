@@ -232,7 +232,7 @@
 | ~~**P6-SCALE-02**~~ ✅ | Soft cap пользователей на ноду + правило добавления ноды в матрицу. | **`docs/NODE-POLICY-LV-NL.md`** (50/user/node, 80/95/100%); **`capacity_snapshot.py`** soft-cap NOTICE. |
 | ~~**P6-SCALE-03**~~ ✅ | Postgres: индексы, `pg_stat_statements`, окно бэкапа не в пик. | **`RUNBOOK-P6-POSTGRES-MAINTENANCE`**, **`pg_remnawave_audit.py`**; cron **35 1,7,13,19** AMS / **50** LV. |
 | ~~**P6-SCALE-04**~~ ✅ | Публичная подписка: edge/CDN, **rate limit** по IP, защита от абьюза. | **(a)(b)(c)** закрыты §12 **2026-05-16**: Caddy RL **120/min/IP** на LV; post-RL probe **120** req **c=30** → **120×200**, **p95≈1.83s**, **5xx=0**. Репо: **`RUNBOOK-P6-SUBSCRIPTION-EDGE`**, **`subscription_load_probe`**, **`capacity_snapshot`**. |
-| **P6-SCALE-05** | Рост API панели: вертикаль/горизонталь по доке; Redis eviction. | Прогон «refresh × N» |
+| ~~**P6-SCALE-05**~~ ✅ | Рост API панели: вертикаль/горизонталь по доке; Redis eviction. | **`RUNBOOK-P6-PANEL-API-SCALE`**; Valkey **256mb/allkeys-lru**; **`panel_refresh_load_probe`** **100×200** p95≈**1.4s** §12 |
 | **P6-SCALE-06** | RU-monitor укладывается в cron **< 5 мин** при текущем числе хостов. | Лог с длительностью |
 | **P6-SCALE-07** | Нагрузка на поддержку: шаблоны (P3) + при росте очереди — вторая линия / SLA ответа. | Метрика очереди |
 | ~~**P6-SCALE-NL-VERIFY**~~ ✅ (репо) | Продукт / ёмкость: все активные пользователи на **LV** при живой **NL** — осознанная политика (**leastLoad**, squads, запасная нода) или ошибка конфигурации? | **`docs/NODE-POLICY-LV-NL.md`** — критерии проверки; фактический аудит squads/UI — по окну эксплуатации. |
@@ -264,8 +264,9 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-16 | **P6-SCALE-05 — DONE:** Valkey **`allkeys-lru`** + **256mb** (runtime AMS + compose tmpl); **`panel_refresh_load_probe`** **100** req **c=25**, **40** shortUuid, **100×200**, **p95≈1.4s**, **0** bad HTTP; **`valkey_memory_audit.py`**. **NEXT=Q019** P6-SCALE-07. |
 | 2026-05-16 | **ru-monitor 401 (LV) — FIXED:** протухший **`REMNA_API_TOKEN_LV`**; выровнен с рабочим AMS shop JWT (**`sync-lv-remna-token-from-ams.ps1`**). Smoke: **`total=16 ok=16`**, **`duration_sec≈8s`**, **`RU_MONITOR_CYCLE_OK`**. |
-| 2026-05-16 | **P6-SCALE-06 — DONE:** **`ru-monitor.py`** — **`duration_sec`** (в т.ч. abort), **`JITTER_MAX=60`**; **`ru_monitor_cycle_probe.py`**, **`RUNBOOK-P6-RU-MONITOR-SCALE`**. **NEXT=Q018** P6-SCALE-05. |
+| 2026-05-16 | **P6-SCALE-06 — DONE:** **`ru-monitor.py`** — **`duration_sec`** (в т.ч. abort), **`JITTER_MAX=60`**; **`ru_monitor_cycle_probe.py`**, **`RUNBOOK-P6-RU-MONITOR-SCALE`**. |
 | 2026-05-16 | **GTM-WIKI-01 — owner gate CLOSED:** канон URL + §1; еженедельная синхронизация — **`RUNBOOK-GTM-WIKI`**. |
 | 2026-05-16 | **P2-OPS-IMAGE-PIN-01 — DONE:** digest pin **postgres/valkey/adguard** в compose tmpl (prod sha256); **Caddy v2.11.2** — host pin в **`IMAGE-PINS.md`**; **`check_compose_image_pins.py`**. Накат compose на прод — при следующем safe-deploy. |
 | 2026-05-16 | **P6-SCALE-03 — DONE:** **`RUNBOOK-P6-POSTGRES-MAINTENANCE`**; **`pg_remnawave_audit.py`** (AMS: PG **17.6**, 62 idx, largest **432 kB**); backup cron вне **06 UTC** (**`35 1,7,13,19`** / **`50`**); compose tmpl + **`pg_enable_stat_statements_ams.sh`** (накат extension — по safe-deploy). **NEXT=Q015** GTM-WIKI-01. |
