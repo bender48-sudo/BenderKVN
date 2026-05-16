@@ -2,7 +2,7 @@
 
 **Задачи бэклога:** **`P2-COM-MONETIZE-01` … `04`**, перед массовым привлечением — **до** или **вместе с** **`P6-RED-PAY-01`**.
 
-**Текущее состояние (репо):** **COM-MONETIZE go-live OK** (**2026-05-16**): баланс **6.67 ₽/день**, **`BOT_PAYMENTS_LIVE=1`** (Stars), legal telegra.ph, чеклист **§4** закрыт; smoke **`ops/smoke_commerce_golive_ams.py`**. Живой GTM-wiki — **Q015** (**`GTM-GROWTH-OUTLINE`**). При пике продаж — **P6-RED-PAY-01**.
+**Текущее состояние (репо):** **COM-MONETIZE go-live OK** (**2026-05-16**). Webhook-платежи: очередь + idempotency + DLQ (**P6-RED-PAY-01**, **`ops/deploy-bot-payment-webhook-ams.ps1`**, smoke **`ops/smoke_webhook_payment_idempotency_ams.py`**). Живой GTM-wiki — **Q015**.
 
 ---
 
@@ -23,7 +23,7 @@
 1. Подключить креды (YooKassa, Telegram Stars, crypto — см. **`bot_src/main.py`**) в **`/opt/remna-shop/.env`** на AMS.
 2. Установить **`BOT_PAYMENTS_LIVE=1`** (или `true`) в env бота; **`docker compose up -d`** / restart **`remna-shop-bot`**.
 3. Smoke каждого канала: тестовая покупка → webhook → продление **`expireAt`** в панели.
-4. Перед пиком продаж — закрыть или начать **`P6-RED-PAY-01`** (idempotency, DLQ).
+4. **`P6-RED-PAY-01`**: HTTP webhook → **`PaymentWebhookQueue`** (SQLite **`webhook_deliveries`**, статусы pending/done/failed=DLQ); повтор с тем же ключом → **200 duplicate**. Деплой: **`ops/deploy-bot-payment-webhook-ams.ps1`**.
 
 **Done when:** минимум один канал оплаты проходит E2E на проде; повтор webhook не дублирует подписку.
 

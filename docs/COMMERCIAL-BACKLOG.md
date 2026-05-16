@@ -121,7 +121,7 @@
 | **P2-RED-TLS-01** | **Клиентский стек**: процесс пересмотра раз в квартал возможностей **sing-box / uTLS / ECH / multiplexing** ([`SagerNet/sing-box`](https://github.com/SagerNet/sing-box)) и внедрение в шаблон подписки при выходе критичных фиксов fingerprinting. | Чеклист в wiki + запись в журнале §12 после каждого ревью. |
 | **P6-RED-SUBHA-01** | **Горизонталь subscription-page**: несколько инстансов за LB + кэш на edge для «утреннего stampede» обновления подписок (дополняет **P6-SCALE-04**). | Нагрузочный тест N параллельных refresh без деградации p95. |
 | **P6-RED-PG-01** | **Postgres**: read‑реплики (или managed Postgres при переносе), явный **pool limit** приложений, нагрузочный тест «массовое обновление клиентов за 1 ч». | Отчёт теста + пороги в **§10.1**. |
-| **P6-RED-PAY-01** | **Очередь платежей бота**: webhook **idempotency**, DLQ, чтобы TG‑бот не был узким горлышком при всплеске продаж. | Очередь задеплоена + тест повторной доставки webhook. |
+| ~~**P6-RED-PAY-01**~~ ✅ | **Очередь платежей бота**: webhook **idempotency**, DLQ, чтобы TG‑бот не был узким горлышком при всплеске продаж. | **2026-05-16:** **`PaymentWebhookQueue`**, таблица **`webhook_deliveries`**, деплой **`deploy-bot-payment-webhook-ams.ps1`**, smoke **`WEBHOOK_PAY_IDEMPOTENCY_OK`**. |
 | **P3-RED-MIN-01** | **Минимизация данных пользователя**: где юридически возможно — развязать платёжный след и тех‑UUID; явная политика «что не собираем». | Страница политики + внутренний чеклист полей БД. |
 | **P3-RED-JURIS-01** | **Гео‑ и провайнер‑диверсификация**: runbook «нас отключил один VPS/агентство платежей за день» — перенос DNS/IP без зависимости от одной юрисдикции. | Wiki + tabletop exercise раз в год. |
 | **P5-RED-RD-01** | **R&D**: PoC канала bootstrap по модели **эфемерных посредников** (идеология [**Snowflake**](https://github.com/cohosh/snowflake)) — только для получения статуса/нового endpoint’а, не замена нодам. | Внутренний doc go/no-go + оценка стоимости поддержки. |
@@ -264,6 +264,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-16 | **P6-RED-PAY-01 — DONE:** in-process очередь webhook (**`payment_queue.py`**), SQLite idempotency/DLQ (**`webhook_deliveries`**), быстрый **200** на duplicate; smoke на AMS. **NEXT=Q010** P2-RED-SUB-01. |
 | 2026-05-16 | **COM-MONETIZE go-live OK** (**P2-COM-MONETIZE-04**): чеклист **`RUNBOOK-COMMERCE-GO-LIVE` §4** — safe-deploy runbook, **P6-SCALE-04**, restore test, **§10.1**, GTM outline (wiki живой — **Q015**). Smoke **`ops/smoke_commerce_golive_ams.py`** на AMS. Эпик **§5.3** закрыт; при пике продаж — **P6-RED-PAY-01** (**NEXT=Q009**). |
 | 2026-05-16 | **P2-COM-MONETIZE-03 — DONE:** legal URLs уже в SQLite бота (не заглушки `config.py`): **terms** / **privacy** → telegra.ph, **support** → **@Bender_KVN_bot**; smoke **`ops/check_legal_urls_ams.py`** → **LEGAL_OK=true**. **NEXT=Q008** go-live чеклист. |
 | 2026-05-16 | **P2-COM-MONETIZE-02 — DONE:** AMS **`BOT_PAYMENTS_LIVE=1`** (`ops/patch-remna-shop-payments-live-ams.sh`, **`docker restart`**); канал **Telegram Stars**; **`process_topup_payment`** + idempotency **`topup_charge:*`**; smoke **`ops/smoke_payments_live_ams.py`** — invoice link OK, admin **`expireAt`** bump, повтор без дубля баланса. **NEXT=Q007** legal URLs. |

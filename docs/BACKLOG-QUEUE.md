@@ -28,8 +28,8 @@
 | 006 | **P2-COM-MONETIZE-02** | **DONE** | **`BOT_PAYMENTS_LIVE=1`**, E2E один канал оплаты | AMS Stars smoke §12 **2026-05-16** | **`RUNBOOK-COMMERCE-GO-LIVE` §2** |
 | 007 | **P2-COM-MONETIZE-03** | **DONE** | Legal URLs в боте без заглушек | AMS telegra.ph + @support §12 | **`RUNBOOK-COMMERCE-GO-LIVE` §3** |
 | 008 | **P2-COM-MONETIZE-04** | **DONE** | Go-live чеклист §4; строка §12 | COM-MONETIZE go-live OK §12 | **`RUNBOOK-COMMERCE-GO-LIVE` §4** |
-| 009 | **P6-RED-PAY-01** | **NEXT** | Idempotency + DLQ webhook бота | Повтор webhook не дублирует | **§5.1** |
-| 010 | **P2-RED-SUB-01** | TODO | ≥2 origin подписки + мониторинг | Wiki/док | **§5.1** |
+| 009 | **P6-RED-PAY-01** | **DONE** | Idempotency + DLQ webhook бота | smoke WEBHOOK_PAY §12 | **§5.1** |
+| 010 | **P2-RED-SUB-01** | **NEXT** | ≥2 origin подписки + мониторинг | Wiki/док | **§5.1** |
 | 011 | **P2-RED-MUX-01** | TODO | ≥2 транспортных профиля в матрице | Доля на alt-профиле | **§5.1**, **`HAPP-MATRIX`** |
 | 012 | **P6-RED-SUBHA-01** | TODO | Горизонталь sub-page или split host | Load test без деградации p95 | **§5.1** |
 | 013 | **P6-SCALE-02** | TODO | Soft cap + правило 3-й ноды | **`NODE-POLICY-LV-NL`** | **§10.2** |
@@ -55,6 +55,7 @@
 | 006 | `product: P2-COM-MONETIZE-02 — BOT_PAYMENTS_LIVE, smoke оплаты` |
 | 007 | `product: P2-COM-MONETIZE-03 — legal URLs в боте` |
 | 008 | `product: P2-COM-MONETIZE-04 — go-live чеклист, §12` |
+| 009 | `ops: P6-RED-PAY-01 — webhook idempotency + DLQ` |
 
 После коммита с закрытием задачи — в **`BACKLOG-QUEUE.md`**: сменить статусы и при необходимости добавить подстроку в §12 бэклога (в том же коммите).
 
@@ -72,3 +73,4 @@
 | 2026-05-16 | **Q006** P2-COM-MONETIZE-02 | **Q007** P2-COM-MONETIZE-03 |
 | 2026-05-16 | **Q007** P2-COM-MONETIZE-03 | **Q008** P2-COM-MONETIZE-04 |
 | 2026-05-16 | **Q008** P2-COM-MONETIZE-04 | **Q009** P6-RED-PAY-01 |
+| 2026-05-16 | **Q009** P6-RED-PAY-01 | **Q010** P2-RED-SUB-01 |

@@ -66,6 +66,15 @@ def initialize_db():
                     key TEXT PRIMARY KEY,
                     value TEXT
                 );
+                CREATE TABLE IF NOT EXISTS webhook_deliveries (
+                    idempotency_key TEXT PRIMARY KEY,
+                    source TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    payload_json TEXT,
+                    error TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
             ''')
             default_settings = {
                 "about_text": ABOUT_TEXT,
@@ -422,6 +431,96 @@ def has_action(user_id: int, action: str) -> bool:
             c = conn.cursor(); c.execute("SELECT 1 FROM user_actions WHERE user_id = ? AND action = ? LIMIT 1", (user_id, action)); return c.fetchone() is not None
     except sqlite3.Error as e:
         logging.error(f"Failed to check action {action} for {user_id}: {e}"); return False
+
+# -------------------- Webhook idempotency / DLQ (P6-RED-PAY-01) --------------------
+def claim_webhook_delivery(idempotency_key: str, source: str, payload_json: str) -> str:
+    """new | duplicate | in_progress | retry"""
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            c = conn.cursor()
+            c.execute(
+                "SELECT status FROM webhook_deliveries WHERE idempotency_key = ?",
+                (idempotency_key,),
+            )
+            row = c.fetchone()
+            if row:
+                status = row[0]
+                if status == "done":
+                    return "duplicate"
+                if status in ("pending", "processing"):
+                    return "in_progress"
+                c.execute(
+                    """UPDATE webhook_deliveries
+                       SET status = 'pending', source = ?, payload_json = ?, error = NULL,
+                           updated_at = CURRENT_TIMESTAMP
+                       WHERE idempotency_key = ?""",
+                    (source, payload_json, idempotency_key),
+                )
+                conn.commit()
+                return "retry"
+            c.execute(
+                """INSERT INTO webhook_deliveries
+                   (idempotency_key, source, status, payload_json)
+                   VALUES (?, ?, 'pending', ?)""",
+                (idempotency_key, source, payload_json),
+            )
+            conn.commit()
+            return "new"
+    except sqlite3.Error as e:
+        logging.error("claim_webhook_delivery %s: %s", idempotency_key, e)
+        return "new"
+
+def mark_webhook_processing(idempotency_key: str) -> None:
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            c = conn.cursor()
+            c.execute(
+                """UPDATE webhook_deliveries
+                   SET status = 'processing', updated_at = CURRENT_TIMESTAMP
+                   WHERE idempotency_key = ?""",
+                (idempotency_key,),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error("mark_webhook_processing %s: %s", idempotency_key, e)
+
+def mark_webhook_done(idempotency_key: str) -> None:
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            c = conn.cursor()
+            c.execute(
+                """UPDATE webhook_deliveries
+                   SET status = 'done', error = NULL, updated_at = CURRENT_TIMESTAMP
+                   WHERE idempotency_key = ?""",
+                (idempotency_key,),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error("mark_webhook_done %s: %s", idempotency_key, e)
+
+def mark_webhook_failed(idempotency_key: str, error: str) -> None:
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            c = conn.cursor()
+            c.execute(
+                """UPDATE webhook_deliveries
+                   SET status = 'failed', error = ?, updated_at = CURRENT_TIMESTAMP
+                   WHERE idempotency_key = ?""",
+                (error[:2000], idempotency_key),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error("mark_webhook_failed %s: %s", idempotency_key, e)
+
+def count_webhook_dlq() -> int:
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            c = conn.cursor()
+            c.execute("SELECT COUNT(*) FROM webhook_deliveries WHERE status = 'failed'")
+            return int(c.fetchone()[0])
+    except sqlite3.Error as e:
+        logging.error("count_webhook_dlq: %s", e)
+        return 0
 
 def get_user_by_ref_code(ref_code: str):
     try:

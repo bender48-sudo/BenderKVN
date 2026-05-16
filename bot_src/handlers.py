@@ -1421,8 +1421,12 @@ async def successful_payment_handler(message: types.Message, bot: Bot):
         await message.answer("❌ " + user_messages.ERR_PAYMENT_PROCESS_SUPPORT)
 
 async def process_successful_payment(bot: Bot, metadata: dict):
+    webhook_idem = metadata.get("webhook_idempotency_key")
     user_id, months, price, action, key_id = map(metadata.get, ['user_id', 'months', 'price', 'action', 'key_id'])
     user_id, months, price, key_id = int(user_id), int(months or 0), float(price), int(key_id)
+    if webhook_idem and has_action(user_id, webhook_idem):
+        logger.info("Duplicate webhook payment ignored: user=%s key=%s", user_id, webhook_idem)
+        return
     promo_code = metadata.get('promo_code')
     plan_id_meta = metadata.get('plan_id')
     chat_id_to_delete = metadata.get('chat_id')
@@ -1523,6 +1527,8 @@ async def process_successful_payment(bot: Bot, metadata: dict):
             log_action(user_id, 'purchase_with_promo', f"{promo_code}:{price}:{months}")
         else:
             log_action(user_id, 'purchase', f"{price}:{months}")
+        if webhook_idem:
+            log_action(user_id, webhook_idem, f"{price}:{months}")
         await processing_message.delete()
         final_text = get_purchase_success_text(action=action, key_number=key_number, expiry_date=expiry_dt, connection_string=uri)
         await bot.send_message(chat_id=user_id, text=final_text, reply_markup=keyboards.create_key_info_keyboard(key_id))
