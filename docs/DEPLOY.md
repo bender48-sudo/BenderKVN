@@ -175,8 +175,8 @@ python ops/drift-check.py
 - Для **`file`** сравнивается MD5 файла в репо с MD5 на проде.
 - Для **`tmpl`**: из шаблона и vault строится **рендер** так же, как на проде; сравнивается MD5 рендера с MD5 prod-файла. Параметр **`tmpl_only_keys`** в `PAIRS` задаёт, какие `${KEY}` подставлять из vault:
   - **`None`** — подставить все плейсхолдеры, для которых есть ключ в vault (типичные `.env`);
-  - **`frozenset()`** — не подставлять ничего (compose остаётся с `${POSTGRES_*}` и т.д. для интерполяции Docker Compose);
-  - **`frozenset({"X"})`** — только перечисленные ключи (например один `SECRET_KEY_NODE_AMS` или `REMNA_API_TOKEN` в под-compose).
+  - **`frozenset()`** — не подставлять ничего: compose остаётся с `${POSTGRES_*}` и, для **subscription-page**, с literal **`${REMNA_API_TOKEN}`** в YAML (интерполяция на сервере из **`sub/.env`**, см. `compose/ams/remnawave-sub/docker-compose.yml.tmpl`);
+  - **`frozenset({"X"})`** — только перечисленные ключи (например `SECRET_KEY_NODE_AMS` в `remnanode` compose или раньше точечная подстановка в отдельных шаблонах).
 - **Один SSH на хост**, внутри — `md5sum` по чанкам путей (меньше таймаутов на LV).
 - Если для chunk приходит **`subprocess.TimeoutExpired`**, утилита **повторяет** тот же запрос: до **4** попыток для **`bvpn-lv`**, до **2** для остальных хостов, с **увеличением** `timeout` и короткой паузой между попытками (см. **`P2-ENG-DRIFT-CHECK-01`** / журнал §12).
 - Локальный MD5 для шаблонов считается по **нормализованным** байтам: **CRLF / lone CR → LF** (`md5_hex_norm`), чтобы копии с Windows не давали ложный DRIFT.
@@ -192,8 +192,8 @@ python ops/render_compose.py compose/ams/remnawave/panel.env.tmpl .secrets/vault
 # Compose: только выбранные секреты; ${POSTGRES_USER} и т.д. остаются для compose
 python ops/render_compose.py --only SECRET_KEY_NODE_AMS compose/ams/remnanode/docker-compose.yml.tmpl
 
-# То же через bash-обёртку (Git Bash / Linux)
-bash ops/render-compose.sh --only REMNA_API_TOKEN compose/ams/remnawave-sub/docker-compose.yml.tmpl
+# Subscription YAML: drift-check подставляет 0 ключей (как на проде остаётся ${REMNA_API_TOKEN})
+python ops/render_compose.py --none compose/ams/remnawave-sub/docker-compose.yml.tmpl
 ```
 
 Список `--only …` для каждого файла смотри в **`tmpl_only_keys`** у соответствующей строки `PAIRS` в **`ops/drift-check.py`** (они совпадают с логикой сравнения).

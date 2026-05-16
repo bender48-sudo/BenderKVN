@@ -89,7 +89,7 @@ PAIRS: list[tuple[str, str, str, str, frozenset[str] | None]] = [
     ("tmpl", "compose/ams/remnawave/docker-compose.yml.tmpl",           "bvpn-ams", "/opt/remnawave/docker-compose.yml", frozenset()),
     ("tmpl", "compose/ams/remnawave/panel.env.tmpl",                  "bvpn-ams", "/opt/remnawave/.env", None),
     ("tmpl", "compose/ams/remnawave-sub/docker-compose.yml.tmpl",     "bvpn-ams", "/opt/remnawave/sub/docker-compose.yml",
-     frozenset({"REMNA_API_TOKEN"})),
+     frozenset()),
     ("tmpl", "compose/ams/remna-shop/docker-compose.yml.tmpl",        "bvpn-ams", "/opt/remna-shop/docker-compose.yml", frozenset()),
     ("tmpl", "compose/ams/remna-shop/bot.env.tmpl",                   "bvpn-ams", "/opt/remna-shop/.env", None),
     ("tmpl", "compose/ams/adguard/docker-compose.yml.tmpl",           "bvpn-ams", "/opt/adguard/docker-compose.yml", frozenset()),
