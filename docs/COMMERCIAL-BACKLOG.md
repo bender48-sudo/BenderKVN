@@ -1,6 +1,6 @@
 # BenderVPN — коммерческий бэклог
 
-**Версия документа:** 2026-05-15 — политика репозитория (**`POLICY-REPO-WORKFLOW`**) + **`P3-UX-01`** (**`docs/ONBOARDING.md`**); прежнее: AMS 502 post-drift (§12).
+**Версия документа:** 2026-05-15 — **`P3-UX-02`/03**, **`docs/POLICY-LOGS-DATA.md`** (черновик **P3-TR-01**), **`docs/NODE-POLICY-LV-NL.md`** ( **P6-SCALE-NL-VERIFY** + задел **P6-SCALE-02** ); синхрон **§4** с **§11** (P0); прежнее: политика репо (**`POLICY-REPO-WORKFLOW`**) + **`P3-UX-01`**; AMS 502 (§12).
 **Цель:** стабильный **8–9/10** (нишевый коммерческий VPN в РФ); измеримый рост к максимально достижимому качеству.  
 **Определение «готово»:** по каждой задаче выполнен критерий в колонке **Done when** + при необходимости запись в трекере (статусы `TODO` / `DOING` / `DONE`).
 
@@ -59,8 +59,8 @@
 | 8 | Бэкапы (off-host + restore test) + patches | ~~**P2-BAK-01**~~ ✅, ~~**P2-BAK-02**~~ ✅ |
 | 9 | Метрики ёмкости (**старт P6 до роста базы**) | ~~**P6-SCALE-01**~~ ✅, **P6-SCALE-04** (runbook + probe; load test → §12) |
 | 9b | **Эксплуатация (хвост P2):** drift post-P0, TG/SSH/утечки | ~~**P2-OPS-DRIFT-POST-P0**~~ ✅, ~~**P2-MON-03**~~ ✅, ~~**P2-SSH-01**~~ ✅, ~~**P2-SEC-LOG-01**~~ ✅ |
-| 10 | **(после §2.1 — UX не раньше продукта)** Онбординг и тексты | ~~**P1-PRO-01…04**~~ ✅ (см. **`docs/FAQ.md`**, **`docs/RUNBOOK-INCIDENT.md`**, **`docs/HAPP-MATRIX.md`**, **`docs/POLICY-SNI-MONITORING.md`**), ~~**P3-UX-01**~~ ✅ (**`docs/ONBOARDING.md`**), **P3-UX-02** |
-| 11 | DNS PoC → FAQ (по ресурсу) | **P4-DNS-01** → **P4-DNS-02** → **P4-DNS-03** |
+| 10 | **(после §2.1 — UX не раньше продукта)** Онбординг и тексты | ~~**P1-PRO-01…04**~~ ✅ (см. **`docs/FAQ.md`**, **`docs/RUNBOOK-INCIDENT.md`**, **`docs/HAPP-MATRIX.md`**, **`docs/POLICY-SNI-MONITORING.md`**), ~~**P3-UX-01**~~ ✅ (**`docs/ONBOARDING.md`**), ~~**P3-UX-02**~~ ✅ (**`bot_src/user_messages.py`**, **`docs/support/USER-FACING-ERRORS.md`**), ~~**P3-UX-03**~~ ✅ (**`docs/templates/USER-INCIDENT-BROADCAST.md`**) |
+| 11 | DNS PoC → FAQ (по ресурсу) | **P4-DNS-01** → ~~**P4-DNS-02**~~ ✅ (блок DNS bootstrap **`docs/FAQ.md`**) → **P4-DNS-03** |
 | 12 | **Red team / ТПСУ** (устойчивость к наблюдению, blast radius, рост до 30k) — см. **§5.1 → §10.2** | **P1-RED-DATA-01** … **P1-RED-LOG-01** → **P2-RED-*** → **P6-RED-*** → **P3-RED-*** → **P5-RED-RD-01** |
 
 ---
@@ -69,13 +69,13 @@
 
 | ID | Задача | Done when |
 |----|--------|-----------|
-| **P0-SEC-01** | Убрать **`curl -sk`** / **`CERT_NONE`** там, где **Bearer** или **изменение состояния** панели. | Все такие вызовы → проверка TLS (CA или pin); read‑only health вынесен и помечен. |
-| **P0-SEC-02** | Переписать **`ops/sync-sub-token-ams.sh`**: секрет **не** в `ssh "…${VAL}…"`. | Передача через stdin/heredoc/base64; review без shell‑инъекции. |
-| **P0-SEC-03** | Решение по **`0.0.0.0:3010`**: зачем, кто достучится, UFW / reverse proxy. | Wiki + `ss`/ufw проверены; нет лишнего exposed surface. |
+| ~~**P0-SEC-01**~~ ✅ | Убрать **`curl -sk`** / **`CERT_NONE`** там, где **Bearer** или **изменение состояния** панели. | **DONE:** журнал §12 **2026-05-14**. |
+| ~~**P0-SEC-02**~~ ✅ | Переписать **`ops/sync-sub-token-ams.sh`**: секрет **не** в `ssh "…${VAL}…"`. | **DONE:** защита heredoc/whitelist (**`selfsteal-monitor`** и др.), журнал §12. |
+| ~~**P0-SEC-03**~~ ✅ | Решение по **`0.0.0.0:3010`**: зачем, кто достучится, UFW / reverse proxy. | **DONE:** **DOCKER-USER** / iptables, журнал §12. |
 | ~~**P0-SEC-04**~~ ✅ | **`/opt/remnawave/` на LV**: legacy дерево с **копиями** JWT/Postgres/API-секретов активного AMS. | **DONE 2026‑05‑15** (журнал §12): архив **`/opt/_archive/remnawave-legacy-*`**, **`chattr +i`** по runbook; живого **`/opt/remnawave/`** на LV нет. |
 | ~~**P0-SEC-05**~~ ✅ | После **P0-SEC-04**: ротация `JWT_AUTH_SECRET`, `JWT_API_TOKENS_SECRET`, `POSTGRES_PASSWORD` на AMS + перевыпуск и раскладка **`REMNA_API_TOKEN`** в 4 местах. | **DONE 2026‑05‑15** (журнал §12): фаза A **`rotate_ams_panel_core_secrets.py --apply`** + **`--force-recreate remnawave`**; фаза B новый API‑токен → AMS shop/sub + LV **`balancer.env`** / **`ru-monitor.env`**; smoke входа в панель / sub / мониторов. |
-| **P0-OPS-01** | **`deploy-node.sh`**: токен панели **не** в argv. | `ps` на машине деплоя не показывает токен целиком. |
-| **P0-OPS-02** | Образы Docker: **`:latest` → digest** для критичных сервисов. | Compose/скрипты воспроизводят тот же образ по digest. |
+| ~~**P0-OPS-01**~~ ✅ | **`deploy-node.sh`**: токен панели **не** в argv. | **DONE:** **2026-05-14**, журнал §12. |
+| ~~**P0-OPS-02**~~ ✅ | Образы Docker: **`:latest` → digest** для критичных сервисов. | **DONE:** пины критичных образов **2026-05-14**; см. журнал (**adguard**/postgres позже pinning). |
 
 ---
 
@@ -154,10 +154,10 @@
 | ID | Задача | Done when |
 |----|--------|-----------|
 | ~~**P3-UX-01**~~ ✅ | Онбординг: подписка → клиент → первый коннект + FAQ при ошибке. | **`docs/ONBOARDING.md`** (2026‑05‑15): одна точка входа + ссылки на **`docs/FAQ.md`**, технические доки только для команды. |
-| **P3-UX-02** | Тексты ошибок для людей (не «TLS timeout»). | Шаблоны поддержки = текст в продукте. |
-| **P3-UX-03** | Шаблон сообщения пользователям при инциденте. | Файл/пост + dry‑run. |
+| ~~**P3-UX-02**~~ ✅ | Тексты ошибок для людей (не «TLS timeout»). | **`bot_src/user_messages.py`** + поддержка **`docs/support/USER-FACING-ERRORS.md`**. |
+| ~~**P3-UX-03**~~ ✅ | Шаблон сообщения пользователям при инциденте. | **`docs/templates/USER-INCIDENT-BROADCAST.md`**. |
 | ~~**P3-OPS-SUPPORT-REMNA-LOGIN**~~ ✅ | Саппорт / операторы: панель Remnawave показывает **Forbidden + E000** не только из‑за прокси, но и при **неверном пароле** и др. политиках (**403**, не **401**). | Абзац **`docs/RUNBOOK-INCIDENT.md`** § «Логин в панель Remnawave» + отсылка к Rescue CLI. **2026‑05‑15** |
-| **P3-TR-01** | Политика логов (что, сколько, кто читает). | Согласовано с публичной политикой. |
+| ~~**P3-TR-01**~~ ✅ (репо) | Политика логов (что, сколько, кто читает). | **`docs/POLICY-LOGS-DATA.md`** — внутренний черновик; публичная политика/оферта — вне репо при согласовании. |
 
 ---
 
@@ -166,7 +166,7 @@
 | ID | Задача | Done when |
 |----|--------|-----------|
 | **P4-DNS-01** | PoC: **dnstt** или **slipstream** + свой домен; замер через НСДИ и провайдера. | Внутренний doc с цифрами. |
-| **P4-DNS-02** | Позиционирование: bootstrap **≠** полноценный VPN. | FAQ без обещания «как основной канал». |
+| ~~**P4-DNS-02**~~ ✅ | Позиционирование: bootstrap **≠** полноценный VPN. | Блок **`docs/FAQ.md`** («DNS bootstrap ≠ VPN»); PoC (**P4-DNS-01**) отдельно. |
 | **P4-DNS-03** | Гайд пользователя (iOS/Android, DNS, ключ). | Прохождение без root. |
 | **P4-DNS-04** | Мониторинг зоны/authoritative отдельно от RU SNI‑проб. | Отдельный алерт. |
 | **P4-DNS-05** | План Б: второй домен/ключ; ToS хостинга; внутренняя юр. оценка. | Wiki + owner. |
@@ -181,7 +181,7 @@
 | **P5-COM-01** | Публичный статус инцидентов. | URL без доступа к админскому TG. |
 | **P5-COM-02** | Правила возвратов при массовом дауне. | Текст в оферте. |
 | **P5-ENG-01** | Общий HTTP‑клиент для Python ops (TLS, таймауты). | Новые скрипты без `CERT_NONE`. |
-| **P5-ENG-02** | Общий `load_env` для мониторов. | Один модуль + тест кавычек. |
+| **P5-ENG-02** | Общий `load_env` для мониторов. | **`ops/load_env_file.py`** (старт); дальше — единое подключение в скриптах + unit-тест на кавычки. |
 
 ---
 
@@ -208,13 +208,13 @@
 | ID | Задача | Done when |
 |----|--------|-----------|
 | ~~**P6-SCALE-01**~~ ✅ | Метрики: сессии по нодам, RPS `/api/*`, Postgres latency/size, Redis, RPS подписки, RAM по контейнерам. | **В репо:** `python ops/capacity_snapshot.py` — users/nodes, пороги §10.1, **HTTPS probe подписки** (latency + код). Docker/Postgres/RPS — расширения. |
-| **P6-SCALE-02** | Soft cap пользователей на ноду + правило добавления ноды в матрицу. | Документ + настройка панели/Happ |
+| **P6-SCALE-02** | Soft cap пользователей на ноду + правило добавления ноды в матрицу. | Документ + настройка панели/Happ; базовое правило про LV/NL — **`docs/NODE-POLICY-LV-NL.md`**. |
 | **P6-SCALE-03** | Postgres: индексы, `pg_stat_statements`, окно бэкапа не в пик. | План обслуживания |
 | **P6-SCALE-04** | Публичная подписка: edge/CDN, **rate limit** по IP, защита от абьюза. | **Репо:** **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`**, smoke в **`ops/capacity_snapshot.py`**, нагрузочный смок **`ops/subscription_load_probe.py`** (§3 runbook). Зафиксированный прогон — §12; **CDN/rate limit** на edge — по §2 runbook при росте (может отличаться от смока). |
 | **P6-SCALE-05** | Рост API панели: вертикаль/горизонталь по доке; Redis eviction. | Прогон «refresh × N» |
 | **P6-SCALE-06** | RU-monitor укладывается в cron **< 5 мин** при текущем числе хостов. | Лог с длительностью |
 | **P6-SCALE-07** | Нагрузка на поддержку: шаблоны (P3) + при росте очереди — вторая линия / SLA ответа. | Метрика очереди |
-| **P6-SCALE-NL-VERIFY** | Продукт / ёмкость: все активные пользователи на **LV** при живой **NL** — осознанная политика (**leastLoad**, squads, запасная нода) или ошибка конфигурации? | Запись в wiki + проверка **internal squads / inbound’ы** LV+NL в UI панели; критерий «когда NL должна брать долю». |
+| ~~**P6-SCALE-NL-VERIFY**~~ ✅ (репо) | Продукт / ёмкость: все активные пользователи на **LV** при живой **NL** — осознанная политика (**leastLoad**, squads, запасная нода) или ошибка конфигурации? | **`docs/NODE-POLICY-LV-NL.md`** — критерии проверки; фактический аудит squads/UI — по окну эксплуатации. |
 
 Задачи **P6‑RED‑SUBHA‑01**, **P6‑RED‑PG‑01**, **P6‑RED‑PAY‑01** дублируются в сводной таблице **§5.1** (единый порядок «критичные → мелкие» для ТПСУ).
 
@@ -229,7 +229,7 @@
 
 ## 11. Связь с аудитом репозитория
 
-Закрыты по коду/операциям: **P0-SEC-01…03** ✅, **P0-OPS** ✅, ~~**P0-SEC-04**~~ ✅, ~~**P0-SEC-05**~~ ✅ (**журнал §12**). Открытых задач уровня **P0** в таблице §4 на текущий срез **нет**. Блок **P1** ✅ по **`docs/P1-POST-AUDIT.md` (PASS 2026-05-15)** плюс **~~P1-OPS-REMNA-TOKEN-01~~**, **~~P1-RED-LOG-01~~** (в форме репо + патч-док). **Операционная память:** **`docs/KNOWLEDGE-BASE.md`**, процедуры репозитория (**`docs/POLICY-REPO-WORKFLOW.md`**). Из **§5.1**: дальше **P1‑RED‑DATA/SEC/SSH/DNS**. Из **§6**: ~~**P2-OPS-DRIFT-POST-P0**~~ ✅, ~~**`P2-SEC-LOG-01`**~~ ✅, ~~**`P2-MON-01`/`P2-MON-02`**~~ ✅, ~~**`P2-BAK-01`/`P2-BAK-02`**~~ ✅, бэкапы (restore test — см. **`RUNBOOK-BACKUP-REMNAWAVE`**); ~~**`P2-ENG-DRIFT-CHECK-01`**~~ ✅, ~~**`P2-CHORE-SUB-ENV`**~~ ✅; затем **P6** (**P6‑RED‑***, **`P6-SCALE-NL-VERIFY`**).
+Закрыты по коду/операциям: **P0-SEC-01…03** ✅, **P0-OPS** ✅, ~~**P0-SEC-04**~~ ✅, ~~**P0-SEC-05**~~ ✅ (**журнал §12**). Открытых задач уровня **P0** в таблице §4 на текущий срез **нет**. Блок **P1** ✅ по **`docs/P1-POST-AUDIT.md` (PASS 2026-05-15)** плюс **~~P1-OPS-REMNA-TOKEN-01~~**, **~~P1-RED-LOG-01~~** (в форме репо + патч-док). **Операционная память:** **`docs/KNOWLEDGE-BASE.md`**, процедуры репозитория (**`docs/POLICY-REPO-WORKFLOW.md`**). Из **§5.1**: дальше **P1‑RED‑DATA/SEC/SSH/DNS**. Из **§6**: ~~**P2-OPS-DRIFT-POST-P0**~~ ✅, ~~**`P2-SEC-LOG-01`**~~ ✅, ~~**`P2-MON-01`/`P2-MON-02`**~~ ✅, ~~**`P2-BAK-01`/`P2-BAK-02`**~~ ✅, бэкапы (restore test — см. **`RUNBOOK-BACKUP-REMNAWAVE`**); ~~**`P2-ENG-DRIFT-CHECK-01`**~~ ✅, ~~**`P2-CHORE-SUB-ENV`**~~ ✅; затем **P6** (**P6‑RED‑***; база для ~~**`P6-SCALE-NL-VERIFY`**~~ / **P6-SCALE‑02** — см. **`docs/NODE-POLICY-LV-NL.md`**). **Репозиторные черновики P3:** ~~**`P3-UX-02`/`P3-UX-03`/`P3-TR-01`**~~ (**`support/USER-FACING-ERRORS`**, **`templates/USER-INCIDENT-BROADCAST`**, **`POLICY-LOGS-DATA`**).
 
 **P4** — отдельный продуктовый слой, не смешивать с основным VPN SKU.
 
@@ -279,3 +279,4 @@
 | 2026-05-15 | **P0-SEC-04 / P0-SEC-05 — процедура в репозитории:** **`docs/RUNBOOK-P0-SEC04-SEC05.md`**, скрипты **`ops/archive_lv_remnawave_legacy.sh`**, **`ops/rotate_ams_panel_core_secrets.py`**. Исполнение на LV/AMS — вручную; после успеха добавить строку **«P0-SEC-04/05 DONE»** с датой ниже. |
 | 2026-05-15 | **P0-SEC-04 / P0-SEC-05 DONE (прод).** **LV:** **`/opt/remnawave/`** заархивирован в **`/opt/_archive/remnawave-legacy-*`**, **`chattr +i`** (наследие закрыто). **AMS:** фаза A — ротация JWT + Postgres **`rotate_ams_panel_core_secrets.py --apply`**, контейнер **`remnawave`** пересоздан (**`--force-recreate`**); фаза B — новый **`REMNA_API_TOKEN`** из UI → **`/opt/remna-shop/.env`**, **`/opt/remnawave/sub/.env`**, LV **`/etc/bvpn/balancer.env`** (**`PANEL_TOKEN`/`REMNA_API_TOKEN`**) и **`/etc/bvpn/ru-monitor.env`**; **`docker compose up -d`** / **`--force-recreate`** для shop и subscription-page. Супер‑админ восстановлен через **Rescue CLI** после потери входа. Добавлены вспомогательные патчи URL панели: **`FRONT_END_DOMAIN`** / **`PANEL_DOMAIN`**, Caddy **`header_up`** (журнал ops/thread). |
 | 2026-05-15 | **Инцидент эксплуатации → задачи P2/P3.** **`ru-monitor.py`**: серия **`HTTP 401`** до обновления **`REMNA_API_TOKEN`** на LV; после фазы B тик **`total=16 ok=16`**. **`balancer.sh`**: до правки бил в **`localhost:3000`** → **`USERS=0 NODES=0`**; исправлено **`PANEL_URL=https://k9x2m1.conntest.xyz:2053`** + синхронизация **`balancer.sh`** с репо; проверка **`/api/users` → HTTP 200**. **`python ops/drift-check.py`**: exit **1**, **DRIFT** по нескольким файлам + **TIMEOUT** на чтении **`/etc/bvpn/*.env`** → занесено как **`P2-OPS-DRIFT-POST-P0`**, **`P2-ENG-DRIFT-CHECK-01`**. UX: **Forbidden/E000** при логине часто означает неверный пароль (**403**) → **`P3-OPS-SUPPORT-REMNA-LOGIN`**. Продукт: все ~58 пользователей на LV при живой NL — на усмотрение политики → **`P6-SCALE-NL-VERIFY`**. |
+| 2026-05-15 | **Черновики P3/P4/P6 (репо):** синхрон **§4** с **§11** (**P0-SEC‑01…03**, **P0‑OPS‑01/02** — ✅ в таблице). ~~**P3‑UX‑02/03**~~: **`bot_src/user_messages.py`**, поддержка **`docs/support/USER-FACING-ERRORS.md`**, шаблон **`docs/templates/USER-INCIDENT-BROADCAST.md`**. ~~**P3‑TR‑01**~~ (внутренний черновик): **`docs/POLICY-LOGS-DATA.md`**. ~~**P4‑DNS‑02**~~: блок в **`docs/FAQ.md`**. ~~**P6‑SCALE‑NL‑VERIFY**~~ (репо): **`docs/NODE-POLICY-LV-NL.md`**. **P5‑ENG‑02** старт: **`ops/load_env_file.py`**. **Деплой бота:** скопировать обновлённый **`handlers.py`** + **`user_messages.py`** в образ **`shop_bot/bot/`** на AMS. |

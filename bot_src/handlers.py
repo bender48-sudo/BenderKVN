@@ -42,7 +42,7 @@ async def safe_edit_message(message: types.Message, text: str, reply_markup=None
         # Для любых других ошибок отправляем новое сообщение
         await message.answer(text, reply_markup=reply_markup)
 
-from shop_bot.bot import keyboards
+from shop_bot.bot import keyboards, user_messages
 from shop_bot.modules import remnawave_api
 from shop_bot.data_manager.database import (
     get_user, add_new_key, get_user_keys, update_user_stats,
@@ -549,7 +549,7 @@ async def trial_period_handler(callback: types.CallbackQuery):
         logger.error(f"Error creating trial key for user {user_id}: {e}", exc_info=True)
         # Сбрасываем флаг при любой ошибке
         reset_trial_used(user_id)
-        await callback.message.edit_text("❌ Произошла ошибка при создании пробного ключа.")
+        await callback.message.edit_text("❌ " + user_messages.ERR_TRIAL_CREATE)
 
 @user_router.callback_query(F.data == "open_admin_panel")
 async def open_admin_panel_handler(callback: types.CallbackQuery):
@@ -869,7 +869,7 @@ async def show_key_handler(callback: types.CallbackQuery):
         await callback.message.edit_text(text=final_text, reply_markup=keyboards.create_key_info_keyboard(key_id_to_show))
     except Exception as e:
         logger.error(f"Error showing key {key_id_to_show}: {e}")
-        await callback.message.edit_text("❌ Произошла ошибка при получении данных ключа.")
+        await callback.message.edit_text("❌ " + user_messages.ERR_KEY_FETCH)
 
 @user_router.callback_query(F.data.startswith("show_qr_"))
 async def show_qr_handler(callback: types.CallbackQuery):
@@ -893,6 +893,7 @@ async def show_qr_handler(callback: types.CallbackQuery):
         await callback.message.answer_photo(photo=qr_code_file)
     except Exception as e:
         logger.error(f"Error showing QR for key {key_id}: {e}")
+        await callback.message.answer("❌ " + user_messages.ERR_QR)
 
 @user_router.callback_query(F.data.startswith("show_instruction_"))
 async def show_instruction_handler(callback: types.CallbackQuery):
@@ -946,7 +947,7 @@ async def create_yookassa_payment_handler(callback: types.CallbackQuery, state: 
     key_id = int(parts[-1])
     
     if plan_id not in PLANS:
-        await callback.message.answer("Произошла ошибка при выборе тарифа.")
+        await callback.message.answer("❌ " + user_messages.ERR_TARIFF_CHOICE)
         return
 
     name, price_rub, months = PLANS[plan_id]
@@ -1034,7 +1035,7 @@ async def create_crypto_payment_handler(callback: types.CallbackQuery, state: FS
     key_id = int(parts[-1])
 
     if plan_id not in PLANS:
-        await callback.message.answer("Произошла ошибка при выборе тарифа.")
+        await callback.message.answer("❌ " + user_messages.ERR_TARIFF_CHOICE)
         return
 
     name, price_rub, months = PLANS[plan_id]
@@ -1105,7 +1106,7 @@ async def create_crypto_payment_handler(callback: types.CallbackQuery, state: FS
                     
                     if not payment_url:
                         logger.error(f"Heleket API success, but no pay_url in response: {response_text}")
-                        await callback.message.edit_text("❌ Ошибка получения ссылки на оплату.")
+                        await callback.message.edit_text("❌ " + user_messages.ERR_PAYMENT_LINK)
                         return
 
                     await callback.message.edit_text(
@@ -1114,11 +1115,11 @@ async def create_crypto_payment_handler(callback: types.CallbackQuery, state: FS
                     )
                 else:
                     logger.error(f"Heleket API error: {response.status} - {response_text}")
-                    await callback.message.edit_text("❌ Не удалось создать счет для оплаты криптовалютой.")
+                    await callback.message.edit_text("❌ " + user_messages.ERR_PAY_CRYPTO_GATEWAY)
 
     except Exception as e:
         logger.error(f"Exception during crypto payment creation: {e}", exc_info=True)
-        await callback.message.edit_text("❌ Произошла критическая ошибка. Попробуйте позже.")
+        await callback.message.edit_text("❌ " + user_messages.ERR_PAYMENT_CRITICAL)
 
 @user_router.callback_query(F.data.startswith("pay_stars_"))
 async def create_stars_payment_handler(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
@@ -1130,7 +1131,7 @@ async def create_stars_payment_handler(callback: types.CallbackQuery, state: FSM
     key_id = int(parts[-1])
     
     if plan_id not in PLANS:
-        await callback.message.answer("Произошла ошибка при выборе тарифа.")
+        await callback.message.answer("❌ " + user_messages.ERR_TARIFF_CHOICE)
         return
 
     name, price_rub, months = PLANS[plan_id]
@@ -1201,7 +1202,7 @@ async def create_stars_payment_handler(callback: types.CallbackQuery, state: FSM
         
     except Exception as e:
         logger.error(f"Failed to create Telegram Stars payment: {e}", exc_info=True)
-        await callback.message.answer("Не удалось создать счет для оплаты звездами.")
+        await callback.message.answer("❌ " + user_messages.ERR_TELEGRAM_STARS)
 
 @user_router.pre_checkout_query()
 async def pre_checkout_handler(pre_checkout_query: types.PreCheckoutQuery):
@@ -1238,7 +1239,7 @@ async def successful_payment_handler(message: types.Message, bot: Bot):
     except Exception as e:
         bot_logger.payment(message.from_user.id, "TELEGRAM_STARS", payment.total_amount, "FAILED")
         logger.error(f"Error processing stars payment: {e}", exc_info=True)
-        await message.answer("❌ Ошибка при обработке платежа. Обратитесь в поддержку.")
+        await message.answer("❌ " + user_messages.ERR_PAYMENT_PROCESS_SUPPORT)
 
 async def process_successful_payment(bot: Bot, metadata: dict):
     user_id, months, price, action, key_id = map(metadata.get, ['user_id', 'months', 'price', 'action', 'key_id'])
@@ -1324,7 +1325,7 @@ async def process_successful_payment(bot: Bot, metadata: dict):
             telegram_id=str(user_id)
         )
         if not uri or not expire_iso or not vless_uuid:
-            await processing_message.edit_text("❌ Не удалось создать/обновить ключ.")
+            await processing_message.edit_text("❌ " + user_messages.ERR_SERVER_KEY_UPDATE)
             return
         expiry_dt = datetime.fromisoformat(expire_iso.replace('Z', '+00:00'))
         expiry_ms = int(expiry_dt.timestamp() * 1000)
@@ -1349,5 +1350,5 @@ async def process_successful_payment(bot: Bot, metadata: dict):
     # FSM промокода очищается после применения при вводе; отдельное хранение не требуется.
     except Exception as e:
         logger.error(f"Error processing payment for user {user_id}: {e}", exc_info=True)
-        await processing_message.edit_text("❌ Ошибка при выдаче ключа.")
+        await processing_message.edit_text("❌ " + user_messages.ERR_SERVER_KEY_UPDATE)
 
