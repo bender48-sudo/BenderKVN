@@ -2,6 +2,13 @@
 
 Цель **P6-SCALE-04**: при росте базы **пик обновлений подписок** не должен класть **edge** (TLS / reverse proxy / контейнер subscription-page) и **панель**.
 
+## 0. Рекомендуемый порядок на проде
+
+1. **Бот AMS** при необходимости: хотфиксы **`handlers` / user_messages`** — см. **`docs/DEPLOY.md` §4.3.1** или **`pwsh -File ops/deploy-bot-handlers-ams.ps1`**, смок **`/start`** в Telegram.
+2. **Baseline без нового RL:** с узла с доступом к публичному URL (или локально через `site_urls`) — один прогон **`python ops/subscription_load_probe.py --json`** (параметры сохраните в **`COMMERCIAL-BACKLOG` §12**).
+3. **Включить** CDN **или** rate-limit на краю (**§2**), не трогая **`/api/sub/*`** токены и upstream на AMS (**`REMNA_API_TOKEN`**, см. **`RUNBOOK-REMNA-API-TOKEN`**).
+4. Повторить **`subscription_load_probe`** (можно **`--max-bad-http-rate`**, если договорились о допустимой доле не-200/304); зафиксировать в **§12**.
+
 ## 1. Текущая схема (ориентир)
 
 | Компонент | Где | Заметка |

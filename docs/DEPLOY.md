@@ -19,6 +19,7 @@
 | `ops/watchdog.sh` | NL | `/opt/scripts/watchdog.sh` | Каждые 15 мин: SSH NL→LV (restricted-key) → проверка mtime двух monitor-логов; алерт «stale >30 мин» только при реальной проблеме. |
 | `ops/bvpn-watchdog-probe.sh` | LV | `/usr/local/sbin/bvpn-watchdog-probe` | Read-only probe для watchdog: возвращает три `epoch=…` строки. Вызывается через `command="…"` в `authorized_keys`. |
 | `ops/bvpn-docker-firewall.sh` | AMS | `/usr/local/sbin/bvpn-docker-firewall.sh` | Idempotent: вставляет в `DOCKER-USER` пару правил «ACCEPT from LV / DROP all» для `subscription-page` :3010. |
+| `bot_src/handlers.py`, `bot_src/user_messages.py` | AMS | `/opt/remna-shop/src/shop_bot/bot/handlers.py` **+** `user_messages.py` **+** `docker cp` в `remna-shop-bot` | Пользовательские тексты и логика бота (до пересборки image). Автоматизация: **`pwsh -File ops/deploy-bot-handlers-ams.ps1`**. |
 | `ops/bot-admin-handlers.py` | AMS | `/opt/remna-shop/src/shop_bot/bot/admin_handlers.py` **+** image-copy в `remna-shop-bot` | Admin-only `/admin` и `/status` команды бота. Bot src — image-baked, поэтому деплой = host-edit + `docker cp` + `docker restart`. |
 | `compose/**/*.tmpl` + vault | LV / AMS / NL | см. **`docs/SECRETS.md` §3** (пути прод) | SoT для прод-compose и ключевых `/etc/bvpn/*.env`: шаблоны в репо, секреты в `.secrets/vault.env`; синхронность **`python ops/drift-check.py`** (**§7**); реген из прода через `ops/sanitize_compose_templates.py`. |
 
@@ -96,6 +97,34 @@ ssh -p 3344 root@168.100.11.140 "
 ```
 
 При следующей пересборке image (`update.sh` в `remna-shop`) изменение в `/opt/remna-shop/src/` подхватится автоматически.
+
+### 4.3.1. `handlers.py` + `user_messages.py` (**AMS**) — хотфиксы UX / платежей
+
+Тот же приём (хост **`/opt/remna-shop/src/…`** + контейнер **`remna-shop-bot`**):
+
+```bash
+python -c "import ast; ast.parse(open('bot_src/handlers.py',encoding='utf-8').read()); ast.parse(open('bot_src/user_messages.py',encoding='utf-8').read())"
+scp -P 3344 bot_src/handlers.py bot_src/user_messages.py root@168.100.11.140:/tmp/
+ssh -p 3344 root@168.100.11.140 '
+  set -e
+  ts=$(date +%Y%m%d-%H%M%S)
+  BT=/opt/remna-shop/src/shop_bot/bot
+  mkdir -p "$BT"
+  test -f "$BT/handlers.py" && cp "$BT/handlers.py" "$BT/handlers.py.before-bot-ops-$ts" || true
+  test -f "$BT/user_messages.py" && cp "$BT/user_messages.py" "$BT/user_messages.py.before-bot-ops-$ts" || true
+  sed -i "s/\r$//" /tmp/handlers.py /tmp/user_messages.py
+  install -m 0644 /tmp/handlers.py "$BT/handlers.py"
+  install -m 0644 /tmp/user_messages.py "$BT/user_messages.py"
+  docker cp /tmp/handlers.py remna-shop-bot:/app/src/shop_bot/bot/handlers.py
+  docker cp /tmp/user_messages.py remna-shop-bot:/app/src/shop_bot/bot/user_messages.py
+  docker restart remna-shop-bot
+  md5sum "$BT/handlers.py" "$BT/user_messages.py"
+'
+```
+
+На Windows из корня репозитория: **`pwsh -File ops/deploy-bot-handlers-ams.ps1`** (использует тот же **`-P 3344`**, ключ **`%USERPROFILE%\.ssh\id_ed25519`**).
+
+Smoke: **`/start`** в боте, при необходимости admin **`/status`**. Затем (план **P6-SCALE-04**) — baseline **`subscription_load_probe`** до правок edge.
 
 ### 4.4 Пробный период (**90 дней**) и grandfather **до 2099** (AMS + панель)
 
