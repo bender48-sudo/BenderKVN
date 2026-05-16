@@ -2,7 +2,7 @@
 
 **Задачи бэклога:** **`P2-COM-MONETIZE-01` … `04`**, перед массовым привлечением — **до** или **вместе с** **`P6-RED-PAY-01`**.
 
-**Текущее состояние (репо):** **`BOT_PAYMENTS_LIVE=1`** на AMS (**2026-05-16**, Stars live); тарификация — **баланс**, **`DAILY_RATE = 6.67` ₽/день**, **`TOPUP_PRESETS`**. Периодные **`PLANS`** — legacy для старых webhook. **`TERMS_URL` / …** — **Q007**.
+**Текущее состояние (репо):** **`BOT_PAYMENTS_LIVE=1`** на AMS (**2026-05-16**, Stars live); тарификация — **баланс**, **`DAILY_RATE = 6.67` ₽/день**, **`TOPUP_PRESETS`**. Legal в SQLite бота: telegra.ph (terms/privacy), **@Bender_KVN_bot** (support) — см. **`ops/check_legal_urls_ams.py`**. Периодные **`PLANS`** — legacy. **NEXT:** go-live чеклист **§4** (**Q008**).
 
 ---
 
