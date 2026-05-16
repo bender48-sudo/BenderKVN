@@ -1,4 +1,8 @@
 p4n7q.conntest.xyz:2053 {
+    header {
+        -Via
+        -Alt-Svc
+    }
     @sub_path path /api/sub/*
     log_skip @sub_path
 
@@ -18,10 +22,23 @@ p4n7q.conntest.xyz:2053 {
         -Caddy-Server
     }
 
-    @blocked not path /api/sub/*
+    rate_limit {
+        zone sub_api_per_ip {
+            match path /api/sub/*
+            key {remote_host}
+            events 120
+            window 1m
+        }
+    }
+
+    @blocked {
+        not path /api/sub/*
+        not path /assets/*
+        not path /locales/*
+    }
     respond @blocked 404
 
-    reverse_proxy http://127.0.0.1:3010 {
+    reverse_proxy http://168.100.11.140:3010 {
         header_up X-Forwarded-Proto "https"
         header_up X-Forwarded-For {remote_host}
     }

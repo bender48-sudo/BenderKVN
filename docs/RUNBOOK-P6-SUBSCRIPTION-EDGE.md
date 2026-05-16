@@ -31,7 +31,15 @@
 
 ### 2.1 Caddy без «магии» в образе по умолчанию
 
-Стандартный **`caddy:2.x`** из Docker Hub / пакеты дистрибутива обычно **не включают** middleware rate‑limit; его подключают отдельной сборкой через **`xcaddy`**. На практике для LV смотрите модуль **[`mholt/caddy-ratelimit`](https://github.com/mholt/caddy-ratelimit)** (Apache‑2.0): ключ зоны типично **`{remote_ip}`**, matcher только на **`/api/sub/*`** и при необходимости на **отдельный host** подписки — чтобы не задеть панель на том же edge.
+Стандартный **`caddy:2.x`** из Docker Hub / пакеты дистрибутива обычно **не включают** middleware rate‑limit; его подключают отдельной сборкой через **`xcaddy`**. На практике для LV смотрите модуль **[`mholt/caddy-ratelimit`](https://github.com/mholt/caddy-ratelimit)** (Apache‑2.0): ключ зоны типично **`{remote_host}`**, matcher только на **`/api/sub/*`** и при необходимости на **отдельный host** подписки — чтобы не задеть панель на том же edge.
+
+**Накат на bvpn-lv (прод):**
+
+1. **`ops/lv-install-caddy-ratelimit.sh`** — сборка **v2.11.2** + модуль (нужен **`/usr/local/go/bin`**, не системный Go 1.18), бэкап **`/usr/bin/caddy`**, установка.
+2. **`ops/patch-caddy-sub-ratelimit.sh`** — блок **`rate_limit`** в **`p4n7q.conntest.xyz:2053`**, **`caddy validate`**, **`systemctl restart caddy`**.
+3. Smoke: **`curl -fsSI`** probe URL → **200** или **304**; при душении — **429** (не **502**).
+
+Эталон Caddyfile: **`Caddyfile-latvia-full.txt`** (зона **`sub_api_per_ip`**: **120** req / **1m** / IP — подстроить после **`subscription_load_probe`** в **Q003**).
 
 Не копировать в прод **числовые пороги** из чужих гайдов: снимите профиль через **`subscription_load_probe.py`** (низкая → высокая параллельность), зафиксируйте p95 до/после. **`429`** от лимитера ожидаемы при намеренном душении; массовые **`502`** трактуйте как деградация upstream (**`remnawave-subscription-page`** / панель на AMS).
 

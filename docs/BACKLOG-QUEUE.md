@@ -21,8 +21,8 @@
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
 | 001 | **P6-SCALE-04a** | **DONE** | Green probe при стабильных 200/304 | §12 **2026-05-16** | **`RUNBOOK-P6-SUBSCRIPTION-EDGE` §0 (a)** |
-| 002 | **P6-SCALE-04b** | **NEXT** | CDN **или** Caddy rate-limit на краю подписки на **проде** | Sub smoke 200/304; конфиг edge задеплоен | **`RUNBOOK-P6-SUBSCRIPTION-EDGE` §2** |
-| 003 | **P6-SCALE-04c** | TODO | Повтор **`subscription_load_probe`** после (b); p95/гистограмма в §12 | `python ops/subscription_load_probe.py --json` | **`RUNBOOK-P6-SUBSCRIPTION-EDGE` §0 (c)** |
+| 002 | **P6-SCALE-04b** | **DONE** | CDN **или** Caddy rate-limit на краю подписки на **проде** | Sub smoke **200**; Caddy RL на **bvpn-lv** §12 **2026-05-16** | **`RUNBOOK-P6-SUBSCRIPTION-EDGE` §2** |
+| 003 | **P6-SCALE-04c** | **NEXT** | Повтор **`subscription_load_probe`** после (b); p95/гистограмма в §12 | `python ops/subscription_load_probe.py --json` | **`RUNBOOK-P6-SUBSCRIPTION-EDGE` §0 (c)** |
 | 004 | **P2-OPS-RESTORE-TEST-01** | TODO | Квартальный restore test; дата в runbook §4 + §12 | Изолированный Postgres, дамп с LV | **`RUNBOOK-BACKUP-REMNAWAVE` §4** |
 | 005 | **P2-COM-MONETIZE-01** | TODO | Финальные цены на проде (не тест 1 ₽) | Меню тарифов в TG | **`RUNBOOK-COMMERCE-GO-LIVE` §1** |
 | 006 | **P2-COM-MONETIZE-02** | TODO | **`BOT_PAYMENTS_LIVE=1`**, E2E один канал оплаты | Оплата → `expireAt` в панели | **`RUNBOOK-COMMERCE-GO-LIVE` §2** |
@@ -65,3 +65,4 @@
 | Дата | Было NEXT | Стало |
 |------|-----------|--------|
 | 2026-05-16 | — | **Q002** (**P6-SCALE-04b**) после внедрения очереди |
+| 2026-05-16 | **Q002** P6-SCALE-04b | **Q003** P6-SCALE-04c |
