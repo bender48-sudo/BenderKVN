@@ -234,7 +234,7 @@
 | ~~**P6-SCALE-04**~~ ✅ | Публичная подписка: edge/CDN, **rate limit** по IP, защита от абьюза. | **(a)(b)(c)** закрыты §12 **2026-05-16**: Caddy RL **120/min/IP** на LV; post-RL probe **120** req **c=30** → **120×200**, **p95≈1.83s**, **5xx=0**. Репо: **`RUNBOOK-P6-SUBSCRIPTION-EDGE`**, **`subscription_load_probe`**, **`capacity_snapshot`**. |
 | ~~**P6-SCALE-05**~~ ✅ | Рост API панели: вертикаль/горизонталь по доке; Redis eviction. | **`RUNBOOK-P6-PANEL-API-SCALE`**; Valkey **256mb/allkeys-lru**; **`panel_refresh_load_probe`** **100×200** p95≈**1.4s** §12 |
 | **P6-SCALE-06** | RU-monitor укладывается в cron **< 5 мин** при текущем числе хостов. | Лог с длительностью |
-| **P6-SCALE-07** | Нагрузка на поддержку: шаблоны (P3) + при росте очереди — вторая линия / SLA ответа. | Метрика очереди |
+| ~~**P6-SCALE-07**~~ ✅ | Нагрузка на поддержку: шаблоны (P3) + при росте очереди — вторая линия / SLA ответа. | **`RUNBOOK-P6-SUPPORT-SCALE`**, **`support_queue_snapshot.py`**; **21** topics, **SUPPORT_QUEUE_OK** §12 |
 | ~~**P6-SCALE-NL-VERIFY**~~ ✅ (репо) | Продукт / ёмкость: все активные пользователи на **LV** при живой **NL** — осознанная политика (**leastLoad**, squads, запасная нода) или ошибка конфигурации? | **`docs/NODE-POLICY-LV-NL.md`** — критерии проверки; фактический аудит squads/UI — по окну эксплуатации. |
 
 Задачи **P6‑RED‑SUBHA‑01**, **P6‑RED‑PG‑01**, **P6‑RED‑PAY‑01** дублируются в сводной таблице **§5.1** (единый порядок «критичные → мелкие» для ТПСУ).
@@ -264,6 +264,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-16 | **P6-SCALE-07 — DONE:** метрика очереди (**`support_queue_snapshot.py`**: pending/SLA/tickets_24h); бот — timestamps **`support_last_*_at`**; шаблоны **`SUPPORT-REPLY-TEMPLATES`**; пороги 2-й линии **15/25**. Smoke: **active_topics=21**, **SUPPORT_QUEUE_OK**. **NEXT=Q020** P2-RED-BOOT-01. |
 | 2026-05-16 | **P6-SCALE-05 — DONE:** Valkey **`allkeys-lru`** + **256mb** (runtime AMS + compose tmpl); **`panel_refresh_load_probe`** **100** req **c=25**, **40** shortUuid, **100×200**, **p95≈1.4s**, **0** bad HTTP; **`valkey_memory_audit.py`**. **NEXT=Q019** P6-SCALE-07. |
 | 2026-05-16 | **ru-monitor 401 (LV) — FIXED:** протухший **`REMNA_API_TOKEN_LV`**; выровнен с рабочим AMS shop JWT (**`sync-lv-remna-token-from-ams.ps1`**). Smoke: **`total=16 ok=16`**, **`duration_sec≈8s`**, **`RU_MONITOR_CYCLE_OK`**. |
 | 2026-05-16 | **P6-SCALE-06 — DONE:** **`ru-monitor.py`** — **`duration_sec`** (в т.ч. abort), **`JITTER_MAX=60`**; **`ru_monitor_cycle_probe.py`**, **`RUNBOOK-P6-RU-MONITOR-SCALE`**. |

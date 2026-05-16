@@ -98,6 +98,15 @@ def initialize_db():
                 )
             except sqlite3.OperationalError:
                 pass
+            for col, typedef in (
+                ("support_topic_id", "INTEGER"),
+                ("support_last_user_at", "INTEGER"),
+                ("support_last_staff_at", "INTEGER"),
+            ):
+                try:
+                    cursor.execute(f"ALTER TABLE users ADD COLUMN {col} {typedef}")
+                except sqlite3.OperationalError:
+                    pass
             conn.commit()
             logging.info("Database with 'created_date' column initialized successfully.")
     except sqlite3.Error as e:

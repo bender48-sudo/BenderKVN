@@ -1,6 +1,7 @@
 import os
 import logging
 import sqlite3
+import time
 from pathlib import Path
 
 from aiogram import Bot, Router, F, types
@@ -31,6 +32,26 @@ def _set_support_topic(telegram_id: int, topic_id):
             "INSERT INTO users (telegram_id, support_topic_id) VALUES (?, ?) "
             "ON CONFLICT(telegram_id) DO UPDATE SET support_topic_id = excluded.support_topic_id",
             (telegram_id, topic_id),
+        )
+        conn.commit()
+
+
+def _touch_support_user(telegram_id: int) -> None:
+    ts = int(time.time())
+    with sqlite3.connect(DB_FILE) as conn:
+        conn.execute(
+            "UPDATE users SET support_last_user_at = ? WHERE telegram_id = ?",
+            (ts, telegram_id),
+        )
+        conn.commit()
+
+
+def _touch_support_staff(topic_id: int) -> None:
+    ts = int(time.time())
+    with sqlite3.connect(DB_FILE) as conn:
+        conn.execute(
+            "UPDATE users SET support_last_staff_at = ? WHERE support_topic_id = ?",
+            (ts, topic_id),
         )
         conn.commit()
 
@@ -82,6 +103,7 @@ async def user_message_to_support(message: types.Message, bot: Bot):
             message_id=message.message_id,
             message_thread_id=topic_id,
         )
+        _touch_support_user(user_id)
         if is_new_topic:
             await message.answer("\u041f\u043e\u043b\u0443\u0447\u0438\u043b\u0438 \u0432\u0430\u0448\u0435 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435! \u041e\u0442\u0432\u0435\u0442\u0438\u043c \u0432 \u0441\u0430\u043c\u043e\u0435 \u0431\u043b\u0438\u0436\u0430\u0439\u0448\u0435\u0435 \u0432\u0440\u0435\u043c\u044f \U0001f64f")
     except TelegramBadRequest as e:
@@ -97,6 +119,7 @@ async def user_message_to_support(message: types.Message, bot: Bot):
                     message_id=message.message_id,
                     message_thread_id=topic_id,
                 )
+                _touch_support_user(user_id)
                 await message.answer("\u041f\u043e\u043b\u0443\u0447\u0438\u043b\u0438 \u0432\u0430\u0448\u0435 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435! \u041e\u0442\u0432\u0435\u0442\u0438\u043c \u0432 \u0441\u0430\u043c\u043e\u0435 \u0431\u043b\u0438\u0436\u0430\u0439\u0448\u0435\u0435 \u0432\u0440\u0435\u043c\u044f \U0001f64f")
             except Exception as e2:
                 logger.error(f"Failed to recreate topic for {user_id}: {e2}")
@@ -120,6 +143,7 @@ async def admin_reply_in_topic(message: types.Message, bot: Bot):
         return
 
     try:
+        _touch_support_staff(message.message_thread_id)
         if message.text:
             await bot.send_message(chat_id=user_id, text=message.text)
         elif message.photo:

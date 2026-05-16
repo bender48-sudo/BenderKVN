@@ -41,8 +41,8 @@
 
 Связь: **`P6-SCALE-07`**, шаблоны **`docs/support/USER-FACING-ERRORS.md`**, **`docs/templates/USER-INCIDENT-BROADCAST.md`**.
 
-- [ ] SLA ответа в чате (согласовать с **`docs/RUNBOOK-INCIDENT.md`** ≤60 мин первый ответ)
-- [ ] Порог «очередь > N тикетов/день» → вторая линия / внешний аутсорс
+- [x] SLA ответа в чате — **`RUNBOOK-P6-SUPPORT-SCALE`** (≤60 мин, **`support_queue_snapshot.py`**)
+- [x] Порог очереди → вторая линия: **pending≥15** или **tickets_24h≥25** (тот же runbook)
 - [ ] Playbook: массовый инцидент (DPI, блок домена подписки) — связь с **P2-RED-SUB-01**
 
 ---
