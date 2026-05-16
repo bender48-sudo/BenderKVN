@@ -13,21 +13,25 @@ set -euo pipefail
 
 WAN_IF="${WAN_IF:-eth0}"
 LV_IP="${LV_IP:-176.126.162.158}"
-SUB_PORT="${SUB_PORT:-3010}"
+# Space-separated list (P6-RED-SUBHA-01: 3010 primary + 3011 alt split-host).
+SUB_PORTS="${SUB_PORTS:-${SUB_PORT:-3010}}"
 
 # Ensure DOCKER-USER exists (it does on any host with Docker, but be safe)
 iptables -L DOCKER-USER -n >/dev/null 2>&1 || iptables -N DOCKER-USER
 
-# Remove our previous rules (idempotent re-apply)
-while iptables -D DOCKER-USER -i "$WAN_IF" -p tcp --dport "$SUB_PORT" -s "$LV_IP" -j ACCEPT 2>/dev/null; do :; done
-while iptables -D DOCKER-USER -i "$WAN_IF" -p tcp --dport "$SUB_PORT" -j DROP   2>/dev/null; do :; done
+apply_port() {
+  local port="$1"
+  while iptables -D DOCKER-USER -i "$WAN_IF" -p tcp --dport "$port" -s "$LV_IP" -j ACCEPT 2>/dev/null; do :; done
+  while iptables -D DOCKER-USER -i "$WAN_IF" -p tcp --dport "$port" -j DROP   2>/dev/null; do :; done
+  iptables -I DOCKER-USER 1 -i "$WAN_IF" -p tcp --dport "$port" -j DROP
+  iptables -I DOCKER-USER 1 -i "$WAN_IF" -p tcp --dport "$port" -s "$LV_IP" -j ACCEPT
+  echo "  port $port: ACCEPT from $LV_IP, DROP others"
+}
 
-# Insert in correct order:
-# 1) accept LV (panel<->sub via Caddy)
-# 2) drop everyone else for that port
-# Order matters: ACCEPT must come before DROP.
-iptables -I DOCKER-USER 1 -i "$WAN_IF" -p tcp --dport "$SUB_PORT" -j DROP
-iptables -I DOCKER-USER 1 -i "$WAN_IF" -p tcp --dport "$SUB_PORT" -s "$LV_IP" -j ACCEPT
+echo "Applying DOCKER-USER rules for SUB_PORTS: $SUB_PORTS"
+for port in $SUB_PORTS; do
+  apply_port "$port"
+done
 
 echo "DOCKER-USER after apply:"
 iptables -L DOCKER-USER -n --line-numbers

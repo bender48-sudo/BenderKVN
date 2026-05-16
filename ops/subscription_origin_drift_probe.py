@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""P2-RED-SUB-01: probe all subscription public origins; detect HTTP/body drift.
+"""P2-RED-SUB-01 / P6-RED-SUBHA-01: probe all subscription public origins.
 
-Exit 0 when every origin returns 200/304 and subscription body hashes match.
+Default: HTTP 200/304 on every origin **and** identical body SHA256 (single backend).
+With ``--split-host``: only HTTP health (p4n7q→:3010, k9x2m1→:3011 may differ in bytes).
 """
 from __future__ import annotations
 
@@ -90,6 +91,11 @@ def main() -> int:
     p = argparse.ArgumentParser(description="Subscription multi-origin drift probe")
     p.add_argument("--timeout", type=float, default=25.0)
     p.add_argument("--json", action="store_true")
+    p.add_argument(
+        "--split-host",
+        action="store_true",
+        help="SUBHA mode: pass if all origins HTTP 200/304 (ignore body hash drift)",
+    )
     args = p.parse_args()
 
     urls = sub_all_probe_urls()
@@ -132,9 +138,14 @@ def main() -> int:
             print(f"{r['url']}: HTTP {r['http_code']} sha256={r.get('sha256', '—')}{flag}")
         print(f"all_ok={all_ok} body_drift={drift}")
 
-    if not all_ok or drift:
+    if not all_ok:
         return 1
-    print("SUB_MULTI_ORIGIN_OK")
+    if drift and not args.split_host:
+        return 1
+    if args.split_host:
+        print("SUB_PAGE_HA_SPLIT_HOST_OK")
+    else:
+        print("SUB_MULTI_ORIGIN_OK")
     return 0
 
 

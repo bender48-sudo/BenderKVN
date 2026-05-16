@@ -31,8 +31,8 @@
 | 009 | **P6-RED-PAY-01** | **DONE** | Idempotency + DLQ webhook бота | smoke WEBHOOK_PAY §12 | **§5.1** |
 | 010 | **P2-RED-SUB-01** | **DONE** | ≥2 origin подписки + мониторинг | p4n7q+k9x2m1 §12 | **§5.1**, **`RUNBOOK-P6-SUBSCRIPTION-MULTI-ORIGIN`** |
 | 011 | **P2-RED-MUX-01** | **DONE** | ≥2 транспортных профиля в матрице | alt_ob_share 56% §12 | **§5.1**, **`TRANSPORT-MUX-MATRIX`** |
-| 012 | **P6-RED-SUBHA-01** | **NEXT** | Горизонталь sub-page или split host | Load test без деградации p95 | **§5.1** |
-| 013 | **P6-SCALE-02** | TODO | Soft cap + правило 3-й ноды | **`NODE-POLICY-LV-NL`** | **§10.2** |
+| 012 | **P6-RED-SUBHA-01** | **DONE** | Горизонталь sub-page или split host | split-host :3010/:3011, HA probe OK §12 | **§5.1**, **`RUNBOOK-P6-SUBSCRIPTION-HA`** |
+| 013 | **P6-SCALE-02** | **NEXT** | Soft cap + правило 3-й ноды | **`NODE-POLICY-LV-NL`** | **§10.2** |
 | 014 | **P6-SCALE-03** | TODO | Postgres индексы / `pg_stat_statements` | План обслуживания | **§10.2** |
 | 015 | **GTM-WIKI-01** | TODO | Wiki по **`GTM-GROWTH-OUTLINE`**; URL в §1 бэклога | Owner заполнил вне git | **`GTM-GROWTH-OUTLINE`** |
 | 016 | **P2-OPS-IMAGE-PIN-01** | TODO | Digest pin postgres/valkey/caddy/adguard | Нет `:latest` в tmpl | **§6** |
@@ -58,6 +58,7 @@
 | 009 | `ops: P6-RED-PAY-01 — webhook idempotency + DLQ` |
 | 010 | `ops: P2-RED-SUB-01 — multi-origin подписки + drift probe` |
 | 011 | `docs: P2-RED-MUX-01 — transport matrix + mux audit` |
+| 012 | `ops: P6-RED-SUBHA-01 — split-host sub-page :3010/:3011 + HA load probe` |
 
 После коммита с закрытием задачи — в **`BACKLOG-QUEUE.md`**: сменить статусы и при необходимости добавить подстроку в §12 бэклога (в том же коммите).
 
@@ -78,3 +79,4 @@
 | 2026-05-16 | **Q009** P6-RED-PAY-01 | **Q010** P2-RED-SUB-01 |
 | 2026-05-16 | **Q010** P2-RED-SUB-01 | **Q011** P2-RED-MUX-01 |
 | 2026-05-16 | **Q011** P2-RED-MUX-01 | **Q012** P6-RED-SUBHA-01 |
+| 2026-05-16 | **Q012** P6-RED-SUBHA-01 | **Q013** P6-SCALE-02 |

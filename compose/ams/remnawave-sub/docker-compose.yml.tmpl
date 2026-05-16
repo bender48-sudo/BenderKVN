@@ -14,6 +14,22 @@ services:
     networks:
       - remnawave-network
 
+  # P6-RED-SUBHA-01: second instance; LV routes k9x2m1 (alt origin) here, p4n7q stays on :3010.
+  remnawave-subscription-page-b:
+    image: remnawave/subscription-page:latest@sha256:37dd48ac794bd14a5c26d3555ff9fbe0cd4fa758b9f591864f3300ce7174a4f4
+    container_name: remnawave-subscription-page-b
+    hostname: remnawave-subscription-page-b
+    restart: always
+    ports:
+      - '0.0.0.0:3011:3010'
+    environment:
+      - REMNAWAVE_PANEL_URL=http://remnawave:3000
+      - REMNAWAVE_API_TOKEN=${REMNA_API_TOKEN}
+      - CUSTOM_SUB_PREFIX=api/sub
+      - ENABLE_DEBUG_LOGS=false
+    networks:
+      - remnawave-network
+
 networks:
   remnawave-network:
     name: remnawave-network

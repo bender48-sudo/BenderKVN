@@ -32,7 +32,7 @@ insert = """    # SUB_ALT_ORIGIN_P2_RED_SUB_01 — second public name for /api/s
                 window 1m
             }
         }
-        reverse_proxy http://168.100.11.140:3010 {
+        reverse_proxy http://168.100.11.140:3011 {
             header_up X-Forwarded-Proto "https"
             header_up X-Forwarded-For {remote_host}
         }

@@ -286,7 +286,7 @@ k9x2m1.conntest.xyz:2053 {
     @fingerprint path /swagger* /health /metrics /api-docs* /docs*
     respond @fingerprint 404
 
-    # P2-RED-SUB-01: alternate subscription origin (same AMS :3010 as p4n7q)
+    # P2-RED-SUB-01 + P6-RED-SUBHA-01: alt origin -> AMS :3011 (primary p4n7q -> :3010)
     @sub_path_alt path /api/sub/*
     handle @sub_path_alt {
         rate_limit {
@@ -296,7 +296,7 @@ k9x2m1.conntest.xyz:2053 {
                 window 1m
             }
         }
-        reverse_proxy http://168.100.11.140:3010 {
+        reverse_proxy http://168.100.11.140:3011 {
             header_up X-Forwarded-Proto "https"
             header_up X-Forwarded-For {remote_host}
         }

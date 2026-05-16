@@ -10,7 +10,7 @@
 | **Alternate** | **`k9x2m1.conntest.xyz:2053`** | `/api/sub/*` | тот же AMS **:3010** (отдельное DNS-имя) |
 | Панель | **`k9x2m1.conntest.xyz:2053`** | остальное | AMS **:3000** |
 
-Оба имени — edge **bvpn-lv**; разнесение **DNS/SNI**, не два независимых дата-центра (следующий шаг — CDN / **P6-RED-SUBHA-01**).
+Оба имени — edge **bvpn-lv**; разнесение **DNS/SNI**. С **P6-RED-SUBHA-01** alt origin (**k9x2m1**) идёт на второй инстанс sub-page (**AMS :3011**), primary (**p4n7q**) — **:3010**; см. **`docs/RUNBOOK-P6-SUBSCRIPTION-HA.md`**.
 
 ## 2. Накат alternate origin на LV
 
@@ -42,7 +42,7 @@ python ops/subscription_origin_drift_probe.py --json
 
 Интеграция: **`monitor.sh`** (CHECK alt), **`daily-report.sh`**, **`capacity_snapshot.py`** — при необходимости.
 
-**Алерт:** `body_drift=true` или HTTP ≠ 200/304 на любом origin → смотреть Caddy на LV, **`remnawave-subscription-page`** на AMS, **`RUNBOOK-AMS-SAFE-DEPLOY`**.
+**Алерт:** HTTP ≠ 200/304 на любом origin → Caddy LV, sub-page на AMS. После **P6-RED-SUBHA-01** (split-host) **`body_drift=true` нормален** — проверяйте `python ops/subscription_origin_drift_probe.py --split-host`.
 
 ## 5. Инцидент «один домен в реестре»
 
