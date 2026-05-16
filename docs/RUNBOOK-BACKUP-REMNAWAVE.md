@@ -26,7 +26,7 @@
 
 1. Скопировать с репозитория на **AMS**: `ops/pg_dump_remnawave.sh` → например `/opt/scripts/pg_dump_remnawave.sh`, `chmod +x`.
 2. Скопировать на **LV**: `ops/pull-latest-dump-ams-to-lv.sh` → `/opt/scripts/pull-latest-dump-ams-to-lv.sh`, `chmod +x`.
-3. **Состояние репо 2026-05-16:** оба файла задеплоены на прод (`install` в `/opt/scripts/`, `bash -n` OK). Добавьте строки в crontab по §2 / `ops/crontab-remnawave-backup.example` при необходимости.
+3. **Состояние репо 2026-05-16:** оба файла задеплоены на прод (`install` в `/opt/scripts/`, `bash -n` OK). Crontab: **`ops/install-remnawave-backup-cron.sh ams|lv`** (AMS `5 */6`, LV `15 */6`); логи **`/var/log/pg_dump_remnawave.log`**, **`/var/log/remnawave-pull.log`**.
 4. Убедиться, что SSH LV→AMS с ключом и портом из скрипта совпадают с реальностью (`AMS_IP`, `AMS_PORT` при необходимости через env).
 5. Каталог **`/opt/backups`** существует на обоих хостах (`mkdir -p`).
 

@@ -14,6 +14,8 @@
 | `ops/pg_dump_remnawave.sh` | AMS | `/opt/scripts/pg_dump_remnawave.sh` (рекомендуемый путь) | Периодический логический дамп Postgres панели в **`/opt/backups/`**. |
 | `ops/pull-latest-dump-ams-to-lv.sh` | LV | `/opt/scripts/pull-latest-dump-ams-to-lv.sh` | Копия последнего дампа с AMS на LV (off-host), верификация SHA256. |
 | `ops/remnawave_restore_test.sh` | LV | `/opt/scripts/remnawave_restore_test.sh` | Квартальный restore test (ephemeral Postgres 17, см. **`RUNBOOK-BACKUP-REMNAWAVE` §4**). |
+| `ops/install-remnawave-backup-cron.sh` | AMS / LV | — (one-shot: `bash … ams` / `… lv`) | Crontab **`pg_dump`** / **`pull-latest-dump`** — см. **`ops/crontab-remnawave-backup.example`**. |
+| `ops/deploy-bot-config-ams.ps1` | AMS (с Windows) | hot-patch **`config.py`** | Цены **`PLANS`** / **`TRAFFIC_PACKS`** без пересборки image. |
 | `ru-monitor.py` | LV | `/opt/scripts/ru-monitor.py` | Каждые 5 мин: SNI-reachability через RU-relay (цели из API `hosts`; минимальный порог **≥4** активных после фильтров, см. код). |
 | `selfsteal-monitor.py` | LV | `/opt/scripts/selfsteal-monitor.py` | Каждые 5 мин: Caddy selfsteal fingerprint (HTTP коды по 13 SNI). AMS-узел закомментирован на время drain'а. |
 | `deploy-node.sh` | LV / AMS | `/opt/scripts/deploy-node.sh` | Развёртывание новой `remnanode`. **Токен через env / argv / interactive read — никогда в `ps`**. |
