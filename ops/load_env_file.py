@@ -3,7 +3,7 @@
 
 Starter for **P5-ENG-02** — скрипты могут прочитать `*.env` без bash `source`.
 Не парсит многострочные значения; строки после `#` в конце считаются комментарием
-только если `#` первый символ строки после trim (как минимально для cron env)."""
+Строка от `#` до конца в **значении** отбрасывается как комментарий (ограничение: `#` нельзя в URL без кавычек)."""
 
 from __future__ import annotations
 
@@ -18,6 +18,8 @@ def load_env_file(path: Path | str) -> dict[str, str]:
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
+        if line.startswith("export "):
+            line = line[7:].strip()
         if "=" not in line:
             continue
         key, rest = line.split("=", 1)

@@ -13,31 +13,24 @@ Importing this module applies the file load once (``setdefault`` only).
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 _OPS = Path(__file__).resolve().parent
 _ROOT = _OPS.parent
 _SITE_ENV = _OPS / "site.env"
 
+if str(_OPS) not in sys.path:
+    sys.path.insert(0, str(_OPS))
+
+from load_env_file import load_env_file as _parse_env_file
+
 
 def _load_site_env_file() -> None:
     if not _SITE_ENV.is_file():
         return
-    for raw in _SITE_ENV.read_text(encoding="utf-8").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#"):
-            continue
-        if line.startswith("export "):
-            line = line[7:].strip()
-        if "=" not in line:
-            continue
-        k, _, v = line.partition("=")
-        k = k.strip()
-        v = v.strip()
-        if (v.startswith('"') and v.endswith('"')) or (v.startswith("'") and v.endswith("'")):
-            v = v[1:-1]
-        if k:
-            os.environ.setdefault(k, v)
+    for k, v in _parse_env_file(_SITE_ENV).items():
+        os.environ.setdefault(k, v)
 
 
 _load_site_env_file()

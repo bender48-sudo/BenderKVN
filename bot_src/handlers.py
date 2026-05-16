@@ -266,7 +266,7 @@ async def profile_handler_callback(callback: types.CallbackQuery):
     user_db_data = get_user(user_id)
     user_keys = get_user_keys(user_id)
     if not user_db_data:
-        await callback.answer("Не удалось получить данные профиля.", show_alert=True)
+        await callback.answer(user_messages.ERR_PROFILE_ALERT, show_alert=True)
         return
     username = html.bold(user_db_data.get('username', 'Пользователь'))
     total_spent, total_months = user_db_data.get('total_spent', 0), user_db_data.get('total_months', 0)
@@ -294,7 +294,7 @@ async def referrals_handler(callback: types.CallbackQuery):
     
     text = f"👥 <b>Пригласите друга</b>\n\nКогда друг активирует подписку —\nвы оба получите +3 дня 🎁\n\n👥 Приглашено: {ref_count}"
     
-    await callback.message.edit_text(ref_text, reply_markup=keyboards.create_back_to_menu_keyboard())
+    await callback.message.edit_text(text, reply_markup=keyboards.create_back_to_menu_keyboard())
 
 @user_router.callback_query(F.data == "show_about")
 async def about_handler(callback: types.CallbackQuery):
@@ -346,7 +346,7 @@ async def traffic_status_handler(callback: types.CallbackQuery):
         # Получаем общую информацию о пользователе (теперь все ключи в одном профиле)
         remote = await get_user_by_telegram_id(session, str(user_id))
         if not remote:
-            lines.append("❌ Не удалось получить данные с сервера")
+            lines.append("❌ " + user_messages.ERR_TRAFFIC_REMOTE)
         else:
             used = remote.get('usedTrafficBytes', 0)
             base_limit = remote.get('trafficLimitBytes', 0)
@@ -473,7 +473,7 @@ async def promo_code_received(message: types.Message, state: FSMContext):
     code = (message.text or '').strip()
     promo = get_promo(code)
     if not promo:
-        await message.answer("❌ Промокод недействителен или исчерпан. Попробуйте другой.")
+        await message.answer("❌ " + user_messages.MSG_PROMO_INVALID)
         return
     await state.update_data(promo_code=code)
     discount = promo.get('discount_percent', 0)
@@ -510,7 +510,7 @@ async def trial_period_handler(callback: types.CallbackQuery):
         if not uri or not expire_iso or not vless_uuid:
             # Сбрасываем флаг при ошибке создания ключа
             reset_trial_used(user_id)
-            await callback.message.edit_text("❌ Не удалось создать пробный ключ.")
+            await callback.message.edit_text("❌ " + user_messages.ERR_TRIAL_CREATE)
             return
         # convert ISO to timestamp ms for storage
         expiry_dt = datetime.fromisoformat(expire_iso.replace('Z', '+00:00'))
@@ -636,10 +636,10 @@ async def copy_sub_url_handler(callback: types.CallbackQuery):
                     parse_mode="Markdown"
                 )
             else:
-                await callback.message.answer("❌ Подписка не найдена.")
+                await callback.message.answer("❌ " + user_messages.ERR_SUBSCRIPTION_URL_MISSING)
     except Exception as e:
         logger.error(f"Error in copy_sub_url: {e}")
-        await callback.message.answer("❌ Ошибка.")
+        await callback.message.answer("❌ " + user_messages.ERR_GENERIC_RETRY)
 
 @user_router.callback_query(F.data == "admin_stats")
 async def admin_stats_handler(callback: types.CallbackQuery):
@@ -711,7 +711,7 @@ async def admin_backup_handler(callback: types.CallbackQuery):
     if success:
         final_text = "✅ Бэкап успешно создан и отправлен!"
     else:
-        final_text = "❌ Ошибка создания бэкапа. Проверьте логи."
+        final_text = "❌ " + user_messages.ERR_ADMIN_BACKUP
     
     try:
         await callback.message.edit_text(final_text, reply_markup=keyboards.create_admin_keyboard())
@@ -786,7 +786,7 @@ async def admin_promo_limit(message: types.Message, state: FSMContext):
     if ok:
         await message.answer(f"✅ Промокод '{code}' создан. Скидка {disc}%, +{free_days} дн., лимит {limit or '∞'}.")
     else:
-        await message.answer("❌ Ошибка создания промокода.")
+        await message.answer("❌ " + user_messages.ERR_ADMIN_PROMO)
     await message.answer("Меню промокодов:", reply_markup=keyboards.create_admin_promos_keyboard())
 
 @user_router.callback_query(F.data == "admin_promo_list")
@@ -843,7 +843,7 @@ async def show_key_handler(callback: types.CallbackQuery):
     key_data = get_key_by_id(key_id_to_show)
 
     if not key_data or key_data['user_id'] != user_id:
-        await callback.message.edit_text("❌ Ошибка: ключ не найден.")
+        await callback.message.edit_text("❌ " + user_messages.ERR_KEY_WRONG_USER)
         return
         
     try:
@@ -853,13 +853,13 @@ async def show_key_handler(callback: types.CallbackQuery):
         async with aiohttp.ClientSession() as session:
             inbound = await get_inbound(session)
             if not inbound:
-                await callback.message.edit_text("❌ Ошибка: inbound не найден.")
+                await callback.message.edit_text("❌ " + user_messages.ERR_INBOUND)
                 return
             user_uuid = key_data['vless_uuid']
             email = key_data['key_email']
             connection_string = build_vless_uri(inbound, user_uuid, email)
             if not connection_string:
-                await callback.message.edit_text("❌ Не удалось сгенерировать строку подключения.")
+                await callback.message.edit_text("❌ " + user_messages.ERR_VLESS_BUILD)
                 return
         expiry_date = datetime.fromisoformat(key_data['expiry_date'])
         created_date = datetime.fromisoformat(key_data['created_date'])
@@ -989,7 +989,7 @@ async def create_yookassa_payment_handler(callback: types.CallbackQuery, state: 
         )
     except Exception as e:
         logger.error(f"Failed to create YooKassa payment: {e}", exc_info=True)
-        await callback.message.answer("Не удалось создать ссылку на оплату.")
+        await callback.message.answer("❌ " + user_messages.ERR_PAYMENT_LINK)
 
 def create_heleket_signature(payload: dict, api_key: str) -> str:
     """
@@ -1267,12 +1267,12 @@ async def process_successful_payment(bot: Bot, metadata: dict):
                 pack_id = metadata.get('plan_id') or metadata.get('pack_id') or metadata.get('action')
                 pack = TRAFFIC_PACKS.get(pack_id, None)
             if not pack:
-                await processing_message.edit_text("❌ Пакет трафика не найден.")
+                await processing_message.edit_text("❌ " + user_messages.ERR_TRAFFIC_PACK_MISSING)
                 return
             title, price_label, gb = pack
             key_data = get_key_by_id(key_id)
             if not key_data or key_data['user_id'] != user_id:
-                await processing_message.edit_text("❌ Ключ для добавления трафика не найден.")
+                await processing_message.edit_text("❌ " + user_messages.ERR_KEY_WRONG_USER)
                 return
             email = key_data['key_email']
             server_ok = await add_extra_traffic(email, gb)
@@ -1282,7 +1282,7 @@ async def process_successful_payment(bot: Bot, metadata: dict):
                 await processing_message.delete()
                 await bot.send_message(user_id, f"✅ Доп. трафик {gb} ГБ добавлен к ключу #{key_id}.")
             else:
-                await processing_message.edit_text("❌ Не удалось обновить лимит на сервере.")
+                await processing_message.edit_text("❌ " + user_messages.ERR_EXTRA_TRAFFIC_PANEL)
             return
         days_to_add = months * 30
         email = ""
@@ -1293,7 +1293,7 @@ async def process_successful_payment(bot: Bot, metadata: dict):
         elif action == "extend":
             key_data = get_key_by_id(key_id)
             if not key_data or key_data['user_id'] != user_id:
-                await processing_message.edit_text("❌ Ошибка: ключ для продления не найден.")
+                await processing_message.edit_text("❌ " + user_messages.ERR_KEY_WRONG_USER)
                 return
             all_user_keys = get_user_keys(user_id)
             key_number = next((i + 1 for i, key in enumerate(all_user_keys) if key['key_id'] == key_id), 0)

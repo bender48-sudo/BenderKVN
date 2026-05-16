@@ -13,6 +13,11 @@
 | Очередь capacity (users/nodes vs §10.1) | `python ops/capacity_snapshot.py` (токен в `.secrets/panel-token.txt`) |
 | Деплой, drift, рендер vault | **`docs/DEPLOY.md`** |
 | Порядок спринтов (продукт → UX) | **`docs/POLICY-BACKLOG-ORDER.md`** |
+| Тексты ошибок бота / карта для поддержки | **`bot_src/user_messages.py`**, **`docs/support/USER-FACING-ERRORS.md`** |
+| Черновик рассылки при инциденте | **`docs/templates/USER-INCIDENT-BROADCAST.md`** |
+| Черновик политики логов (внутр.) | **`docs/POLICY-LOGS-DATA.md`** |
+| LV/NL распределение нагрузки (ёмкость) | **`docs/NODE-POLICY-LV-NL.md`** |
+| Регрессия `ops/load_env_file` (`site.env`) | `python -m unittest discover -s tests` из корня репо |
 | Алерты в Telegram (метаданные) | **`docs/POLICY-TELEGRAM-ALERTS.md`** |
 | SSH known_hosts / `StrictHostKeyChecking` | **`docs/SSH-HOST-KEY-PRACTICE.md`** |
 | Утечка секрета в чат / скриншот | **`docs/POLICY-SECRET-LEAK-RESPONSE.md`** |
