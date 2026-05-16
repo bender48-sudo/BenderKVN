@@ -23,6 +23,7 @@ REMNA machine JWT (переменная в файлах: REMNA_API_TOKEN=) — �
   dry-run       чеклист и команды без SSH (план)
   verify-ams    SSH → ops/check-ams-subscription-token-layout.sh на AMS
   sync-ams-sub  SSH → ops/fix-ams-subscription-api-token.sh на AMS (shop → sub + compose fix)
+  sync-lv-from-ams  pwsh ops/sync-lv-remna-token-from-ams.ps1 (AMS shop JWT → LV balancer + ru-monitor)
 
 Полный апдейт: см. runbook (только AMS / только LV / оба). verify-ams/sync — helpers для AMS sub.
 
@@ -82,6 +83,9 @@ sync-ams-sub | sync)
 	echo "SSH bvpn-ams -> fix-ams-subscription-api-token.sh"
 	bash "${OPS_DIR}/sync-sub-token-ams.sh"
 	echo "sync-ams-sub: done"
+	;;
+sync-lv-from-ams)
+	exec pwsh -NoProfile -File "${OPS_DIR}/sync-lv-remna-token-from-ams.ps1"
 	;;
 *)
 	echo "unknown mode: ${MODE}; try: help" >&2

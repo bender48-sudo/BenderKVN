@@ -264,7 +264,8 @@
 
 | Дата | Что сделано |
 |------|-------------|
-| 2026-05-16 | **P6-SCALE-06 — DONE:** **`ru-monitor.py`** — **`duration_sec`** (в т.ч. abort), **`JITTER_MAX=60`**; **`ru_monitor_cycle_probe.py`**, **`RUNBOOK-P6-RU-MONITOR-SCALE`**. LV: код задеплоен; **401 API** на **`ru-monitor.env`** — отдельный ops (см. **`remna_api_token_rollout.sh`**). **NEXT=Q018** P6-SCALE-05. |
+| 2026-05-16 | **ru-monitor 401 (LV) — FIXED:** протухший **`REMNA_API_TOKEN_LV`**; выровнен с рабочим AMS shop JWT (**`sync-lv-remna-token-from-ams.ps1`**). Smoke: **`total=16 ok=16`**, **`duration_sec≈8s`**, **`RU_MONITOR_CYCLE_OK`**. |
+| 2026-05-16 | **P6-SCALE-06 — DONE:** **`ru-monitor.py`** — **`duration_sec`** (в т.ч. abort), **`JITTER_MAX=60`**; **`ru_monitor_cycle_probe.py`**, **`RUNBOOK-P6-RU-MONITOR-SCALE`**. **NEXT=Q018** P6-SCALE-05. |
 | 2026-05-16 | **GTM-WIKI-01 — owner gate CLOSED:** канон URL + §1; еженедельная синхронизация — **`RUNBOOK-GTM-WIKI`**. |
 | 2026-05-16 | **P2-OPS-IMAGE-PIN-01 — DONE:** digest pin **postgres/valkey/adguard** в compose tmpl (prod sha256); **Caddy v2.11.2** — host pin в **`IMAGE-PINS.md`**; **`check_compose_image_pins.py`**. Накат compose на прод — при следующем safe-deploy. |
 | 2026-05-16 | **P6-SCALE-03 — DONE:** **`RUNBOOK-P6-POSTGRES-MAINTENANCE`**; **`pg_remnawave_audit.py`** (AMS: PG **17.6**, 62 idx, largest **432 kB**); backup cron вне **06 UTC** (**`35 1,7,13,19`** / **`50`**); compose tmpl + **`pg_enable_stat_statements_ams.sh`** (накат extension — по safe-deploy). **NEXT=Q015** GTM-WIKI-01. |
