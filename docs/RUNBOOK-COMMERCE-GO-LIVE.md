@@ -40,7 +40,7 @@
 ## 4. Чеклист перед рекламой (**P2-COM-MONETIZE-04**)
 
 - [ ] **`P2-OPS-AMS-SAFE-DEPLOY-01`** — runbook известен команде
-- [ ] **`P6-SCALE-04`**: green **`subscription_load_probe`** + edge RL/CDN (см. **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`**)
+- [x] **`P6-SCALE-04`**: green **`subscription_load_probe`** + edge RL/CDN (см. **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`**, §12 **2026-05-16**)
 - [ ] **`P2-OPS-RESTORE-TEST-01`**: дата restore test в **`docs/RUNBOOK-BACKUP-REMNAWAVE.md` §4**
 - [ ] **`docs/GTM-GROWTH-OUTLINE.md`** — wiki заполнен, owner GTM
 - [ ] Пороги §10.1 понятны (план апгрейда AMS при **2k** users)

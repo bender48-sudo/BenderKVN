@@ -39,7 +39,7 @@
 2. **`ops/patch-caddy-sub-ratelimit.sh`** — блок **`rate_limit`** в **`p4n7q.conntest.xyz:2053`**, **`caddy validate`**, **`systemctl restart caddy`**.
 3. Smoke: **`curl -fsSI`** probe URL → **200** или **304**; при душении — **429** (не **502**).
 
-Эталон Caddyfile: **`Caddyfile-latvia-full.txt`** (зона **`sub_api_per_ip`**: **120** req / **1m** / IP — подстроить после **`subscription_load_probe`** в **Q003**).
+Эталон Caddyfile: **`Caddyfile-latvia-full.txt`** (зона **`sub_api_per_ip`**: **120** req / **1m** / IP). После наката (**§12 2026-05-16**): probe **120** req **c=30** → **120×200**, **p95≈1.83s** — порог оставлен **120/min**; при росте базы переснять профиль.
 
 Не копировать в прод **числовые пороги** из чужих гайдов: снимите профиль через **`subscription_load_probe.py`** (низкая → высокая параллельность), зафиксируйте p95 до/после. **`429`** от лимитера ожидаемы при намеренном душении; массовые **`502`** трактуйте как деградация upstream (**`remnawave-subscription-page`** / панель на AMS).
 
