@@ -41,6 +41,9 @@
 bash -n monitor.sh                                            # для bash
 python -c "import ast; ast.parse(open('ru-monitor.py').read())" # для python
 
+# (Windows PowerShell, из корня репо — один шаг вместо 2–4 ниже:)
+#   pwsh -File ops/deploy-monitor-lv.ps1
+
 # 2. Ship to host /tmp, normalize line endings
 scp -P 3333 monitor.sh root@176.126.162.158:/tmp/monitor.sh.new
 ssh -p 3333 root@176.126.162.158 "sed -i 's/\r\$//' /tmp/monitor.sh.new"
@@ -52,6 +55,8 @@ ssh -p 3333 root@176.126.162.158 "ts=\$(date +%Y%m%d-%H%M%S); cp /opt/scripts/mo
 ssh -p 3333 root@176.126.162.158 "md5sum /opt/scripts/monitor.sh"
 python -c "import hashlib; print(hashlib.md5(open('monitor.sh','rb').read()).hexdigest())"
 ```
+
+Скрипт **`ops/deploy-monitor-lv.ps1`** делает шаги 2–4 для **`monitor.sh`**, плюс сравнение MD5 в выводе; нужны OpenSSH (`scp`/`ssh`) и ключ **`%USERPROFILE%\.ssh\id_ed25519`**.
 
 Те же 4 шага для NL (через alias `bvpn-nl`, ключ из ssh-config) и AMS (`-P 3344 root@168.100.11.140`).
 
