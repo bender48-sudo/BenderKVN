@@ -6,7 +6,7 @@ from pathlib import Path
 from aiogram import Bot
 from shop_bot.data_manager import database
 from shop_bot.modules import remnawave_api
-from shop_bot.config import PLANS, BOT_PAYMENTS_LIVE
+from shop_bot.config import PLANS, BOT_PAYMENTS_LIVE, DAILY_RATE
 from shop_bot.utils.logger import bot_logger
 import aiohttp
 
@@ -79,17 +79,21 @@ async def start_subscription_monitor(bot: Bot):
                                     if BOT_PAYMENTS_LIVE:
                                         from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
                                         kb = InlineKeyboardMarkup(inline_keyboard=[
-                                            [InlineKeyboardButton(text="💳 Оформить подписку", callback_data="choose_plan")]
+                                            [InlineKeyboardButton(text="💰 Пополнить баланс", callback_data="show_topup")]
                                         ])
+                                        bal = database.get_balance(user_id)
                                         if mark > 0:
                                             txt = (
-                                                f"⏰ Ваш бесплатный период заканчивается через {mark} дн.!\n\n"
-                                                f"Понравился BenderVPN? Продолжите пользоваться — оформите подписку 👇"
+                                                f"⏰ Доступ заканчивается через {mark} дн.\n\n"
+                                                f"💰 Баланс: {bal:.0f} ₽\n\n"
+                                                f"Пополните баланс ({DAILY_RATE:.2f} ₽/день), "
+                                                f"чтобы не остаться без VPN 👇"
                                             )
                                         else:
                                             txt = (
-                                                "❗️ Бесплатный период закончился.\n\n"
-                                                "Оформите подписку, чтобы продолжить пользоваться BenderVPN 👇"
+                                                "❗️ Срок доступа истёк.\n\n"
+                                                f"💰 Баланс: {bal:.0f} ₽\n\n"
+                                                "Пополните баланс, чтобы продолжить пользоваться BenderVPN 👇"
                                             )
                                         await bot.send_message(user_id, txt, reply_markup=kb)
                                     else:

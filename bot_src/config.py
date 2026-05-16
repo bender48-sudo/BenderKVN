@@ -12,12 +12,34 @@ REMNA_TRIAL_DAYS = int(
 # пробного периода без кнопки «Оформить подписку», только поддержка / ожидание кассы.
 BOT_PAYMENTS_LIVE = os.getenv("BOT_PAYMENTS_LIVE", "").strip().lower() in ("1", "true", "yes")
 
-PLANS = {
-    "buy_1_month": (f"Подписка 1 месяц", "50.00", 1),
-    "buy_3_months": (f"Подписка 3 месяца", "135.00", 3),
-    "buy_6_months": (f"Подписка 6 месяцев", "240.00", 6),
-    "buy_12_months": (f"Подписка 12 месяцев", "450.00", 12),
+# Тарификация: пополнение баланса, списание 6.67 ₽/день (не привязка к «месяцам»).
+DAILY_RATE = 6.67  # ₽/день за одно устройство
+
+TOPUP_PRESETS = {
+    "topup_200": ("200 ₽", "200.00", 200),
+    "topup_500": ("500 ₽", "500.00", 500),
+    "topup_1000": ("1000 ₽", "1000.00", 1000),
+    "topup_2000": ("2000 ₽", "2000.00", 2000),
 }
+
+# Legacy: периодные планы (старые webhook / YooKassa metadata); UI — только TOPUP.
+PLANS = {
+    "buy_1_month": ("Подписка 1 месяц", "200.00", 1),
+    "buy_3_months": ("Подписка 3 месяца", "540.00", 3),
+    "buy_6_months": ("Подписка 6 месяцев", "999.00", 6),
+    "buy_12_months": ("Подписка 12 месяцев", "1899.00", 12),
+}
+
+
+def balance_to_days(balance: float) -> int:
+    if balance <= 0:
+        return 0
+    return max(1, int(balance / DAILY_RATE))
+
+
+def topup_button_label(amount_rub: float) -> str:
+    days = balance_to_days(amount_rub)
+    return f"{amount_rub:.0f} ₽ — ~{days} дн."
 
 # Дополнительные пакеты трафика (id: (Название, Цена, ГБ))
 TRAFFIC_PACKS = {
@@ -27,7 +49,12 @@ TRAFFIC_PACKS = {
 
 WELCOME_MESSAGE = "Здесь вы можете приобрести быстрый и надежный VPN."
 CHOOSE_PLAN_MESSAGE = "Выберите подходящий тариф:"
+CHOOSE_TOPUP_MESSAGE = "Выберите сумму пополнения:"
 CHOOSE_PAYMENT_METHOD_MESSAGE = "Выберите удобный способ оплаты:"
+CUSTOM_AMOUNT_UNAVAILABLE = (
+    "Произвольная сумма будет доступна после подключения оплаты картой или криптой."
+)
+KEY_EMAIL_DOMAIN = os.getenv("KEY_EMAIL_DOMAIN", "kitsura.fun")
 
 ABOUT_TEXT = "Настройки не установлены. Установите их в админ-панели."
 TERMS_URL = "Ссылка на условия использования не установлена. Установите её в админ-панели."

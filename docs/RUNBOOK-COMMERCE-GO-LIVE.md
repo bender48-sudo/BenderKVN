@@ -2,17 +2,19 @@
 
 **Задачи бэклога:** **`P2-COM-MONETIZE-01` … `04`**, перед массовым привлечением — **до** или **вместе с** **`P6-RED-PAY-01`**.
 
-**Текущее состояние (репо):** **`BOT_PAYMENTS_LIVE`** пустой в **`compose/ams/remna-shop/bot.env.tmpl`**; **`bot_src/config.py`** — **1 месяц = 50 ₽** (прод AMS **2026-05-16**, **`ops/deploy-bot-config-ams.ps1`**); **`TERMS_URL` / `PRIVACY_URL` / `SUPPORT_USER`** — заглушки (**Q007**).
+**Текущее состояние (репо):** **`BOT_PAYMENTS_LIVE`** пустой; тарификация — **баланс**, **`DAILY_RATE = 6.67` ₽/день**, пополнение **`TOPUP_PRESETS`** (прод AMS **2026-05-16**, **`ops/deploy-bot-balance-model-ams.ps1`**). Периодные **`PLANS`** — legacy для старых webhook. **`TERMS_URL` / …** — **Q007**.
 
 ---
 
 ## 1. Финальные цены (**P2-COM-MONETIZE-01**)
 
-1. Согласовать с владельцем продукта цены в **`bot_src/config.py`** → **`PLANS`** и **`TRAFFIC_PACKS`** (убрать тест **1 ₽** на 1 месяц, если не акция).
-2. Деплой бота на AMS: **`docs/DEPLOY.md` §4.3.1** / **`ops/deploy-bot-handlers-ams.ps1`** (+ при изменении только config — пересборка image или копирование env).
-3. Проверить отображение в TG: меню тарифов, профиль, напоминания scheduler.
+Модель: **не месячные тарифы**, а **пополнение баланса** по **6.67 ₽/день** (кому-то хватит на день, кому-то на год).
 
-**Done when:** на проде отображаются согласованные цены; нет случайного underpricing.
+1. **`bot_src/config.py`**: **`DAILY_RATE`**, **`TOPUP_PRESETS`**, **`balance_to_days()`**; UI — «Пополнить баланс», кнопки вида **`200 ₽ — ~30 дн.`**.
+2. Деплой: **`ops/deploy-bot-balance-model-ams.ps1`** (config, keyboards, handlers, database, scheduler).
+3. Smoke TG: главное меню / аккаунт → баланс и ₽/день; пресеты пополнения без **1 ₽** и без привязки «1 месяц = N ₽».
+
+**Done when:** на проде видна модель баланса и **6.67 ₽/день**; underpricing (тест **1 ₽**) отсутствует.
 
 ---
 

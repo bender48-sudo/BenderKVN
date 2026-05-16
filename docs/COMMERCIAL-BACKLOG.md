@@ -140,7 +140,7 @@
 
 | ID | Задача | Done when |
 |----|--------|-----------|
-| ~~**P2-COM-MONETIZE-01**~~ ✅ | **Финальные цены** в боте: убрать тест **1 ₽**/мес., **`PLANS`** / **`TRAFFIC_PACKS`** в **`bot_src/config.py`**, деплой AMS. | **2026-05-16:** **1 мес = 50 ₽** (в линию с 3/6/12 мес), **`deploy-bot-config-ams.ps1`**, smoke `PLANS['buy_1_month']` на контейнере. |
+| ~~**P2-COM-MONETIZE-01**~~ ✅ | **Финальные цены** в боте: модель **баланса** (**6.67 ₽/день**), пополнение без привязки к периоду. | **2026-05-16:** **`DAILY_RATE=6.67`**, **`TOPUP_PRESETS`**, UI «Пополнить баланс», **`deploy-bot-balance-model-ams.ps1`**; smoke `balance_to_days(200)=29`. |
 | **P2-COM-MONETIZE-02** | **`BOT_PAYMENTS_LIVE=1`**: креды платёжек в **`/opt/remna-shop/.env`**, smoke E2E (Stars / YooKassa / crypto — что включено). | Минимум один канал: оплата → продление в панели; повтор webhook без дубля. |
 | **P2-COM-MONETIZE-03** | **Legal URLs** в боте: **`TERMS_URL`**, **`PRIVACY_URL`**, **`SUPPORT_USER`** (админка/env), без заглушек в прод-сообщениях. | Пользователь видит ссылки до оплаты. |
 | **P2-COM-MONETIZE-04** | **Go-live чеклист** перед рекламой: **§5.3** + **`RUNBOOK-COMMERCE-GO-LIVE` §4** (safe deploy, sub edge, restore test, GTM wiki). | Строка §12 «COM-MONETIZE go-live OK»; связь с **P6-RED-PAY-01** запланирована при пике продаж. |
@@ -265,7 +265,7 @@
 | Дата | Что сделано |
 |------|-------------|
 | 2026-05-16 | **Бэкап cron (хвост Q004):** на **AMS** `5 */6` → **`pg_dump_remnawave.sh`**, на **LV** `15 */6` → **`pull-latest-dump-ams-to-lv.sh`** (`ops/install-remnawave-backup-cron.sh`); свежий дамп **`remnawave-20260516-170159.sql.gz`** (168K) на AMS+LV, SHA256 OK. |
-| 2026-05-16 | **P2-COM-MONETIZE-01 — DONE:** **`bot_src/config.py`** — **1 месяц 50 ₽** (было тест **1 ₽**); **3/6/12** без изменений (**135/240/450**). Деплой **`ops/deploy-bot-config-ams.ps1`**, контейнер **`buy_1_month` → 50.00**. **NEXT=Q006** live payments. |
+| 2026-05-16 | **P2-COM-MONETIZE-01 (уточнение владельца):** тарификация **баланс + 6.67 ₽/день**, не «месячные» планы. **`deploy-bot-balance-model-ams.ps1`**, колонка **`users.balance`**, меню «Пополнить баланс», пресеты **200/500/1000/2000 ₽** с оценкой дней. **NEXT=Q006** live payments. |
 | 2026-05-16 | **P2-OPS-RESTORE-TEST-01 — DONE:** **`ops/remnawave_restore_test.sh`** на **bvpn-lv** (ephemeral **`postgres:17`**, порт **55432**); предварительно **`pull-latest-dump-ams-to-lv.sh`** → **`remnawave-20260514-203204.sql.gz`** (163K, SHA256 OK). Restore ~**5 s**, **36** public tables, **`_prisma_migrations`=97**, без **ERROR** в логе. Дата в **`RUNBOOK-BACKUP-REMNAWAVE` §4**. **NEXT=Q005** monetize prices. |
 | 2026-05-16 | **P6-SCALE-04 (c) — DONE:** после edge RL (**(b)**) — **`subscription_load_probe`** **total=120**, **concurrency=30** на probe URL (рабочая станция): **120×200**, **p95≈1.83s**, **p50≈1.12s**, **hard_errors=0**, **bad_http_rate=0**; **429/5xx=0**. Эпик **P6-SCALE-04** закрыт (a)(b)(c). |
 | 2026-05-16 | **P6-SCALE-04 (b):** на **bvpn-lv** — Caddy **v2.11.2** + **`mholt/caddy-ratelimit`** (`ops/lv-install-caddy-ratelimit.sh`), зона **`sub_api_per_ip`** **120/min/IP** на **`/api/sub/*`** (`ops/patch-caddy-sub-ratelimit.sh`, эталон **`Caddyfile-latvia-full.txt`**). Smoke probe URL → **200**; **`subscription_load_probe`** 5×**200** p95≈**1.3s**. |

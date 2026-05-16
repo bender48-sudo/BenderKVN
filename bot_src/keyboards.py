@@ -3,6 +3,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from datetime import datetime
 import os
 
+from shop_bot.config import DAILY_RATE, TOPUP_PRESETS, topup_button_label
+
 
 main_reply_keyboard = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text="\U0001f3e0 \u0413\u043b\u0430\u0432\u043d\u043e\u0435 \u043c\u0435\u043d\u044e")]],
@@ -17,8 +19,10 @@ def create_main_menu_keyboard(has_active_sub=False, trial_available=True, is_adm
             text="🎁 Бесплатно 3 месяца",
             callback_data="get_trial",
         )
-    elif not has_active_sub:
-        builder.button(text="\U0001f4b3 \u041a\u0443\u043f\u0438\u0442\u044c \u043f\u043e\u0434\u043f\u0438\u0441\u043a\u0443", callback_data="buy_new_key")
+    if not has_active_sub and not trial_available:
+        builder.button(text="\U0001f4b0 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u0431\u0430\u043b\u0430\u043d\u0441", callback_data="show_topup")
+    elif has_active_sub:
+        builder.button(text="\U0001f4b0 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u0431\u0430\u043b\u0430\u043d\u0441", callback_data="show_topup")
     builder.button(text="\U0001f464 \u041c\u043e\u0439 \u0430\u043a\u043a\u0430\u0443\u043d\u0442", callback_data="my_account")
     builder.button(text="\U0001f4ac \u041d\u0430\u043f\u0438\u0441\u0430\u0442\u044c \u043d\u0430\u043c", callback_data="contact_support")
     builder.adjust(1)
@@ -40,7 +44,8 @@ def create_account_keyboard(sub_url=None):
     builder = InlineKeyboardBuilder()
     if sub_url:
         builder.button(text="\U0001f4cb \u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443 \u043f\u043e\u0434\u043f\u0438\u0441\u043a\u0438", callback_data="copy_sub_url")
-    builder.button(text="\U0001f465 \u041f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u0442\u044c \u0434\u0440\u0443\u0433\u0430", callback_data="invite_friend")
+    builder.button(text="\U0001f4b0 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u0431\u0430\u043b\u0430\u043d\u0441", callback_data="show_topup")
+    builder.button(text="\U0001f465 \u041f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u0442\u044c \u0434\u0440\u0443\u0437\u0430", callback_data="invite_friend")
     builder.button(text="\U0001f519 \u041d\u0430\u0437\u0430\u0434", callback_data="back_to_main_menu")
     builder.adjust(1)
     return builder.as_markup()
@@ -54,8 +59,26 @@ def create_account_no_sub_keyboard(trial_available):
             callback_data="get_trial",
         )
     else:
-        builder.button(text="\U0001f4b3 \u041a\u0443\u043f\u0438\u0442\u044c \u043f\u043e\u0434\u043f\u0438\u0441\u043a\u0443", callback_data="buy_new_key")
+        builder.button(text="\U0001f4b0 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u0431\u0430\u043b\u0430\u043d\u0441", callback_data="show_topup")
     builder.button(text="\U0001f519 \u041d\u0430\u0437\u0430\u0434", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_topup_keyboard():
+    builder = InlineKeyboardBuilder()
+    for topup_id, (_name, _price_str, amount) in TOPUP_PRESETS.items():
+        builder.button(text=topup_button_label(amount), callback_data=topup_id)
+    builder.button(text="\U0001f4ac \u0414\u0440\u0443\u0433\u0430\u044f \u0441\u0443\u043c\u043c\u0430", callback_data="topup_custom")
+    builder.button(text="\U0001f519 \u041d\u0430\u0437\u0430\u0434", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_topup_payment_keyboard(topup_id: str):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="\u2b50 Telegram Stars", callback_data=f"pay_stars_topup_{topup_id}")
+    builder.button(text="\U0001f519 \u041d\u0430\u0437\u0430\u0434", callback_data="show_topup")
     builder.adjust(1)
     return builder.as_markup()
 

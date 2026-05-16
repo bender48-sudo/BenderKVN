@@ -78,6 +78,10 @@ def initialize_db():
             if not cursor.execute("SELECT COUNT(*) FROM bot_settings").fetchone()[0]:
                 for key, value in default_settings.items():
                     cursor.execute("INSERT OR REPLACE INTO bot_settings (key, value) VALUES (?, ?)", (key, value))
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN balance REAL DEFAULT 0")
+            except sqlite3.OperationalError:
+                pass
             conn.commit()
             logging.info("Database with 'created_date' column initialized successfully.")
     except sqlite3.Error as e:
@@ -469,3 +473,29 @@ def get_last_backup_timestamp() -> str | None:
             row = c.fetchone(); return row[0] if row else None
     except sqlite3.Error as e:
         logging.error(f"Failed to get last backup timestamp: {e}"); return None
+
+
+def get_balance(telegram_id: int) -> float:
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            cur.execute("SELECT balance FROM users WHERE telegram_id = ?", (telegram_id,))
+            row = cur.fetchone()
+            return float(row["balance"]) if row and row["balance"] is not None else 0.0
+    except sqlite3.Error as e:
+        logging.error(f"Failed to get balance for {telegram_id}: {e}")
+        return 0.0
+
+
+def add_balance(telegram_id: int, amount: float):
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE users SET balance = COALESCE(balance, 0) + ? WHERE telegram_id = ?",
+                (amount, telegram_id),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error(f"Failed to add balance {amount} for {telegram_id}: {e}")

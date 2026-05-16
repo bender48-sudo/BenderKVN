@@ -50,12 +50,13 @@ from shop_bot.data_manager.database import (
     update_key_info, set_trial_used, reset_trial_used, set_terms_agreed, get_setting,
     get_promo, apply_promo_usage, ensure_user_ref_code, link_referral, count_referrals,
     set_auto_renew, get_auto_renew, log_action, has_action, add_traffic_extra,
-    create_promo, get_all_promos
+    create_promo, get_all_promos, get_balance, add_balance,
 )
 from shop_bot.config import (
     PLANS, get_profile_text, get_vpn_active_text, VPN_INACTIVE_TEXT, VPN_NO_DATA_TEXT,
     get_key_info_text, CHOOSE_PAYMENT_METHOD_MESSAGE, get_purchase_success_text, ABOUT_TEXT, TERMS_URL, PRIVACY_URL, SUPPORT_USER, SUPPORT_TEXT,
-    REMNA_TRIAL_DAYS,
+    REMNA_TRIAL_DAYS, DAILY_RATE, TOPUP_PRESETS, CUSTOM_AMOUNT_UNAVAILABLE, KEY_EMAIL_DOMAIN,
+    balance_to_days,
 )
 from shop_bot.config import TRAFFIC_PACKS
 from shop_bot.modules.remnawave_api import add_extra_traffic
@@ -71,6 +72,32 @@ logger = logging.getLogger(__name__)
 
 # Импорт красивого логгера
 from shop_bot.utils.logger import bot_logger
+
+
+async def sync_panel_access_from_balance(user_id: int, balance: float) -> bool:
+    """Продлить доступ на панели по текущему балансу (balance / DAILY_RATE дней)."""
+    days = balance_to_days(balance)
+    if days <= 0:
+        return False
+    keys = get_user_keys(user_id)
+    email = None
+    if keys:
+        email = keys[0]["key_email"]
+    else:
+        key_number = get_next_key_number(user_id)
+        email = f"user{user_id}-key{key_number}@{KEY_EMAIL_DOMAIN}"
+    uri, expire_iso, vless_uuid, _sub_url = await remnawave_api.provision_key(
+        email, days=days, telegram_id=str(user_id)
+    )
+    if not uri or not expire_iso or not vless_uuid:
+        return False
+    expiry_dt = datetime.fromisoformat(expire_iso.replace("Z", "+00:00"))
+    expiry_ms = int(expiry_dt.timestamp() * 1000)
+    if keys:
+        update_key_info(keys[0]["key_id"], vless_uuid, expiry_ms)
+    else:
+        add_new_key(user_id, vless_uuid, email, expiry_ms)
+    return True
 
 async def create_backup_and_send(bot: Bot, admin_id: str, is_auto: bool = False) -> bool:
     """Создает бэкап базы данных и отправляет админу.
@@ -571,21 +598,32 @@ async def my_account_handler(callback: types.CallbackQuery):
     user_db_data = get_user(user_id)
     user_keys = get_user_keys(user_id)
     now = datetime.now()
+    balance = get_balance(user_id)
+    days_left = balance_to_days(balance)
+    ref_code = ensure_user_ref_code(user_id)
+    ref_count = count_referrals(ref_code)
     active_keys = [k for k in user_keys if datetime.fromisoformat(k["expiry_date"]) > now]
+    balance_line = (
+        f"💰 <b>Баланс:</b> {balance:.0f} ₽ (~{days_left} дн. при {DAILY_RATE:.2f} ₽/день)\n"
+        if balance > 0
+        else f"💰 <b>Баланс:</b> 0 ₽ — пополните, чтобы продлить доступ\n"
+    )
     if active_keys:
         latest = max(active_keys, key=lambda k: datetime.fromisoformat(k["expiry_date"]))
         exp = datetime.fromisoformat(latest["expiry_date"])
-        ref_code = ensure_user_ref_code(user_id)
-        ref_count = count_referrals(ref_code)
-        text = f"👤 <b>Ваш аккаунт BenderVPN</b>\n\n📅 Подписка: активна до {exp.strftime('%d.%m.%Y')}\n👥 Приглашено друзей: {ref_count}"
+        text = (
+            f"👤 <b>Ваш аккаунт BenderVPN</b>\n\n"
+            f"{balance_line}"
+            f"📅 Подписка на панели: до {exp.strftime('%d.%m.%Y')}\n"
+            f"👥 Приглашено друзей: {ref_count}"
+        )
         await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboards.create_account_keyboard(True))
     else:
         trial_available = not (user_db_data and user_db_data.get("trial_used"))
-        ref_code = ensure_user_ref_code(user_id)
-        ref_count = count_referrals(ref_code)
         text = (
             f"👤 <b>Ваш аккаунт BenderVPN</b>\n\n"
-            f"📅 Подписка: нет активного ключа\n"
+            f"{balance_line}"
+            f"📅 Активного ключа нет\n"
             f"👥 Приглашено друзей: {ref_count}"
         )
         await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboards.create_account_no_sub_keyboard(trial_available))
@@ -918,14 +956,103 @@ async def show_instruction_handler(callback: types.CallbackQuery):
 
 @user_router.callback_query(F.data == "buy_new_key")
 async def buy_new_key_handler(callback: types.CallbackQuery):
-    await callback.answer()
-    await callback.message.edit_text("Выберите тариф для нового ключа:", reply_markup=keyboards.create_plans_keyboard(PLANS, action="new"))
+    await show_topup_handler(callback)
 
 @user_router.callback_query(F.data.startswith("extend_key_"))
 async def extend_key_handler(callback: types.CallbackQuery):
-    key_id = int(callback.data.split("_")[2])
+    await show_topup_handler(callback)
+
+
+@user_router.callback_query(F.data == "show_topup")
+async def show_topup_handler(callback: types.CallbackQuery):
     await callback.answer()
-    await callback.message.edit_text("Выберите тариф для продления ключа:", reply_markup=keyboards.create_plans_keyboard(PLANS, action="extend", key_id=key_id))
+    user_id = callback.from_user.id
+    balance = get_balance(user_id)
+    days_left = balance_to_days(balance)
+    text = (
+        f"💰 <b>Ваш баланс: {balance:.0f} ₽</b>\n"
+        f"📅 Хватит на: ~{days_left} дн.\n\n"
+        f"Тариф: <b>{DAILY_RATE:.2f} ₽/день</b> (без привязки к месяцу — пополняете на нужную сумму)\n\n"
+        f"Выберите сумму пополнения:"
+    )
+    await callback.message.edit_text(
+        text,
+        reply_markup=keyboards.create_topup_keyboard(),
+        parse_mode="HTML",
+    )
+
+
+@user_router.callback_query(F.data == "topup_custom")
+async def topup_custom_handler(callback: types.CallbackQuery):
+    await callback.answer()
+    await callback.message.edit_text(
+        CUSTOM_AMOUNT_UNAVAILABLE,
+        reply_markup=keyboards.create_topup_keyboard(),
+        parse_mode="HTML",
+    )
+
+
+@user_router.callback_query(F.data.in_({"topup_200", "topup_500", "topup_1000", "topup_2000"}))
+async def topup_select_handler(callback: types.CallbackQuery):
+    await callback.answer()
+    topup_id = callback.data
+    if topup_id not in TOPUP_PRESETS:
+        return
+    _name, _price_str, amount = TOPUP_PRESETS[topup_id]
+    days = balance_to_days(amount)
+    text = (
+        f"💰 Пополнение на <b>{amount:.0f} ₽</b>\n"
+        f"📅 ~{days} дн. по тарифу {DAILY_RATE:.2f} ₽/день\n\n"
+        f"Выберите способ оплаты:"
+    )
+    await callback.message.edit_text(
+        text,
+        reply_markup=keyboards.create_topup_payment_keyboard(topup_id),
+        parse_mode="HTML",
+    )
+
+
+@user_router.callback_query(F.data.startswith("pay_stars_topup_"))
+async def pay_stars_topup_handler(callback: types.CallbackQuery, bot: Bot):
+    await callback.answer("Создаю счёт...")
+    topup_id = callback.data.replace("pay_stars_topup_", "")
+    if topup_id not in TOPUP_PRESETS:
+        await callback.message.edit_text("Ошибка: пресет не найден.")
+        return
+    _name, price_str, amount_rub = TOPUP_PRESETS[topup_id]
+    user_id = callback.from_user.id
+    stars_rate = float(os.getenv("STARS_RATE", "2.0"))
+    stars_amount = max(1, int(float(price_str) * stars_rate))
+    payload_data = json.dumps(
+        {"u": user_id, "t": "topup", "a": amount_rub},
+        separators=(",", ":"),
+    )
+    try:
+        from aiogram.types import LabeledPrice, InlineKeyboardMarkup, InlineKeyboardButton
+
+        link = await bot.create_invoice_link(
+            title=f"Пополнение {amount_rub:.0f} ₽",
+            description=f"Баланс BenderVPN +{amount_rub:.0f} ₽",
+            payload=payload_data,
+            provider_token="",
+            currency="XTR",
+            prices=[LabeledPrice(label=f"{amount_rub:.0f} RUB", amount=stars_amount)],
+        )
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text=f"⭐ Оплатить {stars_amount} Stars", url=link)]
+            ]
+        )
+        await callback.message.edit_text(
+            f"⭐ Оплата через Telegram Stars\n\n"
+            f"Сумма: {stars_amount} Stars (~{amount_rub:.0f} ₽)\n\n"
+            f"Нажмите кнопку ниже:",
+            reply_markup=kb,
+            parse_mode="HTML",
+        )
+    except Exception as e:
+        logger.error(f"Failed to create Stars topup invoice: {e}", exc_info=True)
+        await callback.message.edit_text("❌ " + user_messages.ERR_TELEGRAM_STARS)
 
 @user_router.callback_query(F.data.startswith("buy_") & F.data.contains("_month"))
 async def choose_payment_method_handler(callback: types.CallbackQuery):
@@ -1234,6 +1361,30 @@ async def successful_payment_handler(message: types.Message, bot: Bot):
         }
         
         logger.info(f"Converted metadata: {metadata}")
+
+        if payload_data.get("t") == "topup":
+            amount_rub = float(payload_data.get("a", 0))
+            if amount_rub > 0:
+                add_balance(user_id, amount_rub)
+                new_balance = get_balance(user_id)
+                days_left = balance_to_days(new_balance)
+                synced = await sync_panel_access_from_balance(user_id, new_balance)
+                update_user_stats(user_id, amount_rub, 0)
+                log_action(user_id, "topup", f"{amount_rub}")
+                sync_note = "" if synced else "\n\n⚠️ Баланс зачислен; синхронизация с панелью не удалась — напишите в поддержку."
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=(
+                        f"✅ Баланс пополнен на {amount_rub:.0f} ₽\n\n"
+                        f"💰 Текущий баланс: {new_balance:.0f} ₽\n"
+                        f"📅 Хватит на: ~{days_left} дн. ({DAILY_RATE:.2f} ₽/день)"
+                        f"{sync_note}"
+                    ),
+                    parse_mode="HTML",
+                )
+            bot_logger.payment(user_id, "TELEGRAM_STARS", payment.total_amount, "SUCCESS")
+            return
+
         await process_successful_payment(bot, metadata)
         bot_logger.payment(user_id, "TELEGRAM_STARS", payment.total_amount, "SUCCESS")
     except Exception as e:
