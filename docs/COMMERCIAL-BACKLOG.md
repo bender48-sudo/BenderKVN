@@ -22,7 +22,7 @@
 | **RAM хоста AMS** | **~2 GiB** — панель + edge без prod VPN после drain |
 | **Цели роста (продукт)** | **~10k** учёток к **концу лета 2026**; **~30k** в **2027**; GTM-план — **вне git** (**`docs/GTM-GROWTH-OUTLINE.md`**, URL wiki: _заполнить владельцем_) |
 | **Инфра-триггеры при росте** | **2k** users → апгрейд AMS; **8k** → load test sub + отдельный edge; soft-cap нод → 3-я prod (**§10.1**) |
-| **Вывод** | Модель роста: **2 prod-ноды (LV+NL) + панель AMS**. Контроль «кто всё ещё видит AMS IP в Happ-sub»: **`daily-report.sh`** вызывает **`count_users_with_ams_sub.py`**. Узкие места: RAM/API панели, публичная подписка (**P6**), **монетизация до массового трафика** (**§5.3**). |
+| **Вывод** | Модель роста: **2 prod-ноды (LV+NL) + панель AMS**. Контроль «кто всё ещё видит AMS IP в Happ-sub»: **`daily-report.sh`** вызывает **`count_users_with_ams_sub.py`**. Узкие места: RAM/API панели, публичная подписка (**P6**). **§5.3 монетизация** — go-live **2026-05-16** (§12). |
 
 ---
 
@@ -141,9 +141,9 @@
 | ID | Задача | Done when |
 |----|--------|-----------|
 | ~~**P2-COM-MONETIZE-01**~~ ✅ | **Финальные цены** в боте: модель **баланса** (**6.67 ₽/день**), пополнение без привязки к периоду. | **2026-05-16:** **`DAILY_RATE=6.67`**, **`TOPUP_PRESETS`**, UI «Пополнить баланс», **`deploy-bot-balance-model-ams.ps1`**; smoke `balance_to_days(200)=29`. |
-| **P2-COM-MONETIZE-02** | **`BOT_PAYMENTS_LIVE=1`**: креды платёжек в **`/opt/remna-shop/.env`**, smoke E2E (Stars / YooKassa / crypto — что включено). | Минимум один канал: оплата → продление в панели; повтор webhook без дубля. |
-| **P2-COM-MONETIZE-03** | **Legal URLs** в боте: **`TERMS_URL`**, **`PRIVACY_URL`**, **`SUPPORT_USER`** (админка/env), без заглушек в прод-сообщениях. | Пользователь видит ссылки до оплаты. |
-| **P2-COM-MONETIZE-04** | **Go-live чеклист** перед рекламой: **§5.3** + **`RUNBOOK-COMMERCE-GO-LIVE` §4** (safe deploy, sub edge, restore test, GTM wiki). | Строка §12 «COM-MONETIZE go-live OK»; связь с **P6-RED-PAY-01** запланирована при пике продаж. |
+| ~~**P2-COM-MONETIZE-02**~~ ✅ | **`BOT_PAYMENTS_LIVE=1`**: креды платёжек в **`/opt/remna-shop/.env`**, smoke E2E (Stars / YooKassa / crypto — что включено). | **2026-05-16:** Stars live, **`ops/smoke_payments_live_ams.py`**, idempotency topup. |
+| ~~**P2-COM-MONETIZE-03**~~ ✅ | **Legal URLs** в боте: **`TERMS_URL`**, **`PRIVACY_URL`**, **`SUPPORT_USER`** (админка/env), без заглушек в прод-сообщениях. | **2026-05-16:** telegra.ph + **@Bender_KVN_bot**, **`ops/check_legal_urls_ams.py`**. |
+| ~~**P2-COM-MONETIZE-04**~~ ✅ | **Go-live чеклист** перед рекламой: **§5.3** + **`RUNBOOK-COMMERCE-GO-LIVE` §4** (safe deploy, sub edge, restore test, GTM outline). | **2026-05-16:** §12 **COM-MONETIZE go-live OK**; **`ops/smoke_commerce_golive_ams.py`**; **P6-RED-PAY-01** при пике продаж. |
 
 ---
 
@@ -264,6 +264,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-16 | **COM-MONETIZE go-live OK** (**P2-COM-MONETIZE-04**): чеклист **`RUNBOOK-COMMERCE-GO-LIVE` §4** — safe-deploy runbook, **P6-SCALE-04**, restore test, **§10.1**, GTM outline (wiki живой — **Q015**). Smoke **`ops/smoke_commerce_golive_ams.py`** на AMS. Эпик **§5.3** закрыт; при пике продаж — **P6-RED-PAY-01** (**NEXT=Q009**). |
 | 2026-05-16 | **P2-COM-MONETIZE-03 — DONE:** legal URLs уже в SQLite бота (не заглушки `config.py`): **terms** / **privacy** → telegra.ph, **support** → **@Bender_KVN_bot**; smoke **`ops/check_legal_urls_ams.py`** → **LEGAL_OK=true**. **NEXT=Q008** go-live чеклист. |
 | 2026-05-16 | **P2-COM-MONETIZE-02 — DONE:** AMS **`BOT_PAYMENTS_LIVE=1`** (`ops/patch-remna-shop-payments-live-ams.sh`, **`docker restart`**); канал **Telegram Stars**; **`process_topup_payment`** + idempotency **`topup_charge:*`**; smoke **`ops/smoke_payments_live_ams.py`** — invoice link OK, admin **`expireAt`** bump, повтор без дубля баланса. **NEXT=Q007** legal URLs. |
 | 2026-05-16 | **Бэкап cron (хвост Q004):** на **AMS** `5 */6` → **`pg_dump_remnawave.sh`**, на **LV** `15 */6` → **`pull-latest-dump-ams-to-lv.sh`** (`ops/install-remnawave-backup-cron.sh`); свежий дамп **`remnawave-20260516-170159.sql.gz`** (168K) на AMS+LV, SHA256 OK. |

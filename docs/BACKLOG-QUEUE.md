@@ -27,8 +27,8 @@
 | 005 | **P2-COM-MONETIZE-01** | **DONE** | Финальные цены на проде (не тест 1 ₽) | AMS **`buy_1_month` 50 ₽** §12 | **`RUNBOOK-COMMERCE-GO-LIVE` §1** |
 | 006 | **P2-COM-MONETIZE-02** | **DONE** | **`BOT_PAYMENTS_LIVE=1`**, E2E один канал оплаты | AMS Stars smoke §12 **2026-05-16** | **`RUNBOOK-COMMERCE-GO-LIVE` §2** |
 | 007 | **P2-COM-MONETIZE-03** | **DONE** | Legal URLs в боте без заглушек | AMS telegra.ph + @support §12 | **`RUNBOOK-COMMERCE-GO-LIVE` §3** |
-| 008 | **P2-COM-MONETIZE-04** | **NEXT** | Go-live чеклист §4; строка §12 | Чеклист отмечен | **`RUNBOOK-COMMERCE-GO-LIVE` §4** |
-| 009 | **P6-RED-PAY-01** | TODO | Idempotency + DLQ webhook бота | Повтор webhook не дублирует | **§5.1** |
+| 008 | **P2-COM-MONETIZE-04** | **DONE** | Go-live чеклист §4; строка §12 | COM-MONETIZE go-live OK §12 | **`RUNBOOK-COMMERCE-GO-LIVE` §4** |
+| 009 | **P6-RED-PAY-01** | **NEXT** | Idempotency + DLQ webhook бота | Повтор webhook не дублирует | **§5.1** |
 | 010 | **P2-RED-SUB-01** | TODO | ≥2 origin подписки + мониторинг | Wiki/док | **§5.1** |
 | 011 | **P2-RED-MUX-01** | TODO | ≥2 транспортных профиля в матрице | Доля на alt-профиле | **§5.1**, **`HAPP-MATRIX`** |
 | 012 | **P6-RED-SUBHA-01** | TODO | Горизонталь sub-page или split host | Load test без деградации p95 | **§5.1** |
@@ -71,3 +71,4 @@
 | 2026-05-16 | **Q005** P2-COM-MONETIZE-01 | **Q006** P2-COM-MONETIZE-02 |
 | 2026-05-16 | **Q006** P2-COM-MONETIZE-02 | **Q007** P2-COM-MONETIZE-03 |
 | 2026-05-16 | **Q007** P2-COM-MONETIZE-03 | **Q008** P2-COM-MONETIZE-04 |
+| 2026-05-16 | **Q008** P2-COM-MONETIZE-04 | **Q009** P6-RED-PAY-01 |

@@ -2,7 +2,7 @@
 
 **Задачи бэклога:** **`P2-COM-MONETIZE-01` … `04`**, перед массовым привлечением — **до** или **вместе с** **`P6-RED-PAY-01`**.
 
-**Текущее состояние (репо):** **`BOT_PAYMENTS_LIVE=1`** на AMS (**2026-05-16**, Stars live); тарификация — **баланс**, **`DAILY_RATE = 6.67` ₽/день**, **`TOPUP_PRESETS`**. Legal в SQLite бота: telegra.ph (terms/privacy), **@Bender_KVN_bot** (support) — см. **`ops/check_legal_urls_ams.py`**. Периодные **`PLANS`** — legacy. **NEXT:** go-live чеклист **§4** (**Q008**).
+**Текущее состояние (репо):** **COM-MONETIZE go-live OK** (**2026-05-16**): баланс **6.67 ₽/день**, **`BOT_PAYMENTS_LIVE=1`** (Stars), legal telegra.ph, чеклист **§4** закрыт; smoke **`ops/smoke_commerce_golive_ams.py`**. Живой GTM-wiki — **Q015** (**`GTM-GROWTH-OUTLINE`**). При пике продаж — **P6-RED-PAY-01**.
 
 ---
 
@@ -41,13 +41,15 @@
 
 ## 4. Чеклист перед рекламой (**P2-COM-MONETIZE-04**)
 
-- [ ] **`P2-OPS-AMS-SAFE-DEPLOY-01`** — runbook известен команде
+- [x] **`P2-OPS-AMS-SAFE-DEPLOY-01`** — gate в **`docs/RUNBOOK-AMS-SAFE-DEPLOY.md`** (урок **2026-05-17** §12); накат AMS compose только по чеклисту
 - [x] **`P6-SCALE-04`**: green **`subscription_load_probe`** + edge RL/CDN (см. **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`**, §12 **2026-05-16**)
 - [x] **`P2-OPS-RESTORE-TEST-01`**: дата restore test в **`docs/RUNBOOK-BACKUP-REMNAWAVE.md` §4** (**2026-05-16**)
-- [ ] **`docs/GTM-GROWTH-OUTLINE.md`** — wiki заполнен, owner GTM
-- [ ] Пороги §10.1 понятны (план апгрейда AMS при **2k** users)
+- [x] **`docs/GTM-GROWTH-OUTLINE.md`** — шаблон и пороги в репо; **живая wiki** (каналы, бюджет) — отдельно **Q015 GTM-WIKI-01** (вне git)
+- [x] Пороги **`docs/COMMERCIAL-BACKLOG.md` §10.1** (2k / 8k users, RAM, sub 502 → стоп рекламы)
 
-Строка в **`docs/COMMERCIAL-BACKLOG.md` §12`**: «COM-MONETIZE go-live OK», дата.
+**Verify (AMS):** `docker exec remna-shop-bot python /tmp/smoke_commerce_golive_ams.py` → **`COM-MONETIZE_GO_LIVE_OK`**.
+
+Строка в **`docs/COMMERCIAL-BACKLOG.md` §12`**: «COM-MONETIZE go-live OK», дата — **2026-05-16**.
 
 ---
 
