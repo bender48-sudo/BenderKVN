@@ -29,7 +29,8 @@
 Делать **сверху вниз**; после каждого крупного блока — повторный **`python ops/drift-check.py`**.
 
 1. **Vault**  
-   Убедиться, что **`.secrets/vault.env`** отражает актуальные секреты для рендера. Если правда на проде после ротации — **`python .secrets/extract-vault.py`** (и при необходимости **`sanitize-compose`**) по **`docs/DEPLOY.md` §7.3**, не подгоняйте vault «на глаз».
+   Убедиться, что **`.secrets/vault.env`** отражает актуальные секреты для рендера. Если правда на проде после ротации — **`python .secrets/extract-vault.py`** (и при необходимости **`sanitize-compose`**) по **`docs/DEPLOY.md` §7.3**, не подгоняйте vault «на глаз».  
+   Особенно: **`DATABASE_URL`** / **`POSTGRES_PASSWORD`** для **`remnawave-db`** должны совпадать с **инициализированным** томом Postgres (после **P0-SEC-05** — не подставляйте старый пароль из шаблона). Иначе панель уйдёт в crash loop (**Prisma P1000**).
 
 2. **Скрипты `kind=file` (без compose)**  
    С **LV**: `balancer.sh`, `backup-remnawave.sh`, `ru-monitor.py`; с **LV + AMS**: `deploy-node.sh` — деплой из репо с **`bash -n` / `ast.parse`** и бекапом, см. **`docs/DEPLOY.md` §3**.  

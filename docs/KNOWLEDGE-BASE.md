@@ -57,6 +57,8 @@
 | DRIFT по **`tmpl`** сразу на нескольких `.env` / compose | Рендер из vault не совпадает с продом: vault устарел **или** на проде правили вручную | **`docs/DRIFT-POST-P0.md`** (порядок: vault → файлы → tmpl → перепроверка); **`docs/DEPLOY.md` §7.3** |
 | **`python ops/drift-check.py`** exit **1**, много **DRIFT (file)** | Скрипты на проде уехали от репо (патч на сервере без git) | Деплой из репо по **`docs/DEPLOY.md` §3**, не заполнять waive «чтобы отмазаться» |
 | Контрабанда локальных правил Claude в Git | Коммит **`.claude/settings.local.json`** содержит пути и не должен быть публичным | **`.gitignore`**, раздел KNOWLEDGE-BASE §2 |
+| Crash loop **`remnawave`**, Prisma **P1000**, **502** на панели/sub | Накат **`panel.env`** из vault: **`DATABASE_URL`** не совпадает с живым **`remnawave-db`** | Откат **`/opt/remnawave/.env`** с прода-бэка + **`extract-vault`** |
+| **502** на sub, **401** у subscription-page к панели | Рендер **`sub/docker-compose.yml`**: неверный **`REMNA_API_TOKEN`** | Откат compose с бэкапа; **`RUNBOOK-REMNA-API-TOKEN`** |
 
 ---
 

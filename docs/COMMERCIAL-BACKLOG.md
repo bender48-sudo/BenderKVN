@@ -1,6 +1,6 @@
 # BenderVPN — коммерческий бэклог
 
-**Версия документа:** 2026-05-17 — P6-SCALE-04: **`ops/subscription_load_probe.py`** + запись нагрузочного прогона §12…
+**Версия документа:** 2026-05-17 — инцидент AMS 502 post-drift (откат `.env`/`sub`/shop) + запись §12…
 **Цель:** стабильный **8–9/10** (нишевый коммерческий VPN в РФ); измеримый рост к максимально достижимому качеству.  
 **Определение «готово»:** по каждой задаче выполнен критерий в колонке **Done when** + при необходимости запись в трекере (статусы `TODO` / `DOING` / `DONE`).
 
@@ -239,6 +239,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-17 | **Инцидент 502 после наката rendered `tmpl` на AMS (закрыт):** **`remnawave`** — цикл перезапусков, Prisma **P1000** (пароль в **`DATABASE_URL`** из vault не совпадал с фактическим Postgres); **`remnawave-subscription-page`** — **401** к панели (неверный **`REMNA_API_TOKEN`** в смонтированном **`sub/docker-compose.yml`**). **Починка на AMS:** откат **`/opt/remnawave/.env`**, **`/opt/remnawave/sub/docker-compose.yml`**, **`/opt/remna-shop/.env`** из **`*.before-drift-20260516-120658`** + **`docker compose up -d`**; публичный sub-smoke → **200**, прогон **`subscription_load_probe`**: **20/20 × 200**, p95 ≈ **1.5 s**. **Урок:** перед накатом **`panel.env.tmpl`** обновить vault (**`extract-vault`** с прода) и не перезаписывать sub/shop без сверки токена (**`RUNBOOK-REMNA-API-TOKEN`**). |
 | 2026-05-17 | **P6-SCALE-04 (нагрузочный смок):** добавлен **`ops/subscription_load_probe.py`**; прогон **120** запросов, **concurrency 30** на `site_urls.sub_monitor_probe_url()` — **p95 ≈ 4.2s**, **502** на все ответы (**status_histogram 502=120**), **hard_errors=0**; одновременно **GET /api/users** с рабочей машины дал **502** — трактовать как **проверку устойчивости канала при деградации upstream**, повторить смок когда панель/sub стабильно **200/304**, при необходимости смотреть AMS **`remnawave` / subscription-page** / Caddy. |
 | 2026-05-16 | **~~P2-OPS-DRIFT-POST-P0~~ ✅:** SSH с рабочей машины — выкладка **`balancer.sh`**, **`backup-remnawave.sh`**, **`ru-monitor.py`**, **`deploy-node.sh`** (LV+AMS) из репо; **`/etc/bvpn/balancer.env`** и **`ru-monitor.env`** (LV) — байтовый рендер из **`compose/_shared/...` + `.secrets/vault.env`**; AMS — **`/opt/remnawave/docker-compose.yml`**, **`.env`**, **`/opt/remnawave/sub/docker-compose.yml`**, **`/opt/remna-shop/.env`** из рендера + **`docker compose up -d`** (пересозданы **`remnawave-db`**, **`remnawave`**, **`remnawave-subscription-page`**, **`remna-shop-bot`**). **`python ops/drift-check.py`**: **28/28 OK**, exit **0** (~10 мин). Локальные копии рендера удалены. |
 | 2026-05-16 | Тот же день (**до наката):** drift-check **17 OK / 11 DRIFT** — снимок зафиксирован; процедура **`DRIFT-POST-P0.md`**; затем закрыто (строка выше). |
