@@ -1,6 +1,6 @@
 # BenderVPN — коммерческий бэклог
 
-**Версия документа:** 2026-05-16 — P6-SCALE-01 (snapshot), Cursor User Rules snippet, прод-бэкап-скрипты на AMS/LV, ~~P2-BAK~~, ~~P2-MON~~…
+**Версия документа:** 2026-05-16 — P6-SCALE-01/04 (snapshot + sub runbook)…
 **Цель:** стабильный **8–9/10** (нишевый коммерческий VPN в РФ); измеримый рост к максимально достижимому качеству.  
 **Определение «готово»:** по каждой задаче выполнен критерий в колонке **Done when** + при необходимости запись в трекере (статусы `TODO` / `DOING` / `DONE`).
 
@@ -53,7 +53,7 @@
 | 6 | Конфиг в одном месте + ru-monitor хосты + чистка артефактов | **P1-ENG-01** ✅ (`ops/site_urls.py` + `deploy-node.sh`), **P1-ENG-02** ✅, ~~**P1-ENG-03**~~ ✅ (`archive/tmp-remna-shop-bot-patches/` + `redact_bvpn_artifacts`) |
 | 7 | Мониторинг «Xray реально жив» + state dirs | ~~**P2-MON-01**~~ ✅, ~~**P2-MON-02**~~ ✅ |
 | 8 | Бэкапы (off-host + restore test) + patches | ~~**P2-BAK-01**~~ ✅, ~~**P2-BAK-02**~~ ✅ |
-| 9 | Метрики ёмкости (**старт P6 до роста базы**) | **P6-SCALE-01**, **P6-SCALE-04** (минимум) |
+| 9 | Метрики ёмкости (**старт P6 до роста базы**) | ~~**P6-SCALE-01**~~ ✅, **P6-SCALE-04** (runbook + probe; load test → §12) |
 | 10 | Продуктовая линия + онбординг + тексты ошибок | ~~**P1-PRO-01…04**~~ ✅ (см. **`docs/FAQ.md`**, **`docs/RUNBOOK-INCIDENT.md`**, **`docs/HAPP-MATRIX.md`**, **`docs/POLICY-SNI-MONITORING.md`**), **P3-UX-01**, **P3-UX-02** |
 | 11 | DNS PoC → FAQ (по ресурсу) | **P4-DNS-01** → **P4-DNS-02** → **P4-DNS-03** |
 | 12 | **Red team / ТПСУ** (устойчивость к наблюдению, blast radius, рост до 30k) — см. **§5.1 → §10.2** | **P1-RED-DATA-01** … **P1-RED-LOG-01** → **P2-RED-*** → **P6-RED-*** → **P3-RED-*** → **P5-RED-RD-01** |
@@ -200,10 +200,10 @@
 
 | ID | Задача | Done when |
 |----|--------|-----------|
-| **P6-SCALE-01** | Метрики: сессии по нодам, RPS `/api/*`, Postgres latency/size, Redis, RPS подписки, RAM по контейнерам. | **Минимум в репо:** `python ops/capacity_snapshot.py` (users/nodes + пороги §10.1). Дашборд Docker/Postgres/RPS — дальнейшее расширение. |
+| ~~**P6-SCALE-01**~~ ✅ | Метрики: сессии по нодам, RPS `/api/*`, Postgres latency/size, Redis, RPS подписки, RAM по контейнерам. | **В репо:** `python ops/capacity_snapshot.py` — users/nodes, пороги §10.1, **HTTPS probe подписки** (latency + код). Docker/Postgres/RPS — расширения. |
 | **P6-SCALE-02** | Soft cap пользователей на ноду + правило добавления ноды в матрицу. | Документ + настройка панели/Happ |
 | **P6-SCALE-03** | Postgres: индексы, `pg_stat_statements`, окно бэкапа не в пик. | План обслуживания |
-| **P6-SCALE-04** | Публичная подписка: edge/CDN, **rate limit** по IP, защита от абьюза. | Нагрузочный тест refresh |
+| **P6-SCALE-04** | Публичная подписка: edge/CDN, **rate limit** по IP, защита от абьюза. | **Репо:** **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`** + smoke латентности подписки в **`ops/capacity_snapshot.py`**. Нагрузочный тест refresh — по §3 runbook, дата в §12. |
 | **P6-SCALE-05** | Рост API панели: вертикаль/горизонталь по доке; Redis eviction. | Прогон «refresh × N» |
 | **P6-SCALE-06** | RU-monitor укладывается в cron **< 5 мин** при текущем числе хостов. | Лог с длительностью |
 | **P6-SCALE-07** | Нагрузка на поддержку: шаблоны (P3) + при росте очереди — вторая линия / SLA ответа. | Метрика очереди |
@@ -232,6 +232,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-16 | **P6 (продолжение):** **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`** — edge подписки, rate limit/WAF, критерий load test. **`ops/capacity_snapshot.py`** — HTTPS probe публичной подписки (HEAD→GET, latency, алерт если не 200/304). Сплинт §3 п.9: **P6-SCALE-01** закрыт минимумом; **P6-SCALE-04** — runbook + probe; полный load test — когда будет окно. |
 | 2026-05-16 | **Cursor User Rules:** дубликат инструкции — `%USERPROFILE%\.cursor\RULE-PASTE-INTO-USER-RULES.md` (вставить в Settings → Rules → User Rules); в репо — **`docs/CURSOR-USER-RULES-SNIPPET.md`**. **Прод:** `pg_dump_remnawave.sh` → AMS `/opt/scripts/`, `pull-latest-dump-ams-to-lv.sh` → LV `/opt/scripts/` (`bash -n` OK). **P6-SCALE-01 (минимум):** **`ops/capacity_snapshot.py`**, строки в **`DEPLOY.md`** / **`KNOWLEDGE-BASE.md`**. |
 | 2026-05-16 | **~~P2-BAK-01~~ / ~~P2-BAK-02~~**: **`docs/RUNBOOK-BACKUP-REMNAWAVE.md`** — AMS→LV дамп, пример **`ops/crontab-remnawave-backup.example`**, обновлены **`DEPLOY.md`** (таблица скриптов, §5 crontab AMS/LV), шапка **`backup-remnawave.sh`** (legacy vs канонический путь), строка в **`KNOWLEDGE-BASE.md`**. Restore test — чеклист в runbook; дату успешного прогона зафиксировать в §4 runbook + §12. |
 | 2026-05-16 | **~~P2-MON-01~~ / ~~P2-MON-02~~**: `monitor.sh` на LV — перед `ss :443/:8443` проверяются **`remnanode` running** и **`docker exec remnanode xray version`**; новые ключи **`xray_lv_remnanode`**, **`xray_lv_core`**. Комментарии «где state» в `monitor.sh`, `ru-monitor.py`, пример crontab в **`DEPLOY.md`**. Деплой: `pwsh -File ops/deploy-monitor-lv.ps1`. |

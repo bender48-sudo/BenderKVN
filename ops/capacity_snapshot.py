@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Capacity snapshot for P6-SCALE-01 — panel users (paginated), nodes, soft capacity.
 
+Optional: HTTPS probe of the public subscription edge (same URL family as
+``monitor.sh`` / ``site_urls.sub_monitor_probe_url()``) for latency + HTTP code
+(P6-SCALE-04 smoke — not a load test).
+
 Run from repo root with ``.secrets/panel-token.txt`` or ``PANEL_TOKEN`` / ``REMNA_API_TOKEN``.
 
 Uses the same pagination as ``daily-report.sh`` (``/api/users?size=&start=``).
@@ -9,19 +13,25 @@ Example::
 
   python ops/capacity_snapshot.py
   python ops/capacity_snapshot.py --json
+  python ops/capacity_snapshot.py --no-sub-probe
 """
 from __future__ import annotations
 
 import argparse
 import json
 import os
+import ssl
 import sys
+import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT / "ops") not in sys.path:
     sys.path.insert(0, str(ROOT / "ops"))
 
+import site_urls  # noqa: E401
 from panel_client import PanelClient  # noqa: E402
 
 # Match balancer.sh default unless overridden (soft cap heuristic only).
@@ -70,6 +80,56 @@ def fetch_all_users(client: PanelClient) -> list[dict]:
     return out
 
 
+def probe_subscription_edge(timeout: float = 20.0) -> dict[str, str | int | float]:
+    """HEAD first (cheap); fallback GET if HEAD unsupported. TLS verify ON."""
+    url = site_urls.sub_monitor_probe_url()
+    ctx = ssl.create_default_context()
+    t0 = time.perf_counter()
+
+    def _elapsed_ms() -> float:
+        return round((time.perf_counter() - t0) * 1000, 2)
+
+    for method in ("HEAD", "GET"):
+        req = urllib.request.Request(
+            url,
+            method=method,
+            headers={"User-Agent": "BenderVPN-capacity-snapshot/1.0"},
+        )
+        try:
+            with urllib.request.urlopen(req, context=ctx, timeout=timeout) as resp:
+                return {
+                    "sub_probe_url": url,
+                    "sub_probe_method": method,
+                    "sub_probe_http_code": resp.status,
+                    "sub_probe_latency_ms": _elapsed_ms(),
+                }
+        except urllib.error.HTTPError as e:
+            if method == "HEAD" and e.code in (405, 501):
+                continue
+            return {
+                "sub_probe_url": url,
+                "sub_probe_method": method,
+                "sub_probe_http_code": e.code,
+                "sub_probe_latency_ms": _elapsed_ms(),
+            }
+        except OSError:
+            if method == "HEAD":
+                continue
+            return {
+                "sub_probe_url": url,
+                "sub_probe_method": method,
+                "sub_probe_http_code": 0,
+                "sub_probe_latency_ms": _elapsed_ms(),
+                "sub_probe_error": "network/tls/timeout",
+            }
+    return {
+        "sub_probe_url": url,
+        "sub_probe_http_code": 0,
+        "sub_probe_latency_ms": _elapsed_ms(),
+        "sub_probe_error": "probe_failed",
+    }
+
+
 def fetch_nodes(client: PanelClient) -> list[dict]:
     code, data = client.get("/api/nodes", extra_headers=_fwd())
     if code != 200:
@@ -86,6 +146,11 @@ def fetch_nodes(client: PanelClient) -> list[dict]:
 def main() -> None:
     ap = argparse.ArgumentParser(description="Remnawave capacity snapshot")
     ap.add_argument("--json", action="store_true", help="print one JSON object")
+    ap.add_argument(
+        "--no-sub-probe",
+        action="store_true",
+        help="skip public subscription HTTPS probe (site_urls SUB_PUBLIC_ORIGIN)",
+    )
     args = ap.parse_args()
 
     per_node = int(os.environ.get("USERS_PER_NODE", USERS_PER_NODE_DEFAULT))
@@ -108,7 +173,7 @@ def main() -> None:
     elif len(active) >= WARN_USERS:
         alerts.append(f"users_active>={WARN_USERS} (§10.1: watch AMS RAM / API)")
 
-    snap = {
+    snap: dict = {
         "users_total": len(users),
         "users_active": len(active),
         "nodes_total": len(nodes),
@@ -119,6 +184,16 @@ def main() -> None:
         "load_pct_vs_soft_capacity": load_pct,
         "alerts": alerts,
     }
+
+    if not args.no_sub_probe:
+        snap.update(probe_subscription_edge())
+
+    if not args.no_sub_probe and snap.get("sub_probe_http_code") not in (200, 304):
+        alerts.append(
+            f"subscription edge HTTP {snap.get('sub_probe_http_code')} "
+            f"(see P6-SCALE-04 / RUNBOOK-P6-SUBSCRIPTION-EDGE)"
+        )
+        snap["alerts"] = alerts
 
     if args.json:
         print(json.dumps(snap, ensure_ascii=False, indent=2))
@@ -134,10 +209,16 @@ def main() -> None:
         f"soft_capacity={capacity} (nodes_active×{per_node})  "
         f"load_pct={load_pct}%"
     )
-    if alerts:
-        for a in alerts:
+    if not args.no_sub_probe:
+        print(
+            f"sub_probe: HTTP {snap.get('sub_probe_http_code')}  "
+            f"{snap.get('sub_probe_latency_ms')}ms  "
+            f"({snap.get('sub_probe_method', '?')} {snap.get('sub_probe_url', '')})"
+        )
+    if snap.get("alerts"):
+        for a in snap["alerts"]:
             print(f"NOTICE: {a}")
-    else:
+    if not snap.get("alerts"):
         print("thresholds: OK (see docs/COMMERCIAL-BACKLOG.md §10.1)")
 
 

@@ -18,6 +18,7 @@
 | Смена **`REMNA_API_TOKEN`** без 502 | **`docs/RUNBOOK-REMNA-API-TOKEN.md`** |
 | Логи Caddy без сырого **`/api/sub/`** в access-log | **`docs/RUNBOOK-CADDY-SUBSCRIPTION-LOGS.md`** |
 | Бэкап Postgres панели (AMS → LV, restore test) | **`docs/RUNBOOK-BACKUP-REMNAWAVE.md`** |
+| Пик подписки / edge (rate limit, тест нагрузки) | **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`** |
 | Git / ветки / что в репо | **`docs/VCS-WHERE-IS-GIT.md`** |
 | FAQ для пользователя | **`docs/FAQ.md`** |
 
