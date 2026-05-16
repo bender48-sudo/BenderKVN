@@ -33,7 +33,7 @@
 
 1. **Секреты не в Git.** В репозитории только шаблоны (`*.tmpl`), примеры (`*.example`) и ссылки «куда записать на проде». Перед **`git push`** проверять **`git status`** на предмет случайных **`.env`**, **`.secrets/`**, токенов в diff. Локальные настройки агентов с путём к паролям (**`.claude/settings.local.json`** и аналоги) — **игнорируются** и не пересылать в общие каналы.
 
-2. **Один источник правды по machine JWT.** Активный **`REMNA_API_TOKEN`** задаётся в панели и раскладывается согласно **`docs/SECRETS.md` §3**. Не брать значение со **старого LV `/opt/remnawave`** (legacy закрыт **P0-SEC-04**).
+2. **Machine JWT для API панели (два вида значений на проде).** В переменной окружения на хостах она **`REMNA_API_TOKEN=`**, но в vault для drift два ключа шаблонов — **`REMNA_API_TOKEN_AMS`** (AMS shop + **`sub/.env`**) и **`REMNA_API_TOKEN_LV`** (LV **`balancer.env`** / **`ru-monitor.env`**). Карта файлов и ротации — **`docs/SECRETS.md` §1**. Не брать значение со **старого LV `/opt/remnawave`** (legacy закрыт **P0-SEC-04**).
 
 3. **Subscription-page без инлайна JWT.** В **`/opt/remnawave/sub/docker-compose.yml`** только **`REMNAWAVE_API_TOKEN=${REMNA_API_TOKEN}`**; строка **`eyJ…`** там — регрессия → клиентские **502** и **401** на краю саба. Контроль: **`bash ops/remna_api_token_rollout.sh verify-ams`** (или **`check-ams-subscription-token-layout.sh`** на AMS).
 
@@ -50,14 +50,14 @@
 | Симптом | Частая причина | Куда смотреть |
 |---------|----------------|----------------|
 | Клиенты **502**/битый sub при живой панели | JWT зашит в **`sub/docker-compose.yml`**, не подтягивается из **`.env`** | **`RUNBOOK-REMNA-API-TOKEN`**, **`fix-ams-subscription-api-token`** |
-| **401** от **`ru-monitor`** / balancer после ротации | Обновили токен не везде (**LVBalancer + ru-monitor + shop + sub**) | **`SECRETS.md`**, runbook по токену |
+| **401** от **`ru-monitor`** / balancer после ротации | На LV обновили не **`balancer.env`** + **`ru-monitor.env`** **или** на AMS не shop+sub (**два JWT могут отличаться**, см. **`SECRETS.md`**) | **`SECRETS.md`**, **`RUNBOOK-REMNA-API-TOKEN`** |
 | **USERS=0 NODES=0** в balancer | **`PANEL_URL`** / токен бьют в **`localhost:3000`** вместо публичной панели | **`balancer.env.tmpl`**, **`P2-MON-BALANCER-PANEL-URL`** (закрыт) |
 | Шум после drain AMS только в одном алертере | Обновили **`monitor.sh`**, забыли **`ru-monitor`** (или наоборот) или selfsteal | журнал §12 **2026-05-14** |
 | **Total** в TG daily report = **25**, в панели больше | **`GET /api/users`** без **`size`/`start`** — только первая страница ответа API | Пагинация как в **`grandfather_panel_users_expire.py`** / текущий **`daily-report.sh`** |
 | DRIFT по **`tmpl`** сразу на нескольких `.env` / compose | Рендер из vault не совпадает с продом: vault устарел **или** на проде правили вручную | **`docs/DRIFT-POST-P0.md`** (порядок: vault → файлы → tmpl → перепроверка); **`docs/DEPLOY.md` §7.3** |
 | **`python ops/drift-check.py`** exit **1**, много **DRIFT (file)** | Скрипты на проде уехали от репо (патч на сервере без git) | Деплой из репо по **`docs/DEPLOY.md` §3**, не заполнять waive «чтобы отмазаться» |
 | Контрабанда локальных правил Claude в Git | Коммит **`.claude/settings.local.json`** содержит пути и не должен быть публичным | **`.gitignore`**, раздел KNOWLEDGE-BASE §2 |
-| Crash loop **`remnawave`**, Prisma **P1000**, **502** на панели/sub | Накат **`panel.env`** из vault: **`DATABASE_URL`** не совпадает с живым **`remnawave-db`** | Откат **`/opt/remnawave/.env`** с прода-бэка + **`extract-vault`** |
+| Crash loop **`remnawave`**, Prisma **P1000**, **502** на панели/sub | Накат **`panel.env`** из vault: **`DATABASE_URL`** не совпадает с живым **`remnawave-db`** | Откат **`/opt/remnawave/.env`** с прода-бэка + **`python ops/extract_vault.py`** |
 | **502** на sub, **401** у subscription-page к панели | Рендер **`sub/docker-compose.yml`**: неверный **`REMNA_API_TOKEN`** | Откат compose с бэкапа; **`RUNBOOK-REMNA-API-TOKEN`** |
 
 ---

@@ -54,8 +54,8 @@
 | ID | Issue |
 |----|-------|
 | **P0-SEC-04** | **`/opt/remnawave/` на LV** — legacy-снимок секретов AMS. **Закрытие:** архив в **`/opt/_archive/remnawave-legacy-<ts>/`**, права + опц. **`chattr +i`** — см. runbook §1. |
-| **P0-SEC-05** | Ротация **`JWT_AUTH_SECRET`**, **`JWT_API_TOKENS_SECRET`**, **`POSTGRES_PASSWORD`** на AMS и новый **`REMNA_API_TOKEN`** в 4 местах — см. runbook §2–3 (короткий даунтайм API/админки до перевыпуска токена). |
-| **P1-OPS-TOKEN-SCOPE** | Один `REMNA_API_TOKEN` с `exp=2299` используется **четырьмя разными подсистемами**: bot, sub-page, balancer.sh, ru-monitor.py. Лучше иметь 4 разных token'а с разным scope'ом, чтобы при компрометации одного — не было полной потери. (Текущий Remnawave не поддерживает scope; нужна доработка панели или просто 4 разных `role=API` token'а.) |
+| **P0-SEC-05** | Ротация JWT/Postgres на AMS и выдача новых machine-token'ов (**AMS** shop+sub **`REMNA_API_TOKEN`**, LV **`balancer`/`ru-monitor`**) — см. runbook §2–3. |
+| **P1-OPS-TOKEN-SCOPE** | ~~Один общий JWT на все потребители~~ — на проде уже **расхождение** AMS vs LV; в шаблонах vault — **`REMNA_API_TOKEN_AMS`** и **`REMNA_API_TOKEN_LV`**. Дальнейшее ужесточение — отдельные токены per-сервис (см. runbook раздельная ротация). |
 | **P1-OPS-DRIFT-02** ✅ | (Закрыто этим документом.) Sanitized templates в `compose/` + этот `docs/SECRETS.md`. |
 
 ## 5. Процедура «новый секрет» / «новая нода»

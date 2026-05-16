@@ -20,7 +20,7 @@
 | `ops/bvpn-watchdog-probe.sh` | LV | `/usr/local/sbin/bvpn-watchdog-probe` | Read-only probe для watchdog: возвращает три `epoch=…` строки. Вызывается через `command="…"` в `authorized_keys`. |
 | `ops/bvpn-docker-firewall.sh` | AMS | `/usr/local/sbin/bvpn-docker-firewall.sh` | Idempotent: вставляет в `DOCKER-USER` пару правил «ACCEPT from LV / DROP all» для `subscription-page` :3010. |
 | `ops/bot-admin-handlers.py` | AMS | `/opt/remna-shop/src/shop_bot/bot/admin_handlers.py` **+** image-copy в `remna-shop-bot` | Admin-only `/admin` и `/status` команды бота. Bot src — image-baked, поэтому деплой = host-edit + `docker cp` + `docker restart`. |
-| `compose/**/*.tmpl` + vault | LV / AMS / NL | см. **`docs/SECRETS.md` §3** (пути прод) | SoT для прод-compose и ключевых `/etc/bvpn/*.env`: шаблоны в репо, секреты в `.secrets/vault.env`; синхронность **`python ops/drift-check.py`** (**§7**); реген из прода через `.secrets/sanitize-compose.py`. |
+| `compose/**/*.tmpl` + vault | LV / AMS / NL | см. **`docs/SECRETS.md` §3** (пути прод) | SoT для прод-compose и ключевых `/etc/bvpn/*.env`: шаблоны в репо, секреты в `.secrets/vault.env`; синхронность **`python ops/drift-check.py`** (**§7**); реген из прода через `ops/sanitize_compose_templates.py`. |
 
 Файлы вне таблицы (`intel-digest.py`, `fix-caddy-security.sh`, и т.п.) — **legacy / one-shot / artifacts**. В `monitor.sh.bak-*`, `*.before-blockD-*`, `*.before-ams-drain-*` — это backups, **не SoT**. Чистка backups — задача отдельной полировки.
 
@@ -159,7 +159,7 @@ ssh -p 3344 root@168.100.11.140 "
 ## 7. Drift-чек: скрипты + compose/env (sanitized templates)
 
 Цель §1 — синхронность **управляющих** файлов (`monitor.sh`, `ru-monitor.py`, …).  
-Compose и prod-`.env` держим как **sanitized templates** под **`compose/<host>/…/*.tmpl`** (см. **`docs/SECRETS.md`**). Реальные значения — в **`.secrets/vault.env`** (gitignored), собирается скриптом **`python .secrets/extract-vault.py`** из копий прода (`.secrets/prod-compose/`, тоже gitignored).
+Compose и prod-`.env` держим как **sanitized templates** под **`compose/<host>/…/*.tmpl`** (см. **`docs/SECRETS.md`**). Реальные значения — в **`.secrets/vault.env`** (gitignored), собирается скриптом **`python ops/extract_vault.py`** из копий прода (`.secrets/prod-compose/`, тоже gitignored).
 
 ### 7.1 Утилита `ops/drift-check.py`
 
@@ -203,8 +203,8 @@ python ops/render_compose.py --none compose/ams/remnawave-sub/docker-compose.yml
 Не коммитить живые секреты. Последовательность:
 
 1. Снять копию prod-файла в `.secrets/prod-compose/<host>/…` (как уже принято для DRIFT-02).
-2. **`python .secrets/sanitize-compose.py`** → перегенерирует **`compose/**/*.tmpl`**; скрипт **прерывает работу**, если в шаблоне остались похожие на секрет строки (leak-scan).
-3. При необходимости обновить **`.secrets/vault.env`**: **`python .secrets/extract-vault.py`**.
+2. **`python ops/sanitize_compose_templates.py`** → перегенерирует **`compose/**/*.tmpl`** (скрипт **полностью пересоздаёт** каталог **`compose/`** только из **`MAP`** в себе же; скрытые там сервисы не попадут); при утечке похожих на секрет строк — **выход с ошибкой** (leak-scan).
+3. При необходимости обновить **`.secrets/vault.env`**: **`python ops/extract_vault.py`**.
 4. **`python ops/drift-check.py`** — все строки должны быть **OK**.
 
 ### 7.4 Периодичность
@@ -233,5 +233,5 @@ python ops/render_compose.py --none compose/ams/remnawave-sub/docker-compose.yml
 ## 10. История
 
 - **2026-05-14** — P1-OPS-DRIFT-01 закрыта. Все 10 файлов синхронизированы (репо ← прод после большой серии правок P0-block / Monitor-block / AMS-decom). Этот документ создан.
-- **2026-05-15** — **P1-OPS-DRIFT-02**: в §1 добавлена строка **`compose/**/*.tmpl`**; §7 описывает vault, `sanitize-compose` / `extract-vault`, `render_compose.py` (`--only`, `--none`, согласованность с `tmpl_only_keys` в `drift-check.py`), нормализацию CRLF при сравнении MD5 с продом.
+- **2026-05-15** — **P1-OPS-DRIFT-02**: в §1 добавлена строка **`compose/**/*.tmpl`**; §7 описывает vault, `sanitize_compose_templates` / `extract_vault`, `render_compose.py` (`--only`, `--none`, согласованность с `tmpl_only_keys` в `drift-check.py`), нормализацию CRLF при сравнении MD5 с продом.
 - **2026-05-16** — **`daily-report.sh`**: сбор юзеров через **`/api/users?size=&start=`** постранично (раньше один **`GET /api/users`** давал только первую страницу ~25 записей → расхождение с панелью). Деплой: **`pwsh -File ops/deploy-daily-report-lv.ps1`**. `ru-monitor.py`: текст алерта «cert changed» для внешних SNI (апстрим CDN, не только Caddy/MITM). (и меньший лимит для прочих) при **`TimeoutExpired`**. **`monitor.sh`** в таблице §1: описание **`SUB_*`** / **`PANEL_URL`** (как **`daily-report.sh`**).

@@ -35,12 +35,12 @@ def md5_hex_norm(blob: bytes) -> str:
     return hashlib.md5(blob).hexdigest()
 
 
-# Sanitize rules MUST stay in sync with .secrets/sanitize-compose.py.
+# Sanitize rules MUST stay in sync with ops/sanitize_compose_templates.py.
 # Drift-check uses them to derive a "what would the template look like
 # rendered with vault values" version of the prod file: actually,
 # the other direction — we render the template via render_compose +
 # vault and compare to prod md5.  These rules are kept here only as
-# a sanity check and could be removed if sanitize-compose.py is invoked
+# a sanity check and could be removed if sanitize_compose_templates.py is invoked
 # in-process; we keep a copy to keep drift-check.py standalone.
 SANITIZE_RULES_REF = [
     r'(SECRET_KEY=)("?eyJ[A-Za-z0-9+/=_\\-]+"?)',
