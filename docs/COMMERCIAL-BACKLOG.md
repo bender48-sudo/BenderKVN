@@ -1,6 +1,6 @@
 # BenderVPN — коммерческий бэклог
 
-**Версия документа:** 2026-05-16 — P6-SCALE-01/04 (snapshot + sub runbook)…
+**Версия документа:** 2026-05-16 — ~~**P2-OPS-DRIFT-POST-P0**~~ ✅ (`drift-check` 28/28); далее **P6-SCALE-04** (нагрузочный тест → §12)…
 **Цель:** стабильный **8–9/10** (нишевый коммерческий VPN в РФ); измеримый рост к максимально достижимому качеству.  
 **Определение «готово»:** по каждой задаче выполнен критерий в колонке **Done when** + при необходимости запись в трекере (статусы `TODO` / `DOING` / `DONE`).
 
@@ -36,6 +36,10 @@
 | **P5** | Полировка после «восьмёрки» |
 | **P6** | Ёмкость: метрики, пороги, ноды, подписка, рост до **10k–30k+** |
 
+### 2.1 Сначала продукт, потом UX
+
+Закреплённый порядок: **качество продукта и эксплуатация** (стабильность, бэкапы, drift, метрики) — **раньше**, чем **удобство пользования** (**P3-UX-***). Детали и обоснование — **`docs/POLICY-BACKLOG-ORDER.md`**. В таблице §3 строка **10** не стартует, пока не закрыт разумный минимум эксплуатации (в т.ч. строка **9b**).
+
 ---
 
 ## 3. Очередь по спринтам (чёткий порядок)
@@ -49,12 +53,13 @@
 | 3 | Digest образов | **P0-OPS-02** ✅ |
 | 4 | **Архитектура**: AMS = только панель | ~~**P1-ARCH-AMS-DECOM**~~ ✅ *(drain выполнен 2026-05-14; шаг **4c** опционально — удалить запись ноды в UI)* |
 | 5 | **Прод ↔ репо**: синхронизация `/opt/scripts/` + compose/env templates | **P1-OPS-DRIFT-01** ✅, **P1-OPS-DRIFT-02** ✅ |
-| 5b | **После P0‑SEC‑05 / миграции панели**: снять DRIFT и починить мониторинг вместимости (`balancer` → публичный `PANEL_URL`) | **P2-OPS-DRIFT-POST-P0**, **P2-MON-BALANCER-PANEL-URL** ✅ (см. §12), ~~**P2-ENG-DRIFT-CHECK-01**~~ ✅ |
+| 5b | **После P0‑SEC‑05 / миграции панели**: снять DRIFT и починить мониторинг вместимости (`balancer` → публичный `PANEL_URL`) | ~~**P2-OPS-DRIFT-POST-P0**~~ ✅, **P2-MON-BALANCER-PANEL-URL** ✅ (см. §12), ~~**P2-ENG-DRIFT-CHECK-01**~~ ✅ |
 | 6 | Конфиг в одном месте + ru-monitor хосты + чистка артефактов | **P1-ENG-01** ✅ (`ops/site_urls.py` + `deploy-node.sh`), **P1-ENG-02** ✅, ~~**P1-ENG-03**~~ ✅ (`archive/tmp-remna-shop-bot-patches/` + `redact_bvpn_artifacts`) |
 | 7 | Мониторинг «Xray реально жив» + state dirs | ~~**P2-MON-01**~~ ✅, ~~**P2-MON-02**~~ ✅ |
 | 8 | Бэкапы (off-host + restore test) + patches | ~~**P2-BAK-01**~~ ✅, ~~**P2-BAK-02**~~ ✅ |
 | 9 | Метрики ёмкости (**старт P6 до роста базы**) | ~~**P6-SCALE-01**~~ ✅, **P6-SCALE-04** (runbook + probe; load test → §12) |
-| 10 | Продуктовая линия + онбординг + тексты ошибок | ~~**P1-PRO-01…04**~~ ✅ (см. **`docs/FAQ.md`**, **`docs/RUNBOOK-INCIDENT.md`**, **`docs/HAPP-MATRIX.md`**, **`docs/POLICY-SNI-MONITORING.md`**), **P3-UX-01**, **P3-UX-02** |
+| 9b | **Эксплуатация (хвост P2):** drift post-P0, TG/SSH/утечки | ~~**P2-OPS-DRIFT-POST-P0**~~ ✅, ~~**P2-MON-03**~~ ✅, ~~**P2-SSH-01**~~ ✅, ~~**P2-SEC-LOG-01**~~ ✅ |
+| 10 | **(после §2.1 — UX не раньше продукта)** Онбординг и тексты | ~~**P1-PRO-01…04**~~ ✅ (см. **`docs/FAQ.md`**, **`docs/RUNBOOK-INCIDENT.md`**, **`docs/HAPP-MATRIX.md`**, **`docs/POLICY-SNI-MONITORING.md`**), **P3-UX-01**, **P3-UX-02** |
 | 11 | DNS PoC → FAQ (по ресурсу) | **P4-DNS-01** → **P4-DNS-02** → **P4-DNS-03** |
 | 12 | **Red team / ТПСУ** (устойчивость к наблюдению, blast radius, рост до 30k) — см. **§5.1 → §10.2** | **P1-RED-DATA-01** … **P1-RED-LOG-01** → **P2-RED-*** → **P6-RED-*** → **P3-RED-*** → **P5-RED-RD-01** |
 
@@ -130,19 +135,21 @@
 |----|--------|-----------|
 | ~~**P2-MON-01**~~ ✅ | **`monitor.sh`** (LV): **`remnanode` + `docker exec … xray version` + порты**, не только `ss :443` (AMS xray после drain выключен). | **Репо 2026-05-15**: «контейнер up, Xray мёртв» → **`xray_lv_core`**; нет контейнера → **`xray_lv_remnanode`**. |
 | ~~**P2-MON-02**~~ ✅ | Разные каталоги state: `ru-monitor` vs `monitor.sh`. | **2026-05-15**: комментарии в `monitor.sh` / `ru-monitor.py` + строка в примере crontab **`DEPLOY.md`** (§6 таблица уже была). |
-| **P2-MON-03** | Политика: что уходит в Telegram (минимум метаданных). | Полстраницы wiki. |
-| **P2-SSH-01** | Таблица: где `accept-new`, где pin `known_hosts`; меньше `StrictHostKeyChecking=no` в проде. | Таблица в wiki. |
+| ~~**P2-MON-03**~~ ✅ | Политика: что уходит в Telegram (минимум метаданных). | **`docs/POLICY-TELEGRAM-ALERTS.md`** (2026-05-16). |
+| ~~**P2-SSH-01**~~ ✅ | Таблица: где `accept-new`, где pin `known_hosts`; меньше `StrictHostKeyChecking=no` в проде. | **`docs/SSH-HOST-KEY-PRACTICE.md`** (2026-05-16). |
 | ~~**P2-BAK-01**~~ ✅ | Расписание: `ops/pg_dump_remnawave.sh` (AMS) + `ops/pull-latest-dump-ams-to-lv.sh` (LV); квартальный **restore test**. | **Репо 2026-05-16**: **`docs/RUNBOOK-BACKUP-REMNAWAVE.md`** (календарь, установка, чеклист restore), **`ops/crontab-remnawave-backup.example`**, правки **`DEPLOY.md`** / **`backup-remnawave.sh`**. Фактический прогон restore test — записать дату в runbook §4 и §12. |
 | ~~**P2-BAK-02**~~ ✅ | **Патчи** схемы БД / миграции — не смешивать с «просто дампом»; бэкап до ручных SQL. | Зафиксировано в **`RUNBOOK-BACKUP-REMNAWAVE.md`** §2 (P2-BAK-02). |
 | ~~**P2-CHORE-SUB-ENV**~~ ✅ | **`monitor.sh`** — smoke подписки как **`daily-report.sh`**: **`SUB_PUBLIC_ORIGIN`**, **`SUB_MONITOR_PROBE_URL`**, **`PANEL_URL`** после **`source /etc/bvpn/balancer.env`** (fallback = дефолты как у daily-report/tmpl). | См. репозиторий **2026‑05‑15**; деплой на LV **`/opt/scripts/monitor.sh`**. |
-| **P2-OPS-DRIFT-POST-P0** | После ротации секретов и смены URL панели: снять **DRIFT** прод ↔ репо (**`deploy-node.sh`**, **`selfsteal-monitor.py`**, AMS **`/opt/remnawave/docker-compose.yml`** и **`.env`**, **`/opt/remna-shop/.env`** и т.д.). | **`python ops/drift-check.py`**: OK по всем парам **или** явный waive в wiki с причиной по каждому файлу. |
+| ~~**P2-OPS-DRIFT-POST-P0**~~ ✅ | После ротации секретов и смены URL панели: снять **DRIFT** прод ↔ репо (**`deploy-node.sh`**, **`selfsteal-monitor.py`**, AMS **`/opt/remnawave/docker-compose.yml`** и **`.env`**, **`/opt/remna-shop/.env`** и т.д.). | **2026-05-16**: деплой скриптов LV/AMS из репо; **`/etc/bvpn/balancer.env`**, **`ru-monitor.env`** — рендер из **`.secrets/vault.env`**; AMS **`remnawave` / `sub` / `remna-shop`** — файлы из рендера + **`docker compose up -d`**. **`python ops/drift-check.py`**: **28/28 OK**, exit **0** (журнал §12). |
+| ~~**P2-SEC-LOG-01**~~ ✅ | Гигиена секретов: если **`BOT_TOKEN`** / JWT попали в **транскрипты Cursor**, скриншоты, общие логи — считать компрометацией до проверки. | **`docs/POLICY-SECRET-LEAK-RESPONSE.md`** (2026-05-16). |
 | ~~**P2-ENG-DRIFT-CHECK-01**~~ ✅ | **`ops/drift-check.py`**: нестабильные **TIMEOUT** на LV. | Retry + растущий deadline на chunk (**4×** попытки для **`bvpn-lv`**, **2×** прочие) + backoff; см. **`docs/DEPLOY.md`** (§ drift-check примечание). Репо **2026‑05‑15**. |
 | ~~**P2-MON-BALANCER-PANEL-URL**~~ ✅ | **`balancer.sh`** на LV после переноса панели на AMS всё ещё бил в **`http://localhost:3000`** → **`USERS=0 NODES=0`** в логе, алерты вместимости бессмысленны. | **DONE 2026‑05‑15**: **`PANEL_URL`** в **`/etc/bvpn/balancer.env`** + правка **`balancer.sh`** (репо **`compose/_shared/etc-bvpn-lv/balancer.env.tmpl`**); smoke **`HTTP 200`** на **`/api/users`** (журнал §12). |
-| **P2-SEC-LOG-01** | Гигиена секретов: если **`BOT_TOKEN`** / JWT попали в **транскрипты Cursor**, скриншоты, общие логи — считать компрометацией до проверки. | Политика «rotate + redeploy всех потребителей» в wiki; точечный grep по типичным артефактам. |
 
 ---
 
 ## 7. P3 — Юзерфлоу и доверие
+
+**Порядок:** блок **P3-UX** не является приоритетом, пока не закрыт контур качества продукта — **`docs/POLICY-BACKLOG-ORDER.md`**, §2.1, §3 строка **10**.
 
 | ID | Задача | Done when |
 |----|--------|-----------|
@@ -222,7 +229,7 @@
 
 ## 11. Связь с аудитом репозитория
 
-Закрыты по коду/операциям: **P0-SEC-01…03** ✅, **P0-OPS** ✅, ~~**P0-SEC-04**~~ ✅, ~~**P0-SEC-05**~~ ✅ (**журнал §12**). Открытых задач уровня **P0** в таблице §4 на текущий срез **нет**. Блок **P1** ✅ по **`docs/P1-POST-AUDIT.md` (PASS 2026-05-15)** плюс **~~P1-OPS-REMNA-TOKEN-01~~**, **~~P1-RED-LOG-01~~** (в форме репо + патч-док). **Операционная память:** **`docs/KNOWLEDGE-BASE.md`**. Из **§5.1**: дальше **P1‑RED‑DATA/SEC/SSH/DNS**. Из **§6**: **P2-OPS-DRIFT-POST-P0**, **`P2-SEC-LOG-01`**, ~~**`P2-MON-01`/`P2-MON-02`**~~ ✅, ~~**`P2-BAK-01`/`P2-BAK-02`**~~ ✅, бэкапы (restore test — см. **`RUNBOOK-BACKUP-REMNAWAVE`**); ~~**`P2-ENG-DRIFT-CHECK-01`**~~ ✅, ~~**`P2-CHORE-SUB-ENV`**~~ ✅; затем **P6** (**P6‑RED‑***, **`P6-SCALE-NL-VERIFY`**).
+Закрыты по коду/операциям: **P0-SEC-01…03** ✅, **P0-OPS** ✅, ~~**P0-SEC-04**~~ ✅, ~~**P0-SEC-05**~~ ✅ (**журнал §12**). Открытых задач уровня **P0** в таблице §4 на текущий срез **нет**. Блок **P1** ✅ по **`docs/P1-POST-AUDIT.md` (PASS 2026-05-15)** плюс **~~P1-OPS-REMNA-TOKEN-01~~**, **~~P1-RED-LOG-01~~** (в форме репо + патч-док). **Операционная память:** **`docs/KNOWLEDGE-BASE.md`**. Из **§5.1**: дальше **P1‑RED‑DATA/SEC/SSH/DNS**. Из **§6**: ~~**P2-OPS-DRIFT-POST-P0**~~ ✅, ~~**`P2-SEC-LOG-01`**~~ ✅, ~~**`P2-MON-01`/`P2-MON-02`**~~ ✅, ~~**`P2-BAK-01`/`P2-BAK-02`**~~ ✅, бэкапы (restore test — см. **`RUNBOOK-BACKUP-REMNAWAVE`**); ~~**`P2-ENG-DRIFT-CHECK-01`**~~ ✅, ~~**`P2-CHORE-SUB-ENV`**~~ ✅; затем **P6** (**P6‑RED‑***, **`P6-SCALE-NL-VERIFY`**).
 
 **P4** — отдельный продуктовый слой, не смешивать с основным VPN SKU.
 
@@ -232,6 +239,9 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-16 | **~~P2-OPS-DRIFT-POST-P0~~ ✅:** SSH с рабочей машины — выкладка **`balancer.sh`**, **`backup-remnawave.sh`**, **`ru-monitor.py`**, **`deploy-node.sh`** (LV+AMS) из репо; **`/etc/bvpn/balancer.env`** и **`ru-monitor.env`** (LV) — байтовый рендер из **`compose/_shared/...` + `.secrets/vault.env`**; AMS — **`/opt/remnawave/docker-compose.yml`**, **`.env`**, **`/opt/remnawave/sub/docker-compose.yml`**, **`/opt/remna-shop/.env`** из рендера + **`docker compose up -d`** (пересозданы **`remnawave-db`**, **`remnawave`**, **`remnawave-subscription-page`**, **`remna-shop-bot`**). **`python ops/drift-check.py`**: **28/28 OK**, exit **0** (~10 мин). Локальные копии рендера удалены. |
+| 2026-05-16 | Тот же день (**до наката):** drift-check **17 OK / 11 DRIFT** — снимок зафиксирован; процедура **`DRIFT-POST-P0.md`**; затем закрыто (строка выше). |
+| 2026-05-16 | **§2.1 «продукт → UX»** + доки: **`docs/POLICY-BACKLOG-ORDER.md`**, **`docs/POLICY-TELEGRAM-ALERTS.md`**, **`docs/SSH-HOST-KEY-PRACTICE.md`**, **`docs/POLICY-SECRET-LEAK-RESPONSE.md`**, **`docs/DRIFT-POST-P0.md`** (waive/post-P0 drift). В **`docs/KNOWLEDGE-BASE.md`** — ссылки на политики + сохранён **`DEPLOY.md`** в §1. **§7 P3** — явное напоминание не ставить UX раньше эксплуатации. |
 | 2026-05-16 | **P6 (продолжение):** **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`** — edge подписки, rate limit/WAF, критерий load test. **`ops/capacity_snapshot.py`** — HTTPS probe публичной подписки (HEAD→GET, latency, алерт если не 200/304). Сплинт §3 п.9: **P6-SCALE-01** закрыт минимумом; **P6-SCALE-04** — runbook + probe; полный load test — когда будет окно. |
 | 2026-05-16 | **Cursor User Rules:** дубликат инструкции — `%USERPROFILE%\.cursor\RULE-PASTE-INTO-USER-RULES.md` (вставить в Settings → Rules → User Rules); в репо — **`docs/CURSOR-USER-RULES-SNIPPET.md`**. **Прод:** `pg_dump_remnawave.sh` → AMS `/opt/scripts/`, `pull-latest-dump-ams-to-lv.sh` → LV `/opt/scripts/` (`bash -n` OK). **P6-SCALE-01 (минимум):** **`ops/capacity_snapshot.py`**, строки в **`DEPLOY.md`** / **`KNOWLEDGE-BASE.md`**. |
 | 2026-05-16 | **~~P2-BAK-01~~ / ~~P2-BAK-02~~**: **`docs/RUNBOOK-BACKUP-REMNAWAVE.md`** — AMS→LV дамп, пример **`ops/crontab-remnawave-backup.example`**, обновлены **`DEPLOY.md`** (таблица скриптов, §5 crontab AMS/LV), шапка **`backup-remnawave.sh`** (legacy vs канонический путь), строка в **`KNOWLEDGE-BASE.md`**. Restore test — чеклист в runbook; дату успешного прогона зафиксировать в §4 runbook + §12. |

@@ -12,6 +12,11 @@
 | Журнал «что уже сделали на проде» | тот же файл, **§12** |
 | Очередь capacity (users/nodes vs §10.1) | `python ops/capacity_snapshot.py` (токен в `.secrets/panel-token.txt`) |
 | Деплой, drift, рендер vault | **`docs/DEPLOY.md`** |
+| Порядок спринтов (продукт → UX) | **`docs/POLICY-BACKLOG-ORDER.md`** |
+| Алерты в Telegram (метаданные) | **`docs/POLICY-TELEGRAM-ALERTS.md`** |
+| SSH known_hosts / `StrictHostKeyChecking` | **`docs/SSH-HOST-KEY-PRACTICE.md`** |
+| Утечка секрета в чат / скриншот | **`docs/POLICY-SECRET-LEAK-RESPONSE.md`** |
+| Drift прод↔репо после P0 / смены панели | **`docs/DRIFT-POST-P0.md`** |
 | Реестр секретов и путей на хостах | **`docs/SECRETS.md`** |
 | Инциденты (роли, первый ответ) | **`docs/RUNBOOK-INCIDENT.md`** |
 | Ротация панели + LV legacy архив | **`docs/RUNBOOK-P0-SEC04-SEC05.md`** |
@@ -49,7 +54,8 @@
 | **USERS=0 NODES=0** в balancer | **`PANEL_URL`** / токен бьют в **`localhost:3000`** вместо публичной панели | **`balancer.env.tmpl`**, **`P2-MON-BALANCER-PANEL-URL`** (закрыт) |
 | Шум после drain AMS только в одном алертере | Обновили **`monitor.sh`**, забыли **`ru-monitor`** (или наоборот) или selfsteal | журнал §12 **2026-05-14** |
 | **Total** в TG daily report = **25**, в панели больше | **`GET /api/users`** без **`size`/`start`** — только первая страница ответа API | Пагинация как в **`grandfather_panel_users_expire.py`** / текущий **`daily-report.sh`** |
-| Спор «какая копия compose правда» | Нет апдейта после **`JWT_API_TOKENS_SECRET`** без перевыпуска всех JWT | **`P0-SEC-05`** runbook |
+| DRIFT по **`tmpl`** сразу на нескольких `.env` / compose | Рендер из vault не совпадает с продом: vault устарел **или** на проде правили вручную | **`docs/DRIFT-POST-P0.md`** (порядок: vault → файлы → tmpl → перепроверка); **`docs/DEPLOY.md` §7.3** |
+| **`python ops/drift-check.py`** exit **1**, много **DRIFT (file)** | Скрипты на проде уехали от репо (патч на сервере без git) | Деплой из репо по **`docs/DEPLOY.md` §3**, не заполнять waive «чтобы отмазаться» |
 | Контрабанда локальных правил Claude в Git | Коммит **`.claude/settings.local.json`** содержит пути и не должен быть публичным | **`.gitignore`**, раздел KNOWLEDGE-BASE §2 |
 
 ---
