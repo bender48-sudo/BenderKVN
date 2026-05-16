@@ -64,6 +64,19 @@ def sub_monitor_probe_url() -> str:
     return f"{SUB_PUBLIC_ORIGIN}/{_SUB_MONITOR_SUFFIX}"
 
 
+STATUS_MIRROR_PATH = os.environ.get(
+    "STATUS_MIRROR_PATH", "/api/ops/status.json"
+).lstrip("/")
+
+
+def status_mirror_url() -> str:
+    """Public HTTPS JSON ops status (P2-RED-BOOT-01), alt panel/sub domain."""
+    origin = os.environ.get(
+        "STATUS_MIRROR_ORIGIN", SUB_ALT_PUBLIC_ORIGINS[0] if SUB_ALT_PUBLIC_ORIGINS else PANEL_URL
+    ).rstrip("/")
+    return f"{origin}/{STATUS_MIRROR_PATH}"
+
+
 def sub_all_probe_urls() -> list[str]:
     """Primary + alternate subscription smoke URLs (same shortId path)."""
     urls = [sub_monitor_probe_url()]

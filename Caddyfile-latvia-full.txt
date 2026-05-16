@@ -286,6 +286,13 @@ k9x2m1.conntest.xyz:2053 {
     @fingerprint path /swagger* /health /metrics /api-docs* /docs*
     respond @fingerprint 404
 
+    # STATUS_MIRROR_BOOT_01 — HTTPS JSON ops status (P2-RED-BOOT-01)
+    handle /api/ops/status.json {
+        root * /var/www/bvpn-status
+        rewrite * /status.json
+        file_server
+    }
+
     # P2-RED-SUB-01 + P6-RED-SUBHA-01: alt origin -> AMS :3011 (primary p4n7q -> :3010)
     @sub_path_alt path /api/sub/*
     handle @sub_path_alt {
