@@ -122,6 +122,7 @@ ssh -p 3344 root@168.100.11.140 "
 20 12 * * *   /root/.acme.sh/acme.sh --cron --home /root/.acme.sh > /dev/null
 0 */6 * * *   /bin/bash /opt/scripts/backup-remnawave.sh >> /var/log/remnawave-backup.log 2>&1
 */5 * * * *   /bin/bash /opt/scripts/monitor.sh           >> /var/log/bvpn-monitor.log 2>&1
+#             ↑ alert_* → /var/lib/bvpn-monitor/   |   ru-monitor state.json → /var/lib/bvpn-ru-monitor/
 0 9 * * *     /bin/bash /opt/scripts/daily-report.sh      >> /var/log/bvpn-monitor.log 2>&1
 0 * * * *     /bin/bash /opt/scripts/balancer.sh          >> /var/log/bvpn-balancer.log 2>&1
 */5 * * * *   /opt/scripts/ru-monitor.py                 2>> /var/log/bvpn-ru-monitor.log

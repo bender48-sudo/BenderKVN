@@ -1,6 +1,6 @@
 # BenderVPN — коммерческий бэклог
 
-**Версия документа:** 2026-05-15 — P2.monitor/drift-check, ~~P1-RED-LOG-01~~ (репозиторий).
+**Версия документа:** 2026-05-15 — ~~P2-MON-01~~ / ~~P2-MON-02~~, P2.monitor/drift-check, ~~P1-RED-LOG-01~~ (репозиторий).
 **Цель:** стабильный **8–9/10** (нишевый коммерческий VPN в РФ); измеримый рост к максимально достижимому качеству.  
 **Определение «готово»:** по каждой задаче выполнен критерий в колонке **Done when** + при необходимости запись в трекере (статусы `TODO` / `DOING` / `DONE`).
 
@@ -51,7 +51,7 @@
 | 5 | **Прод ↔ репо**: синхронизация `/opt/scripts/` + compose/env templates | **P1-OPS-DRIFT-01** ✅, **P1-OPS-DRIFT-02** ✅ |
 | 5b | **После P0‑SEC‑05 / миграции панели**: снять DRIFT и починить мониторинг вместимости (`balancer` → публичный `PANEL_URL`) | **P2-OPS-DRIFT-POST-P0**, **P2-MON-BALANCER-PANEL-URL** ✅ (см. §12), ~~**P2-ENG-DRIFT-CHECK-01**~~ ✅ |
 | 6 | Конфиг в одном месте + ru-monitor хосты + чистка артефактов | **P1-ENG-01** ✅ (`ops/site_urls.py` + `deploy-node.sh`), **P1-ENG-02** ✅, ~~**P1-ENG-03**~~ ✅ (`archive/tmp-remna-shop-bot-patches/` + `redact_bvpn_artifacts`) |
-| 7 | Мониторинг «Xray реально жив» + state dirs | **P2-MON-01**, **P2-MON-02** |
+| 7 | Мониторинг «Xray реально жив» + state dirs | ~~**P2-MON-01**~~ ✅, ~~**P2-MON-02**~~ ✅ |
 | 8 | Бэкапы (off-host + restore test) + patches | **P2-BAK-01**, **P2-BAK-02** |
 | 9 | Метрики ёмкости (**старт P6 до роста базы**) | **P6-SCALE-01**, **P6-SCALE-04** (минимум) |
 | 10 | Продуктовая линия + онбординг + тексты ошибок | ~~**P1-PRO-01…04**~~ ✅ (см. **`docs/FAQ.md`**, **`docs/RUNBOOK-INCIDENT.md`**, **`docs/HAPP-MATRIX.md`**, **`docs/POLICY-SNI-MONITORING.md`**), **P3-UX-01**, **P3-UX-02** |
@@ -128,8 +128,8 @@
 
 | ID | Задача | Done when |
 |----|--------|-----------|
-| **P2-MON-01** | **`monitor.sh`**: AMS Xray = **`rw-core`** + порты, не только `grep :443`. | Сценарий «Nest up, Xray down» даёт алерт. |
-| **P2-MON-02** | Разные каталоги state: `ru-monitor` vs `monitor.sh` (не одно имя в `/tmp`). | Комментарий в cron + пути в wiki. |
+| ~~**P2-MON-01**~~ ✅ | **`monitor.sh`** (LV): **`remnanode` + `docker exec … xray version` + порты**, не только `ss :443` (AMS xray после drain выключен). | **Репо 2026-05-15**: «контейнер up, Xray мёртв» → **`xray_lv_core`**; нет контейнера → **`xray_lv_remnanode`**. |
+| ~~**P2-MON-02**~~ ✅ | Разные каталоги state: `ru-monitor` vs `monitor.sh`. | **2026-05-15**: комментарии в `monitor.sh` / `ru-monitor.py` + строка в примере crontab **`DEPLOY.md`** (§6 таблица уже была). |
 | **P2-MON-03** | Политика: что уходит в Telegram (минимум метаданных). | Полстраницы wiki. |
 | **P2-SSH-01** | Таблица: где `accept-new`, где pin `known_hosts`; меньше `StrictHostKeyChecking=no` в проде. | Таблица в wiki. |
 | **P2-BAK-01** | Расписание: `ops/pg_dump_remnawave.sh` (AMS) + `ops/pull-latest-dump-ams-to-lv.sh`; квартальный **restore test**. | Календарь + один успешный тест восстановления. |
@@ -221,7 +221,7 @@
 
 ## 11. Связь с аудитом репозитория
 
-Закрыты по коду/операциям: **P0-SEC-01…03** ✅, **P0-OPS** ✅, ~~**P0-SEC-04**~~ ✅, ~~**P0-SEC-05**~~ ✅ (**журнал §12**). Открытых задач уровня **P0** в таблице §4 на текущий срез **нет**. Блок **P1** ✅ по **`docs/P1-POST-AUDIT.md` (PASS 2026-05-15)** плюс **~~P1-OPS-REMNA-TOKEN-01~~**, **~~P1-RED-LOG-01~~** (в форме репо + патч-док). **Операционная память:** **`docs/KNOWLEDGE-BASE.md`**. Из **§5.1**: дальше **P1‑RED‑DATA/SEC/SSH/DNS**. Из **§6**: **P2-OPS-DRIFT-POST-P0**, **`P2-SEC-LOG-01`**, **`P2-MON-01/02`**, бэкапы; ~~**`P2-ENG-DRIFT-CHECK-01`**~~ ✅, ~~**`P2-CHORE-SUB-ENV`**~~ ✅; затем **P6** (**P6‑RED‑***, **`P6-SCALE-NL-VERIFY`**).
+Закрыты по коду/операциям: **P0-SEC-01…03** ✅, **P0-OPS** ✅, ~~**P0-SEC-04**~~ ✅, ~~**P0-SEC-05**~~ ✅ (**журнал §12**). Открытых задач уровня **P0** в таблице §4 на текущий срез **нет**. Блок **P1** ✅ по **`docs/P1-POST-AUDIT.md` (PASS 2026-05-15)** плюс **~~P1-OPS-REMNA-TOKEN-01~~**, **~~P1-RED-LOG-01~~** (в форме репо + патч-док). **Операционная память:** **`docs/KNOWLEDGE-BASE.md`**. Из **§5.1**: дальше **P1‑RED‑DATA/SEC/SSH/DNS**. Из **§6**: **P2-OPS-DRIFT-POST-P0**, **`P2-SEC-LOG-01`**, ~~**`P2-MON-01`/`P2-MON-02`**~~ ✅, бэкапы; ~~**`P2-ENG-DRIFT-CHECK-01`**~~ ✅, ~~**`P2-CHORE-SUB-ENV`**~~ ✅; затем **P6** (**P6‑RED‑***, **`P6-SCALE-NL-VERIFY`**).
 
 **P4** — отдельный продуктовый слой, не смешивать с основным VPN SKU.
 
@@ -231,6 +231,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-16 | **~~P2-MON-01~~ / ~~P2-MON-02~~**: `monitor.sh` на LV — перед `ss :443/:8443` проверяются **`remnanode` running** и **`docker exec remnanode xray version`**; новые ключи **`xray_lv_remnanode`**, **`xray_lv_core`**. Комментарии «где state» в `monitor.sh`, `ru-monitor.py`, пример crontab в **`DEPLOY.md`**. Деплой: `pwsh -File ops/deploy-monitor-lv.ps1`. |
 | 2026-05-16 | **Red team / ТПСУ → бэклог**: добавлен **§5.1** с ID **P1‑RED‑*** … **P5‑RED‑RD‑01** (шифрование БД, Vault/SPIFFE, SSH blast radius, DNS‑диверсификация, log_skip подписки, резерв без TG, multi‑origin подписки, multi‑transport, квартальный TLS‑ревью sing-box; **P6‑RED‑*** масштаб; **P3‑RED‑*** минимизация данных и юрис‑runbook; **P5‑RED‑RD‑01** Snowflake‑PoC). Спринт **§3 п.12**. |
 | 2026-05-16 | **Разворот пробного тарифа (прод AMS):** `grandfather_panel_users_expire.py --apply` — **54/59** профилям Remnawave **`expireAt` → 2099** (до cut-off **16.05.2026 00:00 МСК**); **1** уже новее порога без изменения; **`/opt/remna-shop/.env`**: TRIAL/`REMNA_DEFAULT_DAYS`/ **`BOT_PAYMENTS_LIVE`**; **`bot_src`**: кнопка «Бесплатно 3 месяца», текст выдачи + HTML, scheduler без оплаты. Сценарий: **`ops/remote_ams_rollout_trials.sh`** + `scp` в **`/tmp/bvpn-rollout/`**. |
 | 2026-05-15 | **`docs/KNOWLEDGE-BASE.md`** — точка входа (правила, типовые ошибки); **`README.md`** для GitHub. **~~`P1-OPS-REMNA-TOKEN-01`~~** оформлен как **`docs/RUNBOOK-REMNA-API-TOKEN.md`** + **`ops/remna_api_token_rollout.sh`**. **~~`P3-OPS-SUPPORT-REMNA-LOGIN`~~ ✅**: секция в **`RUNBOOK-INCIDENT`**. Зрелость: ~~**`P2-CHORE-SUB-ENV`**~~ (**`monitor.sh`** `SUB_*` + **`PANEL_URL`**), ~~**`P2-ENG-DRIFT-CHECK-01`**~~ (**`drift-check`** retries LV), ~~**`P1-RED-LOG-01`**~~ (**`RUNBOOK-CADDY-SUBSCRIPTION-LOGS`**, эталон **`Caddyfile-latvia-full.txt`** с **`log_skip /api/sub/*`**). |

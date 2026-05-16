@@ -24,6 +24,9 @@ ADMIN_CHAT_ID="924498094"
 # the alert markers vanished and `recover` never fired the RECOVERED message,
 # which felt like "монитор не отписал что починилось". 2026-05-14.
 STATE_DIR="/var/lib/bvpn-monitor"
+# P2-MON-02: не путать с ru-monitor — state.json у него в /var/lib/bvpn-ru-monitor/,
+# антиспам-маркеры selfsteal/ru и alert_* этого скрипта — в /var/lib/bvpn-monitor/.
+# Таблица путей: docs/DEPLOY.md §6.
 LEGACY_STATE_DIR="/tmp/bvpn_states"
 LOG_FILE="/var/log/bvpn-monitor.log"
 AMS_IP="168.100.11.140"
@@ -76,22 +79,36 @@ recover() {
 
 NOW=$(date '+%Y-%m-%d %H:%M UTC')
 
-# ==========================================
-# CHECK 1: XRay Latvia :443
-# ==========================================
-if ss -tlnp | grep -q ":443 "; then
-    recover "xray_lv_443" "$(printf '✅ <b>BenderVPN RECOVERED</b>\n\n🟢 XRay Latvia :443 — back up\n🕐 %s' "$NOW")"
-else
-    alert "xray_lv_443" "$(printf '🚨 <b>BenderVPN ALERT</b>\n\n❌ XRay Latvia :443 — DOWN\n🕐 %s\n🖥 176.126.162.158\n\n🔧 <code>docker logs remnanode --tail 20</code>' "$NOW")"
-fi
+# P2-MON-01: «порт слушает» ≠ «Xray жив». Контейнер up, но процесс упал — ловим здесь.
+remnanode_is_running() {
+    docker ps --format '{{.Names}}' 2>/dev/null | grep -qx 'remnanode'
+}
+
+xray_core_ok() {
+    # Должен выполниться бинарник из образа (remnanode); быстрее и надёжнее поиска PID.
+    timeout 10 docker exec remnanode xray version >/dev/null 2>&1
+}
 
 # ==========================================
-# CHECK 2: XRay Latvia :8443
+# CHECK 1–2: XRay Latvia — remnanode, xray core, :443 / :8443
 # ==========================================
-if ss -tlnp | grep -q ":8443 "; then
-    recover "xray_lv_8443" "$(printf '✅ <b>BenderVPN RECOVERED</b>\n\n🟢 XRay Latvia :8443 — back up\n🕐 %s' "$NOW")"
-else
-    alert "xray_lv_8443" "$(printf '🚨 <b>BenderVPN ALERT</b>\n\n❌ XRay Latvia :8443 — DOWN\n🕐 %s\n🖥 176.126.162.158' "$NOW")"
+if remnanode_is_running && xray_core_ok; then
+    recover "xray_lv_remnanode" "$(printf '✅ <b>BenderVPN RECOVERED</b>\n\n🟢 remnanode container + Xray core — OK\n🕐 %s' "$NOW")"
+    recover "xray_lv_core" "$(printf '✅ <b>BenderVPN RECOVERED</b>\n\n🟢 Xray process/binary — OK\n🕐 %s' "$NOW")"
+    if ss -tlnp | grep -q ":443 "; then
+        recover "xray_lv_443" "$(printf '✅ <b>BenderVPN RECOVERED</b>\n\n🟢 XRay Latvia :443 — back up\n🕐 %s' "$NOW")"
+    else
+        alert "xray_lv_443" "$(printf '🚨 <b>BenderVPN ALERT</b>\n\n❌ XRay Latvia :443 — port closed (core OK)\n🕐 %s\n🖥 176.126.162.158\n\n🔧 <code>docker logs remnanode --tail 50</code>' "$NOW")"
+    fi
+    if ss -tlnp | grep -q ":8443 "; then
+        recover "xray_lv_8443" "$(printf '✅ <b>BenderVPN RECOVERED</b>\n\n🟢 XRay Latvia :8443 — back up\n🕐 %s' "$NOW")"
+    else
+        alert "xray_lv_8443" "$(printf '🚨 <b>BenderVPN ALERT</b>\n\n❌ XRay Latvia :8443 — port closed (core OK)\n🕐 %s\n🖥 176.126.162.158' "$NOW")"
+    fi
+elif ! remnanode_is_running; then
+    alert "xray_lv_remnanode" "$(printf '🚨 <b>BenderVPN ALERT</b>\n\n❌ remnanode — container not running\n🕐 %s\n🖥 176.126.162.158\n\n🔧 <code>cd /opt/remnanode && docker compose ps && docker compose up -d</code>' "$NOW")"
+elif ! xray_core_ok; then
+    alert "xray_lv_core" "$(printf '🚨 <b>BenderVPN ALERT</b>\n\n❌ Xray core — dead inside remnanode (ports may still listen)\n🕐 %s\n🖥 176.126.162.158\n\n🔧 <code>docker logs remnanode --tail 50</code>' "$NOW")"
 fi
 
 # ==========================================

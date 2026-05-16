@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 # --- Constants ---
 VIRTUAL_HOST_UUID = "305ccacd-ab74-42a4-b1a2-f80cdde69a25"
 STATE_DIR = "/var/lib/bvpn-ru-monitor"
+# monitor.sh пишет alert_* в /var/lib/bvpn-monitor/ (другой путь). Сводка: docs/DEPLOY.md §6.
 STATE_FILE = os.path.join(STATE_DIR, "state.json")
 LOG_FILE = "/var/log/bvpn-ru-monitor.log"
 # Persistent antispam dir (was /tmp/bvpn_states; moved 2026-05-14 so RECOVERED
