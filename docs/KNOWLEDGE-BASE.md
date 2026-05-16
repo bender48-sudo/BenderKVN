@@ -24,6 +24,7 @@
 | Авто-уведомление «обновите подписку» после PATCH шаблона | **`ops/subscription_config_notify.py`** → бот scheduler; деплой **`pwsh -File ops/deploy-bot-sub-refresh-ams.ps1`** |
 | Sub-page HA (split-host :3010 / :3011) | **`docs/RUNBOOK-P6-SUBSCRIPTION-HA.md`**, **`ops/deploy-sub-page-ha-ams.ps1`**, **`ops/patch-caddy-sub-split-host-lv.sh`** |
 | Postgres панели (аудит / pg_stat / окно бэкапа) | **`docs/RUNBOOK-P6-POSTGRES-MAINTENANCE.md`**, **`ops/pg_remnawave_audit.py`** |
+| Digest pin образов (postgres, valkey, adguard) | **`docs/IMAGE-PINS.md`**, **`python ops/check_compose_image_pins.py`** |
 | Алерты в Telegram (метаданные) | **`docs/POLICY-TELEGRAM-ALERTS.md`** |
 | SSH known_hosts / `StrictHostKeyChecking` | **`docs/SSH-HOST-KEY-PRACTICE.md`** |
 | Утечка секрета в чат / скриншот | **`docs/POLICY-SECRET-LEAK-RESPONSE.md`** |

@@ -164,7 +164,7 @@
 | ~~**P2-MON-BALANCER-PANEL-URL**~~ ✅ | **`balancer.sh`** на LV после переноса панели на AMS всё ещё бил в **`http://localhost:3000`** → **`USERS=0 NODES=0`** в логе, алерты вместимости бессмысленны. | **DONE 2026‑05‑15**: **`PANEL_URL`** в **`/etc/bvpn/balancer.env`** + правка **`balancer.sh`** (репо **`compose/_shared/etc-bvpn-lv/balancer.env.tmpl`**); smoke **`HTTP 200`** на **`/api/users`** (журнал §12). |
 | **P2-OPS-AMS-SAFE-DEPLOY-01** | **Gate наката AMS** compose/env: бэкап → **`extract_vault.py`** → dry-run токена → render в `/tmp` → smoke sub/panel → **`drift-check`**. | **`docs/RUNBOOK-AMS-SAFE-DEPLOY.md`**; каждый накат AMS tmpl по чеклисту; урок **2026-05-17** в §12. |
 | ~~**P2-OPS-RESTORE-TEST-01**~~ ✅ | **Квартальный restore test** дампа Remnawave (изолированный Postgres). | **2026-05-16** на **bvpn-lv**: **`ops/remnawave_restore_test.sh`**, дамп с LV после pull AMS, **36** tables, **97** migrations — §4 runbook + §12. |
-| **P2-OPS-IMAGE-PIN-01** | **Digest pin** хвоста образов: **adguard**, **postgres**, **caddy**, **valkey** (см. журнал **P0-OPS-02**). | В **`compose/**/*.tmpl`** нет `:latest` для перечисленных; деплой + smoke. |
+| ~~**P2-OPS-IMAGE-PIN-01**~~ ✅ | **Digest pin** хвоста образов: **adguard**, **postgres**, **caddy**, **valkey** (см. журнал **P0-OPS-02**). | **`docs/IMAGE-PINS.md`**, **`check_compose_image_pins.py`**; digests с прода AMS/LV **2026-05-16**. |
 
 ---
 
@@ -264,6 +264,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-16 | **P2-OPS-IMAGE-PIN-01 — DONE:** digest pin **postgres/valkey/adguard** в compose tmpl (prod sha256); **Caddy v2.11.2** — host pin в **`IMAGE-PINS.md`**; **`check_compose_image_pins.py`**. Накат compose на прод — при следующем safe-deploy. **NEXT=§11** red team / scale. |
 | 2026-05-16 | **GTM-WIKI-01 — DONE (репо):** **`docs/templates/GTM-WIKI-PAGE.md`**, **`docs/GTM-WIKI.md`**, **`RUNBOOK-GTM-WIKI`**; §1 → реестр wiki. **Owner gate:** live URL вне git — чеклист в **`GTM-WIKI.md`**. **NEXT=Q016** image pin. |
 | 2026-05-16 | **P6-SCALE-03 — DONE:** **`RUNBOOK-P6-POSTGRES-MAINTENANCE`**; **`pg_remnawave_audit.py`** (AMS: PG **17.6**, 62 idx, largest **432 kB**); backup cron вне **06 UTC** (**`35 1,7,13,19`** / **`50`**); compose tmpl + **`pg_enable_stat_statements_ams.sh`** (накат extension — по safe-deploy). **NEXT=Q015** GTM-WIKI-01. |
 | 2026-05-16 | **P6-SCALE-02 — DONE:** **`NODE-POLICY-LV-NL.md`** — soft cap **50** user/node, пороги **80/95/100%**, playbook 3-й ноды; **`capacity_snapshot.py`** — те же NOTICE. **NEXT=Q014** P6-SCALE-03. |

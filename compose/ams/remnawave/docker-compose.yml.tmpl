@@ -23,7 +23,7 @@ x-env: &env
 
 services:
     remnawave-db:
-        image: postgres:17.6
+        image: postgres:17.6@sha256:00bc86618629af00d2937fdc5a5d63db3ff8450acf52f0636ec813c7f4902929
         container_name: 'remnawave-db'
         hostname: remnawave-db
         <<: [*common, *logging, *env]
@@ -76,7 +76,7 @@ services:
                 condition: service_healthy
 
     remnawave-redis:
-        image: valkey/valkey:8.1-alpine
+        image: valkey/valkey:8.1-alpine@sha256:b027235326507cfdade9b6684056ec1d0b0c0757412e628245129b5d7b788618
         container_name: remnawave-redis
         hostname: remnawave-redis
         <<: [*common, *logging]
