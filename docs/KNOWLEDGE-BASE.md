@@ -17,6 +17,8 @@
 | SSH known_hosts / `StrictHostKeyChecking` | **`docs/SSH-HOST-KEY-PRACTICE.md`** |
 | Утечка секрета в чат / скриншот | **`docs/POLICY-SECRET-LEAK-RESPONSE.md`** |
 | Drift прод↔репо после P0 / смены панели | **`docs/DRIFT-POST-P0.md`** |
+| Правила репозитория (secrets, sanitize, drift) | **`docs/POLICY-REPO-WORKFLOW.md`** |
+| Онбординг пользователя / поддержка первого коннекта | **`docs/ONBOARDING.md`** |
 | Реестр секретов и путей на хостах | **`docs/SECRETS.md`** |
 | Инциденты (роли, первый ответ) | **`docs/RUNBOOK-INCIDENT.md`** |
 | Ротация панели + LV legacy архив | **`docs/RUNBOOK-P0-SEC04-SEC05.md`** |

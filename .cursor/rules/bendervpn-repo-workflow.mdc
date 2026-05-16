@@ -1,0 +1,15 @@
+---
+description: BenderVPN repo — secrets, drift, templates, AMS/LV API tokens (agent workflow)
+alwaysApply: true
+---
+
+# BenderVPN — рабочий контур репозитория
+
+При изменениях **ops/deploy/compose/docs** следуй канонической политике:
+
+- Прочитай при необходимости **`docs/POLICY-REPO-WORKFLOW.md`** и **`docs/KNOWLEDGE-BASE.md`**.
+- **Секреты:** не коммитить `.secrets/vault.env`, живые `.env`, `prod-compose`; в репозитории только **`compose/**/*.tmpl`** с плейсхолдерами (`docs/SECRETS.md`).
+- **JWT панели:** два vault-ключа — **`REMNA_API_TOKEN_AMS`** (AMS shop/sub) и **`REMNA_API_TOKEN_LV`** (LV balancer/ru-monitor); скрипт **`python ops/extract_vault.py`**.
+- **Sanitize:** **`python ops/sanitize_compose_templates.py`** **полностью пересоздаёт `compose/`** из своего **`MAP`** — не запускать без понимания, что файлы вне MAP пропадут.
+- **Проверка с продом:** **`python ops/drift-check.py`** (ожидать SSH к `bvpn-*`).
+- После заметной правки при зелёных проверках — **commit + push** (согласуй с **`commit-after-verify.mdc`**).

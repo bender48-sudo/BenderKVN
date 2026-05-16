@@ -1,6 +1,6 @@
 # BenderVPN — коммерческий бэклог
 
-**Версия документа:** 2026-05-17 — инцидент AMS 502 post-drift (откат `.env`/`sub`/shop) + запись §12…
+**Версия документа:** 2026-05-15 — политика репозитория (**`POLICY-REPO-WORKFLOW`**) + **`P3-UX-01`** (**`docs/ONBOARDING.md`**); прежнее: AMS 502 post-drift (§12).
 **Цель:** стабильный **8–9/10** (нишевый коммерческий VPN в РФ); измеримый рост к максимально достижимому качеству.  
 **Определение «готово»:** по каждой задаче выполнен критерий в колонке **Done when** + при необходимости запись в трекере (статусы `TODO` / `DOING` / `DONE`).
 
@@ -59,7 +59,7 @@
 | 8 | Бэкапы (off-host + restore test) + patches | ~~**P2-BAK-01**~~ ✅, ~~**P2-BAK-02**~~ ✅ |
 | 9 | Метрики ёмкости (**старт P6 до роста базы**) | ~~**P6-SCALE-01**~~ ✅, **P6-SCALE-04** (runbook + probe; load test → §12) |
 | 9b | **Эксплуатация (хвост P2):** drift post-P0, TG/SSH/утечки | ~~**P2-OPS-DRIFT-POST-P0**~~ ✅, ~~**P2-MON-03**~~ ✅, ~~**P2-SSH-01**~~ ✅, ~~**P2-SEC-LOG-01**~~ ✅ |
-| 10 | **(после §2.1 — UX не раньше продукта)** Онбординг и тексты | ~~**P1-PRO-01…04**~~ ✅ (см. **`docs/FAQ.md`**, **`docs/RUNBOOK-INCIDENT.md`**, **`docs/HAPP-MATRIX.md`**, **`docs/POLICY-SNI-MONITORING.md`**), **P3-UX-01**, **P3-UX-02** |
+| 10 | **(после §2.1 — UX не раньше продукта)** Онбординг и тексты | ~~**P1-PRO-01…04**~~ ✅ (см. **`docs/FAQ.md`**, **`docs/RUNBOOK-INCIDENT.md`**, **`docs/HAPP-MATRIX.md`**, **`docs/POLICY-SNI-MONITORING.md`**), ~~**P3-UX-01**~~ ✅ (**`docs/ONBOARDING.md`**), **P3-UX-02** |
 | 11 | DNS PoC → FAQ (по ресурсу) | **P4-DNS-01** → **P4-DNS-02** → **P4-DNS-03** |
 | 12 | **Red team / ТПСУ** (устойчивость к наблюдению, blast radius, рост до 30k) — см. **§5.1 → §10.2** | **P1-RED-DATA-01** … **P1-RED-LOG-01** → **P2-RED-*** → **P6-RED-*** → **P3-RED-*** → **P5-RED-RD-01** |
 
@@ -153,7 +153,7 @@
 
 | ID | Задача | Done when |
 |----|--------|-----------|
-| **P3-UX-01** | Онбординг: подписка → клиент → первый коннект + FAQ при ошибке. | Одна страница без противоречий. |
+| ~~**P3-UX-01**~~ ✅ | Онбординг: подписка → клиент → первый коннект + FAQ при ошибке. | **`docs/ONBOARDING.md`** (2026‑05‑15): одна точка входа + ссылки на **`docs/FAQ.md`**, технические доки только для команды. |
 | **P3-UX-02** | Тексты ошибок для людей (не «TLS timeout»). | Шаблоны поддержки = текст в продукте. |
 | **P3-UX-03** | Шаблон сообщения пользователям при инциденте. | Файл/пост + dry‑run. |
 | ~~**P3-OPS-SUPPORT-REMNA-LOGIN**~~ ✅ | Саппорт / операторы: панель Remnawave показывает **Forbidden + E000** не только из‑за прокси, но и при **неверном пароле** и др. политиках (**403**, не **401**). | Абзац **`docs/RUNBOOK-INCIDENT.md`** § «Логин в панель Remnawave» + отсылка к Rescue CLI. **2026‑05‑15** |
@@ -229,7 +229,7 @@
 
 ## 11. Связь с аудитом репозитория
 
-Закрыты по коду/операциям: **P0-SEC-01…03** ✅, **P0-OPS** ✅, ~~**P0-SEC-04**~~ ✅, ~~**P0-SEC-05**~~ ✅ (**журнал §12**). Открытых задач уровня **P0** в таблице §4 на текущий срез **нет**. Блок **P1** ✅ по **`docs/P1-POST-AUDIT.md` (PASS 2026-05-15)** плюс **~~P1-OPS-REMNA-TOKEN-01~~**, **~~P1-RED-LOG-01~~** (в форме репо + патч-док). **Операционная память:** **`docs/KNOWLEDGE-BASE.md`**. Из **§5.1**: дальше **P1‑RED‑DATA/SEC/SSH/DNS**. Из **§6**: ~~**P2-OPS-DRIFT-POST-P0**~~ ✅, ~~**`P2-SEC-LOG-01`**~~ ✅, ~~**`P2-MON-01`/`P2-MON-02`**~~ ✅, ~~**`P2-BAK-01`/`P2-BAK-02`**~~ ✅, бэкапы (restore test — см. **`RUNBOOK-BACKUP-REMNAWAVE`**); ~~**`P2-ENG-DRIFT-CHECK-01`**~~ ✅, ~~**`P2-CHORE-SUB-ENV`**~~ ✅; затем **P6** (**P6‑RED‑***, **`P6-SCALE-NL-VERIFY`**).
+Закрыты по коду/операциям: **P0-SEC-01…03** ✅, **P0-OPS** ✅, ~~**P0-SEC-04**~~ ✅, ~~**P0-SEC-05**~~ ✅ (**журнал §12**). Открытых задач уровня **P0** в таблице §4 на текущий срез **нет**. Блок **P1** ✅ по **`docs/P1-POST-AUDIT.md` (PASS 2026-05-15)** плюс **~~P1-OPS-REMNA-TOKEN-01~~**, **~~P1-RED-LOG-01~~** (в форме репо + патч-док). **Операционная память:** **`docs/KNOWLEDGE-BASE.md`**, процедуры репозитория (**`docs/POLICY-REPO-WORKFLOW.md`**). Из **§5.1**: дальше **P1‑RED‑DATA/SEC/SSH/DNS**. Из **§6**: ~~**P2-OPS-DRIFT-POST-P0**~~ ✅, ~~**`P2-SEC-LOG-01`**~~ ✅, ~~**`P2-MON-01`/`P2-MON-02`**~~ ✅, ~~**`P2-BAK-01`/`P2-BAK-02`**~~ ✅, бэкапы (restore test — см. **`RUNBOOK-BACKUP-REMNAWAVE`**); ~~**`P2-ENG-DRIFT-CHECK-01`**~~ ✅, ~~**`P2-CHORE-SUB-ENV`**~~ ✅; затем **P6** (**P6‑RED‑***, **`P6-SCALE-NL-VERIFY`**).
 
 **P4** — отдельный продуктовый слой, не смешивать с основным VPN SKU.
 
@@ -239,6 +239,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026‑05‑15 | **`docs/POLICY-REPO-WORKFLOW.md`** — операционная дисциплина репозитория (SoT, секреты, AMS/LV JWT, sanitize убивает `compose/` как по MAP); **`.cursor/rules/bendervpn-repo-workflow.mdc`** для Cursor. **`docs/ONBOARDING.md`** + закрыта **`P3-UX-01`**. Обновлён **`ops/remna_api_token_rollout.sh` dry-run** под двухтокенную схему. |
 | 2026-05-17 | **Инцидент 502 после наката rendered `tmpl` на AMS (закрыт):** **`remnawave`** — цикл перезапусков, Prisma **P1000** (пароль в **`DATABASE_URL`** из vault не совпадал с фактическим Postgres); **`remnawave-subscription-page`** — **401** к панели (неверный **`REMNA_API_TOKEN`** в смонтированном **`sub/docker-compose.yml`**). **Починка на AMS:** откат **`/opt/remnawave/.env`**, **`/opt/remnawave/sub/docker-compose.yml`**, **`/opt/remna-shop/.env`** из **`*.before-drift-20260516-120658`** + **`docker compose up -d`**; публичный sub-smoke → **200**, прогон **`subscription_load_probe`**: **20/20 × 200**, p95 ≈ **1.5 s**. **Урок:** перед накатом **`panel.env.tmpl`** обновить vault (**`extract-vault`** с прода) и не перезаписывать sub/shop без сверки токена (**`RUNBOOK-REMNA-API-TOKEN`**). |
 | 2026-05-17 | **P6-SCALE-04 (нагрузочный смок):** добавлен **`ops/subscription_load_probe.py`**; прогон **120** запросов, **concurrency 30** на `site_urls.sub_monitor_probe_url()` — **p95 ≈ 4.2s**, **502** на все ответы (**status_histogram 502=120**), **hard_errors=0**; одновременно **GET /api/users** с рабочей машины дал **502** — трактовать как **проверку устойчивости канала при деградации upstream**, повторить смок когда панель/sub стабильно **200/304**, при необходимости смотреть AMS **`remnawave` / subscription-page** / Caddy. |
 | 2026-05-16 | **~~P2-OPS-DRIFT-POST-P0~~ ✅:** SSH с рабочей машины — выкладка **`balancer.sh`**, **`backup-remnawave.sh`**, **`ru-monitor.py`**, **`deploy-node.sh`** (LV+AMS) из репо; **`/etc/bvpn/balancer.env`** и **`ru-monitor.env`** (LV) — байтовый рендер из **`compose/_shared/...` + `.secrets/vault.env`**; AMS — **`/opt/remnawave/docker-compose.yml`**, **`.env`**, **`/opt/remnawave/sub/docker-compose.yml`**, **`/opt/remna-shop/.env`** из рендера + **`docker compose up -d`** (пересозданы **`remnawave-db`**, **`remnawave`**, **`remnawave-subscription-page`**, **`remna-shop-bot`**). **`python ops/drift-check.py`**: **28/28 OK**, exit **0** (~10 мин). Локальные копии рендера удалены. |
