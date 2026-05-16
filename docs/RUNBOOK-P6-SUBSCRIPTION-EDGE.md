@@ -69,7 +69,11 @@ python ops/subscription_load_probe.py --url 'https://хост:2053/api/sub/SHORT
 
 Зафиксировать в журнале **`docs/COMMERCIAL-BACKLOG.md` §12**: дата, N, параллельность, p95, гистограмма статусов (или `--json`).
 
-## 4. Связанные файлы
+## 4. Несколько origin (P2-RED-SUB-01)
+
+См. **`docs/RUNBOOK-P6-SUBSCRIPTION-MULTI-ORIGIN.md`** — **p4n7q** (primary) + **k9x2m1** (alternate), drift probe, инцидент при блокировке одного имени.
+
+## 5. Связанные файлы
 
 - **`ops/subscription_load_probe.py`** — нагрузочный смок по умолчанию для §3.
 - **`docs/COMMERCIAL-BACKLOG.md` §10.1** — порог «ошибки на `p4n7q…/api/sub/*`».

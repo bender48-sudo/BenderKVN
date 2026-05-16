@@ -29,8 +29,8 @@
 | 007 | **P2-COM-MONETIZE-03** | **DONE** | Legal URLs в боте без заглушек | AMS telegra.ph + @support §12 | **`RUNBOOK-COMMERCE-GO-LIVE` §3** |
 | 008 | **P2-COM-MONETIZE-04** | **DONE** | Go-live чеклист §4; строка §12 | COM-MONETIZE go-live OK §12 | **`RUNBOOK-COMMERCE-GO-LIVE` §4** |
 | 009 | **P6-RED-PAY-01** | **DONE** | Idempotency + DLQ webhook бота | smoke WEBHOOK_PAY §12 | **§5.1** |
-| 010 | **P2-RED-SUB-01** | **NEXT** | ≥2 origin подписки + мониторинг | Wiki/док | **§5.1** |
-| 011 | **P2-RED-MUX-01** | TODO | ≥2 транспортных профиля в матрице | Доля на alt-профиле | **§5.1**, **`HAPP-MATRIX`** |
+| 010 | **P2-RED-SUB-01** | **DONE** | ≥2 origin подписки + мониторинг | p4n7q+k9x2m1 §12 | **§5.1**, **`RUNBOOK-P6-SUBSCRIPTION-MULTI-ORIGIN`** |
+| 011 | **P2-RED-MUX-01** | **NEXT** | ≥2 транспортных профиля в матрице | Доля на alt-профиле | **§5.1**, **`HAPP-MATRIX`** |
 | 012 | **P6-RED-SUBHA-01** | TODO | Горизонталь sub-page или split host | Load test без деградации p95 | **§5.1** |
 | 013 | **P6-SCALE-02** | TODO | Soft cap + правило 3-й ноды | **`NODE-POLICY-LV-NL`** | **§10.2** |
 | 014 | **P6-SCALE-03** | TODO | Postgres индексы / `pg_stat_statements` | План обслуживания | **§10.2** |
@@ -56,6 +56,7 @@
 | 007 | `product: P2-COM-MONETIZE-03 — legal URLs в боте` |
 | 008 | `product: P2-COM-MONETIZE-04 — go-live чеклист, §12` |
 | 009 | `ops: P6-RED-PAY-01 — webhook idempotency + DLQ` |
+| 010 | `ops: P2-RED-SUB-01 — multi-origin подписки + drift probe` |
 
 После коммита с закрытием задачи — в **`BACKLOG-QUEUE.md`**: сменить статусы и при необходимости добавить подстроку в §12 бэклога (в том же коммите).
 
@@ -74,3 +75,4 @@
 | 2026-05-16 | **Q007** P2-COM-MONETIZE-03 | **Q008** P2-COM-MONETIZE-04 |
 | 2026-05-16 | **Q008** P2-COM-MONETIZE-04 | **Q009** P6-RED-PAY-01 |
 | 2026-05-16 | **Q009** P6-RED-PAY-01 | **Q010** P2-RED-SUB-01 |
+| 2026-05-16 | **Q010** P2-RED-SUB-01 | **Q011** P2-RED-MUX-01 |

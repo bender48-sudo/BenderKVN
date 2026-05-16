@@ -278,8 +278,35 @@ id.x5.ru:9443 {
 }
 
 k9x2m1.conntest.xyz:2053 {
-    reverse_proxy http://127.0.0.1:3000 {
-        header_up X-Forwarded-Proto "https"
-        header_up X-Forwarded-For {remote_host}
+    header {
+        -Via
+        -Alt-Svc
+    }
+
+    @fingerprint path /swagger* /health /metrics /api-docs* /docs*
+    respond @fingerprint 404
+
+    # P2-RED-SUB-01: alternate subscription origin (same AMS :3010 as p4n7q)
+    @sub_path_alt path /api/sub/*
+    handle @sub_path_alt {
+        rate_limit {
+            zone sub_api_per_ip_alt {
+                key {remote_host}
+                events 120
+                window 1m
+            }
+        }
+        reverse_proxy http://168.100.11.140:3010 {
+            header_up X-Forwarded-Proto "https"
+            header_up X-Forwarded-For {remote_host}
+        }
+    }
+
+    handle {
+        reverse_proxy http://168.100.11.140:3000 {
+            header_up Host k9x2m1.conntest.xyz
+            header_up X-Forwarded-Proto "https"
+            header_up X-Forwarded-For {remote_host}
+        }
     }
 }

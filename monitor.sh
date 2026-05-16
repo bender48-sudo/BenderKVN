@@ -7,6 +7,8 @@ source /etc/bvpn/balancer.env
 SUB_PUBLIC_ORIGIN="${SUB_PUBLIC_ORIGIN:-https://p4n7q.conntest.xyz:2053}"
 export SUB_PUBLIC_ORIGIN
 SUB_MONITOR_PROBE_URL="${SUB_MONITOR_PROBE_URL:-${SUB_PUBLIC_ORIGIN}/api/sub/JLCF43RGjyq4ML78Qcsbq7Kf2}"
+SUB_ALT_PUBLIC_ORIGIN="${SUB_ALT_PUBLIC_ORIGIN:-https://k9x2m1.conntest.xyz:2053}"
+SUB_ALT_MONITOR_PROBE_URL="${SUB_ALT_MONITOR_PROBE_URL:-${SUB_ALT_PUBLIC_ORIGIN}/api/sub/JLCF43RGjyq4ML78Qcsbq7Kf2}"
 
 # After P0 migrations panel lives on AMS; balancer.env MUST set this (fallback matches tmpl)
 PANEL_URL="${PANEL_URL:-https://k9x2m1.conntest.xyz:2053}"
@@ -143,6 +145,15 @@ if [ "$SUB_STATUS" = "200" ]; then
     recover "subscription" "$(printf '✅ <b>BenderVPN RECOVERED</b>\n\n🟢 Subscription endpoint — back up (HTTP 200)\n🕐 %s' "$NOW")"
 else
     alert "subscription" "$(printf '🚨 <b>BenderVPN ALERT</b>\n\n❌ Subscription endpoint — DOWN (HTTP %s)\n🕐 %s\n🌐 %s\n🔗 <code>%s</code>\n\n🔧 <code>systemctl status caddy</code>' "${SUB_STATUS:-timeout}" "$NOW" "${SUB_PUBLIC_ORIGIN}" "${SUB_MONITOR_PROBE_URL}")"
+fi
+
+# CHECK 5b: Alternate subscription origin (P2-RED-SUB-01)
+SUB_ALT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 \
+    "$SUB_ALT_MONITOR_PROBE_URL" 2>/dev/null)
+if [ "$SUB_ALT_STATUS" = "200" ]; then
+    recover "subscription_alt" "$(printf '✅ <b>BenderVPN RECOVERED</b>\n\n🟢 Subscription alt origin — back up (HTTP 200)\n🕐 %s\n🌐 %s' "$NOW" "${SUB_ALT_PUBLIC_ORIGIN}")"
+else
+    alert "subscription_alt" "$(printf '🚨 <b>BenderVPN ALERT</b>\n\n❌ Subscription alt origin — DOWN (HTTP %s)\n🕐 %s\n🌐 %s\n🔗 <code>%s</code>' "${SUB_ALT_STATUS:-timeout}" "$NOW" "${SUB_ALT_PUBLIC_ORIGIN}" "${SUB_ALT_MONITOR_PROBE_URL}")"
 fi
 
 # ==========================================
