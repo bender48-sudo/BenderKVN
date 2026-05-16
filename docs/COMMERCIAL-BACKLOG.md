@@ -1,6 +1,6 @@
 # BenderVPN — коммерческий бэклог
 
-**Версия документа:** 2026-05-15 — ~~P2-MON-01~~ / ~~P2-MON-02~~, P2.monitor/drift-check, ~~P1-RED-LOG-01~~ (репозиторий).
+**Версия документа:** 2026-05-16 — ~~P2-BAK-01~~ / ~~P2-BAK-02~~ (репо), ~~P2-MON-01~~ / ~~P2-MON-02~~, P2.monitor/drift-check, ~~P1-RED-LOG-01~~ (репозиторий).
 **Цель:** стабильный **8–9/10** (нишевый коммерческий VPN в РФ); измеримый рост к максимально достижимому качеству.  
 **Определение «готово»:** по каждой задаче выполнен критерий в колонке **Done when** + при необходимости запись в трекере (статусы `TODO` / `DOING` / `DONE`).
 
@@ -52,7 +52,7 @@
 | 5b | **После P0‑SEC‑05 / миграции панели**: снять DRIFT и починить мониторинг вместимости (`balancer` → публичный `PANEL_URL`) | **P2-OPS-DRIFT-POST-P0**, **P2-MON-BALANCER-PANEL-URL** ✅ (см. §12), ~~**P2-ENG-DRIFT-CHECK-01**~~ ✅ |
 | 6 | Конфиг в одном месте + ru-monitor хосты + чистка артефактов | **P1-ENG-01** ✅ (`ops/site_urls.py` + `deploy-node.sh`), **P1-ENG-02** ✅, ~~**P1-ENG-03**~~ ✅ (`archive/tmp-remna-shop-bot-patches/` + `redact_bvpn_artifacts`) |
 | 7 | Мониторинг «Xray реально жив» + state dirs | ~~**P2-MON-01**~~ ✅, ~~**P2-MON-02**~~ ✅ |
-| 8 | Бэкапы (off-host + restore test) + patches | **P2-BAK-01**, **P2-BAK-02** |
+| 8 | Бэкапы (off-host + restore test) + patches | ~~**P2-BAK-01**~~ ✅, ~~**P2-BAK-02**~~ ✅ |
 | 9 | Метрики ёмкости (**старт P6 до роста базы**) | **P6-SCALE-01**, **P6-SCALE-04** (минимум) |
 | 10 | Продуктовая линия + онбординг + тексты ошибок | ~~**P1-PRO-01…04**~~ ✅ (см. **`docs/FAQ.md`**, **`docs/RUNBOOK-INCIDENT.md`**, **`docs/HAPP-MATRIX.md`**, **`docs/POLICY-SNI-MONITORING.md`**), **P3-UX-01**, **P3-UX-02** |
 | 11 | DNS PoC → FAQ (по ресурсу) | **P4-DNS-01** → **P4-DNS-02** → **P4-DNS-03** |
@@ -132,7 +132,8 @@
 | ~~**P2-MON-02**~~ ✅ | Разные каталоги state: `ru-monitor` vs `monitor.sh`. | **2026-05-15**: комментарии в `monitor.sh` / `ru-monitor.py` + строка в примере crontab **`DEPLOY.md`** (§6 таблица уже была). |
 | **P2-MON-03** | Политика: что уходит в Telegram (минимум метаданных). | Полстраницы wiki. |
 | **P2-SSH-01** | Таблица: где `accept-new`, где pin `known_hosts`; меньше `StrictHostKeyChecking=no` в проде. | Таблица в wiki. |
-| **P2-BAK-01** | Расписание: `ops/pg_dump_remnawave.sh` (AMS) + `ops/pull-latest-dump-ams-to-lv.sh`; квартальный **restore test**. | Календарь + один успешный тест восстановления. |
+| ~~**P2-BAK-01**~~ ✅ | Расписание: `ops/pg_dump_remnawave.sh` (AMS) + `ops/pull-latest-dump-ams-to-lv.sh` (LV); квартальный **restore test**. | **Репо 2026-05-16**: **`docs/RUNBOOK-BACKUP-REMNAWAVE.md`** (календарь, установка, чеклист restore), **`ops/crontab-remnawave-backup.example`**, правки **`DEPLOY.md`** / **`backup-remnawave.sh`**. Фактический прогон restore test — записать дату в runbook §4 и §12. |
+| ~~**P2-BAK-02**~~ ✅ | **Патчи** схемы БД / миграции — не смешивать с «просто дампом»; бэкап до ручных SQL. | Зафиксировано в **`RUNBOOK-BACKUP-REMNAWAVE.md`** §2 (P2-BAK-02). |
 | ~~**P2-CHORE-SUB-ENV**~~ ✅ | **`monitor.sh`** — smoke подписки как **`daily-report.sh`**: **`SUB_PUBLIC_ORIGIN`**, **`SUB_MONITOR_PROBE_URL`**, **`PANEL_URL`** после **`source /etc/bvpn/balancer.env`** (fallback = дефолты как у daily-report/tmpl). | См. репозиторий **2026‑05‑15**; деплой на LV **`/opt/scripts/monitor.sh`**. |
 | **P2-OPS-DRIFT-POST-P0** | После ротации секретов и смены URL панели: снять **DRIFT** прод ↔ репо (**`deploy-node.sh`**, **`selfsteal-monitor.py`**, AMS **`/opt/remnawave/docker-compose.yml`** и **`.env`**, **`/opt/remna-shop/.env`** и т.д.). | **`python ops/drift-check.py`**: OK по всем парам **или** явный waive в wiki с причиной по каждому файлу. |
 | ~~**P2-ENG-DRIFT-CHECK-01**~~ ✅ | **`ops/drift-check.py`**: нестабильные **TIMEOUT** на LV. | Retry + растущий deadline на chunk (**4×** попытки для **`bvpn-lv`**, **2×** прочие) + backoff; см. **`docs/DEPLOY.md`** (§ drift-check примечание). Репо **2026‑05‑15**. |
@@ -221,7 +222,7 @@
 
 ## 11. Связь с аудитом репозитория
 
-Закрыты по коду/операциям: **P0-SEC-01…03** ✅, **P0-OPS** ✅, ~~**P0-SEC-04**~~ ✅, ~~**P0-SEC-05**~~ ✅ (**журнал §12**). Открытых задач уровня **P0** в таблице §4 на текущий срез **нет**. Блок **P1** ✅ по **`docs/P1-POST-AUDIT.md` (PASS 2026-05-15)** плюс **~~P1-OPS-REMNA-TOKEN-01~~**, **~~P1-RED-LOG-01~~** (в форме репо + патч-док). **Операционная память:** **`docs/KNOWLEDGE-BASE.md`**. Из **§5.1**: дальше **P1‑RED‑DATA/SEC/SSH/DNS**. Из **§6**: **P2-OPS-DRIFT-POST-P0**, **`P2-SEC-LOG-01`**, ~~**`P2-MON-01`/`P2-MON-02`**~~ ✅, бэкапы; ~~**`P2-ENG-DRIFT-CHECK-01`**~~ ✅, ~~**`P2-CHORE-SUB-ENV`**~~ ✅; затем **P6** (**P6‑RED‑***, **`P6-SCALE-NL-VERIFY`**).
+Закрыты по коду/операциям: **P0-SEC-01…03** ✅, **P0-OPS** ✅, ~~**P0-SEC-04**~~ ✅, ~~**P0-SEC-05**~~ ✅ (**журнал §12**). Открытых задач уровня **P0** в таблице §4 на текущий срез **нет**. Блок **P1** ✅ по **`docs/P1-POST-AUDIT.md` (PASS 2026-05-15)** плюс **~~P1-OPS-REMNA-TOKEN-01~~**, **~~P1-RED-LOG-01~~** (в форме репо + патч-док). **Операционная память:** **`docs/KNOWLEDGE-BASE.md`**. Из **§5.1**: дальше **P1‑RED‑DATA/SEC/SSH/DNS**. Из **§6**: **P2-OPS-DRIFT-POST-P0**, **`P2-SEC-LOG-01`**, ~~**`P2-MON-01`/`P2-MON-02`**~~ ✅, ~~**`P2-BAK-01`/`P2-BAK-02`**~~ ✅, бэкапы (restore test — см. **`RUNBOOK-BACKUP-REMNAWAVE`**); ~~**`P2-ENG-DRIFT-CHECK-01`**~~ ✅, ~~**`P2-CHORE-SUB-ENV`**~~ ✅; затем **P6** (**P6‑RED‑***, **`P6-SCALE-NL-VERIFY`**).
 
 **P4** — отдельный продуктовый слой, не смешивать с основным VPN SKU.
 
@@ -231,6 +232,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-16 | **~~P2-BAK-01~~ / ~~P2-BAK-02~~**: **`docs/RUNBOOK-BACKUP-REMNAWAVE.md`** — AMS→LV дамп, пример **`ops/crontab-remnawave-backup.example`**, обновлены **`DEPLOY.md`** (таблица скриптов, §5 crontab AMS/LV), шапка **`backup-remnawave.sh`** (legacy vs канонический путь), строка в **`KNOWLEDGE-BASE.md`**. Restore test — чеклист в runbook; дату успешного прогона зафиксировать в §4 runbook + §12. |
 | 2026-05-16 | **~~P2-MON-01~~ / ~~P2-MON-02~~**: `monitor.sh` на LV — перед `ss :443/:8443` проверяются **`remnanode` running** и **`docker exec remnanode xray version`**; новые ключи **`xray_lv_remnanode`**, **`xray_lv_core`**. Комментарии «где state» в `monitor.sh`, `ru-monitor.py`, пример crontab в **`DEPLOY.md`**. Деплой: `pwsh -File ops/deploy-monitor-lv.ps1`. |
 | 2026-05-16 | **Red team / ТПСУ → бэклог**: добавлен **§5.1** с ID **P1‑RED‑*** … **P5‑RED‑RD‑01** (шифрование БД, Vault/SPIFFE, SSH blast radius, DNS‑диверсификация, log_skip подписки, резерв без TG, multi‑origin подписки, multi‑transport, квартальный TLS‑ревью sing-box; **P6‑RED‑*** масштаб; **P3‑RED‑*** минимизация данных и юрис‑runbook; **P5‑RED‑RD‑01** Snowflake‑PoC). Спринт **§3 п.12**. |
 | 2026-05-16 | **Разворот пробного тарифа (прод AMS):** `grandfather_panel_users_expire.py --apply` — **54/59** профилям Remnawave **`expireAt` → 2099** (до cut-off **16.05.2026 00:00 МСК**); **1** уже новее порога без изменения; **`/opt/remna-shop/.env`**: TRIAL/`REMNA_DEFAULT_DAYS`/ **`BOT_PAYMENTS_LIVE`**; **`bot_src`**: кнопка «Бесплатно 3 месяца», текст выдачи + HTML, scheduler без оплаты. Сценарий: **`ops/remote_ams_rollout_trials.sh`** + `scp` в **`/tmp/bvpn-rollout/`**. |

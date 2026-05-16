@@ -1,0 +1,6 @@
+# Пример строк crontab для P2-BAK-01 (подставьте свои пути логов).
+# AMS — сначала дамп:
+# 5 */6 * * *  /bin/bash /opt/scripts/pg_dump_remnawave.sh >> /var/log/pg_dump_remnawave.log 2>&1
+#
+# LV — затем копия off-host (через 10 минут после часа «5», т.е. 15,35,55… — поправьте под ваш offset):
+# 15 */6 * * * /bin/bash /opt/scripts/pull-latest-dump-ams-to-lv.sh >> /var/log/remnawave-pull.log 2>&1

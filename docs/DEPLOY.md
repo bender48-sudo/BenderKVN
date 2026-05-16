@@ -10,7 +10,9 @@
 | `daily-report.sh` | LV | `/opt/scripts/daily-report.sh` | 09:00 UTC digest: users/traffic/nodes/… **`/api/users` обязан запрашивать со страницами (`size`/`start`)** — без этого панель отдаёт только ~25 записей и цифры в TG не сходятся с UI. |
 | `ops/count_users_with_ams_sub.py` | LV | `/opt/scripts/count_users_with_ams_sub.py` | Счётчик «users-touching-AMS-over-IP» по факту rendered subscription (Happ UA). Вызывается из `daily-report.sh`. |
 | `balancer.sh` | LV | `/opt/scripts/balancer.sh` | Каждый час: capacity (users/node, CPU). 80/95/100% алерты + daily summary. |
-| `backup-remnawave.sh` | LV | `/opt/scripts/backup-remnawave.sh` | Каждые 6 часов: `pg_dump` Remnawave-БД на AMS → файл → Telegram-документ. **Хранит 7 последних**. |
+| `backup-remnawave.sh` | LV | `/opt/scripts/backup-remnawave.sh` | **Legacy:** локальный `pg_dump`, только если на LV есть контейнер **`remnawave-db`**. Иначе используйте связку **AMS** → **`ops/pg_dump_remnawave.sh`** и **LV** → **`ops/pull-latest-dump-ams-to-lv.sh`** (см. **`docs/RUNBOOK-BACKUP-REMNAWAVE.md`**, пример cron **`ops/crontab-remnawave-backup.example`**). |
+| `ops/pg_dump_remnawave.sh` | AMS | `/opt/scripts/pg_dump_remnawave.sh` (рекомендуемый путь) | Периодический логический дамп Postgres панели в **`/opt/backups/`**. |
+| `ops/pull-latest-dump-ams-to-lv.sh` | LV | `/opt/scripts/pull-latest-dump-ams-to-lv.sh` | Копия последнего дампа с AMS на LV (off-host), верификация SHA256. |
 | `ru-monitor.py` | LV | `/opt/scripts/ru-monitor.py` | Каждые 5 мин: SNI-reachability через RU-relay (цели из API `hosts`; минимальный порог **≥4** активных после фильтров, см. код). |
 | `selfsteal-monitor.py` | LV | `/opt/scripts/selfsteal-monitor.py` | Каждые 5 мин: Caddy selfsteal fingerprint (HTTP коды по 13 SNI). AMS-узел закомментирован на время drain'а. |
 | `deploy-node.sh` | LV / AMS | `/opt/scripts/deploy-node.sh` | Развёртывание новой `remnanode`. **Токен через env / argv / interactive read — никогда в `ps`**. |
@@ -117,10 +119,14 @@ ssh -p 3344 root@168.100.11.140 "
 
 ## 5. Crontab — где какие задачи живут
 
+### AMS (`crontab`)
+По умолчанию **пусто** — сервисы через docker compose. Для бэкапа БД панели ( **P2-BAK-01** ) добавьте периодический вызов **`ops/pg_dump_remnawave.sh`**: см. **`docs/RUNBOOK-BACKUP-REMNAWAVE.md`** и **`ops/crontab-remnawave-backup.example`**.
+
 ### LV (`crontab -l`)
 ```cron
 20 12 * * *   /root/.acme.sh/acme.sh --cron --home /root/.acme.sh > /dev/null
 0 */6 * * *   /bin/bash /opt/scripts/backup-remnawave.sh >> /var/log/remnawave-backup.log 2>&1
+#             ↑ legacy: локальный remnawave-db; иначе дамп на AMS + pull → **`RUNBOOK-BACKUP-REMNAWAVE`**
 */5 * * * *   /bin/bash /opt/scripts/monitor.sh           >> /var/log/bvpn-monitor.log 2>&1
 #             ↑ alert_* → /var/lib/bvpn-monitor/   |   ru-monitor state.json → /var/lib/bvpn-ru-monitor/
 0 9 * * *     /bin/bash /opt/scripts/daily-report.sh      >> /var/log/bvpn-monitor.log 2>&1
@@ -135,8 +141,6 @@ ssh -p 3344 root@168.100.11.140 "
 ```cron
 */15 * * * *  /bin/bash /opt/scripts/watchdog.sh # bvpn-watchdog
 ```
-
-### AMS — пусто (бот и сервисы запускаются через docker compose).
 
 ## 6. State / antispam — где живут маркеры
 

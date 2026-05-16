@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# --- P2-BAK / миграция панели на AMS ---
+# Канонический путь бэкапа: **AMS** `ops/pg_dump_remnawave.sh` → LV `ops/pull-latest-dump-ams-to-lv.sh`.
+# Подробности: **`docs/RUNBOOK-BACKUP-REMNAWAVE.md`**. Этот скрипт — для случая, когда `remnawave-db`
+# локально на той же машине, что и cron (исторически LV).
+
 # OPSEC Stage 4 (post-task-2c cleanup): secrets sourced from balancer.env
 source /etc/bvpn/balancer.env
 
