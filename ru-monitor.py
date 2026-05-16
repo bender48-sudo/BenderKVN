@@ -25,10 +25,12 @@ LOG_FILE = "/var/log/bvpn-ru-monitor.log"
 # duplicate ALERTs after a host restart).
 ANTISPAM_DIR = "/var/lib/bvpn-monitor"
 _LEGACY_ANTISPAM_DIR = "/tmp/bvpn_states"
-SSH_TIMEOUT = 120  # seconds, covers 16 targets x 5s timeout + overhead
+SSH_TIMEOUT = 120  # seconds, covers ~16 targets x ~5s timeout + overhead
 API_TIMEOUT = 15
 LOCK_FILE = "/tmp/bvpn-ru-monitor.lock"
-JITTER_MAX = 120  # seconds, worst case: jitter 120 + ssh 120 + overhead < 300s cron
+# P6-SCALE-06: cron */5 → cycle must stay <300s; jitter capped (was 120).
+JITTER_MAX = 60
+CYCLE_WARN_SEC = 240  # log WARNING if total cycle exceeds this
 
 
 def acquire_lock():
@@ -334,6 +336,7 @@ def main():
     if lock_fd is None:
         return
 
+    cycle_t0 = time.monotonic()
     try:
         # Jitter: random delay to spread cron load
         time.sleep(random.randint(0, JITTER_MAX))
@@ -452,10 +455,23 @@ def main():
         # Save state atomically
         save_state(new_state)
 
-        # Log summary
-        log(f"total={len(results)} ok={ok_count} fail={fail_count} transitions={transitions}")
+        # Log summary (P6-SCALE-06: duration for cron */5 budget)
+        duration_sec = round(time.monotonic() - cycle_t0, 1)
+        log(
+            f"total={len(results)} ok={ok_count} fail={fail_count} "
+            f"transitions={transitions} duration_sec={duration_sec}"
+        )
+        if duration_sec > CYCLE_WARN_SEC:
+            log(
+                f"WARNING: cycle {duration_sec}s > {CYCLE_WARN_SEC}s "
+                f"(P6-SCALE-06: target <300s for */5 cron)"
+            )
 
     finally:
+        duration_sec = round(time.monotonic() - cycle_t0, 1)
+        # Always log cycle time (P6-SCALE-06), including API/SSH abort paths.
+        if "results" not in locals():
+            log(f"duration_sec={duration_sec} status=aborted")
         try:
             fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
             lock_fd.close()

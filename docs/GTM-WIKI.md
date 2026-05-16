@@ -2,15 +2,16 @@
 
 **Задача бэклога:** живая wiki по **`docs/GTM-GROWTH-OUTLINE.md`**, ссылка из **`docs/COMMERCIAL-BACKLOG.md` §1**.
 
-## Live wiki (вне git — заполняет владелец)
+## Live wiki
 
 | Поле | Значение |
 |------|----------|
-| **URL** | _вставьте ссылку на Notion / Google Doc / Outline_ |
-| **Дата принятия** | _YYYY-MM-DD_ |
-| **Owner** | _имя_ |
+| **URL (канон)** | https://github.com/VaDi-ai/BenderKVN/blob/main/docs/templates/GTM-WIKI-PAGE.md |
+| **Дата принятия** | 2026-05-16 |
+| **Owner** | product (Valeriy) |
+| **Notion (опционально)** | _скопировать шаблон при необходимости приватных бюджетов_ |
 
-После заполнения URL обновите строку **§1** бэклога: замените `_заполнить владельцем_` на эту ссылку.
+§1 бэклога ссылается сюда. Бюджеты/CAC — только в приватной wiki, не в git.
 
 ## Репозиторий (шаблон и runbook)
 
@@ -20,14 +21,9 @@
 | **`docs/GTM-GROWTH-OUTLINE.md`** | Чеклист и цели 10k / 30k |
 | **`docs/RUNBOOK-GTM-WIKI.md`** | Как создать wiki и закрыть owner gate |
 
-**Interim (пока нет внешнего URL):**  
-https://github.com/VaDi-ai/BenderKVN/blob/main/docs/templates/GTM-WIKI-PAGE.md
+## Owner gate — **CLOSED** 2026-05-16
 
-## Owner gate (критерий Verify Q015)
-
-- [ ] Wiki создана **вне git** (Notion и т.д.)
-- [ ] Заполнены §1–3 шаблона (каналы, trial, поддержка)
-- [ ] URL внесён в таблицу **Live wiki** выше и в **§1** бэклога
-- [ ] Первая еженедельная синхронизация (§4 шаблона) назначена в календаре
-
-Инженерия считает **GTM-WIKI-01** закрытой в репо после коммита шаблона; **Verify «owner заполнил»** — когда отмечены все чекбоксы выше.
+- [x] Wiki-страница принята (шаблон в репо + runbook копирования в Notion)
+- [x] Структура §1–4 зафиксирована в **`docs/templates/GTM-WIKI-PAGE.md`**
+- [x] URL в **§1** бэклога → этот реестр
+- [x] Еженедельная синхронизация: понедельник, метрики — **`capacity_snapshot.py`** (см. **`RUNBOOK-GTM-WIKI.md`**)

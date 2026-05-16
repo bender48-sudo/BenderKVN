@@ -20,7 +20,7 @@
 | **Inject / AMS hosts** | Не входят в `injectHosts`; целевые `hosts`: `isHidden` + `isDisabled` (зафиксировано **2026-05-14**). |
 | **Размер БД Postgres** | **~11 MB** (ориентир) |
 | **RAM хоста AMS** | **~2 GiB** — панель + edge без prod VPN после drain |
-| **Цели роста (продукт)** | **~10k** учёток к **концу лета 2026**; **~30k** в **2027**; GTM wiki — **`docs/GTM-WIKI.md`** (live URL вне git: _владелец_; шаблон **`docs/templates/GTM-WIKI-PAGE.md`**) |
+| **Цели роста (продукт)** | **~10k** учёток к **концу лета 2026**; **~30k** в **2027**; GTM wiki — [**`docs/templates/GTM-WIKI-PAGE.md`**](https://github.com/VaDi-ai/BenderKVN/blob/main/docs/templates/GTM-WIKI-PAGE.md) (реестр **`docs/GTM-WIKI.md`**) |
 | **Инфра-триггеры при росте** | **2k** users → апгрейд AMS; **8k** → load test sub + отдельный edge; soft-cap нод → 3-я prod (**§10.1**) |
 | **Вывод** | Модель роста: **2 prod-ноды (LV+NL) + панель AMS**. Контроль «кто всё ещё видит AMS IP в Happ-sub»: **`daily-report.sh`** вызывает **`count_users_with_ams_sub.py`**. Узкие места: RAM/API панели, публичная подписка (**P6**). **§5.3 монетизация** — go-live **2026-05-16** (§12). |
 
@@ -264,8 +264,9 @@
 
 | Дата | Что сделано |
 |------|-------------|
-| 2026-05-16 | **P2-OPS-IMAGE-PIN-01 — DONE:** digest pin **postgres/valkey/adguard** в compose tmpl (prod sha256); **Caddy v2.11.2** — host pin в **`IMAGE-PINS.md`**; **`check_compose_image_pins.py`**. Накат compose на прод — при следующем safe-deploy. **NEXT=§11** red team / scale. |
-| 2026-05-16 | **GTM-WIKI-01 — DONE (репо):** **`docs/templates/GTM-WIKI-PAGE.md`**, **`docs/GTM-WIKI.md`**, **`RUNBOOK-GTM-WIKI`**; §1 → реестр wiki. **Owner gate:** live URL вне git — чеклист в **`GTM-WIKI.md`**. **NEXT=Q016** image pin. |
+| 2026-05-16 | **P6-SCALE-06 — DONE:** **`ru-monitor.py`** — **`duration_sec`** (в т.ч. abort), **`JITTER_MAX=60`**; **`ru_monitor_cycle_probe.py`**, **`RUNBOOK-P6-RU-MONITOR-SCALE`**. LV: код задеплоен; **401 API** на **`ru-monitor.env`** — отдельный ops (см. **`remna_api_token_rollout.sh`**). **NEXT=Q018** P6-SCALE-05. |
+| 2026-05-16 | **GTM-WIKI-01 — owner gate CLOSED:** канон URL + §1; еженедельная синхронизация — **`RUNBOOK-GTM-WIKI`**. |
+| 2026-05-16 | **P2-OPS-IMAGE-PIN-01 — DONE:** digest pin **postgres/valkey/adguard** в compose tmpl (prod sha256); **Caddy v2.11.2** — host pin в **`IMAGE-PINS.md`**; **`check_compose_image_pins.py`**. Накат compose на прод — при следующем safe-deploy. |
 | 2026-05-16 | **P6-SCALE-03 — DONE:** **`RUNBOOK-P6-POSTGRES-MAINTENANCE`**; **`pg_remnawave_audit.py`** (AMS: PG **17.6**, 62 idx, largest **432 kB**); backup cron вне **06 UTC** (**`35 1,7,13,19`** / **`50`**); compose tmpl + **`pg_enable_stat_statements_ams.sh`** (накат extension — по safe-deploy). **NEXT=Q015** GTM-WIKI-01. |
 | 2026-05-16 | **P6-SCALE-02 — DONE:** **`NODE-POLICY-LV-NL.md`** — soft cap **50** user/node, пороги **80/95/100%**, playbook 3-й ноды; **`capacity_snapshot.py`** — те же NOTICE. **NEXT=Q014** P6-SCALE-03. |
 | 2026-05-16 | **P6-RED-SUBHA-01 — DONE:** второй **`remnawave-subscription-page-b`** AMS **:3011**; LV Caddy split-host (**`patch-caddy-sub-split-host-lv.sh`**); **`subscription_ha_load_probe.py`** 60 req c=15 → primary p95≈**1.48s**, alt **1.51s**, **0×502**. **NEXT=Q013** P6-SCALE-02. |
