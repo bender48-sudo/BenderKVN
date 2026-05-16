@@ -112,6 +112,18 @@ def main() -> None:
             print(rtext[:1500])
         raise SystemExit(1)
     print("OK: template updated")
+    try:
+        import sys
+        from pathlib import Path
+
+        _ops = Path(__file__).resolve().parent
+        if str(_ops) not in sys.path:
+            sys.path.insert(0, str(_ops))
+        from subscription_config_notify import after_template_patch
+
+        after_template_patch("trim_injecthosts_no_ams")
+    except Exception as exc:
+        print(f"[sub-config] WARN: {exc}")
 
 
 if __name__ == "__main__":

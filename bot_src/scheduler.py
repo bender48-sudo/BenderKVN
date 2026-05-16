@@ -8,6 +8,7 @@ from shop_bot.data_manager import database
 from shop_bot.modules import remnawave_api
 from shop_bot.config import PLANS, BOT_PAYMENTS_LIVE, DAILY_RATE
 from shop_bot.utils.logger import bot_logger
+from shop_bot.bot.subscription_refresh import run_sub_refresh_notify_batch
 import aiohttp
 
 CHECK_INTERVAL_SECONDS = 300
@@ -22,6 +23,14 @@ async def start_subscription_monitor(bot: Bot):
     bot_logger.system("MONITOR", "Subscription monitor started", "OK")
     while True:
         try:
+            sub_ok, sub_fail = await run_sub_refresh_notify_batch(bot)
+            if sub_ok or sub_fail:
+                bot_logger.system(
+                    "SUB_REFRESH",
+                    f"notify batch ok={sub_ok} fail={sub_fail}",
+                    "OK" if sub_fail == 0 else "WARNING",
+                )
+
             vpn_users = database.get_all_vpn_users()
             if not vpn_users:
                 await asyncio.sleep(CHECK_INTERVAL_SECONDS)

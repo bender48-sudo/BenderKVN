@@ -60,6 +60,11 @@ from panel_client import PanelClient  # type: ignore
 
 import site_urls  # noqa: E402
 
+_OPS = Path(__file__).resolve().parent
+if str(_OPS) not in sys.path:
+    sys.path.insert(0, str(_OPS))
+from subscription_config_notify import after_template_patch  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
 DEFAULT_TEMPLATE_UUID = site_urls.REMNA_TEMPLATE_UUID
@@ -258,6 +263,11 @@ def main() -> None:
         action="store_true",
         help="только удалить routing rules без матчеров (экстренный hotfix для Xray iOS)",
     )
+    ap.add_argument(
+        "--no-sub-notify",
+        action="store_true",
+        help="не bump sub_config_generation / не пушить уведомление в бот",
+    )
     args = ap.parse_args()
 
     unblock_max = not args.no_unblock_max
@@ -289,7 +299,12 @@ def main() -> None:
         if n_live != n:
             print(f"WARN: live strip removed {n_live} vs dry-run {n}")
         patch_template(c, tpl, args.template_uuid)
-        print("[patch] OK — ask users to refresh subscription (Happ: update profile)")
+        print("[patch] OK")
+        if not args.no_sub_notify:
+            try:
+                after_template_patch("ru_bypass_strip_degenerate")
+            except Exception as exc:
+                print(f"[sub-config] WARN: {exc}")
         return
 
     print(f"current routing rules: {len(rules)}")
@@ -376,6 +391,11 @@ def main() -> None:
         print("WARN: template still has empty rules — run --strip-degenerate-only --apply")
     new_direct = re_rules[plan["direct_idx"]].get("domain", [])
     print(f"direct-domain count after: {len(new_direct)}")
+    if not args.no_sub_notify:
+        try:
+            after_template_patch("ru_bypass_routing")
+        except Exception as exc:
+            print(f"[sub-config] WARN: {exc}")
     print("\nDONE")
 
 

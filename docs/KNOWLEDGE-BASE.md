@@ -21,6 +21,7 @@
 | LV/NL распределение нагрузки (ёмкость) | **`docs/NODE-POLICY-LV-NL.md`** |
 | Регрессия `ops/load_env_file` (`site.env`) | `python -m unittest discover -s tests` из корня репо |
 | Хотфикс бота (handlers/user_messages на AMS) | **`pwsh -File ops/deploy-bot-handlers-ams.ps1`** (см. **`docs/DEPLOY.md` §4.3.1**) |
+| Авто-уведомление «обновите подписку» после PATCH шаблона | **`ops/subscription_config_notify.py`** → бот scheduler; деплой **`pwsh -File ops/deploy-bot-sub-refresh-ams.ps1`** |
 | Алерты в Telegram (метаданные) | **`docs/POLICY-TELEGRAM-ALERTS.md`** |
 | SSH known_hosts / `StrictHostKeyChecking` | **`docs/SSH-HOST-KEY-PRACTICE.md`** |
 | Утечка секрета в чат / скриншот | **`docs/POLICY-SECRET-LEAK-RESPONSE.md`** |

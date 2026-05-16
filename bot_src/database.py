@@ -28,7 +28,8 @@ def initialize_db():
                     ref_code TEXT UNIQUE,
                     referred_by TEXT,
                     auto_renew BOOLEAN DEFAULT 0,
-                    last_expiry_notified_days INTEGER DEFAULT 999
+                    last_expiry_notified_days INTEGER DEFAULT 999,
+                    sub_refresh_notified_generation INTEGER DEFAULT 0
                 );
                 CREATE TABLE IF NOT EXISTS vpn_keys (
                     key_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,6 +92,12 @@ def initialize_db():
                 cursor.execute("ALTER TABLE users ADD COLUMN balance REAL DEFAULT 0")
             except sqlite3.OperationalError:
                 pass
+            try:
+                cursor.execute(
+                    "ALTER TABLE users ADD COLUMN sub_refresh_notified_generation INTEGER DEFAULT 0"
+                )
+            except sqlite3.OperationalError:
+                pass
             conn.commit()
             logging.info("Database with 'created_date' column initialized successfully.")
     except sqlite3.Error as e:
@@ -116,6 +123,79 @@ def update_setting(key: str, value: str):
             logging.info(f"Setting '{key}' updated.")
     except sqlite3.Error as e:
         logging.error(f"Failed to update setting '{key}': {e}")
+
+def upsert_setting(key: str, value: str):
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT OR REPLACE INTO bot_settings (key, value) VALUES (?, ?)",
+                (key, value),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error(f"Failed to upsert setting '{key}': {e}")
+
+def get_sub_config_generation() -> int:
+    raw = get_setting("sub_config_generation")
+    try:
+        return int(raw) if raw else 0
+    except ValueError:
+        return 0
+
+def set_sub_config_generation(generation: int, reason: str = "") -> None:
+    upsert_setting("sub_config_generation", str(generation))
+    if reason:
+        upsert_setting("sub_config_refresh_reason", reason)
+
+def get_sub_refresh_notified_generation(user_id: int) -> int:
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT sub_refresh_notified_generation FROM users WHERE telegram_id = ?",
+                (user_id,),
+            )
+            row = cursor.fetchone()
+            return int(row[0]) if row and row[0] is not None else 0
+    except sqlite3.Error as e:
+        logging.error(f"Failed to get sub_refresh_notified_generation for {user_id}: {e}")
+        return 0
+
+def update_sub_refresh_notified_generation(user_id: int, generation: int) -> None:
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE users SET sub_refresh_notified_generation = ? WHERE telegram_id = ?",
+                (generation, user_id),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error(
+            f"Failed to update sub_refresh_notified_generation for {user_id}: {e}"
+        )
+
+def list_users_pending_sub_refresh(current_generation: int, limit: int = 15) -> list[int]:
+    """Distinct vpn_keys.user_id with telegram account behind current_generation."""
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT DISTINCT vk.user_id
+                FROM vpn_keys vk
+                INNER JOIN users u ON u.telegram_id = vk.user_id
+                WHERE COALESCE(u.sub_refresh_notified_generation, 0) < ?
+                ORDER BY vk.user_id
+                LIMIT ?
+                """,
+                (current_generation, limit),
+            )
+            return [int(row[0]) for row in cursor.fetchall()]
+    except sqlite3.Error as e:
+        logging.error(f"Failed to list pending sub refresh users: {e}")
+        return []
 
 def register_user_if_not_exists(telegram_id: int, username: str):
     try:

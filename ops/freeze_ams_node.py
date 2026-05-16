@@ -34,6 +34,11 @@ from panel_client import PanelClient  # type: ignore
 
 import site_urls  # noqa: E402
 
+_OPS = Path(__file__).resolve().parent
+if str(_OPS) not in sys.path:
+    sys.path.insert(0, str(_OPS))
+from subscription_config_notify import after_template_patch  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
 DEFAULT_NODE_ADDR = "168.100.11.140"
@@ -128,6 +133,11 @@ def main() -> None:
                     help="actually mutate (default: dry-run)")
     ap.add_argument("--disable", action="store_true",
                     help="also set isDisabled=true (stops ru-monitor probing)")
+    ap.add_argument(
+        "--no-sub-notify",
+        action="store_true",
+        help="не bump sub_config_generation / не пушить уведомление в бот",
+    )
     args = ap.parse_args()
 
     c = PanelClient()
@@ -184,6 +194,11 @@ def main() -> None:
         verify = inject_values(get_template(c, args.template_uuid))
         assert len(verify) == after, f"verify failed: re-fetch shows {len(verify)} != {after}"
         print(f"[verify] re-fetched inject-count = {len(verify)}  OK")
+        if not args.no_sub_notify:
+            try:
+                after_template_patch("freeze_ams_node_trim")
+            except Exception as exc:
+                print(f"[sub-config] WARN: {exc}")
     else:
         print("[trim] nothing to trim (UUIDs already absent from injectHosts)")
 
