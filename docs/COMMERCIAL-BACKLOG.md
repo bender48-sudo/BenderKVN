@@ -1,6 +1,6 @@
 # BenderVPN — коммерческий бэклог
 
-**Версия документа:** 2026-05-16 — ~~P2-BAK-01~~ / ~~P2-BAK-02~~ (репо), ~~P2-MON-01~~ / ~~P2-MON-02~~, P2.monitor/drift-check, ~~P1-RED-LOG-01~~ (репозиторий).
+**Версия документа:** 2026-05-16 — P6-SCALE-01 (snapshot), Cursor User Rules snippet, прод-бэкап-скрипты на AMS/LV, ~~P2-BAK~~, ~~P2-MON~~…
 **Цель:** стабильный **8–9/10** (нишевый коммерческий VPN в РФ); измеримый рост к максимально достижимому качеству.  
 **Определение «готово»:** по каждой задаче выполнен критерий в колонке **Done when** + при необходимости запись в трекере (статусы `TODO` / `DOING` / `DONE`).
 
@@ -200,7 +200,7 @@
 
 | ID | Задача | Done when |
 |----|--------|-----------|
-| **P6-SCALE-01** | Метрики: сессии по нодам, RPS `/api/*`, Postgres latency/size, Redis, RPS подписки, RAM по контейнерам. | Дашборд или скрипт + алерты по таблице 10.1 |
+| **P6-SCALE-01** | Метрики: сессии по нодам, RPS `/api/*`, Postgres latency/size, Redis, RPS подписки, RAM по контейнерам. | **Минимум в репо:** `python ops/capacity_snapshot.py` (users/nodes + пороги §10.1). Дашборд Docker/Postgres/RPS — дальнейшее расширение. |
 | **P6-SCALE-02** | Soft cap пользователей на ноду + правило добавления ноды в матрицу. | Документ + настройка панели/Happ |
 | **P6-SCALE-03** | Postgres: индексы, `pg_stat_statements`, окно бэкапа не в пик. | План обслуживания |
 | **P6-SCALE-04** | Публичная подписка: edge/CDN, **rate limit** по IP, защита от абьюза. | Нагрузочный тест refresh |
@@ -232,6 +232,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-16 | **Cursor User Rules:** дубликат инструкции — `%USERPROFILE%\.cursor\RULE-PASTE-INTO-USER-RULES.md` (вставить в Settings → Rules → User Rules); в репо — **`docs/CURSOR-USER-RULES-SNIPPET.md`**. **Прод:** `pg_dump_remnawave.sh` → AMS `/opt/scripts/`, `pull-latest-dump-ams-to-lv.sh` → LV `/opt/scripts/` (`bash -n` OK). **P6-SCALE-01 (минимум):** **`ops/capacity_snapshot.py`**, строки в **`DEPLOY.md`** / **`KNOWLEDGE-BASE.md`**. |
 | 2026-05-16 | **~~P2-BAK-01~~ / ~~P2-BAK-02~~**: **`docs/RUNBOOK-BACKUP-REMNAWAVE.md`** — AMS→LV дамп, пример **`ops/crontab-remnawave-backup.example`**, обновлены **`DEPLOY.md`** (таблица скриптов, §5 crontab AMS/LV), шапка **`backup-remnawave.sh`** (legacy vs канонический путь), строка в **`KNOWLEDGE-BASE.md`**. Restore test — чеклист в runbook; дату успешного прогона зафиксировать в §4 runbook + §12. |
 | 2026-05-16 | **~~P2-MON-01~~ / ~~P2-MON-02~~**: `monitor.sh` на LV — перед `ss :443/:8443` проверяются **`remnanode` running** и **`docker exec remnanode xray version`**; новые ключи **`xray_lv_remnanode`**, **`xray_lv_core`**. Комментарии «где state» в `monitor.sh`, `ru-monitor.py`, пример crontab в **`DEPLOY.md`**. Деплой: `pwsh -File ops/deploy-monitor-lv.ps1`. |
 | 2026-05-16 | **Red team / ТПСУ → бэклог**: добавлен **§5.1** с ID **P1‑RED‑*** … **P5‑RED‑RD‑01** (шифрование БД, Vault/SPIFFE, SSH blast radius, DNS‑диверсификация, log_skip подписки, резерв без TG, multi‑origin подписки, multi‑transport, квартальный TLS‑ревью sing-box; **P6‑RED‑*** масштаб; **P3‑RED‑*** минимизация данных и юрис‑runbook; **P5‑RED‑RD‑01** Snowflake‑PoC). Спринт **§3 п.12**. |

@@ -8,7 +8,7 @@
 |------|------|---------------|------------|
 | `monitor.sh` | LV | `/opt/scripts/monitor.sh` | Каждые 5 мин: LV Xray-порты, **smoke подписки** (`SUB_PUBLIC_ORIGIN` / `SUB_MONITOR_PROBE_URL` после `source /etc/bvpn/balancer.env`, см. **`daily-report.sh`**), **`PANEL_URL`**, бот AMS, disk. Алерты в TG. |
 | `daily-report.sh` | LV | `/opt/scripts/daily-report.sh` | 09:00 UTC digest: users/traffic/nodes/… **`/api/users` обязан запрашивать со страницами (`size`/`start`)** — без этого панель отдаёт только ~25 записей и цифры в TG не сходятся с UI. |
-| `ops/count_users_with_ams_sub.py` | LV | `/opt/scripts/count_users_with_ams_sub.py` | Счётчик «users-touching-AMS-over-IP» по факту rendered subscription (Happ UA). Вызывается из `daily-report.sh`. |
+| `ops/capacity_snapshot.py` | LV / рабочая станция | — (ops, не cron) | Снимок **§10.1**: активные users (постранично), ноды, мягкая «загрузка» относительно `USERS_PER_NODE`. **P6-SCALE-01**. |
 | `balancer.sh` | LV | `/opt/scripts/balancer.sh` | Каждый час: capacity (users/node, CPU). 80/95/100% алерты + daily summary. |
 | `backup-remnawave.sh` | LV | `/opt/scripts/backup-remnawave.sh` | **Legacy:** локальный `pg_dump`, только если на LV есть контейнер **`remnawave-db`**. Иначе используйте связку **AMS** → **`ops/pg_dump_remnawave.sh`** и **LV** → **`ops/pull-latest-dump-ams-to-lv.sh`** (см. **`docs/RUNBOOK-BACKUP-REMNAWAVE.md`**, пример cron **`ops/crontab-remnawave-backup.example`**). |
 | `ops/pg_dump_remnawave.sh` | AMS | `/opt/scripts/pg_dump_remnawave.sh` (рекомендуемый путь) | Периодический логический дамп Postgres панели в **`/opt/backups/`**. |

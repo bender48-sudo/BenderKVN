@@ -10,6 +10,7 @@
 |-----------|---------------------|
 | Очередь задач по приоритетам | **`docs/COMMERCIAL-BACKLOG.md`** |
 | Журнал «что уже сделали на проде» | тот же файл, **§12** |
+| Очередь capacity (users/nodes vs §10.1) | `python ops/capacity_snapshot.py` (токен в `.secrets/panel-token.txt`) |
 | Деплой, drift, рендер vault | **`docs/DEPLOY.md`** |
 | Реестр секретов и путей на хостах | **`docs/SECRETS.md`** |
 | Инциденты (роли, первый ответ) | **`docs/RUNBOOK-INCIDENT.md`** |
