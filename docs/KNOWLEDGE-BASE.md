@@ -45,6 +45,7 @@
 | **401** от **`ru-monitor`** / balancer после ротации | Обновили токен не везде (**LVBalancer + ru-monitor + shop + sub**) | **`SECRETS.md`**, runbook по токену |
 | **USERS=0 NODES=0** в balancer | **`PANEL_URL`** / токен бьют в **`localhost:3000`** вместо публичной панели | **`balancer.env.tmpl`**, **`P2-MON-BALANCER-PANEL-URL`** (закрыт) |
 | Шум после drain AMS только в одном алертере | Обновили **`monitor.sh`**, забыли **`ru-monitor`** (или наоборот) или selfsteal | журнал §12 **2026-05-14** |
+| **Total** в TG daily report = **25**, в панели больше | **`GET /api/users`** без **`size`/`start`** — только первая страница ответа API | Пагинация как в **`grandfather_panel_users_expire.py`** / текущий **`daily-report.sh`** |
 | Спор «какая копия compose правда» | Нет апдейта после **`JWT_API_TOKENS_SECRET`** без перевыпуска всех JWT | **`P0-SEC-05`** runbook |
 | Контрабанда локальных правил Claude в Git | Коммит **`.claude/settings.local.json`** содержит пути и не должен быть публичным | **`.gitignore`**, раздел KNOWLEDGE-BASE §2 |
 
