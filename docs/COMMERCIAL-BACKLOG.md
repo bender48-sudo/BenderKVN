@@ -1,6 +1,6 @@
 # BenderVPN — коммерческий бэклог
 
-**Версия документа:** 2026-05-16 — ~~**P2-OPS-DRIFT-POST-P0**~~ ✅ (`drift-check` 28/28); далее **P6-SCALE-04** (нагрузочный тест → §12)…
+**Версия документа:** 2026-05-17 — P6-SCALE-04: **`ops/subscription_load_probe.py`** + запись нагрузочного прогона §12…
 **Цель:** стабильный **8–9/10** (нишевый коммерческий VPN в РФ); измеримый рост к максимально достижимому качеству.  
 **Определение «готово»:** по каждой задаче выполнен критерий в колонке **Done when** + при необходимости запись в трекере (статусы `TODO` / `DOING` / `DONE`).
 
@@ -210,7 +210,7 @@
 | ~~**P6-SCALE-01**~~ ✅ | Метрики: сессии по нодам, RPS `/api/*`, Postgres latency/size, Redis, RPS подписки, RAM по контейнерам. | **В репо:** `python ops/capacity_snapshot.py` — users/nodes, пороги §10.1, **HTTPS probe подписки** (latency + код). Docker/Postgres/RPS — расширения. |
 | **P6-SCALE-02** | Soft cap пользователей на ноду + правило добавления ноды в матрицу. | Документ + настройка панели/Happ |
 | **P6-SCALE-03** | Postgres: индексы, `pg_stat_statements`, окно бэкапа не в пик. | План обслуживания |
-| **P6-SCALE-04** | Публичная подписка: edge/CDN, **rate limit** по IP, защита от абьюза. | **Репо:** **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`** + smoke латентности подписки в **`ops/capacity_snapshot.py`**. Нагрузочный тест refresh — по §3 runbook, дата в §12. |
+| **P6-SCALE-04** | Публичная подписка: edge/CDN, **rate limit** по IP, защита от абьюза. | **Репо:** **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`**, smoke в **`ops/capacity_snapshot.py`**, нагрузочный смок **`ops/subscription_load_probe.py`** (§3 runbook). Зафиксированный прогон — §12; **CDN/rate limit** на edge — по §2 runbook при росте (может отличаться от смока). |
 | **P6-SCALE-05** | Рост API панели: вертикаль/горизонталь по доке; Redis eviction. | Прогон «refresh × N» |
 | **P6-SCALE-06** | RU-monitor укладывается в cron **< 5 мин** при текущем числе хостов. | Лог с длительностью |
 | **P6-SCALE-07** | Нагрузка на поддержку: шаблоны (P3) + при росте очереди — вторая линия / SLA ответа. | Метрика очереди |
@@ -239,6 +239,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-17 | **P6-SCALE-04 (нагрузочный смок):** добавлен **`ops/subscription_load_probe.py`**; прогон **120** запросов, **concurrency 30** на `site_urls.sub_monitor_probe_url()` — **p95 ≈ 4.2s**, **502** на все ответы (**status_histogram 502=120**), **hard_errors=0**; одновременно **GET /api/users** с рабочей машины дал **502** — трактовать как **проверку устойчивости канала при деградации upstream**, повторить смок когда панель/sub стабильно **200/304**, при необходимости смотреть AMS **`remnawave` / subscription-page** / Caddy. |
 | 2026-05-16 | **~~P2-OPS-DRIFT-POST-P0~~ ✅:** SSH с рабочей машины — выкладка **`balancer.sh`**, **`backup-remnawave.sh`**, **`ru-monitor.py`**, **`deploy-node.sh`** (LV+AMS) из репо; **`/etc/bvpn/balancer.env`** и **`ru-monitor.env`** (LV) — байтовый рендер из **`compose/_shared/...` + `.secrets/vault.env`**; AMS — **`/opt/remnawave/docker-compose.yml`**, **`.env`**, **`/opt/remnawave/sub/docker-compose.yml`**, **`/opt/remna-shop/.env`** из рендера + **`docker compose up -d`** (пересозданы **`remnawave-db`**, **`remnawave`**, **`remnawave-subscription-page`**, **`remna-shop-bot`**). **`python ops/drift-check.py`**: **28/28 OK**, exit **0** (~10 мин). Локальные копии рендера удалены. |
 | 2026-05-16 | Тот же день (**до наката):** drift-check **17 OK / 11 DRIFT** — снимок зафиксирован; процедура **`DRIFT-POST-P0.md`**; затем закрыто (строка выше). |
 | 2026-05-16 | **§2.1 «продукт → UX»** + доки: **`docs/POLICY-BACKLOG-ORDER.md`**, **`docs/POLICY-TELEGRAM-ALERTS.md`**, **`docs/SSH-HOST-KEY-PRACTICE.md`**, **`docs/POLICY-SECRET-LEAK-RESPONSE.md`**, **`docs/DRIFT-POST-P0.md`** (waive/post-P0 drift). В **`docs/KNOWLEDGE-BASE.md`** — ссылки на политики + сохранён **`DEPLOY.md`** в §1. **§7 P3** — явное напоминание не ставить UX раньше эксплуатации. |

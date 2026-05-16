@@ -26,10 +26,22 @@
 
 Минимум: снять **p95 latency** и **долю 5xx** при **N** параллельных `GET` на публичный URL подписки (короткий ключ smoke или отдельный staging-домен **без** утечки прод-данных).
 
-Зафиксировать в журнале **`docs/COMMERCIAL-BACKLOG.md` §12**: дата, N, p95, ошибки.
+Утилита в репозитории (тот же URL по умолчанию, что **`site_urls.sub_monitor_probe_url()`** / **`monitor.sh`**):
+
+```bash
+python ops/subscription_load_probe.py --concurrency 30 --total 120
+python ops/subscription_load_probe.py --json   # машиночитаемый отчёт
+# свой URL без правки site.env:
+python ops/subscription_load_probe.py --url 'https://хост:2053/api/sub/SHORTID' --total 80
+```
+
+Смотреть **p50/p95/p99**, **status_histogram** (в т.ч. доля **5xx**), **hard_errors** (только TLS/DNS/таймаут — не HTTP-коды).
+
+Зафиксировать в журнале **`docs/COMMERCIAL-BACKLOG.md` §12**: дата, N, параллельность, p95, гистограмма статусов (или `--json`).
 
 ## 4. Связанные файлы
 
+- **`ops/subscription_load_probe.py`** — нагрузочный смок по умолчанию для §3.
 - **`docs/COMMERCIAL-BACKLOG.md` §10.1** — порог «ошибки на `p4n7q…/api/sub/*`».
 - **`docs/RUNBOOK-CADDY-SUBSCRIPTION-LOGS.md`** — логирование без утечки сырого `/api/sub/` в access-log.
 - **`compose/ams/remnawave-sub/docker-compose.yml.tmpl`**
