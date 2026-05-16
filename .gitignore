@@ -62,8 +62,10 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Cursor (drop this line if the team commits shared project rules via .cursor/)
-.cursor/
+# Cursor — коммитим `.cursor/rules/*.mdc`; прочие файлы IDE не в git
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/*.mdc
 
 # Claude Code — локальные разрешения/пути (не должны попадать в публичный репозиторий)
 .claude/settings.local.json
