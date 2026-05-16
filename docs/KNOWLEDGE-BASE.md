@@ -30,7 +30,7 @@
 | Drift прод↔репо после P0 / смены панели | **`docs/DRIFT-POST-P0.md`** |
 | Накат AMS compose/env (gate) | **`docs/RUNBOOK-AMS-SAFE-DEPLOY.md`** |
 | Go-live оплаты в боте | **`docs/RUNBOOK-COMMERCE-GO-LIVE.md`** |
-| GTM / рост 10k–30k (шаблон вне git) | **`docs/GTM-GROWTH-OUTLINE.md`** |
+| GTM / рост 10k–30k | **`docs/GTM-GROWTH-OUTLINE.md`**, wiki-шаблон **`docs/templates/GTM-WIKI-PAGE.md`**, реестр URL **`docs/GTM-WIKI.md`** |
 | Edge подписки (P6-SCALE-04) | **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`** |
 | Правила репозитория (secrets, sanitize, drift) | **`docs/POLICY-REPO-WORKFLOW.md`** |
 | Онбординг пользователя / поддержка первого коннекта | **`docs/ONBOARDING.md`** |

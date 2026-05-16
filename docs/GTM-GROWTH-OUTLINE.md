@@ -60,6 +60,8 @@
 
 ## 5. Где хранить «живой» план
 
-Рекомендация: одна страница wiki (ссылку вставить в **`docs/COMMERCIAL-BACKLOG.md` §1** строка «GTM wiki») — **не** дублировать секреты и персональные контакты в git.
+1. Скопировать **`docs/templates/GTM-WIKI-PAGE.md`** в Notion / wiki **вне git**.
+2. URL живой страницы — в **`docs/GTM-WIKI.md`** и **`docs/COMMERCIAL-BACKLOG.md` §1**.
+3. Процедура: **`docs/RUNBOOK-GTM-WIKI.md`**.
 
-После заполнения wiki отметить в журнале бэклога §12: «GTM outline принят, URL wiki: …».
+После заполнения wiki отметить в журнале бэклога §12: «GTM wiki принят, URL: …» (см. **`docs/GTM-WIKI.md`** Owner gate).
