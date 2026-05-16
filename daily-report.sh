@@ -23,39 +23,87 @@ AMS_IP="168.100.11.140"
 AMS_SSH_PORT="3344"
 AMS_SSH_KEY="/root/.ssh/id_ed25519"
 
-# Get user stats from Remnawave API
-STATS=$(curl -s -H "Authorization: Bearer ${PANEL_TOKEN}" \
-    -H "X-Forwarded-Proto: https" -H "X-Forwarded-For: 127.0.0.1" \
-    "${PANEL_URL}/api/users" | python3 -c "
-import json,sys
+# User stats: /api/users без size/start отдаёт только первую страницу (~25) — см. grandfather_panel_users_expire.py
+STATS=$(PANEL_URL="$PANEL_URL" PANEL_TOKEN="$PANEL_TOKEN" python3 <<'PY'
+import json, os, ssl, urllib.error, urllib.request
 from datetime import datetime, timezone
+
+def fetch_all_users():
+    base = os.environ["PANEL_URL"].rstrip("/")
+    token = os.environ["PANEL_TOKEN"]
+    ctx = ssl.create_default_context()
+    out = []
+    seen = set()
+    start = 0
+    size = 100
+    while True:
+        url = f"{base}/api/users?size={size}&start={start}"
+        req = urllib.request.Request(
+            url,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "X-Forwarded-Proto": "https",
+                "X-Forwarded-For": "127.0.0.1",
+            },
+        )
+        with urllib.request.urlopen(req, context=ctx, timeout=90) as resp:
+            data = json.load(resp)
+        chunk = (data.get("response") or {}).get("users") or []
+        if not isinstance(chunk, list):
+            chunk = []
+        n_new = 0
+        for u in chunk:
+            uid = u.get("uuid") or u.get("shortUuid") or u.get("email")
+            if uid:
+                if uid in seen:
+                    continue
+                seen.add(uid)
+            out.append(u)
+            n_new += 1
+        if len(chunk) < size:
+            break
+        if n_new == 0:
+            break
+        start += len(chunk)
+        if start > 100000:
+            break
+    return out
+
 try:
-    data=json.load(sys.stdin)
-    users=data.get('response',{}).get('users',[]) if isinstance(data,dict) else []
-    active = [u for u in users if u.get('status') == 'ACTIVE']
+    users = fetch_all_users()
+    active = [u for u in users if u.get("status") == "ACTIVE"]
     now = datetime.now(timezone.utc)
     online = []
     for u in users:
-        ut = u.get('userTraffic') or {}
-        oa = ut.get('onlineAt') or u.get('onlineAt')
+        ut = u.get("userTraffic") or {}
+        oa = ut.get("onlineAt") or u.get("onlineAt")
         if oa:
             try:
-                t = datetime.fromisoformat(oa.replace('Z','+00:00'))
+                t = datetime.fromisoformat(str(oa).replace("Z", "+00:00"))
                 if (now - t).total_seconds() < 600:
                     online.append(u)
-            except: pass
-    top_users = sorted(users, key=lambda x: (x.get('userTraffic') or {}).get('lifetimeUsedTrafficBytes', 0), reverse=True)[:3]
-    print('TOTAL:' + str(len(users)))
-    print('ACTIVE:' + str(len(active)))
-    print('ONLINE:' + str(len(online)))
-    for i,u in enumerate(top_users):
-        ut = u.get('userTraffic') or {}
-        gb = ut.get('lifetimeUsedTrafficBytes', 0) / (1024**3)
-        name = (u.get('username') or u.get('shortUuid') or 'unknown')[:20]
-        print('TOP' + str(i+1) + ':' + name + ':' + format(gb, '.2f') + ' GB')
+            except Exception:
+                pass
+    top_users = sorted(
+        users,
+        key=lambda x: (x.get("userTraffic") or {}).get("lifetimeUsedTrafficBytes", 0),
+        reverse=True,
+    )[:3]
+    print("TOTAL:" + str(len(users)))
+    print("ACTIVE:" + str(len(active)))
+    print("ONLINE:" + str(len(online)))
+    for i, u in enumerate(top_users):
+        ut = u.get("userTraffic") or {}
+        gb = ut.get("lifetimeUsedTrafficBytes", 0) / (1024**3)
+        name = (u.get("username") or u.get("shortUuid") or "unknown")[:20]
+        print("TOP" + str(i + 1) + ":" + name + ":" + format(gb, ".2f") + " GB")
+except urllib.error.HTTPError as e:
+    body = e.read().decode("utf-8", errors="replace")[:400]
+    print("ERROR:HTTP " + str(e.code) + " " + body)
 except Exception as e:
-    print('ERROR:' + str(e))
-" 2>/dev/null)
+    print("ERROR:" + str(e))
+PY
+)
 
 TOTAL=$(echo "$STATS" | grep "^TOTAL:" | cut -d: -f2)
 ACTIVE=$(echo "$STATS" | grep "^ACTIVE:" | cut -d: -f2)

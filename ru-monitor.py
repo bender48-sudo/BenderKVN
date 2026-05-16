@@ -323,7 +323,8 @@ def format_alert_cert_changed(r, old_fp, new_fp):
         f"<b>Old fingerprint:</b> <code>{old_fp}</code>\n"
         f"<b>New fingerprint:</b> <code>{new_fp}</code>\n"
         f"<b>Checked from:</b> Russia Relay (72.56.0.145)\n\n"
-        f"Возможно: Caddy перегенерировал self-signed cert, или MITM."
+        f"Часто это ротация сертификата апстрима (CDN/магазин), не ваш Caddy. "
+        f"Для fingerprinting-узлов на relay — сравните с первым успешным прогоном. MITM не исключайте, но не паникуйте на одном смене."
     )
 
 

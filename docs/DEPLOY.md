@@ -7,7 +7,7 @@
 | Репо | Хост | Путь на проде | Назначение |
 |------|------|---------------|------------|
 | `monitor.sh` | LV | `/opt/scripts/monitor.sh` | Каждые 5 мин: LV Xray-порты, **smoke подписки** (`SUB_PUBLIC_ORIGIN` / `SUB_MONITOR_PROBE_URL` после `source /etc/bvpn/balancer.env`, см. **`daily-report.sh`**), **`PANEL_URL`**, бот AMS, disk. Алерты в TG. |
-| `daily-report.sh` | LV | `/opt/scripts/daily-report.sh` | 09:00 UTC digest: users/traffic/nodes/disk/backup/alerts + счётчик **ACTIVE с AMS outbound** в Happ-подписке (`python3 /opt/scripts/count_users_with_ams_sub.py`). |
+| `daily-report.sh` | LV | `/opt/scripts/daily-report.sh` | 09:00 UTC digest: users/traffic/nodes/… **`/api/users` обязан запрашивать со страницами (`size`/`start`)** — без этого панель отдаёт только ~25 записей и цифры в TG не сходятся с UI. |
 | `ops/count_users_with_ams_sub.py` | LV | `/opt/scripts/count_users_with_ams_sub.py` | Счётчик «users-touching-AMS-over-IP» по факту rendered subscription (Happ UA). Вызывается из `daily-report.sh`. |
 | `balancer.sh` | LV | `/opt/scripts/balancer.sh` | Каждый час: capacity (users/node, CPU). 80/95/100% алерты + daily summary. |
 | `backup-remnawave.sh` | LV | `/opt/scripts/backup-remnawave.sh` | Каждые 6 часов: `pg_dump` Remnawave-БД на AMS → файл → Telegram-документ. **Хранит 7 последних**. |
@@ -229,4 +229,4 @@ bash ops/render-compose.sh --only REMNA_API_TOKEN compose/ams/remnawave-sub/dock
 
 - **2026-05-14** — P1-OPS-DRIFT-01 закрыта. Все 10 файлов синхронизированы (репо ← прод после большой серии правок P0-block / Monitor-block / AMS-decom). Этот документ создан.
 - **2026-05-15** — **P1-OPS-DRIFT-02**: в §1 добавлена строка **`compose/**/*.tmpl`**; §7 описывает vault, `sanitize-compose` / `extract-vault`, `render_compose.py` (`--only`, `--none`, согласованность с `tmpl_only_keys` в `drift-check.py`), нормализацию CRLF при сравнении MD5 с продом.
-- **2026-05-15** — **`ops/drift-check.py`**: ретраи SSH-chunk для **`bvpn-lv`** (и меньший лимит для прочих) при **`TimeoutExpired`**. **`monitor.sh`** в таблице §1: описание **`SUB_*`** / **`PANEL_URL`** (как **`daily-report.sh`**).
+- **2026-05-16** — **`daily-report.sh`**: сбор юзеров через **`/api/users?size=&start=`** постранично (раньше один **`GET /api/users`** давал только первую страницу ~25 записей → расхождение с панелью). Деплой: **`pwsh -File ops/deploy-daily-report-lv.ps1`**. `ru-monitor.py`: текст алерта «cert changed» для внешних SNI (апстрим CDN, не только Caddy/MITM). (и меньший лимит для прочих) при **`TimeoutExpired`**. **`monitor.sh`** в таблице §1: описание **`SUB_*`** / **`PANEL_URL`** (как **`daily-report.sh`**).
