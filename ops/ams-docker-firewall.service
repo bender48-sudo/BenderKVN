@@ -1,0 +1,14 @@
+[Unit]
+Description=BenderVPN: lock Docker-exposed subscription port to Latvia panel
+After=docker.service ufw.service
+Requires=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/bvpn-docker-firewall.sh
+ExecReload=/usr/local/sbin/bvpn-docker-firewall.sh
+
+[Install]
+WantedBy=multi-user.target

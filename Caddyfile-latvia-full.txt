@@ -1,0 +1,262 @@
+p4n7q.conntest.xyz:2053 {
+    log {
+        output file /var/log/caddy/sub-access.log
+        format json
+    }
+    header {
+        Server "nginx/1.24.0"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "no-referrer"
+        -X-Powered-By
+        -Caddy-Server
+    }
+
+    @blocked not path /api/sub/*
+    respond @blocked 404
+
+    reverse_proxy http://127.0.0.1:3010 {
+        header_up X-Forwarded-Proto "https"
+        header_up X-Forwarded-For {remote_host}
+    }
+}
+
+:2054 {
+    reverse_proxy http://127.0.0.1:3000 {
+        header_up X-Forwarded-Proto "https"
+        header_up X-Forwarded-For {remote_host}
+    }
+}
+
+lv.conntest.xyz:9443 {
+    root * /opt/caddy/html
+    file_server
+}
+
+www.microsoft.com:9443 {
+    tls internal
+    reverse_proxy https://www.microsoft.com {
+        header_up Host www.microsoft.com
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Proto
+        header_up -X-Real-IP
+        header_up -X-Forwarded-Host
+        transport http {
+            tls
+            tls_server_name www.microsoft.com
+            dial_timeout 5s
+            versions 1.1 2
+        }
+    }
+}
+
+www.apple.com:9443 {
+    tls internal
+    reverse_proxy https://www.apple.com {
+        header_up Host www.apple.com
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Proto
+        header_up -X-Real-IP
+        header_up -X-Forwarded-Host
+        transport http {
+            tls
+            tls_server_name www.apple.com
+            dial_timeout 5s
+            versions 1.1 2
+        }
+    }
+}
+
+api.github.com:9443 {
+    tls internal
+    reverse_proxy https://api.github.com {
+        header_up Host api.github.com
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Proto
+        header_up -X-Real-IP
+        header_up -X-Forwarded-Host
+        transport http {
+            tls
+            tls_server_name api.github.com
+            dial_timeout 5s
+            versions 1.1 2
+        }
+    }
+}
+
+www.bing.com:9443 {
+    tls internal
+    reverse_proxy https://www.bing.com {
+        header_up Host www.bing.com
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Proto
+        header_up -X-Real-IP
+        header_up -X-Forwarded-Host
+        transport http {
+            tls
+            tls_server_name www.bing.com
+            dial_timeout 5s
+            versions 1.1 2
+        }
+    }
+}
+
+ads.x5.ru:9443 {
+    tls internal
+    reverse_proxy https://ads.x5.ru {
+        header_up Host ads.x5.ru
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Proto
+        header_up -X-Real-IP
+        header_up -X-Forwarded-Host
+        transport http {
+            tls
+            tls_server_name ads.x5.ru
+            dial_timeout 5s
+            versions 1.1 2
+        }
+    }
+}
+
+eh.vk.com:9443 {
+    tls internal
+    reverse_proxy https://eh.vk.com {
+        header_up Host eh.vk.com
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Proto
+        header_up -X-Real-IP
+        header_up -X-Forwarded-Host
+        transport http {
+            tls
+            tls_server_name eh.vk.com
+            dial_timeout 5s
+            versions 1.1 2
+        }
+    }
+}
+
+ir-3.ozone.ru:9443 {
+    tls internal
+    reverse_proxy https://ir-3.ozone.ru {
+        header_up Host ir-3.ozone.ru
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Proto
+        header_up -X-Real-IP
+        header_up -X-Forwarded-Host
+        transport http {
+            tls
+            tls_server_name ir-3.ozone.ru
+            dial_timeout 5s
+            versions 1.1 2
+        }
+    }
+}
+
+sun6-21.userapi.com:9443 {
+    tls internal
+    reverse_proxy https://sun6-21.userapi.com {
+        header_up Host sun6-21.userapi.com
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Proto
+        header_up -X-Real-IP
+        header_up -X-Forwarded-Host
+        transport http {
+            tls
+            tls_server_name sun6-21.userapi.com
+            dial_timeout 5s
+            versions 1.1 2
+        }
+    }
+}
+
+google-analytics.com:9443 {
+    tls internal
+    reverse_proxy https://google-analytics.com {
+        header_up Host google-analytics.com
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Proto
+        header_up -X-Real-IP
+        header_up -X-Forwarded-Host
+        transport http {
+            tls
+            tls_server_name google-analytics.com
+            dial_timeout 5s
+            versions 1.1 2
+        }
+    }
+}
+
+pimg.mycdn.me:9443 {
+    tls internal
+    reverse_proxy https://pimg.mycdn.me {
+        header_up Host pimg.mycdn.me
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Proto
+        header_up -X-Real-IP
+        header_up -X-Forwarded-Host
+        transport http {
+            tls
+            tls_server_name pimg.mycdn.me
+            dial_timeout 5s
+            versions 1.1 2
+        }
+    }
+}
+
+fonts.googleapis.com:9443 {
+    tls internal
+    reverse_proxy https://fonts.googleapis.com {
+        header_up Host fonts.googleapis.com
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Proto
+        header_up -X-Real-IP
+        header_up -X-Forwarded-Host
+        transport http {
+            tls
+            tls_server_name fonts.googleapis.com
+            dial_timeout 5s
+            versions 1.1 2
+        }
+    }
+}
+
+id.x5.ru:9443 {
+    tls internal
+    reverse_proxy https://id.x5.ru {
+        header_up Host id.x5.ru
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Proto
+        header_up -X-Real-IP
+        header_up -X-Forwarded-Host
+        transport http {
+            tls
+            tls_server_name id.x5.ru
+            dial_timeout 5s
+            versions 1.1 2
+        }
+    }
+}
+
+5post-gate.x5.ru:9443 {
+    tls internal
+    reverse_proxy https://5post-gate.x5.ru {
+        header_up Host 5post-gate.x5.ru
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Proto
+        header_up -X-Real-IP
+        header_up -X-Forwarded-Host
+        transport http {
+            tls
+            tls_server_name 5post-gate.x5.ru
+            dial_timeout 5s
+            versions 1.1 2
+        }
+    }
+}
+
+k9x2m1.conntest.xyz:2053 {
+    reverse_proxy http://127.0.0.1:3000 {
+        header_up X-Forwarded-Proto "https"
+        header_up X-Forwarded-For {remote_host}
+    }
+}

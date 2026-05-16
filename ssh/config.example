@@ -1,0 +1,32 @@
+# Copy blocks into %USERPROFILE%\.ssh\config (Windows) or ~/.ssh/config.
+# Set IdentityFile to your private key path. Do not commit keys to git.
+
+Host bvpn-lv
+    HostName 176.126.162.158
+    Port 3333
+    User root
+    IdentityFile ~/.ssh/id_ed25519
+    IdentitiesOnly yes
+
+Host bvpn-ams
+    HostName 168.100.11.140
+    Port 3344
+    User root
+    IdentityFile ~/.ssh/id_ed25519
+    IdentitiesOnly yes
+
+# FriendHosting Netherlands (Plus NL). If login fails, check SSH port in billing panel (often 22).
+Host bvpn-nl
+    HostName 91.90.192.17
+    Port 3333
+    User root
+    IdentityFile ~/.ssh/bvpn_nl
+    IdentitiesOnly yes
+
+# Relay: use selectel_relay key on your PC (see project docs).
+Host bvpn-relay
+    HostName 72.56.0.145
+    Port 3344
+    User root
+    IdentityFile ~/.ssh/selectel_relay
+    IdentitiesOnly yes

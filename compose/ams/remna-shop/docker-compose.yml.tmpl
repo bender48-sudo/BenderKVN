@@ -1,0 +1,19 @@
+services:
+  remna-shop-bot:
+    build: .
+    container_name: remna-shop-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:1488:1488"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./backups:/app/backups
+    networks:
+      - remna-network
+
+networks:
+  remna-network:
+    driver: bridge

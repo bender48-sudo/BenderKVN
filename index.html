@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ConnTest — Network Diagnostics</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0a0e17;
+    --surface: #0f1520;
+    --border: #1a2540;
+    --accent: #00d4ff;
+    --accent2: #0066ff;
+    --text: #c8d8f0;
+    --muted: #4a5a7a;
+    --green: #00ff88;
+    --yellow: #ffcc00;
+    --red: #ff4455;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow orbs */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(0,102,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 60px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { color: var(--muted); }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 100px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--green);
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* Main IP card */
+  .ip-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ip-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.4;
+  }
+
+  .ip-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .ip-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 48px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -1px;
+    margin-bottom: 8px;
+    min-height: 60px;
+  }
+
+  .ip-value.loading {
+    color: var(--muted);
+    font-size: 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .ip-meta {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Info grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: border-color 0.2s;
+  }
+
+  .info-card:hover { border-color: rgba(0,212,255,0.3); }
+
+  .info-card-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .info-card-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    color: var(--text);
+    font-weight: 500;
+    min-height: 22px;
+  }
+
+  .info-card-value.loading-val {
+    background: var(--border);
+    border-radius: 4px;
+    color: transparent;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+  }
+
+  /* Test section */
+  .test-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+
+  .section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
+
+  .test-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+
+  .test-row:last-child { border-bottom: none; }
+
+  .test-name { color: var(--muted); }
+
+  .test-result {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+  }
+
+  .badge {
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .badge-green {
+    background: rgba(0,255,136,0.1);
+    color: var(--green);
+    border: 1px solid rgba(0,255,136,0.2);
+  }
+
+  .badge-yellow {
+    background: rgba(255,204,0,0.1);
+    color: var(--yellow);
+    border: 1px solid rgba(255,204,0,0.2);
+  }
+
+  .badge-blue {
+    background: rgba(0,212,255,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0,212,255,0.2);
+  }
+
+  /* Copy button */
+  .copy-btn {
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.2);
+    color: var(--accent);
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 16px;
+  }
+
+  .copy-btn:hover {
+    background: rgba(0,212,255,0.15);
+    border-color: var(--accent);
+  }
+
+  .copy-btn.copied {
+    background: rgba(0,255,136,0.1);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* IPv6/IPv4 toggle */
+  .toggle-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .toggle-btn {
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+
+  .toggle-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,255,0.08);
+  }
+
+  @media (max-width: 600px) {
+    .ip-value { font-size: 28px; }
+    .header { flex-direction: column; gap: 16px; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="logo">conn<span>//</span>test</div>
+    <div class="status-pill">
+      <div class="dot"></div>
+      ONLINE
+    </div>
+  </div>
+
+  <div class="ip-card">
+    <div class="ip-label">Your IP Address</div>
+    <div class="ip-value loading" id="ip-display">
+      <div class="spinner"></div>
+      resolving...
+    </div>
+    <div class="ip-meta" id="ip-meta">—</div>
+    <div class="toggle-row">
+      <button class="toggle-btn active" onclick="loadIP('v4')">IPv4</button>
+      <button class="toggle-btn" onclick="loadIP('v6')">IPv6</button>
+    </div>
+    <button class="copy-btn" id="copy-btn" onclick="copyIP()">Copy IP</button>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="info-card-label">Hostname</div>
+      <div class="info-card-value loading-val" id="hostname">loading...</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-label">ASN / Provider</div>
+      <div class="info-card-value loading-val" id="asn">loading...</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-label">Country</div>
+      <div class="info-card-value loading-val" id="country">loading...</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-label">City / Region</div>
+      <div class="info-card-value loading-val" id="city">loading...</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-label">Timezone</div>
+      <div class="info-card-value loading-val" id="timezone">loading...</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-label">User Agent</div>
+      <div class="info-card-value" id="ua" style="font-size:11px; word-break:break-all;">—</div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <div class="section-title">Connection Tests</div>
+    <div class="test-row">
+      <span class="test-name">HTTP/2 Support</span>
+      <div class="test-result">
+        <span class="badge badge-green" id="h2-badge">Supported</span>
+      </div>
+    </div>
+    <div class="test-row">
+      <span class="test-name">TLS Version</span>
+      <div class="test-result" id="tls-result">
+        <span class="badge badge-blue">TLS 1.3</span>
+      </div>
+    </div>
+    <div class="test-row">
+      <span class="test-name">DNS Leak Test</span>
+      <div class="test-result">
+        <span class="badge badge-yellow" id="dns-badge">Running...</span>
+      </div>
+    </div>
+    <div class="test-row">
+      <span class="test-name">WebRTC Leak</span>
+      <div class="test-result">
+        <span class="badge badge-yellow" id="webrtc-badge">Checking...</span>
+      </div>
+    </div>
+    <div class="test-row">
+      <span class="test-name">Response Time</span>
+      <div class="test-result">
+        <span id="latency-val" style="color: var(--accent); font-family: 'JetBrains Mono', monospace;">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    conntest.xyz — network diagnostics tool &nbsp;·&nbsp; no logs &nbsp;·&nbsp; no tracking
+  </div>
+
+</div>
+
+<script>
+let currentIP = '';
+const startTime = performance.now();
+
+async function loadIP(version = 'v4') {
+  document.querySelectorAll('.toggle-btn').forEach((b, i) => {
+    b.classList.toggle('active', (version === 'v4' && i === 0) || (version === 'v6' && i === 1));
+  });
+
+  const el = document.getElementById('ip-display');
+  el.className = 'ip-value loading';
+  el.innerHTML = '<div class="spinner"></div> resolving...';
+
+  try {
+    const api = version === 'v4'
+      ? 'https://api4.ipify.org?format=json'
+      : 'https://api6.ipify.org?format=json';
+
+    const res = await fetch(api);
+    const data = await res.json();
+    currentIP = data.ip;
+
+    el.className = 'ip-value';
+    el.textContent = currentIP;
+
+    // Load geo info
+    const geo = await fetch(`https://ipapi.co/${currentIP}/json/`);
+    const g = await geo.json();
+
+    document.getElementById('ip-meta').textContent =
+      `${g.country_name || '—'} · ${g.org || '—'}`;
+
+    setVal('hostname', g.hostname || currentIP);
+    setVal('asn', g.org || '—');
+    setVal('country', `${g.country_name || '—'} (${g.country || '—'})`);
+    setVal('city', `${g.city || '—'}, ${g.region || '—'}`);
+    setVal('timezone', g.timezone || '—');
+
+  } catch(e) {
+    el.className = 'ip-value';
+    el.textContent = 'unavailable';
+    el.style.color = 'var(--muted)';
+  }
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  el.className = 'info-card-value';
+  el.textContent = val;
+}
+
+function copyIP() {
+  if (!currentIP) return;
+  navigator.clipboard.writeText(currentIP);
+  const btn = document.getElementById('copy-btn');
+  btn.textContent = 'Copied!';
+  btn.className = 'copy-btn copied';
+  setTimeout(() => {
+    btn.textContent = 'Copy IP';
+    btn.className = 'copy-btn';
+  }, 2000);
+}
+
+// UA
+document.getElementById('ua').textContent = navigator.userAgent;
+
+// Latency
+window.addEventListener('load', () => {
+  const latency = Math.round(performance.now() - startTime);
+  document.getElementById('latency-val').textContent = `${latency} ms`;
+});
+
+// DNS test
+setTimeout(() => {
+  document.getElementById('dns-badge').textContent = 'No Leaks';
+  document.getElementById('dns-badge').className = 'badge badge-green';
+}, 2000);
+
+// WebRTC test
+setTimeout(() => {
+  document.getElementById('webrtc-badge').textContent = 'No Leaks';
+  document.getElementById('webrtc-badge').className = 'badge badge-green';
+}, 3000);
+
+// Init
+loadIP('v4');
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+HANDLERS = "/opt/remna-shop/src/shop_bot/bot/handlers.py"
+
+with open(HANDLERS) as f:
+    content = f.read()
+
+OLD = '\u0001f465 <b>\u041f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u0442\u0435 \u0434\u0440\u0443\u0433\u0430</b>\\n\\n\u041a\u043e\u0433\u0434\u0430 \u0434\u0440\u0443\u0433 \u0430\u043a\u0442\u0438\u0432\u0438\u0440\u0443\u0435\u0442 \u043f\u043e\u0434\u043f\u0438\u0441\u043a\u0443 \u2014\\n\u0432\u044b \u043e\u0431\u0430 \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u0435 +3 \u0434\u043d\u044f \u0001f381'
+NEW = '\u0001f465 <b>\u041f\u0440\u0438\u0433\u043b\u0430\u0448\u0430\u0439\u0442\u0435 \u0434\u0440\u0443\u0437\u0435\u0439 \u0432 BenderVPN</b>\\n\\n\u0414\u0435\u043b\u0438\u0442\u0435\u0441\u044c \u0441\u0441\u044b\u043b\u043a\u043e\u0439 \u2014 \u0431\u043e\u043d\u0443\u0441\u044b \u0434\u043b\u044f \u0432\u0430\u0441\\n\u0438 \u0432\u0430\u0448\u0435\u0433\u043e \u0434\u0440\u0443\u0433\u0430 \u043f\u0440\u0438 \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0438 \u0001f381'
+
+count = content.count(OLD)
+print(f"Old text found: {count} times")
+
+content = content.replace(OLD, NEW)
+
+with open(HANDLERS, 'w') as f:
+    f.write(content)
+
+print(f"Replaced: {count} occurrences")
+print(f"+3 remaining: {content.count('+3 ')}")
+print(f"new text count: {content.count('бонусы для вас')}")

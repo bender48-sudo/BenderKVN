@@ -1,0 +1,21 @@
+services:
+  remnanode:
+    container_name: remnanode
+    hostname: remnanode
+    image: ghcr.io/remnawave/node:latest@sha256:9d57375a8168d00252f4debe7a6ac29debd8449af60467ab26b4ee212b047525
+    env_file:
+      - .env
+    network_mode: host
+    restart: always
+    cap_add:
+      - NET_ADMIN
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    volumes:
+      - /var/lib/remnanode/xray:/usr/local/bin/xray
+      - /var/lib/remnanode/geoip.dat:/usr/local/share/xray/geoip.dat
+      - /var/lib/remnanode/geosite.dat:/usr/local/share/xray/geosite.dat
+      # - /var/log/remnanode:/var/log/remnanode
+      # - /dev/shm:/dev/shm  # Uncomment for selfsteal socket access

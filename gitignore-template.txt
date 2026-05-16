@@ -1,0 +1,52 @@
+# ============================================================
+# BenderVPN .gitignore — generated 2026-04-09
+# Prevents accidental commit of secrets and sensitive data
+# ============================================================
+
+# --- Environment and secrets ---
+.env
+*.env
+env.txt
+*.env.*
+*.secret
+*.key
+*.pem
+*.p12
+*.pfx
+credentials*
+secrets*
+tokens*
+
+# --- Bot source with embedded secrets ---
+bot_src/
+
+# --- Backups (may contain old secrets) ---
+*.bak
+*.bak.*
+*.backup
+*.old
+*.orig
+
+# --- Diagnostics and audit reports ---
+diagnostics/
+redteam-audit-*.md
+opsec-*.md
+
+# --- Documentation with potential secrets ---
+# (sanitized version should be committed instead)
+BenderVPN_Documentation_v2_4.md
+
+# --- Snapshot directories ---
+bvpn-snapshot/
+
+# --- OS and editor artifacts ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# --- Logs ---
+*.log

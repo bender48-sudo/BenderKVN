@@ -1,0 +1,72 @@
+# --- Secrets and local environment ---
+# Всё под .secrets/, кроме публичных примеров (не коммитить vault, prod-compose, токены)
+.secrets/**
+!.secrets/vault.env.example
+
+# Корневые и разовые .env без суффикса .example (tmpl-секреты именуются *.env.tmpl)
+*.env
+
+env.txt
+*.secret
+*_token.txt
+**/panel-token.txt
+**/bot-token.txt
+*.key
+*.pem
+*.p12
+
+# Optional local URL defaults (see ops/site.env.example)
+ops/site.env
+
+# Backups (may contain old secrets or live config)
+*.bak
+*.bak.*
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.envrc
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# --- Diagnostics / one-off ops (often contained tokens historically) ---
+redteam-audit-*.md
+opsec-*.md
+bvpn-snapshot/
+bvpn-artifacts/
+
+# Heavy or duplicate history (restore from elsewhere if needed)
+.snapshots/
+
+# One-off scripts (unignore if promoted to ops/)
+fix_routing.py
+deploy-remnawave.sh
+broadcast-*.sh
+
+# --- OS and editors ---
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
+
+# Cursor (drop this line if the team commits shared project rules via .cursor/)
+.cursor/
+
+# Claude Code — локальные разрешения/пути (не должны попадать в публичный репозиторий)
+.claude/settings.local.json
+
+# --- Logs ---
+*.log
