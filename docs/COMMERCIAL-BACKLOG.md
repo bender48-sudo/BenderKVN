@@ -264,6 +264,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-16 | **P2-COM-MONETIZE-02 — DONE:** AMS **`BOT_PAYMENTS_LIVE=1`** (`ops/patch-remna-shop-payments-live-ams.sh`, **`docker restart`**); канал **Telegram Stars**; **`process_topup_payment`** + idempotency **`topup_charge:*`**; smoke **`ops/smoke_payments_live_ams.py`** — invoice link OK, admin **`expireAt`** bump, повтор без дубля баланса. **NEXT=Q007** legal URLs. |
 | 2026-05-16 | **Бэкап cron (хвост Q004):** на **AMS** `5 */6` → **`pg_dump_remnawave.sh`**, на **LV** `15 */6` → **`pull-latest-dump-ams-to-lv.sh`** (`ops/install-remnawave-backup-cron.sh`); свежий дамп **`remnawave-20260516-170159.sql.gz`** (168K) на AMS+LV, SHA256 OK. |
 | 2026-05-16 | **P2-COM-MONETIZE-01 (уточнение владельца):** тарификация **баланс + 6.67 ₽/день**, не «месячные» планы. **`deploy-bot-balance-model-ams.ps1`**, колонка **`users.balance`**, меню «Пополнить баланс», пресеты **200/500/1000/2000 ₽** с оценкой дней. **NEXT=Q006** live payments. |
 | 2026-05-16 | **P2-OPS-RESTORE-TEST-01 — DONE:** **`ops/remnawave_restore_test.sh`** на **bvpn-lv** (ephemeral **`postgres:17`**, порт **55432**); предварительно **`pull-latest-dump-ams-to-lv.sh`** → **`remnawave-20260514-203204.sql.gz`** (163K, SHA256 OK). Restore ~**5 s**, **36** public tables, **`_prisma_migrations`=97**, без **ERROR** в логе. Дата в **`RUNBOOK-BACKUP-REMNAWAVE` §4**. **NEXT=Q005** monetize prices. |

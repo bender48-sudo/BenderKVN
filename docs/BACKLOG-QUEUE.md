@@ -25,8 +25,8 @@
 | 003 | **P6-SCALE-04c** | **DONE** | Повтор **`subscription_load_probe`** после (b); p95/гистограмма в §12 | §12 **2026-05-16**: 120×**200**, p95≈**1.83s** | **`RUNBOOK-P6-SUBSCRIPTION-EDGE` §0 (c)** |
 | 004 | **P2-OPS-RESTORE-TEST-01** | **DONE** | Квартальный restore test; дата в runbook §4 + §12 | §4/§12 **2026-05-16**, 36 tables | **`RUNBOOK-BACKUP-REMNAWAVE` §4** |
 | 005 | **P2-COM-MONETIZE-01** | **DONE** | Финальные цены на проде (не тест 1 ₽) | AMS **`buy_1_month` 50 ₽** §12 | **`RUNBOOK-COMMERCE-GO-LIVE` §1** |
-| 006 | **P2-COM-MONETIZE-02** | **NEXT** | **`BOT_PAYMENTS_LIVE=1`**, E2E один канал оплаты | Оплата → `expireAt` в панели | **`RUNBOOK-COMMERCE-GO-LIVE` §2** |
-| 007 | **P2-COM-MONETIZE-03** | TODO | Legal URLs в боте без заглушек | Ссылки до оплаты | **`RUNBOOK-COMMERCE-GO-LIVE` §3** |
+| 006 | **P2-COM-MONETIZE-02** | **DONE** | **`BOT_PAYMENTS_LIVE=1`**, E2E один канал оплаты | AMS Stars smoke §12 **2026-05-16** | **`RUNBOOK-COMMERCE-GO-LIVE` §2** |
+| 007 | **P2-COM-MONETIZE-03** | **NEXT** | Legal URLs в боте без заглушек | Ссылки до оплаты | **`RUNBOOK-COMMERCE-GO-LIVE` §3** |
 | 008 | **P2-COM-MONETIZE-04** | TODO | Go-live чеклист §4; строка §12 | Чеклист отмечен | **`RUNBOOK-COMMERCE-GO-LIVE` §4** |
 | 009 | **P6-RED-PAY-01** | TODO | Idempotency + DLQ webhook бота | Повтор webhook не дублирует | **§5.1** |
 | 010 | **P2-RED-SUB-01** | TODO | ≥2 origin подписки + мониторинг | Wiki/док | **§5.1** |
@@ -69,3 +69,4 @@
 | 2026-05-16 | **Q003** P6-SCALE-04c | **Q004** P2-OPS-RESTORE-TEST-01 |
 | 2026-05-16 | **Q004** P2-OPS-RESTORE-TEST-01 | **Q005** P2-COM-MONETIZE-01 |
 | 2026-05-16 | **Q005** P2-COM-MONETIZE-01 | **Q006** P2-COM-MONETIZE-02 |
+| 2026-05-16 | **Q006** P2-COM-MONETIZE-02 | **Q007** P2-COM-MONETIZE-03 |

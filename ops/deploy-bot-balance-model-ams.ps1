@@ -10,7 +10,8 @@ $Files = @(
     @{ Local = "bot_src\keyboards.py"; RemoteHost = "/opt/remna-shop/src/shop_bot/bot/keyboards.py"; Container = "/app/src/shop_bot/bot/keyboards.py" },
     @{ Local = "bot_src\handlers.py"; RemoteHost = "/opt/remna-shop/src/shop_bot/bot/handlers.py"; Container = "/app/src/shop_bot/bot/handlers.py" },
     @{ Local = "bot_src\database.py"; RemoteHost = "/opt/remna-shop/src/shop_bot/data_manager/database.py"; Container = "/app/src/shop_bot/data_manager/database.py" },
-    @{ Local = "bot_src\scheduler.py"; RemoteHost = "/opt/remna-shop/src/shop_bot/data_manager/scheduler.py"; Container = "/app/src/shop_bot/data_manager/scheduler.py" }
+    @{ Local = "bot_src\scheduler.py"; RemoteHost = "/opt/remna-shop/src/shop_bot/data_manager/scheduler.py"; Container = "/app/src/shop_bot/data_manager/scheduler.py" },
+    @{ Local = "bot_src\user_messages.py"; RemoteHost = "/opt/remna-shop/src/shop_bot/bot/user_messages.py"; Container = "/app/src/shop_bot/bot/user_messages.py" }
 )
 
 foreach ($f in $Files) {
@@ -46,7 +47,8 @@ for pair in \
   "keyboards.py:/opt/remna-shop/src/shop_bot/bot/keyboards.py:/app/src/shop_bot/bot/keyboards.py" \
   "handlers.py:/opt/remna-shop/src/shop_bot/bot/handlers.py:/app/src/shop_bot/bot/handlers.py" \
   "database.py:/opt/remna-shop/src/shop_bot/data_manager/database.py:/app/src/shop_bot/data_manager/database.py" \
-  "scheduler.py:/opt/remna-shop/src/shop_bot/data_manager/scheduler.py:/app/src/shop_bot/data_manager/scheduler.py"
+  "scheduler.py:/opt/remna-shop/src/shop_bot/data_manager/scheduler.py:/app/src/shop_bot/data_manager/scheduler.py" \
+  "user_messages.py:/opt/remna-shop/src/shop_bot/bot/user_messages.py:/app/src/shop_bot/bot/user_messages.py"
 do
   base="${pair%%:*}"
   rest="${pair#*:}"

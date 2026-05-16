@@ -13,7 +13,22 @@ def create_webhook_app(bot, payment_processor):
             event_json = request.json
             if event_json.get("event") == "payment.succeeded":
                 metadata = event_json.get("object", {}).get("metadata", {})
-                if metadata:
+                obj = event_json.get("object", {})
+                if metadata.get("t") == "topup":
+                    from shop_bot.bot.handlers import process_topup_payment
+
+                    user_id = int(metadata.get("user_id") or metadata.get("u") or 0)
+                    amount_rub = float(metadata.get("amount") or metadata.get("a") or 0)
+                    pay_id = obj.get("id") or ""
+                    idem = f"topup_yk:{pay_id}" if pay_id else None
+                    loop = current_app.config["EVENT_LOOP"]
+                    asyncio.run_coroutine_threadsafe(
+                        process_topup_payment(
+                            bot, user_id, amount_rub, idempotency_key=idem, notify=True
+                        ),
+                        loop,
+                    )
+                elif metadata:
                     loop = current_app.config['EVENT_LOOP']
                     asyncio.run_coroutine_threadsafe(payment_processor(bot, metadata), loop)
             return 'OK', 200

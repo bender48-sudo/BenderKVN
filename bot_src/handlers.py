@@ -74,6 +74,47 @@ logger = logging.getLogger(__name__)
 from shop_bot.utils.logger import bot_logger
 
 
+async def process_topup_payment(
+    bot: Bot,
+    user_id: int,
+    amount_rub: float,
+    *,
+    idempotency_key: str | None = None,
+    notify: bool = True,
+) -> bool:
+    """Зачислить пополнение и синхронизировать expireAt на панели. True если обработано."""
+    if amount_rub <= 0:
+        return False
+    if idempotency_key and has_action(user_id, idempotency_key):
+        logger.info("Duplicate topup ignored: user=%s key=%s", user_id, idempotency_key)
+        return False
+
+    add_balance(user_id, amount_rub)
+    new_balance = get_balance(user_id)
+    days_left = balance_to_days(new_balance)
+    synced = await sync_panel_access_from_balance(user_id, new_balance)
+    update_user_stats(user_id, amount_rub, 0)
+    log_action(user_id, "topup", f"{amount_rub}")
+    if idempotency_key:
+        log_action(user_id, idempotency_key, f"{amount_rub}")
+
+    if notify:
+        sync_note = "" if synced else (
+            "\n\n⚠️ Баланс зачислен; синхронизация с панелью не удалась — напишите в поддержку."
+        )
+        await bot.send_message(
+            chat_id=user_id,
+            text=(
+                f"✅ Баланс пополнен на {amount_rub:.0f} ₽\n\n"
+                f"💰 Текущий баланс: {new_balance:.0f} ₽\n"
+                f"📅 Хватит на: ~{days_left} дн. ({DAILY_RATE:.2f} ₽/день)"
+                f"{sync_note}"
+            ),
+            parse_mode="HTML",
+        )
+    return synced
+
+
 async def sync_panel_access_from_balance(user_id: int, balance: float) -> bool:
     """Продлить доступ на панели по текущему балансу (balance / DAILY_RATE дней)."""
     days = balance_to_days(balance)
@@ -1364,24 +1405,11 @@ async def successful_payment_handler(message: types.Message, bot: Bot):
 
         if payload_data.get("t") == "topup":
             amount_rub = float(payload_data.get("a", 0))
-            if amount_rub > 0:
-                add_balance(user_id, amount_rub)
-                new_balance = get_balance(user_id)
-                days_left = balance_to_days(new_balance)
-                synced = await sync_panel_access_from_balance(user_id, new_balance)
-                update_user_stats(user_id, amount_rub, 0)
-                log_action(user_id, "topup", f"{amount_rub}")
-                sync_note = "" if synced else "\n\n⚠️ Баланс зачислен; синхронизация с панелью не удалась — напишите в поддержку."
-                await bot.send_message(
-                    chat_id=user_id,
-                    text=(
-                        f"✅ Баланс пополнен на {amount_rub:.0f} ₽\n\n"
-                        f"💰 Текущий баланс: {new_balance:.0f} ₽\n"
-                        f"📅 Хватит на: ~{days_left} дн. ({DAILY_RATE:.2f} ₽/день)"
-                        f"{sync_note}"
-                    ),
-                    parse_mode="HTML",
-                )
+            charge_id = getattr(payment, "telegram_payment_charge_id", None) or payment.provider_payment_charge_id
+            idem = f"topup_charge:{charge_id}" if charge_id else None
+            await process_topup_payment(
+                bot, user_id, amount_rub, idempotency_key=idem, notify=True
+            )
             bot_logger.payment(user_id, "TELEGRAM_STARS", payment.total_amount, "SUCCESS")
             return
 
