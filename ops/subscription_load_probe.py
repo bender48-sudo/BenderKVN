@@ -10,6 +10,7 @@ Example::
   python ops/subscription_load_probe.py --url https://example:2053/api/sub/SHORTID --json
 
 Exit 1 if any request hard-fails (TLS/DNS) or if error_rate exceeds --max-error-rate.
+Use --max-bad-http-rate to fail when too many HTTP responses are not 200/304 (e.g. 502/429).
 """
 from __future__ import annotations
 
@@ -83,8 +84,18 @@ def main() -> int:
         default=0.05,
         help="fail if (tcp/tls errors) / total > this (default 0.05)",
     )
+    ap.add_argument(
+        "--max-bad-http-rate",
+        type=float,
+        default=None,
+        metavar="RATE",
+        help="optional: fail if fraction of HTTP responses with status not in {200,304} exceeds RATE",
+    )
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
+    if args.max_bad_http_rate is not None and not (0.0 <= args.max_bad_http_rate <= 1.0):
+        print("--max-bad-http-rate must be between 0 and 1", file=sys.stderr)
+        return 2
 
     url = args.url or site_urls.sub_monitor_probe_url()
     if args.concurrency < 1 or args.total < 1:
@@ -123,6 +134,7 @@ def main() -> int:
     err_rate = hard_errors / args.total if args.total else 0.0
     ok_http = sum(1 for c in http_codes if c in (200, 304))
     http_ok_rate = ok_http / len(http_codes) if http_codes else 0.0
+    bad_http_rate = bad_http / len(http_codes) if http_codes else None
 
     summary = {
         "url": url,
@@ -136,6 +148,7 @@ def main() -> int:
         "http_status_histogram": {str(k): v for k, v in sorted(code_hist.items())},
         "http_codes_count": len(http_codes),
         "http_200_304_rate": round(http_ok_rate, 4) if http_codes else None,
+        "bad_http_rate": round(bad_http_rate, 4) if bad_http_rate is not None else None,
         "not_200_304": bad_http,
         "error_rate": round(err_rate, 4),
     }
@@ -148,10 +161,12 @@ def main() -> int:
             f"total={args.total} concurrency={args.concurrency} "
             f"p50={p50:.1f}ms p95={p95:.1f}ms p99={p99:.1f}ms max={mx:.1f}ms"
         )
+        hist = dict(sorted(code_hist.items()))
+        bh = f" bad_http_rate={bad_http_rate:.2%}" if bad_http_rate is not None else ""
         print(
             f"hard_errors={hard_errors} not_200_304={bad_http} "
-            f"status_histogram={dict(sorted(code_hist.items()))} "
-            f"http_200_304={ok_http}/{len(http_codes)} tcp_tls_error_rate={err_rate:.2%}"
+            f"status_histogram={hist} "
+            f"http_200_304={ok_http}/{len(http_codes)}{bh} tcp_tls_error_rate={err_rate:.2%}"
         )
 
     if err_rate > args.max_error_rate:
@@ -160,6 +175,19 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+    if args.max_bad_http_rate is not None:
+        if bad_http_rate is None:
+            print(
+                "FAIL: --max-bad-http-rate set but no HTTP responses were recorded",
+                file=sys.stderr,
+            )
+            return 1
+        if bad_http_rate > args.max_bad_http_rate:
+            print(
+                f"FAIL: bad_http_rate {bad_http_rate:.2%} > max {args.max_bad_http_rate:.2%}",
+                file=sys.stderr,
+            )
+            return 1
     return 0
 
 

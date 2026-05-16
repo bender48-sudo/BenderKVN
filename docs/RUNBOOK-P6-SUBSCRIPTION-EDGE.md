@@ -20,7 +20,18 @@
 2. **Rate limit на edge** (Caddy / nginx перед `subscription-page`): лимит по **client IP** на путь **`/api/sub/*`** или весь vhost подписки. Проверять поддержку в вашей версии Caddy / модулей (см. [Caddy rate limiting](https://caddyserver.com/docs/) и плагины).
 3. **Прикладной уровень** Remnawave / subscription-page — только если даёт документация (пороги, кэш ответа).
 
-Для **первого поколия** при ~60–500 пользователей часто достаточно: **edge лимит + алерт по HTTP ≠ 200** на smoke URL (уже есть в мониторинге + расширенный вывод в **`capacity_snapshot`**).
+### 2.1 Caddy без «магии» в образе по умолчанию
+
+Стандартный **`caddy:2.x`** из Docker Hub / пакеты дистрибутива обычно **не включают** middleware rate‑limit; его подключают отдельной сборкой через **`xcaddy`**. На практике для LV смотрите модуль **[`mholt/caddy-ratelimit`](https://github.com/mholt/caddy-ratelimit)** (Apache‑2.0): ключ зоны типично **`{remote_ip}`**, matcher только на **`/api/sub/*`** и при необходимости на **отдельный host** подписки — чтобы не задеть панель на том же edge.
+
+Не копировать в прод **числовые пороги** из чужих гайдов: снимите профиль через **`subscription_load_probe.py`** (низкая → высокая параллельность), зафиксируйте p95 до/после. **`429`** от лимитера ожидаемы при намеренном душении; массовые **`502`** трактуйте как деградация upstream (**`remnawave-subscription-page`** / панель на AMS).
+
+### 2.2 Без сборки своего бинаря Caddy
+
+- **CDN / WAF** (пункт **1** выше) — самый короткий путь без смены бинаря на VPS.
+- **nftables**/conntrack — грубо по IP и порту, без понимания пути; только если нет времени ни на CDN, ни на **`xcaddy`**.
+
+Для **первого поколения** при ~60–500 пользователей часто достаточно: **edge лимит + алерт по HTTP ≠ 200** на smoke URL (уже есть в мониторинге + расширенный вывод в **`capacity_snapshot`**).
 
 ## 3. Нагрузочный тест (критерий «готово» P6-SCALE-04)
 
@@ -31,11 +42,13 @@
 ```bash
 python ops/subscription_load_probe.py --concurrency 30 --total 120
 python ops/subscription_load_probe.py --json   # машиночитаемый отчёт
+# опционально: упасть, если доля ответов не 200/304 слишком высокая (сверяйте с базой до внедрения RL):
+python ops/subscription_load_probe.py --max-bad-http-rate 0.15
 # свой URL без правки site.env:
 python ops/subscription_load_probe.py --url 'https://хост:2053/api/sub/SHORTID' --total 80
 ```
 
-Смотреть **p50/p95/p99**, **status_histogram** (в т.ч. доля **5xx**), **hard_errors** (только TLS/DNS/таймаут — не HTTP-коды).
+Смотреть **p50/p95/p99**, **status_histogram** (в т.ч. доля **5xx** и **429** после edge RL), **hard_errors** (только TLS/DNS/таймаут — не HTTP-коды).
 
 Зафиксировать в журнале **`docs/COMMERCIAL-BACKLOG.md` §12**: дата, N, параллельность, p95, гистограмма статусов (или `--json`).
 
