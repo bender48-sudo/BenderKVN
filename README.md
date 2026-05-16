@@ -11,6 +11,7 @@
 | Деплой и drift | [`docs/DEPLOY.md`](docs/DEPLOY.md) |
 | Где живут секреты (paths, не значения) | [`docs/SECRETS.md`](docs/SECRETS.md) |
 | Смена `REMNA_API_TOKEN` без 502 | [`docs/RUNBOOK-REMNA-API-TOKEN.md`](docs/RUNBOOK-REMNA-API-TOKEN.md) |
+| Логи Caddy (**`log_skip`** для `/api/sub/*`) | [`docs/RUNBOOK-CADDY-SUBSCRIPTION-LOGS.md`](docs/RUNBOOK-CADDY-SUBSCRIPTION-LOGS.md) |
 | Git vs прод | [`docs/VCS-WHERE-IS-GIT.md`](docs/VCS-WHERE-IS-GIT.md) |
 
 Секреты и `.env` прод-серверов **не** версионируются (см. [`.gitignore`](.gitignore)).

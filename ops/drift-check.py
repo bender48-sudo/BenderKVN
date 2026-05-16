@@ -141,14 +141,34 @@ for host, paths in by_host.items():
         cmd = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=40",
                "-o", "ServerAliveInterval=15", "-o", "ServerAliveCountMax=4", host,
                "md5sum " + " ".join(chunk) + " 2>&1 || true"]
-        try:
-            proc = subprocess.run(cmd, capture_output=True, text=True,
-                                  timeout=run_timeout)
-        except subprocess.TimeoutExpired:
+        stdout_text = ""
+        ok = False
+        max_attempts = 4 if host == "bvpn-lv" else 2
+        for attempt in range(max_attempts):
+            extra = attempt * (45 if host == "bvpn-lv" else 30)
+            try:
+                proc = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=run_timeout + extra,
+                )
+                stdout_text = proc.stdout or ""
+                ok = True
+                break
+            except subprocess.TimeoutExpired:
+                print(
+                    f"[drift-check] timeout ssh {host} chunk starting {chunk[0]!r} "
+                    f"attempt {attempt + 1}/{max_attempts} (+{extra}s deadline)",
+                    flush=True,
+                )
+                if attempt + 1 < max_attempts:
+                    time.sleep(4.0 + attempt * 6.0)
+        if not ok:
             for p in chunk:
                 remote_md5[(host, p)] = "TIMEOUT"
             continue
-        for line in (proc.stdout or "").splitlines():
+        for line in stdout_text.splitlines():
             parts = line.split()
             if len(parts) >= 2 and parts[0] not in ("md5sum:",):
                 remote_md5[(host, parts[1])] = parts[0]

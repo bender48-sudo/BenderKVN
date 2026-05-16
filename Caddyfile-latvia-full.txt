@@ -1,6 +1,12 @@
 p4n7q.conntest.xyz:2053 {
+    @sub_path path /api/sub/*
+    log_skip @sub_path
+
     log {
-        output file /var/log/caddy/sub-access.log
+        output file /var/log/caddy/sub-access.log {
+            roll_size 10mb
+            roll_keep 3
+        }
         format json
     }
     header {

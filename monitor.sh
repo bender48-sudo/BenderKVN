@@ -3,6 +3,14 @@
 # OPSEC Stage 4: secrets sourced from balancer.env (was hardcoded before)
 source /etc/bvpn/balancer.env
 
+# Public subscription smoke URL (aligned with daily-report.sh; overrides via balancer.env OK)
+SUB_PUBLIC_ORIGIN="${SUB_PUBLIC_ORIGIN:-https://p4n7q.conntest.xyz:2053}"
+export SUB_PUBLIC_ORIGIN
+SUB_MONITOR_PROBE_URL="${SUB_MONITOR_PROBE_URL:-${SUB_PUBLIC_ORIGIN}/api/sub/JLCF43RGjyq4ML78Qcsbq7Kf2}"
+
+# After P0 migrations panel lives on AMS; balancer.env MUST set this (fallback matches tmpl)
+PANEL_URL="${PANEL_URL:-https://k9x2m1.conntest.xyz:2053}"
+
 # Anti-correlation jitter: random delay 0-60s
 sleep $((RANDOM % 60))
 
@@ -12,7 +20,6 @@ sleep $((RANDOM % 60))
 # ==========================================
 
 ADMIN_CHAT_ID="924498094"
-PANEL_URL="http://localhost:3000"
 # Persistent state dir — survives reboot (was /tmp/bvpn_states; after reboot
 # the alert markers vanished and `recover` never fired the RECOVERED message,
 # which felt like "монитор не отписал что починилось". 2026-05-14.
@@ -114,11 +121,11 @@ fi
 # CHECK 5: Subscription endpoint
 # ==========================================
 SUB_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 \
-    "https://p4n7q.conntest.xyz:2053/api/sub/JLCF43RGjyq4ML78Qcsbq7Kf2" 2>/dev/null)
+    "$SUB_MONITOR_PROBE_URL" 2>/dev/null)
 if [ "$SUB_STATUS" = "200" ]; then
     recover "subscription" "$(printf '✅ <b>BenderVPN RECOVERED</b>\n\n🟢 Subscription endpoint — back up (HTTP 200)\n🕐 %s' "$NOW")"
 else
-    alert "subscription" "$(printf '🚨 <b>BenderVPN ALERT</b>\n\n❌ Subscription endpoint — DOWN (HTTP %s)\n🕐 %s\n🌐 p4n7q.conntest.xyz:2053\n\n🔧 <code>systemctl status caddy</code>' "${SUB_STATUS:-timeout}" "$NOW")"
+    alert "subscription" "$(printf '🚨 <b>BenderVPN ALERT</b>\n\n❌ Subscription endpoint — DOWN (HTTP %s)\n🕐 %s\n🌐 %s\n🔗 <code>%s</code>\n\n🔧 <code>systemctl status caddy</code>' "${SUB_STATUS:-timeout}" "$NOW" "${SUB_PUBLIC_ORIGIN}" "${SUB_MONITOR_PROBE_URL}")"
 fi
 
 # ==========================================

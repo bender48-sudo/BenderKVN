@@ -6,7 +6,7 @@
 
 | Репо | Хост | Путь на проде | Назначение |
 |------|------|---------------|------------|
-| `monitor.sh` | LV | `/opt/scripts/monitor.sh` | Каждые 5 мин: LV/AMS xray-порты, sub-endpoint, бот, CPU/RAM. Алерты в TG. |
+| `monitor.sh` | LV | `/opt/scripts/monitor.sh` | Каждые 5 мин: LV Xray-порты, **smoke подписки** (`SUB_PUBLIC_ORIGIN` / `SUB_MONITOR_PROBE_URL` после `source /etc/bvpn/balancer.env`, см. **`daily-report.sh`**), **`PANEL_URL`**, бот AMS, disk. Алерты в TG. |
 | `daily-report.sh` | LV | `/opt/scripts/daily-report.sh` | 09:00 UTC digest: users/traffic/nodes/disk/backup/alerts + счётчик **ACTIVE с AMS outbound** в Happ-подписке (`python3 /opt/scripts/count_users_with_ams_sub.py`). |
 | `ops/count_users_with_ams_sub.py` | LV | `/opt/scripts/count_users_with_ams_sub.py` | Счётчик «users-touching-AMS-over-IP» по факту rendered subscription (Happ UA). Вызывается из `daily-report.sh`. |
 | `balancer.sh` | LV | `/opt/scripts/balancer.sh` | Каждый час: capacity (users/node, CPU). 80/95/100% алерты + daily summary. |
@@ -168,6 +168,7 @@ python ops/drift-check.py
   - **`frozenset()`** — не подставлять ничего (compose остаётся с `${POSTGRES_*}` и т.д. для интерполяции Docker Compose);
   - **`frozenset({"X"})`** — только перечисленные ключи (например один `SECRET_KEY_NODE_AMS` или `REMNA_API_TOKEN` в под-compose).
 - **Один SSH на хост**, внутри — `md5sum` по чанкам путей (меньше таймаутов на LV).
+- Если для chunk приходит **`subprocess.TimeoutExpired`**, утилита **повторяет** тот же запрос: до **4** попыток для **`bvpn-lv`**, до **2** для остальных хостов, с **увеличением** `timeout` и короткой паузой между попытками (см. **`P2-ENG-DRIFT-CHECK-01`** / журнал §12).
 - Локальный MD5 для шаблонов считается по **нормализованным** байтам: **CRLF / lone CR → LF** (`md5_hex_norm`), чтобы копии с Windows не давали ложный DRIFT.
 
 Exit code **0** — все пары совпали; **1** — DRIFT, MISSING, пустой vault для tmpl, или TIMEOUT.
@@ -223,3 +224,4 @@ bash ops/render-compose.sh --only REMNA_API_TOKEN compose/ams/remnawave-sub/dock
 
 - **2026-05-14** — P1-OPS-DRIFT-01 закрыта. Все 10 файлов синхронизированы (репо ← прод после большой серии правок P0-block / Monitor-block / AMS-decom). Этот документ создан.
 - **2026-05-15** — **P1-OPS-DRIFT-02**: в §1 добавлена строка **`compose/**/*.tmpl`**; §7 описывает vault, `sanitize-compose` / `extract-vault`, `render_compose.py` (`--only`, `--none`, согласованность с `tmpl_only_keys` в `drift-check.py`), нормализацию CRLF при сравнении MD5 с продом.
+- **2026-05-15** — **`ops/drift-check.py`**: ретраи SSH-chunk для **`bvpn-lv`** (и меньший лимит для прочих) при **`TimeoutExpired`**. **`monitor.sh`** в таблице §1: описание **`SUB_*`** / **`PANEL_URL`** (как **`daily-report.sh`**).
