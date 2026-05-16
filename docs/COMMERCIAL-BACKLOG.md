@@ -229,7 +229,7 @@
 | ID | Задача | Done when |
 |----|--------|-----------|
 | ~~**P6-SCALE-01**~~ ✅ | Метрики: сессии по нодам, RPS `/api/*`, Postgres latency/size, Redis, RPS подписки, RAM по контейнерам. | **В репо:** `python ops/capacity_snapshot.py` — users/nodes, пороги §10.1, **HTTPS probe подписки** (latency + код). Docker/Postgres/RPS — расширения. |
-| **P6-SCALE-02** | Soft cap пользователей на ноду + правило добавления ноды в матрицу. | Документ + настройка панели/Happ; базовое правило про LV/NL — **`docs/NODE-POLICY-LV-NL.md`**. |
+| ~~**P6-SCALE-02**~~ ✅ | Soft cap пользователей на ноду + правило добавления ноды в матрицу. | **`docs/NODE-POLICY-LV-NL.md`** (50/user/node, 80/95/100%); **`capacity_snapshot.py`** soft-cap NOTICE. |
 | **P6-SCALE-03** | Postgres: индексы, `pg_stat_statements`, окно бэкапа не в пик. | План обслуживания |
 | ~~**P6-SCALE-04**~~ ✅ | Публичная подписка: edge/CDN, **rate limit** по IP, защита от абьюза. | **(a)(b)(c)** закрыты §12 **2026-05-16**: Caddy RL **120/min/IP** на LV; post-RL probe **120** req **c=30** → **120×200**, **p95≈1.83s**, **5xx=0**. Репо: **`RUNBOOK-P6-SUBSCRIPTION-EDGE`**, **`subscription_load_probe`**, **`capacity_snapshot`**. |
 | **P6-SCALE-05** | Рост API панели: вертикаль/горизонталь по доке; Redis eviction. | Прогон «refresh × N» |
@@ -264,6 +264,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-16 | **P6-SCALE-02 — DONE:** **`NODE-POLICY-LV-NL.md`** — soft cap **50** user/node, пороги **80/95/100%**, playbook 3-й ноды; **`capacity_snapshot.py`** — те же NOTICE. **NEXT=Q014** P6-SCALE-03. |
 | 2026-05-16 | **P6-RED-SUBHA-01 — DONE:** второй **`remnawave-subscription-page-b`** AMS **:3011**; LV Caddy split-host (**`patch-caddy-sub-split-host-lv.sh`**); **`subscription_ha_load_probe.py`** 60 req c=15 → primary p95≈**1.48s**, alt **1.51s**, **0×502**. **NEXT=Q013** P6-SCALE-02. |
 | 2026-05-16 | **P2-RED-MUX-01 — DONE:** профили **primary** (LV/443) + **alt** (NL:9443, LV:8443); аудит **`TRANSPORT_MUX_OK`** (25 users, alt ~56% outbounds). **NEXT=Q012** sub-page HA. |
 | 2026-05-16 | **P2-RED-SUB-01 — DONE:** alternate origin **k9x2m1.conntest.xyz:2053/api/sub/** (Caddy **`patch-caddy-sub-alt-origin-lv.sh`**); мониторинг **`monitor.sh`** CHECK 5b + **`ops/subscription_origin_drift_probe.py`** / **`smoke_sub_multi_origin_lv.sh`** (SHA256 совпадает). **NEXT=Q011** mux profiles. |

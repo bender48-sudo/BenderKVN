@@ -18,7 +18,7 @@
 | Тексты ошибок бота / карта для поддержки | **`bot_src/user_messages.py`**, **`docs/support/USER-FACING-ERRORS.md`** |
 | Черновик рассылки при инциденте | **`docs/templates/USER-INCIDENT-BROADCAST.md`** |
 | Черновик политики логов (внутр.) | **`docs/POLICY-LOGS-DATA.md`** |
-| LV/NL распределение нагрузки (ёмкость) | **`docs/NODE-POLICY-LV-NL.md`** |
+| LV/NL распределение нагрузки / soft cap / 3-я нода | **`docs/NODE-POLICY-LV-NL.md`** (**P6-SCALE-02**) |
 | Регрессия `ops/load_env_file` (`site.env`) | `python -m unittest discover -s tests` из корня репо |
 | Хотфикс бота (handlers/user_messages на AMS) | **`pwsh -File ops/deploy-bot-handlers-ams.ps1`** (см. **`docs/DEPLOY.md` §4.3.1**) |
 | Авто-уведомление «обновите подписку» после PATCH шаблона | **`ops/subscription_config_notify.py`** → бот scheduler; деплой **`pwsh -File ops/deploy-bot-sub-refresh-ams.ps1`** |

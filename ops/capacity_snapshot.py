@@ -37,6 +37,11 @@ from panel_client import PanelClient  # noqa: E402
 # Match balancer.sh default unless overridden (soft cap heuristic only).
 USERS_PER_NODE_DEFAULT = 50
 
+# P6-SCALE-02 — same tiers as balancer.sh capacity alerts.
+SOFT_CAP_WARN_PCT = 80
+SOFT_CAP_ALERT_PCT = 95
+SOFT_CAP_CRITICAL_PCT = 100
+
 # Backlog §10.1 — advisory thresholds (users in DB).
 WARN_USERS = 2000
 CRITICAL_USERS = 8000
@@ -172,6 +177,23 @@ def main() -> None:
         alerts.append(f"users_active>={CRITICAL_USERS} (§10.1: consider panel scale / load test)")
     elif len(active) >= WARN_USERS:
         alerts.append(f"users_active>={WARN_USERS} (§10.1: watch AMS RAM / API)")
+
+    if capacity > 0:
+        if load_pct >= SOFT_CAP_CRITICAL_PCT:
+            alerts.append(
+                f"soft_cap CRITICAL {load_pct}% (>={SOFT_CAP_CRITICAL_PCT}%): "
+                f"deploy 3rd prod node (docs/NODE-POLICY-LV-NL.md)"
+            )
+        elif load_pct >= SOFT_CAP_ALERT_PCT:
+            alerts.append(
+                f"soft_cap ALERT {load_pct}% (>={SOFT_CAP_ALERT_PCT}%): "
+                "order next node"
+            )
+        elif load_pct >= SOFT_CAP_WARN_PCT:
+            alerts.append(
+                f"soft_cap WARN {load_pct}% (>={SOFT_CAP_WARN_PCT}%): "
+                "plan (N+1) node"
+            )
 
     snap: dict = {
         "users_total": len(users),
