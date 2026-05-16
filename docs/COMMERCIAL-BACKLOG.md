@@ -1,6 +1,6 @@
 # BenderVPN — коммерческий бэклог
 
-**Версия документа:** 2026-05-16 — §5.1–5.2, grandfather/пробный период (журнал §12).
+**Версия документа:** 2026-05-15 — §5.2 runbook/token; база знаний [`KNOWLEDGE-BASE`](KNOWLEDGE-BASE.md) (журнал §12).
 **Цель:** стабильный **8–9/10** (нишевый коммерческий VPN в РФ); измеримый рост к максимально достижимому качеству.  
 **Определение «готово»:** по каждой задаче выполнен критерий в колонке **Done when** + при необходимости запись в трекере (статусы `TODO` / `DOING` / `DONE`).
 
@@ -120,7 +120,7 @@
 
 | ID | Задача | Done when |
 |----|--------|-----------|
-| **P1-OPS-REMNA-TOKEN-01** | **Единый runbook + автоматизация смены `REMNA_API_TOKEN`** по всем потребителям (**`docs/SECRETS.md` §3**: shop; **`/opt/remnawave/sub/.env`**; в compose подписки только **`REMNAWAVE_API_TOKEN=${REMNA_API_TOKEN}`**, без `eyJ…` в YAML; LV **`balancer.env`/`ru-monitor.env`**; **`.secrets/vault.env`** + **`python ops/render_compose.py`** где применимо; перезапуск контейнеров/сервисов). Учесть баги инцидента **2026‑05‑16**: инлайн JWT в **`sub/docker-compose.yml`** → 401 подписки → **502** клиентам; историческое чтение токена с LV **`/opt/remnawave`** как источник рассинхрона; обновление только части потребителей. **Допустимо:** перевыпуск в панели и передача нового значения агенту Cursor для раскладки (логи сессии локально у оператора). **Запрет:** коммит и публичные каналы. | Один документ **`docs/`** (чеклист + порядок команд); **один сценарий** (скрипт с **dry-run** и режимом применения); после прогона — **`ops/check-ams-subscription-token-layout.sh`** на AMS; smoke **подписка HTTP 200**, **`panel_api`/бот**; **`drift-check`** OK или явные waive; запись в **§12** при первом реальном применении процедуры. |
+| ~~**P1-OPS-REMNA-TOKEN-01**~~ ✅ | **Единый runbook + автоматизация смены `REMNA_API_TOKEN`** по всем потребителям (**`docs/SECRETS.md` §3**: shop; **`/opt/remnawave/sub/.env`**; в compose подписки только **`REMNAWAVE_API_TOKEN=${REMNA_API_TOKEN}`**, без `eyJ…` в YAML; LV **`balancer.env`/`ru-monitor.env`**; **`.secrets/vault.env`** + **`python ops/render_compose.py`** где применимо; перезапуск контейнеров/сервисов). Инцидент **2026‑05‑16**: инлайн JWT в **`sub/docker-compose.yml`** → **502** клиентам; синхрон LV **`/opt/remnawave`** давал рассинхрон. **Документ:** **`docs/RUNBOOK-REMNA-API-TOKEN.md`**; **скрипт:** **`bash ops/remna_api_token_rollout.sh`** (**`dry-run`** / **`verify-ams`** / **`sync-ams-sub`**). **Запрет:** коммит и публичные каналы. | **DONE 2026‑05‑15 (репо):** формализация процедуры. **При первой реальной ротации только скриптом** — добавить строку §12 со smoke (**подписка 200**, бот/`panel_api`, **`drift-check`** или waive). |
 
 ---
 
@@ -148,7 +148,7 @@
 | **P3-UX-01** | Онбординг: подписка → клиент → первый коннект + FAQ при ошибке. | Одна страница без противоречий. |
 | **P3-UX-02** | Тексты ошибок для людей (не «TLS timeout»). | Шаблоны поддержки = текст в продукте. |
 | **P3-UX-03** | Шаблон сообщения пользователям при инциденте. | Файл/пост + dry‑run. |
-| **P3-OPS-SUPPORT-REMNA-LOGIN** | Саппорт / операторы: панель Remnawave показывает **Forbidden + E000** не только из‑за прокси, но и при **неверном пароле** и др. политиках (**403**, не **401**). | Абзац в **`docs/RUNBOOK-INCIDENT.md`** или внутренний FAQ операторов с отсылкой к Rescue CLI. |
+| ~~**P3-OPS-SUPPORT-REMNA-LOGIN**~~ ✅ | Саппорт / операторы: панель Remnawave показывает **Forbidden + E000** не только из‑за прокси, но и при **неверном пароле** и др. политиках (**403**, не **401**). | Абзац **`docs/RUNBOOK-INCIDENT.md`** § «Логин в панель Remnawave» + отсылка к Rescue CLI. **2026‑05‑15** |
 | **P3-TR-01** | Политика логов (что, сколько, кто читает). | Согласовано с публичной политикой. |
 
 ---
@@ -221,7 +221,7 @@
 
 ## 11. Связь с аудитом репозитория
 
-Закрыты по коду/операциям: **P0-SEC-01…03** ✅, **P0-OPS** ✅, ~~**P0-SEC-04**~~ ✅, ~~**P0-SEC-05**~~ ✅ (**журнал §12**). Открытых задач уровня **P0** в таблице §4 на текущий срез **нет**. Весь блок **P1** ✅ по **`docs/P1-POST-AUDIT.md` (PASS 2026-05-15)**. Дальше в первую очередь: блок **§5.1 Red team / ТПСУ** (**P1‑RED‑*** приоритетнее базового P2), параллельно **P2** (**`P2-OPS-DRIFT-POST-P0`**, **`P2-ENG-DRIFT-CHECK-01`**, **`P2-SEC-LOG-01`**, мониторинг, бэкапы, **`P2-CHORE-SUB-ENV`**), затем **P6** (**в т.ч. P6‑RED‑*** и **`P6-SCALE-NL-VERIFY`**).
+Закрыты по коду/операциям: **P0-SEC-01…03** ✅, **P0-OPS** ✅, ~~**P0-SEC-04**~~ ✅, ~~**P0-SEC-05**~~ ✅ (**журнал §12**). Открытых задач уровня **P0** в таблице §4 на текущий срез **нет**. Весь блок **P1** ✅ по **`docs/P1-POST-AUDIT.md` (PASS 2026-05-15)** плюс **~~P1-OPS-REMNA-TOKEN-01~~** ✅ (runbook + **`ops/remna_api_token_rollout.sh`**). **Операционная память:** **`docs/KNOWLEDGE-BASE.md`** (правила и типичные ошибки). Дальше в первую очередь: блок **§5.1 Red team / ТПСУ** (**P1‑RED‑*** приоритетнее базового P2), параллельно **P2** (**`P2-OPS-DRIFT-POST-P0`**, **`P2-ENG-DRIFT-CHECK-01`**, **`P2-SEC-LOG-01`**, мониторинг, бэкапы, **`P2-CHORE-SUB-ENV`**), затем **P6** (**в т.ч. P6‑RED‑*** и **`P6-SCALE-NL-VERIFY`**).
 
 **P4** — отдельный продуктовый слой, не смешивать с основным VPN SKU.
 
@@ -233,6 +233,7 @@
 |------|-------------|
 | 2026-05-16 | **Red team / ТПСУ → бэклог**: добавлен **§5.1** с ID **P1‑RED‑*** … **P5‑RED‑RD‑01** (шифрование БД, Vault/SPIFFE, SSH blast radius, DNS‑диверсификация, log_skip подписки, резерв без TG, multi‑origin подписки, multi‑transport, квартальный TLS‑ревью sing-box; **P6‑RED‑*** масштаб; **P3‑RED‑*** минимизация данных и юрис‑runbook; **P5‑RED‑RD‑01** Snowflake‑PoC). Спринт **§3 п.12**. |
 | 2026-05-16 | **Разворот пробного тарифа (прод AMS):** `grandfather_panel_users_expire.py --apply` — **54/59** профилям Remnawave **`expireAt` → 2099** (до cut-off **16.05.2026 00:00 МСК**); **1** уже новее порога без изменения; **`/opt/remna-shop/.env`**: TRIAL/`REMNA_DEFAULT_DAYS`/ **`BOT_PAYMENTS_LIVE`**; **`bot_src`**: кнопка «Бесплатно 3 месяца», текст выдачи + HTML, scheduler без оплаты. Сценарий: **`ops/remote_ams_rollout_trials.sh`** + `scp` в **`/tmp/bvpn-rollout/`**. |
+| 2026-05-15 | **`docs/KNOWLEDGE-BASE.md`** — точка входа (правила, типовые ошибки); **`README.md`** для GitHub. **~~`P1-OPS-REMNA-TOKEN-01`~~** оформлен как **`docs/RUNBOOK-REMNA-API-TOKEN.md`** + **`ops/remna_api_token_rollout.sh`** (`dry-run`, `verify-ams`, `sync-ams-sub`). **~~`P3-OPS-SUPPORT-REMNA-LOGIN`~~ ✅**: секция в **`RUNBOOK-INCIDENT`** про **Forbidden/E000** vs неверный пароль (**403**). |
 | 2026-05-14 | **P0-pre**: pg_dump remnawave (`/var/backups/remnawave/`) + git snapshot (`.snapshots/pre-P0-…`), SHA256 зафиксированы |
 | 2026-05-14 | **P0-SEC-03 DONE**: `0.0.0.0:3010` закрыт через iptables `DOCKER-USER` (только LV `176.126.162.158`); systemd-юнит `ams-docker-firewall.service`; `ENABLE_DEBUG_LOGS=false`; LV→AMS `200 OK`, прямой доступ снаружи отвергнут |
 | 2026-05-14 | **P0-SEC-01 DONE**: убран `ssl.CERT_NONE` из 15 `ops/*.py`, добавлен общий `ops/panel_client.py` (strict TLS + retry); `monitor.sh` / `daily-report.sh` — `-sk → -s` для LE-эндпоинтов (selfsteal `127.0.0.1` остался `-sk` намеренно); `.secrets/*.sh` — то же; `check.py` оставлен `CERT_NONE` с явным комментарием (это relay-проба чужих SNI). Smoke: `panel_api.py nodes/inject-count` отвечают, `curl -fsS` к панели/подписке без `-k` → 200 |
