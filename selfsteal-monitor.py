@@ -29,11 +29,15 @@ LOG_FILE = "/var/log/bvpn-selfsteal-monitor.log"
 # disappeared).
 ANTISPAM_DIR = "/var/lib/bvpn-monitor"
 _LEGACY_ANTISPAM_DIR = "/tmp/bvpn_states"
-CURL_TIMEOUT = 5
+CURL_TIMEOUT = 8
 SSH_TIMEOUT = 90
 JITTER_MAX = 120
 RETRY_DELAY = 0.5
 RETRY_WARN_THRESHOLD = 5
+# When curl returns 0 (timeout/refused), retry before alerting — same Caddy serves
+# heavy panel traffic; brief contention is not necessarily "probe dead".
+HTTP_ZERO_RETRIES = 3
+HTTP_ZERO_BACKOFF_BASE = 1.0
 
 # --- Amsterdam ---
 AMSTERDAM_HOST = "168.100.11.140"
@@ -337,8 +341,16 @@ def run_checks_local():
     for sni, exp in EXPECTATIONS.items():
         code = curl_local(sni)
         retried = False
+        if code == 0:
+            for attempt in range(HTTP_ZERO_RETRIES):
+                time.sleep(HTTP_ZERO_BACKOFF_BASE + attempt * 0.5)
+                code = curl_local(sni)
+                retried = True
+                if code != 0:
+                    break
         if code not in exp["tolerate"]:
-            time.sleep(RETRY_DELAY)
+            if not retried:
+                time.sleep(RETRY_DELAY)
             code = curl_local(sni)
             retried = True
         level, reason = classify_result(code, exp)
@@ -423,7 +435,9 @@ def format_alert_down(node, sni, code, prev):
         f"Check:\n"
         f"- systemctl status caddy (Latvia)\n"
         f"- docker ps caddy-selfsteal (Amsterdam)\n"
-        f"- tail /var/log/caddy/..."
+        f"- tail /var/log/caddy/...\n\n"
+        f"<i>Short HTTP 0 spikes can be transient (same Caddy handles panel :2053); "
+        f"retry before paging.</i>"
     )
 
 
