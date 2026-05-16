@@ -4,10 +4,12 @@
 
 ## 0. Рекомендуемый порядок на проде
 
+Критерий закрытия **`P6-SCALE-04`** в бэклоге: **(a)** green probe → **(b)** CDN/RL → **(c)** повтор probe (§12).
+
 1. **Бот AMS** при необходимости: хотфиксы **`handlers` / user_messages`** — см. **`docs/DEPLOY.md` §4.3.1** или **`pwsh -File ops/deploy-bot-handlers-ams.ps1`**, смок **`/start`** в Telegram.
-2. **Baseline без нового RL:** с узла с доступом к публичному URL (или локально через `site_urls`) — один прогон **`python ops/subscription_load_probe.py --json`** (параметры сохраните в **`COMMERCIAL-BACKLOG` §12**).
-3. **Включить** CDN **или** rate-limit на краю (**§2**), не трогая **`/api/sub/*`** токены и upstream на AMS (**`REMNA_API_TOKEN`**, см. **`RUNBOOK-REMNA-API-TOKEN`**).
-4. Повторить **`subscription_load_probe`** (можно **`--max-bad-http-rate`**, если договорились о допустимой доле не-200/304); зафиксировать в **§12**.
+2. **(a) Baseline без нового RL:** только если панель/sub стабильно **200/304** — прогон **`python ops/subscription_load_probe.py --json`** (параметры в **`COMMERCIAL-BACKLOG` §12**). При массовых **502** — сначала AMS health / **`RUNBOOK-AMS-SAFE-DEPLOY`**, не считать (a) закрытым.
+3. **(b) Включить** CDN **или** rate-limit на краю (**§2**), не трогая токены upstream (**`RUNBOOK-REMNA-API-TOKEN`**).
+4. **(c) Повторить** **`subscription_load_probe`** (опц. **`--max-bad-http-rate`**); зафиксировать в **§12**. После (b)+(c) — **P6-SCALE-04** можно считать **DONE**.
 
 ## 1. Текущая схема (ориентир)
 

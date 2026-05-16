@@ -240,6 +240,16 @@ python ops/render_compose.py --none compose/ams/remnawave-sub/docker-compose.yml
 
 Раз в 1–2 недели или перед/после релиза. По возможности — шаг CI (без vault: только то, что можно в публичном runner'е).
 
+### 7.5 Safe-deploy gate на AMS (обязательно)
+
+Перед накатом **`compose/ams/**`** на **`/opt/remnawave`**, **`/opt/remnawave/sub`**, **`/opt/remna-shop`**:
+
+1. **`python ops/extract_vault.py`** из свежих **`.secrets/prod-compose/`** (не подгонять секреты вручную).
+2. Рендер в **`/tmp`**, diff с продом; **`bash ops/remna_api_token_rollout.sh dry-run`**.
+3. Бэкап целевых файлов → накат → smoke sub/panel → **`python ops/drift-check.py`**.
+
+Полный чеклист: **`docs/RUNBOOK-AMS-SAFE-DEPLOY.md`** (**`P2-OPS-AMS-SAFE-DEPLOY-01`**). Урок: инцидент **502** **2026-05-17** (§12 бэклога).
+
 ---
 
 ## 8. Что ещё под капотом (не в §1 таблице)
@@ -263,4 +273,5 @@ python ops/render_compose.py --none compose/ams/remnawave-sub/docker-compose.yml
 
 - **2026-05-14** — P1-OPS-DRIFT-01 закрыта. Все 10 файлов синхронизированы (репо ← прод после большой серии правок P0-block / Monitor-block / AMS-decom). Этот документ создан.
 - **2026-05-15** — **P1-OPS-DRIFT-02**: в §1 добавлена строка **`compose/**/*.tmpl`**; §7 описывает vault, `sanitize_compose_templates` / `extract_vault`, `render_compose.py` (`--only`, `--none`, согласованность с `tmpl_only_keys` в `drift-check.py`), нормализацию CRLF при сравнении MD5 с продом.
+- **2026-05-16** — **§7.5** safe-deploy gate AMS: **`docs/RUNBOOK-AMS-SAFE-DEPLOY.md`** (**`P2-OPS-AMS-SAFE-DEPLOY-01`**).
 - **2026-05-16** — **`daily-report.sh`**: сбор юзеров через **`/api/users?size=&start=`** постранично (раньше один **`GET /api/users`** давал только первую страницу ~25 записей → расхождение с панелью). Деплой: **`pwsh -File ops/deploy-daily-report-lv.ps1`**. `ru-monitor.py`: текст алерта «cert changed» для внешних SNI (апстрим CDN, не только Caddy/MITM). (и меньший лимит для прочих) при **`TimeoutExpired`**. **`monitor.sh`** в таблице §1: описание **`SUB_*`** / **`PANEL_URL`** (как **`daily-report.sh`**).

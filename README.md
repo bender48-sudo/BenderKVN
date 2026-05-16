@@ -6,7 +6,9 @@
 
 | Раздел | Файл |
 |--------|------|
+| **Что делать сейчас (один NEXT → коммит)** | [`docs/BACKLOG-QUEUE.md`](docs/BACKLOG-QUEUE.md) |
 | **Бэклог и журнал решений на проде** | [`docs/COMMERCIAL-BACKLOG.md`](docs/COMMERCIAL-BACKLOG.md) |
+| **Одна задача за сессию агента** | [`docs/POLICY-SEQUENTIAL-WORK.md`](docs/POLICY-SEQUENTIAL-WORK.md) |
 | **Правила работы, уроки, типовые ошибки** | [`docs/KNOWLEDGE-BASE.md`](docs/KNOWLEDGE-BASE.md) |
 | Политика репозитория (секреты, drift, sanitize) | [`docs/POLICY-REPO-WORKFLOW.md`](docs/POLICY-REPO-WORKFLOW.md) |
 | Онбординг пользователя | [`docs/ONBOARDING.md`](docs/ONBOARDING.md) |

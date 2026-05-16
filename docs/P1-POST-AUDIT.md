@@ -22,7 +22,7 @@
 
 ## 3. Безопасность (наследие и открытые P0)
 
-- [ ] **`P0-SEC-04`** / **`P0-SEC-05`**: закрываются **операционно** по **`docs/RUNBOOK-P0-SEC04-SEC05.md`** (`ops/archive_lv_remnawave_legacy.sh`, `ops/rotate_ams_panel_core_secrets.py`). После выполнения на проде — отметить **`docs/COMMERCIAL-BACKLOG.md` §12** (строка **P0-SEC-04/05 DONE**).
+- [x] **`P0-SEC-04`** / **`P0-SEC-05`**: **DONE на проде 2026-05-15** — **`docs/RUNBOOK-P0-SEC04-SEC05.md`**, журнал **`docs/COMMERCIAL-BACKLOG.md` §12**.
 - [x] «Живые» JWT в дереве: **`ops/redact_bvpn_artifacts.py`**; выборочный поиск `eyJ` — в прикладном коде/compose плейсхолдеров нет; встречается в архивных markdown/снапшотах как **описание формата**, не как значение секрета.
 
 ## 4. Архитектура нод и compose
@@ -52,13 +52,13 @@
 
 Закрытие **блока P1** подтверждено документально и кодом репозитория: продуктовый пакет (FAQ, runbook, Happ-matrix, SNI-policy), ENG (site_urls, архив **`tmp_*.py`** → **`archive/tmp-remna-shop-bot-patches/`**, RU-bypass tooling), ARCH (унификация compose нод NL/AMS, метрика «users-touching-AMS-sub» для decom).
 
-**Оговорки (не блокируют go на P2, но критичны по приоритету):**
+**Оговорки (актуально на 2026-05-16):**
 
-1. **`P0-SEC-04` / `P0-SEC-05`**: процедура и скрипты в **`docs/RUNBOOK-P0-SEC04-SEC05.md`** — выполнить на проде; затем считать критичный секретный трек закрытым и обновить журнал бэклога §12.
-2. **Деплой на прод после merge**: **`daily-report.sh`**, **`count_users_with_ams_sub.py`**, возможное разнесение секрета AMS/NL **`remnanode`** на **`docker-compose.yml` + `.env`** — иначе **`drift-check`** будет показывать расхождение до наката.
-3. **`monitor.sh`**: smoke URL подписки всё ещё захардкожен → задача **`P2-CHORE-SUB-ENV`** в бэклоге.
+1. ~~**`P0-SEC-04` / `P0-SEC-05`**~~ — закрыто на проде (§12 бэклога).
+2. ~~**`P2-CHORE-SUB-ENV`**~~ — **`monitor.sh`** на env-based smoke URL.
+3. **Фаза роста:** **`P6-SCALE-04`**, **`§5.3 P2-COM-MONETIZE`**, **`P2-OPS-AMS-SAFE-DEPLOY-01`**, **`P2-OPS-RESTORE-TEST-01`** — см. **`docs/COMMERCIAL-BACKLOG.md` §11**.
 
-**Вердикт:** **go на P2** (надёжность, мониторинг Xray-vs-grep, бэкапы) после выполнения **`docs/RUNBOOK-P0-SEC04-SEC05.md`** на проде (или параллельно держать контроль до окна работ).
+**Вердикт:** **P1 PASS**; дальнейшая работа — **P6 + коммерция + selective Red team** (§11 бэклога).
 
 ---
 

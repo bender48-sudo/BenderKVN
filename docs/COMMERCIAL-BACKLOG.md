@@ -1,6 +1,6 @@
 # BenderVPN — коммерческий бэклог
 
-**Версия документа:** 2026-05-15 — **`P3-UX-02`/03**, **`docs/POLICY-LOGS-DATA.md`** (черновик **P3-TR-01**), **`docs/NODE-POLICY-LV-NL.md`** ( **P6-SCALE-NL-VERIFY** + задел **P6-SCALE-02** ); синхрон **§4** с **§11** (P0); прежнее: политика репо (**`POLICY-REPO-WORKFLOW`**) + **`P3-UX-01`**; AMS 502 (§12).
+**Версия документа:** 2026-05-16 — **`docs/BACKLOG-QUEUE.md`** + **`POLICY-SEQUENTIAL-WORK`**; цели роста **§1**, спринт **коммерция §3 п.9a**, **`§5.3`**, переупорядочен **§11** (Red team под 10k/30k), runbook’и **`RUNBOOK-AMS-SAFE-DEPLOY`**, **`RUNBOOK-COMMERCE-GO-LIVE`**, **`GTM-GROWTH-OUTLINE`**; прежнее: P3-UX, AMS 502 (§12).
 **Цель:** стабильный **8–9/10** (нишевый коммерческий VPN в РФ); измеримый рост к максимально достижимому качеству.  
 **Определение «готово»:** по каждой задаче выполнен критерий в колонке **Done when** + при необходимости запись в трекере (статусы `TODO` / `DOING` / `DONE`).
 
@@ -16,11 +16,13 @@
 | **Роль LV** | Production-нода (`remnanode` + AdGuard); `/opt/scripts/*`. |
 | **Роль NL** | Production-нода (`remnanode`). |
 | **Пользователи в БД** (`users`) | **≈58** (ориентир; см. журнал §12) |
-| **Ноды в панели** | **3 записи**; prod **online: LV + NL**; Amsterdam-01 — **decom**, `connected=false` до шага 4c. |
+| **Ноды в панели** | **3 записи**; prod **online: LV + NL**; Amsterdam-01 — **decom**, `connected=false`; шаг **4c** (удалить запись в UI) — **waive до scale** (не блокер, см. §12). |
 | **Inject / AMS hosts** | Не входят в `injectHosts`; целевые `hosts`: `isHidden` + `isDisabled` (зафиксировано **2026-05-14**). |
 | **Размер БД Postgres** | **~11 MB** (ориентир) |
 | **RAM хоста AMS** | **~2 GiB** — панель + edge без prod VPN после drain |
-| **Вывод** | Модель роста: **2 prod-ноды (LV+NL) + панель AMS**. Контроль «кто всё ещё видит AMS IP в Happ-sub»: **`daily-report.sh`** вызывает **`count_users_with_ams_sub.py`**. Узкие места: RAM/API панели, публичная подписка (**P6**). |
+| **Цели роста (продукт)** | **~10k** учёток к **концу лета 2026**; **~30k** в **2027**; GTM-план — **вне git** (**`docs/GTM-GROWTH-OUTLINE.md`**, URL wiki: _заполнить владельцем_) |
+| **Инфра-триггеры при росте** | **2k** users → апгрейд AMS; **8k** → load test sub + отдельный edge; soft-cap нод → 3-я prod (**§10.1**) |
+| **Вывод** | Модель роста: **2 prod-ноды (LV+NL) + панель AMS**. Контроль «кто всё ещё видит AMS IP в Happ-sub»: **`daily-report.sh`** вызывает **`count_users_with_ams_sub.py`**. Узкие места: RAM/API панели, публичная подписка (**P6**), **монетизация до массового трафика** (**§5.3**). |
 
 ---
 
@@ -42,9 +44,9 @@
 
 ---
 
-## 3. Очередь по спринтам (чёткий порядок)
+## 3. Очередь по спринтам (историческая карта)
 
-Выполнять **сверху вниз**. Параллельно: только **P4-DNS** при отдельном человеке (не блокирует P0–P2).
+Спринты **1–12** — архив закрытого и группировка по темам. **Исполнять новую работу** только по линейной очереди **`docs/BACKLOG-QUEUE.md`** (одна задача → коммит → новая сессия). Параллельно: только **P4-DNS** при отдельном человеке.
 
 | # | Спринт‑кусок | ID |
 |---|----------------|-----|
@@ -57,11 +59,12 @@
 | 6 | Конфиг в одном месте + ru-monitor хосты + чистка артефактов | **P1-ENG-01** ✅ (`ops/site_urls.py` + `deploy-node.sh`), **P1-ENG-02** ✅, ~~**P1-ENG-03**~~ ✅ (`archive/tmp-remna-shop-bot-patches/` + `redact_bvpn_artifacts`) |
 | 7 | Мониторинг «Xray реально жив» + state dirs | ~~**P2-MON-01**~~ ✅, ~~**P2-MON-02**~~ ✅ |
 | 8 | Бэкапы (off-host + restore test) + patches | ~~**P2-BAK-01**~~ ✅, ~~**P2-BAK-02**~~ ✅ |
-| 9 | Метрики ёмкости (**старт P6 до роста базы**) | ~~**P6-SCALE-01**~~ ✅, **P6-SCALE-04** (runbook + probe; load test → §12) |
-| 9b | **Эксплуатация (хвост P2):** drift post-P0, TG/SSH/утечки | ~~**P2-OPS-DRIFT-POST-P0**~~ ✅, ~~**P2-MON-03**~~ ✅, ~~**P2-SSH-01**~~ ✅, ~~**P2-SEC-LOG-01**~~ ✅ |
+| 9 | Метрики ёмкости (**старт P6 до роста базы**) | ~~**P6-SCALE-01**~~ ✅, **P6-SCALE-04** (a green probe §12; b CDN/RL на проде; c повтор probe — **`RUNBOOK-P6-SUBSCRIPTION-EDGE`**) |
+| **9a** | **Коммерция (до массового привлечения)** | **P2-COM-MONETIZE-01…04** → **`RUNBOOK-COMMERCE-GO-LIVE`**; затем **P6-RED-PAY-01** при включении оплаты |
+| 9b | **Эксплуатация (хвост P2):** drift post-P0, TG/SSH/утечки, gates | ~~**P2-OPS-DRIFT-POST-P0**~~ ✅, ~~**P2-MON-03**~~ ✅, ~~**P2-SSH-01**~~ ✅, ~~**P2-SEC-LOG-01**~~ ✅, **P2-OPS-AMS-SAFE-DEPLOY-01**, **P2-OPS-RESTORE-TEST-01** |
 | 10 | **(после §2.1 — UX не раньше продукта)** Онбординг и тексты | ~~**P1-PRO-01…04**~~ ✅ (см. **`docs/FAQ.md`**, **`docs/RUNBOOK-INCIDENT.md`**, **`docs/HAPP-MATRIX.md`**, **`docs/POLICY-SNI-MONITORING.md`**), ~~**P3-UX-01**~~ ✅ (**`docs/ONBOARDING.md`**), ~~**P3-UX-02**~~ ✅ (**`bot_src/user_messages.py`**, **`docs/support/USER-FACING-ERRORS.md`**), ~~**P3-UX-03**~~ ✅ (**`docs/templates/USER-INCIDENT-BROADCAST.md`**) |
 | 11 | DNS PoC → FAQ (по ресурсу) | **P4-DNS-01** → ~~**P4-DNS-02**~~ ✅ (блок DNS bootstrap **`docs/FAQ.md`**) → **P4-DNS-03** |
-| 12 | **Red team / ТПСУ** (устойчивость к наблюдению, blast radius, рост до 30k) — см. **§5.1 → §10.2** | **P1-RED-DATA-01** … **P1-RED-LOG-01** → **P2-RED-*** → **P6-RED-*** → **P3-RED-*** → **P5-RED-RD-01** |
+| 12 | **Red team / ТПСУ** — порядок **§5.1** (фаза роста 10k): **P2-RED-SUB/MUX** → **P6-RED-PAY/SUBHA** → **P1-RED-DATA/Vault** после monetize или **2k** users | см. **§5.1** |
 
 ---
 
@@ -99,7 +102,11 @@
 
 ### 5.1 Red team / ТПСУ — конкретные доработки (приоритет: критичные → мелкие)
 
-Источник: аудит «чёрного оппонента» + дорожная карта смягчения (sing-box/USENIX DPI‑литература, Vault/SPIFFE, Snowflake‑подобный bootstrap). Выполнять в порядке **P1‑RED → P2‑RED → P6‑RED → P3‑RED → P5‑RED**.
+Источник: аудит «чёрного оппонента» + дорожная карта смягчения (sing-box/USENIX DPI‑литература, Vault/SPIFFE, Snowflake‑подобный bootstrap).
+
+**Порядок по умолчанию (таблица ниже):** P1‑RED → P2‑RED → P6‑RED → P3‑RED → P5‑RED.
+
+**Фаза роста до ~10k (лето 2026)** — сдвиг вперёд (см. **§11**): сначала **P2-RED-SUB-01**, **P2-RED-MUX-01**, **P6-RED-PAY-01**, **P6-RED-SUBHA-01**; **P1-RED-DATA-01**, **P1-RED-SEC-01** (Vault/SPIFFE), **P1-RED-SSH-01**, **P1-RED-DNS-01** — после **P2-COM-MONETIZE-02** или при **users > 2k**, отдельный владелец. **P5-RED-RD-01** — не на критическом пути.
 
 | ID | Задача | Done when |
 |----|--------|-----------|
@@ -121,11 +128,22 @@
 
 ### 5.2 Смена `REMNA_API_TOKEN` без регресса (после остального бэклога)
 
-**Порядок:** выполнять **после** приоритетных P2 / P6 / §5.1 — на проде уже есть guardrails (**`ops/sync-sub-token-ams.sh`**, **`ops/check-ams-subscription-token-layout.sh`**, **`ops/fix-ams-subscription-api-token.sh`**, **`docs/SECRETS.md`** §3). Задача ниже — **формализовать одноразовую процедуру** на случай **намеренной** смены токена (компрометация, смена `JWT_API_TOKENS_SECRET`, политика ротации), чтобы не повторять сбои **2026‑05‑16**.
+**Порядок:** выполнять **после** приоритетных P2 / P6 / §5.1 — на проде уже есть guardrails (**`ops/check-ams-subscription-token-layout.sh`**, **`ops/fix-ams-subscription-api-token.sh`**, **`docs/SECRETS.md`** §3). Накат AMS — **`docs/RUNBOOK-AMS-SAFE-DEPLOY.md`**. Задача ниже — **формализовать одноразовую процедуру** на случай **намеренной** смены токена, чтобы не повторять сбои **2026‑05‑16**.
 
 | ID | Задача | Done when |
 |----|--------|-----------|
 | ~~**P1-OPS-REMNA-TOKEN-01**~~ ✅ | **Единый runbook + автоматизация смены `REMNA_API_TOKEN`** по всем потребителям (**`docs/SECRETS.md` §3**: shop; **`/opt/remnawave/sub/.env`**; в compose подписки только **`REMNAWAVE_API_TOKEN=${REMNA_API_TOKEN}`**, без `eyJ…` в YAML; LV **`balancer.env`/`ru-monitor.env`**; **`.secrets/vault.env`** + **`python ops/render_compose.py`** где применимо; перезапуск контейнеров/сервисов). Инцидент **2026‑05‑16**: инлайн JWT в **`sub/docker-compose.yml`** → **502** клиентам; синхрон LV **`/opt/remnawave`** давал рассинхрон. **Документ:** **`docs/RUNBOOK-REMNA-API-TOKEN.md`**; **скрипт:** **`bash ops/remna_api_token_rollout.sh`** (**`dry-run`** / **`verify-ams`** / **`sync-ams-sub`**). **Запрет:** коммит и публичные каналы. | **DONE 2026‑05‑15 (репо):** формализация процедуры. **При первой реальной ротации только скриптом** — добавить строку §12 со smoke (**подписка 200**, бот/`panel_api`, **`drift-check`** или waive). |
+
+### 5.3 Коммерция и монетизация (до 10k users)
+
+Выполнять **после** спринта **9** (метрики) и **параллельно** с закрытием **P6-SCALE-04**, **до** массового GTM (**`docs/GTM-GROWTH-OUTLINE.md`**). Процедура: **`docs/RUNBOOK-COMMERCE-GO-LIVE.md`**.
+
+| ID | Задача | Done when |
+|----|--------|-----------|
+| **P2-COM-MONETIZE-01** | **Финальные цены** в боте: убрать тест **1 ₽**/мес., согласовать **`PLANS`** / **`TRAFFIC_PACKS`** в **`bot_src/config.py`**, деплой на AMS. | На проде отображаются согласованные цены; owner подтвердил. |
+| **P2-COM-MONETIZE-02** | **`BOT_PAYMENTS_LIVE=1`**: креды платёжек в **`/opt/remna-shop/.env`**, smoke E2E (Stars / YooKassa / crypto — что включено). | Минимум один канал: оплата → продление в панели; повтор webhook без дубля. |
+| **P2-COM-MONETIZE-03** | **Legal URLs** в боте: **`TERMS_URL`**, **`PRIVACY_URL`**, **`SUPPORT_USER`** (админка/env), без заглушек в прод-сообщениях. | Пользователь видит ссылки до оплаты. |
+| **P2-COM-MONETIZE-04** | **Go-live чеклист** перед рекламой: **§5.3** + **`RUNBOOK-COMMERCE-GO-LIVE` §4** (safe deploy, sub edge, restore test, GTM wiki). | Строка §12 «COM-MONETIZE go-live OK»; связь с **P6-RED-PAY-01** запланирована при пике продаж. |
 
 ---
 
@@ -144,6 +162,9 @@
 | ~~**P2-SEC-LOG-01**~~ ✅ | Гигиена секретов: если **`BOT_TOKEN`** / JWT попали в **транскрипты Cursor**, скриншоты, общие логи — считать компрометацией до проверки. | **`docs/POLICY-SECRET-LEAK-RESPONSE.md`** (2026-05-16). |
 | ~~**P2-ENG-DRIFT-CHECK-01**~~ ✅ | **`ops/drift-check.py`**: нестабильные **TIMEOUT** на LV. | Retry + растущий deadline на chunk (**4×** попытки для **`bvpn-lv`**, **2×** прочие) + backoff; см. **`docs/DEPLOY.md`** (§ drift-check примечание). Репо **2026‑05‑15**. |
 | ~~**P2-MON-BALANCER-PANEL-URL**~~ ✅ | **`balancer.sh`** на LV после переноса панели на AMS всё ещё бил в **`http://localhost:3000`** → **`USERS=0 NODES=0`** в логе, алерты вместимости бессмысленны. | **DONE 2026‑05‑15**: **`PANEL_URL`** в **`/etc/bvpn/balancer.env`** + правка **`balancer.sh`** (репо **`compose/_shared/etc-bvpn-lv/balancer.env.tmpl`**); smoke **`HTTP 200`** на **`/api/users`** (журнал §12). |
+| **P2-OPS-AMS-SAFE-DEPLOY-01** | **Gate наката AMS** compose/env: бэкап → **`extract_vault.py`** → dry-run токена → render в `/tmp` → smoke sub/panel → **`drift-check`**. | **`docs/RUNBOOK-AMS-SAFE-DEPLOY.md`**; каждый накат AMS tmpl по чеклисту; урок **2026-05-17** в §12. |
+| **P2-OPS-RESTORE-TEST-01** | **Квартальный restore test** дампа Remnawave (изолированный Postgres). | Дата успешного прогона в **`docs/RUNBOOK-BACKUP-REMNAWAVE.md` §4** + строка §12 (**P2-BAK-01** runbook в репо ✅). |
+| **P2-OPS-IMAGE-PIN-01** | **Digest pin** хвоста образов: **adguard**, **postgres**, **caddy**, **valkey** (см. журнал **P0-OPS-02**). | В **`compose/**/*.tmpl`** нет `:latest` для перечисленных; деплой + smoke. |
 
 ---
 
@@ -210,7 +231,7 @@
 | ~~**P6-SCALE-01**~~ ✅ | Метрики: сессии по нодам, RPS `/api/*`, Postgres latency/size, Redis, RPS подписки, RAM по контейнерам. | **В репо:** `python ops/capacity_snapshot.py` — users/nodes, пороги §10.1, **HTTPS probe подписки** (latency + код). Docker/Postgres/RPS — расширения. |
 | **P6-SCALE-02** | Soft cap пользователей на ноду + правило добавления ноды в матрицу. | Документ + настройка панели/Happ; базовое правило про LV/NL — **`docs/NODE-POLICY-LV-NL.md`**. |
 | **P6-SCALE-03** | Postgres: индексы, `pg_stat_statements`, окно бэкапа не в пик. | План обслуживания |
-| **P6-SCALE-04** | Публичная подписка: edge/CDN, **rate limit** по IP, защита от абьюза. | **Репо:** **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`**, smoke в **`ops/capacity_snapshot.py`**, нагрузочный смок **`ops/subscription_load_probe.py`** (§3 runbook). Зафиксированный прогон — §12; **CDN/rate limit** на edge — по §2 runbook при росте (может отличаться от смока). |
+| **P6-SCALE-04** | Публичная подписка: edge/CDN, **rate limit** по IP, защита от абьюза. | **(a)** Green baseline: **`subscription_load_probe`** при стабильных **200/304** → §12. **(b)** CDN **или** Caddy RL на проде (**`RUNBOOK-P6-SUBSCRIPTION-EDGE` §2**). **(c)** Повтор probe после (b); p95/5xx в §12. Репо: runbook + **`capacity_snapshot`** probe. |
 | **P6-SCALE-05** | Рост API панели: вертикаль/горизонталь по доке; Redis eviction. | Прогон «refresh × N» |
 | **P6-SCALE-06** | RU-monitor укладывается в cron **< 5 мин** при текущем числе хостов. | Лог с длительностью |
 | **P6-SCALE-07** | Нагрузка на поддержку: шаблоны (P3) + при росте очереди — вторая линия / SLA ответа. | Метрика очереди |
@@ -229,9 +250,13 @@
 
 ## 11. Связь с аудитом репозитория
 
-Закрыты по коду/операциям: **P0-SEC-01…03** ✅, **P0-OPS** ✅, ~~**P0-SEC-04**~~ ✅, ~~**P0-SEC-05**~~ ✅ (**журнал §12**). Открытых задач уровня **P0** в таблице §4 на текущий срез **нет**. Блок **P1** ✅ по **`docs/P1-POST-AUDIT.md` (PASS 2026-05-15)** плюс **~~P1-OPS-REMNA-TOKEN-01~~**, **~~P1-RED-LOG-01~~** (в форме репо + патч-док). **Операционная память:** **`docs/KNOWLEDGE-BASE.md`**, процедуры репозитория (**`docs/POLICY-REPO-WORKFLOW.md`**). Из **§5.1**: дальше **P1‑RED‑DATA/SEC/SSH/DNS**. Из **§6**: ~~**P2-OPS-DRIFT-POST-P0**~~ ✅, ~~**`P2-SEC-LOG-01`**~~ ✅, ~~**`P2-MON-01`/`P2-MON-02`**~~ ✅, ~~**`P2-BAK-01`/`P2-BAK-02`**~~ ✅, бэкапы (restore test — см. **`RUNBOOK-BACKUP-REMNAWAVE`**); ~~**`P2-ENG-DRIFT-CHECK-01`**~~ ✅, ~~**`P2-CHORE-SUB-ENV`**~~ ✅; затем **P6** (**P6‑RED‑***; база для ~~**`P6-SCALE-NL-VERIFY`**~~ / **P6-SCALE‑02** — см. **`docs/NODE-POLICY-LV-NL.md`**). **Репозиторные черновики P3:** ~~**`P3-UX-02`/`P3-UX-03`/`P3-TR-01`**~~ (**`support/USER-FACING-ERRORS`**, **`templates/USER-INCIDENT-BROADCAST`**, **`POLICY-LOGS-DATA`**).
+**Закрыто:** **P0** (вкл. ~~**P0-SEC-04/05**~~ на проде, §12), **P1**, большинство **P2**, репозиторные **P3-UX/TR**. **`docs/P1-POST-AUDIT.md`** синхронизирован (**2026-05-16**).
 
-**P4** — отдельный продуктовый слой, не смешивать с основным VPN SKU.
+**Что делать сейчас:** смотреть **`docs/BACKLOG-QUEUE.md`** — одна строка **`NEXT`**, после закрытия — коммит и новая сессия (правило: **`docs/POLICY-SEQUENTIAL-WORK.md`**, **`.cursor/rules/sequential-backlog.mdc`**).
+
+**Операционная память:** **`docs/KNOWLEDGE-BASE.md`**, **`docs/POLICY-REPO-WORKFLOW.md`**. **Ёмкость нод:** **`docs/NODE-POLICY-LV-NL.md`**.
+
+**P4** — отдельный SKU, не смешивать с основным VPN.
 
 ---
 
@@ -239,6 +264,8 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-16 | **Последовательная очередь:** **`docs/BACKLOG-QUEUE.md`** (Q001…, **NEXT=Q002** P6-SCALE-04b), **`docs/POLICY-SEQUENTIAL-WORK.md`**, **`.cursor/rules/sequential-backlog.mdc`**. §3 — карта спринтов; §11 → ссылка на очередь. |
+| 2026-05-16 | **План «бэклог vs рост 10k/30k» в репо:** §1 цели роста; спринт **§3 п.9a** (**P2-COM-MONETIZE**); **§5.3**, переупорядочен **§11**; **`RUNBOOK-AMS-SAFE-DEPLOY`**, **`RUNBOOK-COMMERCE-GO-LIVE`**, **`GTM-GROWTH-OUTLINE`**; **P2-OPS-AMS-SAFE-DEPLOY-01**, **P2-OPS-RESTORE-TEST-01**, **P2-OPS-IMAGE-PIN-01**; **P6-SCALE-04** критерии (a)(b)(c). **P6-SCALE-04 (a):** probe **20** req, c=10 → **19×200**, p95≈**11.5s**, 1 hard_error (с рабочей станции). **(b)(c)** CDN/RL на проде — открыто. Amsterdam **4c** — waive до scale. |
 | 2026‑05‑15 | **`docs/POLICY-REPO-WORKFLOW.md`** — операционная дисциплина репозитория (SoT, секреты, AMS/LV JWT, sanitize убивает `compose/` как по MAP); **`.cursor/rules/bendervpn-repo-workflow.mdc`** для Cursor. **`docs/ONBOARDING.md`** + закрыта **`P3-UX-01`**. Обновлён **`ops/remna_api_token_rollout.sh` dry-run** под двухтокенную схему. |
 | 2026-05-17 | **Инцидент 502 после наката rendered `tmpl` на AMS (закрыт):** **`remnawave`** — цикл перезапусков, Prisma **P1000** (пароль в **`DATABASE_URL`** из vault не совпадал с фактическим Postgres); **`remnawave-subscription-page`** — **401** к панели (неверный **`REMNA_API_TOKEN`** в смонтированном **`sub/docker-compose.yml`**). **Починка на AMS:** откат **`/opt/remnawave/.env`**, **`/opt/remnawave/sub/docker-compose.yml`**, **`/opt/remna-shop/.env`** из **`*.before-drift-20260516-120658`** + **`docker compose up -d`**; публичный sub-smoke → **200**, прогон **`subscription_load_probe`**: **20/20 × 200**, p95 ≈ **1.5 s**. **Урок:** перед накатом **`panel.env.tmpl`** обновить vault (**`extract-vault`** с прода) и не перезаписывать sub/shop без сверки токена (**`RUNBOOK-REMNA-API-TOKEN`**). |
 | 2026-05-17 | **P6-SCALE-04 (нагрузочный смок):** добавлен **`ops/subscription_load_probe.py`**; прогон **120** запросов, **concurrency 30** на `site_urls.sub_monitor_probe_url()` — **p95 ≈ 4.2s**, **502** на все ответы (**status_histogram 502=120**), **hard_errors=0**; одновременно **GET /api/users** с рабочей машины дал **502** — трактовать как **проверку устойчивости канала при деградации upstream**, повторить смок когда панель/sub стабильно **200/304**, при необходимости смотреть AMS **`remnawave` / subscription-page** / Caddy. |

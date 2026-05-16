@@ -9,6 +9,8 @@
 | Что нужно | Документ / артефакт |
 |-----------|---------------------|
 | Очередь задач по приоритетам | **`docs/COMMERCIAL-BACKLOG.md`** |
+| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** |
+| Правило: одна задача → коммит → стоп | **`docs/POLICY-SEQUENTIAL-WORK.md`** |
 | Журнал «что уже сделали на проде» | тот же файл, **§12** |
 | Очередь capacity (users/nodes vs §10.1) | `python ops/capacity_snapshot.py` (токен в `.secrets/panel-token.txt`) |
 | Деплой, drift, рендер vault | **`docs/DEPLOY.md`** |
@@ -23,6 +25,10 @@
 | SSH known_hosts / `StrictHostKeyChecking` | **`docs/SSH-HOST-KEY-PRACTICE.md`** |
 | Утечка секрета в чат / скриншот | **`docs/POLICY-SECRET-LEAK-RESPONSE.md`** |
 | Drift прод↔репо после P0 / смены панели | **`docs/DRIFT-POST-P0.md`** |
+| Накат AMS compose/env (gate) | **`docs/RUNBOOK-AMS-SAFE-DEPLOY.md`** |
+| Go-live оплаты в боте | **`docs/RUNBOOK-COMMERCE-GO-LIVE.md`** |
+| GTM / рост 10k–30k (шаблон вне git) | **`docs/GTM-GROWTH-OUTLINE.md`** |
+| Edge подписки (P6-SCALE-04) | **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`** |
 | Правила репозитория (secrets, sanitize, drift) | **`docs/POLICY-REPO-WORKFLOW.md`** |
 | Онбординг пользователя / поддержка первого коннекта | **`docs/ONBOARDING.md`** |
 | Реестр секретов и путей на хостах | **`docs/SECRETS.md`** |
