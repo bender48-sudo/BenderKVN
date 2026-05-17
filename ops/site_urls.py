@@ -92,6 +92,49 @@ def public_status_url() -> str:
     return f"{origin}{path}"
 
 
+def _portal_origin() -> str:
+    return os.environ.get(
+        "PUBLIC_PORTAL_ORIGIN",
+        SUB_ALT_PUBLIC_ORIGINS[0] if SUB_ALT_PUBLIC_ORIGINS else PANEL_URL,
+    ).rstrip("/")
+
+
+PUBLIC_BOOTSTRAP_PATH = os.environ.get(
+    "PUBLIC_BOOTSTRAP_PATH", "/start"
+).strip()
+if not PUBLIC_BOOTSTRAP_PATH.startswith("/"):
+    PUBLIC_BOOTSTRAP_PATH = "/" + PUBLIC_BOOTSTRAP_PATH
+
+PUBLIC_PORTAL_PATH = os.environ.get("PUBLIC_PORTAL_PATH", "/portal").strip()
+if not PUBLIC_PORTAL_PATH.startswith("/"):
+    PUBLIC_PORTAL_PATH = "/" + PUBLIC_PORTAL_PATH
+
+PUBLIC_SETUP_PATH = os.environ.get("PUBLIC_SETUP_PATH", "/setup").strip()
+if not PUBLIC_SETUP_PATH.startswith("/"):
+    PUBLIC_SETUP_PATH = "/" + PUBLIC_SETUP_PATH
+
+
+def public_bootstrap_url() -> str:
+    """Bootstrap landing (P3-FLOW-01), clearnet without VPN."""
+    path = PUBLIC_BOOTSTRAP_PATH.rstrip("/") or "/start"
+    return f"{_portal_origin()}{path}/"
+
+
+def public_portal_url() -> str:
+    """Canonical portal URL for site + Telegram Mini App (P3-FLOW-12/14)."""
+    path = PUBLIC_PORTAL_PATH.rstrip("/") or "/portal"
+    return f"{_portal_origin()}{path}/"
+
+
+def public_setup_url(token: str = "") -> str:
+    """Personal setup page (P3-FLOW-02). Token appended as ?t= when set."""
+    path = PUBLIC_SETUP_PATH.rstrip("/") or "/setup"
+    base = f"{_portal_origin()}{path}"
+    if token:
+        return f"{base}?t={token}"
+    return base
+
+
 def sub_all_probe_urls() -> list[str]:
     """Primary + alternate subscription smoke URLs (same shortId path)."""
     urls = [sub_monitor_probe_url()]

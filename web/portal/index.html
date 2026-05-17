@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BenderVPN — подключение</title>
+  <link rel="stylesheet" href="assets/portal.css">
+  <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+  <script src="assets/portal.js" defer></script>
+</head>
+<body>
+  <main>
+    <p id="load-error" class="note hidden" role="alert"></p>
+
+    <section data-view="home">
+      <h1 id="page-title">BenderVPN</h1>
+      <p id="page-subtitle" class="lead"></p>
+      <p id="devices-note" class="note"></p>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="btn-connect"></button>
+        <a class="btn btn-secondary" id="btn-status" href="/status"></a>
+        <a class="btn btn-secondary" id="btn-support" href="#" target="_blank" rel="noopener"></a>
+        <button type="button" class="btn btn-ghost" id="btn-stuck"></button>
+      </div>
+      <div class="panel">
+        <h2 id="tg-blocked-title"></h2>
+        <p id="tg-blocked-body" class="muted"></p>
+      </div>
+      <p id="happ-note" class="muted"></p>
+    </section>
+
+    <section data-view="devices" class="hidden">
+      <button type="button" class="btn btn-ghost" id="btn-back-home">← Назад</button>
+      <h2>На каком устройстве настраиваем?</h2>
+      <p class="muted">VPN ставится на телефон, Android, Windows и Mac. Happ — на каждое устройство отдельно.</p>
+      <div id="device-grid" class="device-grid"></div>
+    </section>
+
+    <section data-view="device" class="hidden">
+      <button type="button" class="btn btn-ghost" id="btn-back-devices">← Назад к выбору устройства</button>
+      <h2 id="device-detail-title"></h2>
+      <div class="panel">
+        <ol id="device-install-steps" class="steps"></ol>
+      </div>
+      <div class="panel">
+        <h2>Дальше</h2>
+        <ol id="after-device-steps" class="steps"></ol>
+      </div>
+      <a class="btn btn-primary" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener">Написать в поддержку</a>
+    </section>
+  </main>
+</body>
+</html>
