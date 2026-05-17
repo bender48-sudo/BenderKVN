@@ -44,19 +44,21 @@ def main() -> int:
         doc["buttons"]["connect"],
         doc["buttons"].get("setup_browser", "настройку"),
         doc["home"].get("hero_badge", "60"),
-        "Быстро",
+        "Стабильный",
         "Windows",
         "Mac",
         "Happ",
+        "events",
     ]
     html_needles = [
         "device-grid",
         "portal.js",
         "brand-mark",
         "hero-badge",
-        "pill-row",
+        "hero-stack",
+        "events-card",
         "btn-setup",
-        "BenderVPN",
+        "bendervpn",
     ]
 
     ok = True

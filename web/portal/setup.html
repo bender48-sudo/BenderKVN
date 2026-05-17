@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#07070f">
-  <title>BenderVPN — моя настройка</title>
+  <meta name="theme-color" content="#000000">
+  <title>BenderVPN — получить настройку</title>
   <link rel="stylesheet" href="assets/portal.css">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" defer></script>
@@ -12,30 +12,37 @@
 </head>
 <body>
   <main>
-    <header class="brand">
-      <div class="brand-mark" aria-hidden="true">🔗</div>
-      <h1 class="brand-name" id="setup-title">Моя настройка</h1>
+    <header class="site-header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">👊</span>
+        <h1 class="brand-name" id="setup-title">bendervpn</h1>
+      </div>
+      <a class="nav-code" href="/portal/">&lt;/&gt; инструкция</a>
     </header>
     <p id="setup-lead" class="lead"></p>
 
-    <p id="setup-loading" class="note hidden">Загружаем…</p>
+    <p id="setup-loading" class="note hidden" role="status">Создаём бесплатный доступ…</p>
     <p id="setup-error" class="note note-accent hidden" role="alert"></p>
 
-    <section id="setup-paste" class="panel hidden">
-      <h2 id="paste-heading">Вставьте ссылку</h2>
-      <p id="paste-hint" class="muted"></p>
-      <label class="field-label" for="setup-paste-input" id="paste-label">Ссылка</label>
-      <input type="url" class="field-input" id="setup-paste-input" autocomplete="off" spellcheck="false" inputmode="url">
+    <section id="setup-signup" class="panel">
+      <h2 id="signup-heading">Новый пользователь</h2>
+      <p id="signup-lead" class="muted"></p>
+      <label class="field-label" for="signup-email" id="signup-email-label">Email</label>
+      <input type="email" class="field-input" id="signup-email" autocomplete="email" inputmode="email" required>
+      <label class="field-label" for="signup-phone" id="signup-phone-label">Телефон (необязательно)</label>
+      <input type="tel" class="field-input" id="signup-phone" autocomplete="tel" inputmode="tel">
+      <label class="checkbox-row">
+        <input type="checkbox" id="signup-terms">
+        <span id="signup-terms-label"></span>
+      </label>
       <div class="actions" style="margin-top:0.75rem">
-        <button type="button" class="btn btn-primary" id="btn-paste-submit">Показать QR</button>
+        <button type="button" class="btn btn-primary" id="btn-signup-submit">Получить бесплатный доступ</button>
       </div>
-      <div class="panel" style="margin-top:1rem">
-        <h3 id="no-access-title"></h3>
-        <p id="no-access-body" class="muted"></p>
-      </div>
+      <p id="signup-note" class="muted" style="margin-top:1rem"></p>
     </section>
 
     <section id="setup-content" class="hidden">
+      <p id="setup-success-msg" class="note note-accent"></p>
       <div class="panel qr-wrap">
         <canvas id="setup-qr" aria-label="QR-код"></canvas>
       </div>
@@ -46,17 +53,12 @@
       </div>
       <div class="panel">
         <h2>Дальше в Happ</h2>
-        <ol class="steps" id="happ-steps">
-          <li>Установите Happ (App Store, Google Play или версия для Windows/Mac).</li>
-          <li>Нажмите + → «Из буфера обмена» или отсканируйте QR.</li>
-          <li>Обновите подписку в Happ при необходимости.</li>
-          <li>Включите VPN переключателем.</li>
-        </ol>
+        <ol class="steps" id="happ-steps"></ol>
       </div>
     </section>
 
     <nav class="footer-nav">
-      <a class="btn btn-ghost" href="/portal/">← Инструкция</a>
+      <a class="btn btn-ghost" href="/portal/">Инструкция по установке</a>
       <a class="btn btn-ghost" href="/start/">← На главную</a>
       <a class="btn btn-ghost" href="/status">Статус сервиса</a>
     </nav>

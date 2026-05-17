@@ -3,7 +3,6 @@
 
   var params = new URLSearchParams(window.location.search);
   var token = params.get("t") || "";
-  var SUB_RE = /^https:\/\/.+\/api\/sub\/[A-Za-z0-9_-]{8,128}(\?.*)?$/i;
 
   function $(id) {
     return document.getElementById(id);
@@ -20,28 +19,9 @@
   function showError(msg) {
     hide($("setup-loading"));
     hide($("setup-content"));
-    hide($("setup-paste"));
     $("setup-error").textContent = msg;
     showEl($("setup-error"));
-  }
-
-  function normalizeSubUrl(raw) {
-    var text = (raw || "").trim();
-    if (!text) return "";
-    if (!/^https?:\/\//i.test(text)) {
-      text = "https://" + text.replace(/^\/+/, "");
-    }
-    try {
-      var u = new URL(text);
-      if (u.protocol !== "https:") return "";
-      return u.toString();
-    } catch (e) {
-      return "";
-    }
-  }
-
-  function isValidSubUrl(url) {
-    return SUB_RE.test(url.split("#")[0]);
+    showEl($("setup-signup"));
   }
 
   function renderQr(url) {
@@ -78,11 +58,15 @@
     };
   }
 
-  function showSetupResult(url, content) {
+  function showSetupResult(url, content, extra) {
     var s = content.setup;
     hide($("setup-loading"));
-    hide($("setup-paste"));
+    hide($("setup-signup"));
     hide($("setup-error"));
+    if (extra && extra.expire_at && $("setup-success-msg")) {
+      $("setup-success-msg").textContent =
+        (s.success_trial || "Готово! Бесплатный доступ до") + " " + extra.expire_at;
+    }
     $("setup-link").textContent = url;
     $("setup-link").href = url;
     $("btn-open-happ").href = url;
@@ -92,38 +76,73 @@
     showEl($("setup-content"));
   }
 
-  function showPasteForm(content) {
+  function bindSignupForm(content) {
     var s = content.setup;
-    hide($("setup-loading"));
-    hide($("setup-error"));
-    hide($("setup-content"));
-    $("setup-lead").textContent = s.lead_paste || s.lead_token;
-    $("paste-hint").textContent = s.paste_hint || "";
-    $("paste-label").textContent = s.paste_label || "Ссылка";
-    $("setup-paste-input").placeholder = s.paste_placeholder || "";
-    $("btn-paste-submit").textContent = s.paste_submit || "Показать QR";
-    $("no-access-title").textContent = s.no_access_title || "";
-    $("no-access-body").textContent = s.no_access_body || "";
-    showEl($("setup-paste"));
-    $("setup-paste-input").focus();
-  }
+    $("signup-heading").textContent = s.signup_heading || "Новый пользователь";
+    $("signup-lead").textContent = s.signup_lead || "";
+    $("signup-email-label").textContent = s.signup_email_label || "Email";
+    $("signup-phone-label").textContent = s.signup_phone_label || "Телефон";
+    $("signup-terms-label").textContent = s.signup_terms || "";
+    $("btn-signup-submit").textContent = s.signup_submit || "Получить доступ";
+    $("signup-note").textContent = s.signup_note || "";
+    $("signup-email").placeholder = s.signup_email_placeholder || "you@example.com";
 
-  function bindPasteForm(content) {
-    var input = $("setup-paste-input");
-    var submit = $("btn-paste-submit");
-    function tryPaste() {
-      var url = normalizeSubUrl(input.value);
-      if (!url || !isValidSubUrl(url)) {
-        showError(content.setup.paste_invalid);
-        showPasteForm(content);
+    var steps = $("happ-steps");
+    if (steps && s.happ_steps) {
+      steps.innerHTML = "";
+      s.happ_steps.forEach(function (t) {
+        var li = document.createElement("li");
+        li.textContent = t;
+        steps.appendChild(li);
+      });
+    }
+
+    $("btn-signup-submit").addEventListener("click", function () {
+      hide($("setup-error"));
+      var email = ($("signup-email").value || "").trim();
+      var phone = ($("signup-phone").value || "").trim();
+      if (!$("signup-terms").checked) {
+        showError(s.signup_terms_required || "Примите условия.");
         return;
       }
-      $("setup-lead").textContent = content.setup.lead_token;
-      showSetupResult(url, content);
-    }
-    submit.addEventListener("click", tryPaste);
-    input.addEventListener("keydown", function (ev) {
-      if (ev.key === "Enter") tryPaste();
+      if (!email || email.indexOf("@") < 1) {
+        showError(s.signup_email_invalid || "Укажите email.");
+        return;
+      }
+      hide($("setup-signup"));
+      showEl($("setup-loading"));
+      $("setup-loading").textContent = s.signup_loading || "Создаём доступ…";
+
+      fetch("api/web-trial", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email, phone: phone }),
+      })
+        .then(function (r) {
+          return r.json().then(function (j) {
+            return { code: r.status, body: j };
+          });
+        })
+        .then(function (res) {
+          hide($("setup-loading"));
+          if (!res.body.ok || !res.body.sub_url) {
+            var err = s.signup_error_generic;
+            if (res.body.error === "trial_already_claimed") {
+              err = s.signup_error_used;
+            } else if (res.body.error === "rate_limited") {
+              err = s.signup_error_rate;
+            } else if (res.body.error === "invalid_email") {
+              err = s.signup_email_invalid;
+            }
+            showError(err);
+            return;
+          }
+          showSetupResult(res.body.sub_url, content, res.body);
+        })
+        .catch(function () {
+          hide($("setup-loading"));
+          showError(content.errors.generic);
+        });
     });
   }
 
@@ -133,16 +152,18 @@
     })
     .then(function (content) {
       var s = content.setup;
-      $("setup-title").textContent = s.title;
-      bindPasteForm(content);
+      $("setup-title").textContent = s.title_browser || s.title;
+      $("setup-lead").textContent = s.lead_browser || s.lead_paste;
+      bindSignupForm(content);
 
       if (!token) {
-        showPasteForm(content);
+        showEl($("setup-signup"));
         return;
       }
 
+      hide($("setup-signup"));
       showEl($("setup-loading"));
-      $("setup-lead").textContent = s.lead_token || s.lead;
+      $("setup-lead").textContent = s.lead_token;
 
       fetch("api/verify?t=" + encodeURIComponent(token))
         .then(function (r) {
@@ -151,16 +172,18 @@
           });
         })
         .then(function (res) {
+          hide($("setup-loading"));
           if (!res.body.ok || !res.body.sub_url) {
-            $("setup-error").textContent = s.invalid_token;
-            showPasteForm(content);
-            showEl($("setup-error"));
+            showError(s.invalid_token);
+            showEl($("setup-signup"));
             return;
           }
-          showSetupResult(res.body.sub_url, content);
+          showSetupResult(res.body.sub_url, content, null);
         })
         .catch(function () {
+          hide($("setup-loading"));
           showError(content.errors.generic);
+          showEl($("setup-signup"));
         });
     })
     .catch(function () {

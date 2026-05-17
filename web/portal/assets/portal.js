@@ -2,9 +2,11 @@
   "use strict";
 
   const CONTENT_URL = "content/ru.json";
+  const STATUS_JSON = "/api/ops/status.json";
   const STATUS_PATH = "/status";
   const SUPPORT_URL = "https://t.me/Bender_KVN_bot";
   const SETUP_PATH = "/setup/";
+  const ACK_KEY = "bvpn_vpn_config_ack";
 
   let content = null;
 
@@ -45,16 +47,14 @@
       bg_color: "--bg",
       text_color: "--text",
       hint_color: "--muted",
-      button_color: "--accent",
-      button_text_color: "--text",
-      secondary_bg_color: "--card",
+      secondary_bg_color: "--bg-card",
     };
     Object.keys(cssMap).forEach(function (key) {
       if (tp[key]) {
         document.documentElement.style.setProperty(cssMap[key], tp[key]);
       }
     });
-    var headerColor = tp.bg_color || "#0f1419";
+    var headerColor = tp.bg_color || "#000000";
     if (typeof tg.setHeaderColor === "function") {
       try {
         tg.setHeaderColor(headerColor);
@@ -80,20 +80,121 @@
     window.open(url, "_blank", "noopener");
   }
 
+  function bindExternalLink(el) {
+    if (!el) return;
+    el.addEventListener("click", function (ev) {
+      if (getTelegramWebApp()) {
+        ev.preventDefault();
+        openExternal(el.href);
+      }
+    });
+  }
+
+  function readAckGeneration() {
+    try {
+      var raw = localStorage.getItem(ACK_KEY);
+      if (raw === null || raw === "") return 0;
+      return parseInt(raw, 10) || 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  function writeAckGeneration(gen) {
+    try {
+      localStorage.setItem(ACK_KEY, String(gen));
+    } catch (e) {
+      /* private mode */
+    }
+  }
+
+  function setEventsState(mode, ev) {
+    var pill = $("events-pill");
+    var detail = $("events-detail");
+    var steps = $("events-steps");
+    var ackBtn = $("btn-events-ack");
+    if (!pill || !detail || !ev) return;
+
+    pill.className = "events-pill";
+    steps.classList.add("hidden");
+    ackBtn.classList.add("hidden");
+
+    if (mode === "ok") {
+      pill.classList.add("events-pill--ok");
+      pill.textContent = ev.ok_pill;
+      detail.textContent = ev.ok_detail;
+    } else if (mode === "refresh") {
+      pill.classList.add("events-pill--action");
+      pill.textContent = ev.refresh_pill;
+      detail.textContent = ev.refresh_detail;
+      steps.classList.remove("hidden");
+      steps.innerHTML = "";
+      (ev.refresh_steps || []).forEach(function (t) {
+        var li = document.createElement("li");
+        li.textContent = t;
+        steps.appendChild(li);
+      });
+      ackBtn.classList.remove("hidden");
+    } else if (mode === "incident") {
+      pill.classList.add("events-pill--incident");
+      pill.textContent = ev.incident_pill;
+      detail.textContent = ev.incident_detail;
+    }
+  }
+
+  function loadEvents() {
+    var ev = content.events || {};
+    $("events-title").textContent = ev.title || "Обновления VPN";
+    $("btn-events-ack").textContent = ev.refresh_ack || "Я обновил в Happ";
+    var more = $("btn-events-more");
+    more.textContent = ev.more || content.buttons.status;
+    more.href = STATUS_PATH;
+    bindExternalLink(more);
+    bindExternalLink($("nav-status-link"));
+
+    fetch(STATUS_JSON)
+      .then(function (r) {
+        if (!r.ok) throw new Error("status json");
+        return r.json();
+      })
+      .then(function (doc) {
+        var cfg = doc.vpn_config || {};
+        var gen = parseInt(cfg.generation, 10) || 0;
+        var ack = readAckGeneration();
+        var overall = doc.overall || "ok";
+
+        if (overall !== "ok") {
+          setEventsState("incident", ev);
+          return;
+        }
+        if (gen > 0 && gen > ack) {
+          setEventsState("refresh", ev);
+          return;
+        }
+        setEventsState("ok", ev);
+      })
+      .catch(function () {
+        setEventsState("ok", ev);
+      });
+  }
+
   function renderHome() {
     var home = content.home;
     $("page-title").textContent = home.title;
     if ($("hero-badge") && home.hero_badge) {
       $("hero-badge").textContent = home.hero_badge;
     }
-    $("page-subtitle").textContent = home.subtitle;
-    var pills = $("feature-pills");
-    if (pills && home.features && home.features.length) {
-      pills.innerHTML = "";
+    var sub = $("page-subtitle");
+    if (sub) {
+      sub.textContent = home.hero_mono || home.subtitle || "";
+    }
+    var stack = $("hero-stack");
+    if (stack && home.features && home.features.length) {
+      stack.innerHTML = "";
       home.features.forEach(function (label) {
         var li = document.createElement("li");
         li.textContent = label;
-        pills.appendChild(li);
+        stack.appendChild(li);
       });
     }
     $("devices-note").textContent = home.devices_note;
@@ -103,7 +204,6 @@
       setupBtn.textContent = content.buttons.setup_browser;
       setupBtn.href = SETUP_PATH;
     }
-    $("btn-status").textContent = content.buttons.status;
     var supportBtn = $("btn-support");
     supportBtn.textContent = content.buttons.support;
     supportBtn.href = SUPPORT_URL;
@@ -124,6 +224,7 @@
     $("tg-blocked-title").textContent = content.telegram_blocked.title;
     $("tg-blocked-body").textContent = content.telegram_blocked.body;
     $("happ-note").textContent = content.happ.phone_and_pc;
+    loadEvents();
   }
 
   function renderDevices() {
@@ -200,44 +301,28 @@
         if (!helpPanel.classList.contains("hidden")) {
           helpPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
-        return;
-      }
-      window.location.href = SETUP_PATH;
-    });
-    var statusBtn = $("btn-status");
-    statusBtn.addEventListener("click", function (ev) {
-      if (getTelegramWebApp()) {
-        ev.preventDefault();
-        openExternal(statusBtn.href);
       }
     });
-    var supportBtn = $("btn-support");
-    supportBtn.addEventListener("click", function (ev) {
-      if (getTelegramWebApp()) {
-        ev.preventDefault();
-        openExternal(SUPPORT_URL);
-      }
+    bindExternalLink($("btn-support"));
+    bindExternalLink($("btn-setup"));
+    bindExternalLink($("btn-device-support"));
+
+    $("btn-events-ack").addEventListener("click", function () {
+      fetch(STATUS_JSON)
+        .then(function (r) {
+          return r.json();
+        })
+        .then(function (doc) {
+          var gen = parseInt((doc.vpn_config || {}).generation, 10) || 0;
+          writeAckGeneration(gen > 0 ? gen : 1);
+          setEventsState("ok", content.events || {});
+          $("events-card").scrollIntoView({ behavior: "smooth", block: "nearest" });
+        })
+        .catch(function () {
+          writeAckGeneration(1);
+          setEventsState("ok", content.events || {});
+        });
     });
-    var setupLink = $("btn-setup");
-    if (setupLink) {
-      setupLink.addEventListener("click", function (ev) {
-        if (getTelegramWebApp()) {
-          ev.preventDefault();
-          openExternal(
-            window.location.origin.replace(/\/$/, "") + SETUP_PATH
-          );
-        }
-      });
-    }
-    var deviceSupport = $("btn-device-support");
-    if (deviceSupport) {
-      deviceSupport.addEventListener("click", function (ev) {
-        if (getTelegramWebApp()) {
-          ev.preventDefault();
-          openExternal(SUPPORT_URL);
-        }
-      });
-    }
   }
 
   function showError(msg) {

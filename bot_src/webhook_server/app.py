@@ -1,6 +1,8 @@
+import asyncio
 import logging
+import os
 
-from flask import Flask, request
+from flask import Flask, jsonify, request
 
 from shop_bot.webhook_server.auth import (
     is_client_allowed,
@@ -74,6 +76,27 @@ def create_webhook_app(bot, payment_processor):
             logger.error("crypto webhook: %s", e, exc_info=True)
             return "Error", 500
 
+    @flask_app.route("/portal-web-trial", methods=["POST"])
+    def portal_web_trial_handler():
+        """Browser signup: new user without Telegram (localhost only)."""
+        secret = os.getenv("PORTAL_WEB_TRIAL_SECRET", "").strip()
+        if not secret or request.headers.get("X-Portal-Web-Trial-Key") != secret:
+            return _reject_auth()
+        data = request.get_json(silent=True) or {}
+        email = (data.get("email") or "").strip()
+        phone = (data.get("phone") or "").strip() or None
+        try:
+            from shop_bot.portal_web_trial import issue_web_trial
+
+            result = asyncio.run(issue_web_trial(email, phone))
+            code = 200 if result.get("ok") else 400
+            if result.get("error") == "trial_already_claimed":
+                code = 409
+            return jsonify(result), code
+        except Exception as e:
+            logger.error("portal-web-trial: %s", e, exc_info=True)
+            return jsonify({"ok": False, "error": "server_error"}), 500
+
     @flask_app.route("/cryptobot-webhook", methods=["GET"])
     def crypto_webhook_get_handler():
         try:
@@ -89,5 +112,34 @@ def create_webhook_app(bot, payment_processor):
         except Exception as e:
             logger.error("cryptobot webhook: %s", e, exc_info=True)
             return "Error", 500
+
+    def _portal_lookup_auth() -> bool:
+        secret = os.getenv("PORTAL_BROWSER_LOOKUP_SECRET", "").strip()
+        if not secret:
+            return False
+        return request.headers.get("X-Portal-Lookup-Key", "") == secret
+
+    @flask_app.route("/portal-setup-resolve", methods=["POST"])
+    def portal_setup_resolve_handler():
+        """Browser setup: resolve @username / telegram id → subscription URL."""
+        try:
+            if not _portal_lookup_auth():
+                return _reject_auth()
+            data = request.get_json(silent=True) or {}
+            username = (data.get("username") or "").strip()
+            raw_tid = data.get("telegram_id")
+            telegram_id = None
+            if raw_tid is not None and str(raw_tid).strip().isdigit():
+                telegram_id = int(raw_tid)
+            from shop_bot.portal_browser_resolve import resolve_browser_setup
+
+            doc = asyncio.run(
+                resolve_browser_setup(username=username, telegram_id=telegram_id)
+            )
+            code = 200 if doc.get("ok") else 404
+            return jsonify(doc), code
+        except Exception as e:
+            logger.error("portal-setup-resolve: %s", e, exc_info=True)
+            return jsonify({"ok": False, "error": "server_error"}), 500
 
     return flask_app

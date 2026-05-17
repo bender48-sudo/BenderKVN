@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""P3-FLOW-02: localhost verify API for /setup tokens (behind Caddy)."""
+"""P3-FLOW-02/WEB: setup verify + browser web trial (behind Caddy on LV)."""
 from __future__ import annotations
 
 import json
 import os
+import shlex
+import subprocess
 import sys
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -13,7 +16,76 @@ _OPS = Path(__file__).resolve().parent
 if str(_OPS) not in sys.path:
     sys.path.insert(0, str(_OPS))
 
-from portal_setup_token import verify_setup_token  # noqa: E402
+import re
+
+from portal_setup_token import sign_setup_token, verify_setup_token  # noqa: E402
+import site_urls  # noqa: E402
+
+_SHORT_ID_RE = re.compile(r"^[A-Za-z0-9_-]{8,128}$")
+
+
+def _short_id_from_sub_url(sub_url: str) -> str | None:
+    if not sub_url:
+        return None
+    seg = sub_url.rstrip("/").split("/")[-1].split("?")[0]
+    if _SHORT_ID_RE.match(seg):
+        return seg
+    return None
+
+_RATE: dict[str, list[float]] = {}
+_RATE_LIMIT = int(os.environ.get("WEB_TRIAL_RATE_PER_HOUR", "5"))
+_AMS_KEY = Path.home() / ".ssh" / "bvpn_ams_ed25519"
+_AMS_HOST = os.environ.get("AMS_OPS_HOST", "168.100.11.140")
+_AMS_PORT = os.environ.get("AMS_OPS_SSH_PORT", "3344")
+
+
+def _client_ip(handler: BaseHTTPRequestHandler) -> str:
+    fwd = handler.headers.get("X-Forwarded-For", "")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return handler.client_address[0]
+
+
+def _rate_ok(ip: str) -> bool:
+    now = time.time()
+    window = _RATE.get(ip, [])
+    window = [t for t in window if now - t < 3600]
+    if len(window) >= _RATE_LIMIT:
+        _RATE[ip] = window
+        return False
+    window.append(now)
+    _RATE[ip] = window
+    return True
+
+
+def _ams_web_trial(email: str, phone: str = "") -> dict:
+    secret = os.environ.get("PORTAL_WEB_TRIAL_SECRET", "").strip()
+    if not secret:
+        raise ValueError("PORTAL_WEB_TRIAL_SECRET is not set")
+    payload = json.dumps({"email": email, "phone": phone}, ensure_ascii=False)
+    pl = shlex.quote(payload)
+    remote = (
+        "curl -fsS -X POST "
+        "-H 'Content-Type: application/json' "
+        f"-H 'X-Portal-Web-Trial-Key: {secret}' "
+        f"-d {pl} "
+        "http://127.0.0.1:1488/portal-web-trial"
+    )
+    cmd = [
+        "ssh",
+        "-i",
+        str(_AMS_KEY),
+        "-p",
+        str(_AMS_PORT),
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "ConnectTimeout=40",
+        f"root@{_AMS_HOST}",
+        remote,
+    ]
+    out = subprocess.check_output(cmd, text=True, timeout=90)
+    return json.loads(out.strip().splitlines()[-1])
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -35,6 +107,58 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, {"ok": True, **info})
         except ValueError as e:
             self._json(403, {"ok": False, "error": str(e)})
+
+    def do_POST(self) -> None:
+        parsed = urlparse(self.path)
+        if parsed.path not in ("/web-trial", "/web-trial/"):
+            self._json(404, {"ok": False, "error": "not_found"})
+            return
+        ip = _client_ip(self)
+        if not _rate_ok(ip):
+            self._json(429, {"ok": False, "error": "rate_limited"})
+            return
+        length = int(self.headers.get("Content-Length", "0") or "0")
+        raw = self.rfile.read(length) if length > 0 else b"{}"
+        try:
+            data = json.loads(raw.decode("utf-8"))
+        except json.JSONDecodeError:
+            self._json(400, {"ok": False, "error": "invalid_json"})
+            return
+        email = (data.get("email") or "").strip()
+        phone = (data.get("phone") or "").strip()
+        if not email or "@" not in email:
+            self._json(400, {"ok": False, "error": "invalid_email"})
+            return
+        try:
+            ams = _ams_web_trial(email, phone)
+        except subprocess.CalledProcessError as e:
+            self._json(502, {"ok": False, "error": "upstream_failed", "detail": str(e)[:120]})
+            return
+        except Exception as e:
+            self._json(500, {"ok": False, "error": str(e)[:200]})
+            return
+        if not ams.get("ok"):
+            code = 409 if ams.get("error") == "trial_already_claimed" else 400
+            self._json(code, ams)
+            return
+        sub_url = ams.get("sub_url") or ""
+        sid = _short_id_from_sub_url(sub_url)
+        if not sid:
+            self._json(500, {"ok": False, "error": "bad_sub_url"})
+            return
+        token = sign_setup_token(sid)
+        setup_url = site_urls.public_setup_url(token)
+        self._json(
+            200,
+            {
+                "ok": True,
+                "sub_url": sub_url,
+                "setup_url": setup_url,
+                "token": token,
+                "expire_at": ams.get("expire_at"),
+                "days": ams.get("days"),
+            },
+        )
 
     def _json(self, code: int, doc: dict) -> None:
         body = json.dumps(doc, ensure_ascii=False).encode("utf-8")

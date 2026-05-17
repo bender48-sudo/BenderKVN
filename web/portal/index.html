@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#07070f">
+  <meta name="theme-color" content="#000000">
   <title>BenderVPN — подключение</title>
   <link rel="stylesheet" href="assets/portal.css">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
@@ -11,30 +11,54 @@
 </head>
 <body>
   <main>
-    <header class="brand">
-      <div class="brand-mark" aria-hidden="true">🛡️</div>
-      <h1 class="brand-name" id="page-title">BenderVPN</h1>
+    <header class="site-header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">👊</span>
+        <h1 class="brand-name" id="page-title">bendervpn</h1>
+      </div>
+      <a class="nav-code" href="/status" id="nav-status-link">&lt;/&gt; статус</a>
     </header>
 
     <p id="load-error" class="note note-accent hidden" role="alert"></p>
 
     <section data-view="home">
       <p class="hero-badge" id="hero-badge"></p>
-      <p id="page-subtitle" class="lead"></p>
-      <ul class="pill-row" id="feature-pills" aria-label="Преимущества"></ul>
-      <p id="devices-note" class="note note-accent"></p>
+      <ul class="hero-stack" id="hero-stack" aria-label="Преимущества"></ul>
+      <p class="hero-mono" id="page-subtitle"></p>
+
       <div class="actions">
-        <button type="button" class="btn btn-primary" id="btn-connect"></button>
-        <a class="btn btn-secondary" id="btn-setup" href="/setup/">Получить настройку</a>
-        <a class="btn btn-secondary" id="btn-status" href="/status"></a>
-        <a class="btn btn-secondary" id="btn-support" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
-        <button type="button" class="btn btn-ghost" id="btn-stuck"></button>
+        <a class="btn btn-primary" id="btn-setup" href="/setup/">Получить бесплатный VPN</a>
+        <button type="button" class="btn btn-secondary" id="btn-connect"></button>
       </div>
+
+      <section class="events-card" id="events-card" aria-live="polite">
+        <div class="events-card-head">
+          <span class="code-tag" aria-hidden="true">&lt;/&gt;</span>
+          <h2 id="events-title">Обновления VPN</h2>
+        </div>
+        <p class="events-pill events-pill--ok" id="events-pill" role="status"></p>
+        <p class="events-detail" id="events-detail"></p>
+        <ol class="events-steps hidden" id="events-steps"></ol>
+        <div class="events-actions">
+          <button type="button" class="btn btn-events-ack hidden btn-no-code" id="btn-events-ack"></button>
+          <a class="btn btn-ghost btn-no-code" id="btn-events-more" href="/status"></a>
+        </div>
+      </section>
+
+      <p id="devices-note" class="muted"></p>
+
       <div class="panel">
         <h2 id="tg-blocked-title"></h2>
         <p id="tg-blocked-body" class="muted"></p>
       </div>
+
       <p id="happ-note" class="muted"></p>
+
+      <div class="actions">
+        <a class="btn btn-secondary" id="btn-support" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
+        <button type="button" class="btn btn-ghost btn-no-code" id="btn-stuck"></button>
+      </div>
+
       <section id="help-stuck" class="panel hidden">
         <h2 id="help-stuck-title"></h2>
         <ol class="steps" id="help-stuck-steps"></ol>
@@ -42,14 +66,14 @@
     </section>
 
     <section data-view="devices" class="hidden">
-      <button type="button" class="btn btn-ghost" id="btn-back-home">← Назад</button>
+      <button type="button" class="btn btn-ghost btn-no-code" id="btn-back-home">← Назад</button>
       <h2 id="devices-heading">На каком устройстве настраиваем?</h2>
       <p class="muted" id="devices-lead"></p>
       <div id="device-grid" class="device-grid"></div>
     </section>
 
     <section data-view="device" class="hidden">
-      <button type="button" class="btn btn-ghost" id="btn-back-devices">← Назад к выбору устройства</button>
+      <button type="button" class="btn btn-ghost btn-no-code" id="btn-back-devices">← Назад к выбору устройства</button>
       <h2 id="device-detail-title"></h2>
       <div class="panel">
         <h3 id="install-steps-title">Установка</h3>

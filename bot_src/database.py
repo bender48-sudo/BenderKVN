@@ -1,8 +1,12 @@
+import hashlib
+import re
 import sqlite3
 from datetime import datetime
 import logging
 import os
 from pathlib import Path
+
+_CONTACT_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 from shop_bot.config import ABOUT_TEXT, TERMS_URL, PRIVACY_URL, SUPPORT_USER, SUPPORT_TEXT, CHANNEL_URL
 
 logger = logging.getLogger(__name__)
@@ -66,6 +70,13 @@ def initialize_db():
                 CREATE TABLE IF NOT EXISTS bot_settings (
                     key TEXT PRIMARY KEY,
                     value TEXT
+                );
+                CREATE TABLE IF NOT EXISTS web_trial_claims (
+                    contact_email TEXT PRIMARY KEY,
+                    web_user_id INTEGER NOT NULL UNIQUE,
+                    panel_email TEXT NOT NULL,
+                    contact_phone TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
                 CREATE TABLE IF NOT EXISTS webhook_deliveries (
                     idempotency_key TEXT PRIMARY KEY,
@@ -206,6 +217,56 @@ def list_users_pending_sub_refresh(current_generation: int, limit: int = 15) -> 
         logging.error(f"Failed to list pending sub refresh users: {e}")
         return []
 
+def normalize_contact_email(email: str) -> str:
+    return (email or "").strip().lower()
+
+
+def is_valid_contact_email(email: str) -> bool:
+    return bool(_CONTACT_EMAIL_RE.match(normalize_contact_email(email)))
+
+
+def web_user_id_from_email(contact_email: str) -> int:
+    """Stable negative telegram_id surrogate for browser-only users."""
+    digest = hashlib.sha256(normalize_contact_email(contact_email).encode()).hexdigest()
+    n = int(digest[:12], 16) % (2**30)
+    return -(n + 100_000)
+
+
+def web_trial_contact_claimed(contact_email: str) -> bool:
+    try:
+        em = normalize_contact_email(contact_email)
+        with sqlite3.connect(DB_FILE) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT 1 FROM web_trial_claims WHERE contact_email = ?",
+                (em,),
+            )
+            return cur.fetchone() is not None
+    except sqlite3.Error as e:
+        logging.error(f"web_trial_contact_claimed failed: {e}")
+        return True
+
+
+def record_web_trial_claim(
+    contact_email: str,
+    web_user_id: int,
+    panel_email: str,
+    contact_phone: str | None = None,
+) -> None:
+    try:
+        em = normalize_contact_email(contact_email)
+        with sqlite3.connect(DB_FILE) as conn:
+            conn.execute(
+                """INSERT INTO web_trial_claims
+                   (contact_email, web_user_id, panel_email, contact_phone)
+                   VALUES (?, ?, ?, ?)""",
+                (em, web_user_id, panel_email, (contact_phone or "").strip() or None),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error(f"record_web_trial_claim failed: {e}")
+
+
 def register_user_if_not_exists(telegram_id: int, username: str):
     try:
         with sqlite3.connect(DB_FILE) as conn:
@@ -230,6 +291,39 @@ def get_user(telegram_id: int):
     except sqlite3.Error as e:
         logging.error(f"Failed to get user {telegram_id}: {e}")
         return None
+
+
+def lookup_telegram_ids_by_hint(hint: str, *, limit: int = 5) -> list[dict]:
+    """Find bot users by @username or numeric Telegram ID (browser setup lookup)."""
+    raw = (hint or "").strip()
+    if not raw:
+        return []
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            if raw.lstrip("@").isdigit():
+                tid = int(raw.lstrip("@"))
+                cursor.execute(
+                    "SELECT telegram_id, username FROM users WHERE telegram_id = ?",
+                    (tid,),
+                )
+            else:
+                name = raw.lstrip("@").lower()
+                cursor.execute(
+                    """
+                    SELECT telegram_id, username FROM users
+                    WHERE LOWER(TRIM(username)) = ?
+                       OR LOWER(TRIM(username)) LIKE ?
+                    ORDER BY CASE WHEN LOWER(TRIM(username)) = ? THEN 0 ELSE 1 END
+                    LIMIT ?
+                    """,
+                    (name, f"%{name}%", name, limit),
+                )
+            return [dict(row) for row in cursor.fetchall()]
+    except sqlite3.Error as e:
+        logging.error(f"lookup_telegram_ids_by_hint failed: {e}")
+        return []
 
 def set_terms_agreed(telegram_id: int):
     try:

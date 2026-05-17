@@ -74,7 +74,7 @@ def main() -> int:
     if _SECRET_RE.search(body):
         print("PORTAL_SETUP_FAIL: page may leak secrets", file=sys.stderr)
         return 1
-    for needle in ("setup-qr", "setup.js", "Моя настройка", "setup-content"):
+    for needle in ("setup-qr", "setup.js", "btn-copy", "setup-content"):
         if needle not in body:
             print(f"PORTAL_SETUP_FAIL: missing {needle!r}", file=sys.stderr)
             return 1
@@ -101,9 +101,9 @@ def main() -> int:
     if pcode != 200:
         print("PORTAL_SETUP_FAIL: setup paste page not 200", file=sys.stderr)
         return 1
-    for needle in ("setup-paste", "setup-paste-input", "btn-paste-submit"):
+    for needle in ("setup-signup", "signup-email", "btn-signup-submit"):
         if needle not in pbody:
-            print(f"PORTAL_SETUP_FAIL: paste page missing {needle!r}", file=sys.stderr)
+            print(f"PORTAL_SETUP_FAIL: signup page missing {needle!r}", file=sys.stderr)
             return 1
 
     print("PORTAL_SETUP_PAGE_OK")

@@ -5,7 +5,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shlex
 import ssl
+import subprocess
 import sys
 import time
 import urllib.error
@@ -44,6 +46,50 @@ def _probe_url(url: str, timeout: float = 8.0) -> int:
         return e.code
     except Exception:
         return 0
+
+
+def _vpn_config_from_ams() -> dict:
+    """Public generation counter for browser «Обновления VPN» card."""
+    key = Path.home() / ".ssh" / "bvpn_ams_ed25519"
+    host = os.environ.get("AMS_OPS_HOST", "168.100.11.140")
+    port = os.environ.get("AMS_OPS_SSH_PORT", "3344")
+    if not key.is_file():
+        return {"generation": 0, "reason": ""}
+    remote = (
+        "docker exec remna-shop-bot python3 -c "
+        + shlex.quote(
+            "import json; "
+            "from shop_bot.data_manager.database import get_sub_config_generation, get_setting; "
+            "print(json.dumps({'generation': get_sub_config_generation(), "
+            "'reason': (get_setting('sub_config_refresh_reason') or '')}))"
+        )
+    )
+    try:
+        out = subprocess.check_output(
+            [
+                "ssh",
+                "-i",
+                str(key),
+                "-p",
+                str(port),
+                "-o",
+                "BatchMode=yes",
+                "-o",
+                "ConnectTimeout=25",
+                f"root@{host}",
+                remote,
+            ],
+            text=True,
+            timeout=45,
+            stderr=subprocess.DEVNULL,
+        )
+        line = out.strip().splitlines()[-1]
+        doc = json.loads(line)
+        gen = int(doc.get("generation") or 0)
+        reason = (doc.get("reason") or "").strip()
+        return {"generation": gen, "reason": reason[:200]}
+    except Exception:
+        return {"generation": 0, "reason": ""}
 
 
 def _probe_telegram_api() -> str:
@@ -105,12 +151,15 @@ def build_status() -> dict:
     if overall != "ok":
         msg = "Degraded: review nodes/subscription in JSON."
 
+    vpn_config = _vpn_config_from_ams()
+
     return {
         "service": "bender-vpn",
         "schema": "status-mirror/v1",
         "updated_at": now,
         "overall": overall,
         "message": msg,
+        "vpn_config": vpn_config,
         "channels": {
             "primary_admin": "telegram",
             "telegram_bot_api": tg_api,

@@ -13,7 +13,10 @@ $Keyboards = Join-Path $RepoRoot "bot_src\keyboards.py"
 $MainPy = Join-Path $RepoRoot "bot_src\main.py"
 $ConfigPy = Join-Path $RepoRoot "bot_src\config.py"
 $PortalLinks = Join-Path $RepoRoot "bot_src\portal_links.py"
-foreach ($f in @($Handlers, $UserMsgs, $Scheduler, $Keyboards, $MainPy, $ConfigPy, $PortalLinks)) {
+$PortalWebTrial = Join-Path $RepoRoot "bot_src\portal_web_trial.py"
+$Database = Join-Path $RepoRoot "bot_src\database.py"
+$WebhookApp = Join-Path $RepoRoot "bot_src\webhook_server\app_ams_with_portal_trial.py"
+foreach ($f in @($Handlers, $UserMsgs, $Scheduler, $Keyboards, $MainPy, $ConfigPy, $PortalLinks, $PortalWebTrial, $Database, $WebhookApp)) {
     if (-not (Test-Path $f)) { throw "Missing: $f" }
 }
 
@@ -21,8 +24,9 @@ python -c @"
 import ast
 from pathlib import Path
 root = Path(r'$RepoRoot')
-for name in ('handlers.py', 'user_messages.py', 'scheduler.py', 'keyboards.py', 'main.py', 'config.py', 'portal_links.py'):
+for name in ('handlers.py', 'user_messages.py', 'scheduler.py', 'keyboards.py', 'main.py', 'config.py', 'portal_links.py', 'portal_web_trial.py', 'database.py'):
     ast.parse((root / 'bot_src' / name).read_text(encoding='utf-8'))
+ast.parse((root / 'bot_src/webhook_server/app_ams_with_portal_trial.py').read_text(encoding='utf-8'))
 "@
 
 $HostAms = "168.100.11.140"
@@ -48,14 +52,19 @@ Write-Host "[deploy-bot-handlers-ams] scp..."
 & scp @($Common + @("-P", "$Port", "${MainPy}", "root@${HostAms}:/tmp/main.py"))
 & scp @($Common + @("-P", "$Port", "${ConfigPy}", "root@${HostAms}:/tmp/config.py"))
 & scp @($Common + @("-P", "$Port", "${PortalLinks}", "root@${HostAms}:/tmp/portal_links.py"))
+& scp @($Common + @("-P", "$Port", "${PortalWebTrial}", "root@${HostAms}:/tmp/portal_web_trial.py"))
+& scp @($Common + @("-P", "$Port", "${Database}", "root@${HostAms}:/tmp/database.py"))
+& scp @($Common + @("-P", "$Port", "${WebhookApp}", "root@${HostAms}:/tmp/webhook_app.py"))
 
 $sshCmd = @'
 set -e
 ts=$(date +%Y%m%d-%H%M%S)
 BT=/opt/remna-shop/src/shop_bot/bot
+SB=/opt/remna-shop/src/shop_bot
 DM=/opt/remna-shop/src/shop_bot/data_manager
-sed -i 's/\r$//' /tmp/handlers.py /tmp/user_messages.py /tmp/scheduler.py /tmp/keyboards.py /tmp/main.py /tmp/config.py /tmp/portal_links.py
-mkdir -p "$BT" "$DM"
+WH=/opt/remna-shop/src/shop_bot/webhook_server
+sed -i 's/\r$//' /tmp/handlers.py /tmp/user_messages.py /tmp/scheduler.py /tmp/keyboards.py /tmp/main.py /tmp/config.py /tmp/portal_links.py /tmp/portal_web_trial.py /tmp/database.py /tmp/webhook_app.py
+mkdir -p "$BT" "$DM" "$WH"
 CFG=/opt/remna-shop/src/shop_bot/config.py
 for f in handlers.py user_messages.py keyboards.py; do
   test -f "$BT/$f" && cp "$BT/$f" "$BT/$f.before-bot-ops-$ts" || true
@@ -69,6 +78,9 @@ install -m 0644 /tmp/keyboards.py "$BT/keyboards.py"
 install -m 0644 /tmp/scheduler.py "$DM/scheduler.py"
 install -m 0644 /tmp/config.py "$CFG"
 install -m 0644 /tmp/portal_links.py "$BT/portal_links.py"
+install -m 0644 /tmp/portal_web_trial.py "$SB/portal_web_trial.py"
+install -m 0644 /tmp/database.py "$DM/database.py"
+install -m 0644 /tmp/webhook_app.py "$WH/app.py"
 install -m 0644 /tmp/main.py /opt/remna-shop/src/shop_bot/main.py
 docker cp /tmp/handlers.py remna-shop-bot:/app/src/shop_bot/bot/handlers.py
 docker cp /tmp/user_messages.py remna-shop-bot:/app/src/shop_bot/bot/user_messages.py
@@ -76,6 +88,9 @@ docker cp /tmp/keyboards.py remna-shop-bot:/app/src/shop_bot/bot/keyboards.py
 docker cp /tmp/scheduler.py remna-shop-bot:/app/src/shop_bot/data_manager/scheduler.py
 docker cp /tmp/config.py remna-shop-bot:/app/src/shop_bot/config.py
 docker cp /tmp/portal_links.py remna-shop-bot:/app/src/shop_bot/bot/portal_links.py
+docker cp /tmp/portal_web_trial.py remna-shop-bot:/app/src/shop_bot/portal_web_trial.py
+docker cp /tmp/database.py remna-shop-bot:/app/src/shop_bot/data_manager/database.py
+docker cp /tmp/webhook_app.py remna-shop-bot:/app/src/shop_bot/webhook_server/app.py
 docker cp /tmp/main.py remna-shop-bot:/app/src/shop_bot/main.py
 docker restart remna-shop-bot
 echo "Remote md5:"
