@@ -4,13 +4,13 @@
 
 ## 1. Один раз: ключ и config
 
-1. Ключ (если ещё нет): `ssh-keygen -t ed25519 -f $env:USERPROFILE\.ssh\id_ed25519 -N '""'`
-2. Публичный ключ добавьте на каждый сервер в `~/.ssh/authorized_keys` для нужного пользователя (`root` или отдельный deploy-пользователь).
-3. Скопируйте блоки из `ssh/config.example` в файл **`%USERPROFILE%\.ssh\config`**, поправив `IdentityFile` (для relay может быть другой ключ, как в вашей доке).
+1. Per-host ключи (**P1-RED-SSH-01**): `pwsh -File ops/ssh_rollout_operator_keys.ps1 -GenerateOnly`, затем `-InstallLv` / `-InstallAms`. Инвентарь: **`docs/SSH-KEY-INVENTORY.md`**.
+2. Скопируйте блоки из `ssh/config.example` в **`%USERPROFILE%\.ssh\config`** (`bvpn_lv_ed25519`, `bvpn_ams_ed25519`, `bvpn_nl`, relay).
+3. Аудит: `python ops/ssh_audit.py` → **`SSH_AUDIT_OK`**.
 
 Права на Windows для OpenSSH: ключ и `config` должны быть доступны только вам (при необходимости см. [документацию OpenSSH для Windows](https://learn.microsoft.com/windows-server/administration/openssh/openssh_keymanagement)).
 
-**EU-хосты в примере:** `bvpn-lv` (FriendHosting LV), `bvpn-ams` (Hetzner Amsterdam), `bvpn-nl` (FriendHosting Netherlands `91.90.192.17`, порт **3333**, ключ `bvpn_nl`).
+**EU-хосты:** `bvpn-lv` / `bvpn-ams` / `bvpn-nl` — **разные** `IdentityFile` (см. `ssh/config.example`).
 
 ## 2. Проверка
 

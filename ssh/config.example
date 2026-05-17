@@ -5,14 +5,14 @@ Host bvpn-lv
     HostName 176.126.162.158
     Port 3333
     User root
-    IdentityFile ~/.ssh/id_ed25519
+    IdentityFile ~/.ssh/bvpn_lv_ed25519
     IdentitiesOnly yes
 
 Host bvpn-ams
     HostName 168.100.11.140
     Port 3344
     User root
-    IdentityFile ~/.ssh/id_ed25519
+    IdentityFile ~/.ssh/bvpn_ams_ed25519
     IdentitiesOnly yes
 
 # FriendHosting Netherlands (Plus NL). If login fails, check SSH port in billing panel (often 22).
