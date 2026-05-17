@@ -24,8 +24,9 @@
 2. Установить **`BOT_PAYMENTS_LIVE=1`** (или `true`) в env бота; **`docker compose up -d`** / restart **`remna-shop-bot`**.
 3. Smoke каждого канала: тестовая покупка → webhook → продление **`expireAt`** в панели.
 4. **`P6-RED-PAY-01`**: HTTP webhook → **`PaymentWebhookQueue`** (SQLite **`webhook_deliveries`**, статусы pending/done/failed=DLQ); повтор с тем же ключом → **200 duplicate**. Деплой: **`ops/deploy-bot-payment-webhook-ams.ps1`**.
+5. **`P6-RED-PAY-02`**: Flask **`WEBHOOK_BIND_HOST=127.0.0.1`** (порт **1488** только с AMS, через nginx); **YooKassa** — API verify **`Payment.find_one`** перед начислением; **crypto/cryptobot** — заголовок **`X-Webhook-Secret`** / query **`secret`** = **`CRYPTO_WEBHOOK_SECRET`**. Smoke: **`ops/smoke_webhook_auth_ams.py`** → **`WEBHOOK_AUTH_OK`**.
 
-**Done when:** минимум один канал оплаты проходит E2E на проде; повтор webhook не дублирует подписку.
+**Done when:** минимум один канал оплаты проходит E2E на проде; повтор webhook не дублирует подписку; подделанный webhook → **403** без изменения баланса.
 
 ---
 

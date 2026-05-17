@@ -102,12 +102,20 @@ def main():
         loop = asyncio.get_running_loop()
         flask_app.config['EVENT_LOOP'] = loop
 
+        webhook_host = os.getenv("WEBHOOK_BIND_HOST", "127.0.0.1").strip() or "127.0.0.1"
+        webhook_port = int(os.getenv("WEBHOOK_PORT", "1488"))
         flask_thread = threading.Thread(
-            target=lambda: flask_app.run(host='0.0.0.0', port=1488, use_reloader=False),
-            daemon=True
+            target=lambda: flask_app.run(
+                host=webhook_host, port=webhook_port, use_reloader=False
+            ),
+            daemon=True,
         )
         flask_thread.start()
-        bot_logger.system("WEBHOOK", "Flask server started on port 1488", "OK")
+        bot_logger.system(
+            "WEBHOOK",
+            f"Flask webhook on {webhook_host}:{webhook_port} (localhost only by default)",
+            "OK",
+        )
 
         if database.get_all_vpn_users():
             asyncio.create_task(start_subscription_monitor(bot))

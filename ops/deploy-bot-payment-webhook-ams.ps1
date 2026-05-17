@@ -1,4 +1,4 @@
-# P6-RED-PAY-01: database + webhook queue -> AMS remna-shop-bot.
+# P6-RED-PAY-01/02: database + webhook queue + auth -> AMS remna-shop-bot.
 # From repo root:  pwsh -File ops/deploy-bot-payment-webhook-ams.ps1
 
 $ErrorActionPreference = "Stop"
@@ -9,6 +9,8 @@ $Files = @(
     @{ Local = "bot_src\database.py"; Host = "/opt/remna-shop/src/shop_bot/data_manager/database.py"; Container = "/app/src/shop_bot/data_manager/database.py" },
     @{ Local = "bot_src\webhook_server\payment_queue.py"; Host = "/opt/remna-shop/src/shop_bot/webhook_server/payment_queue.py"; Container = "/app/src/shop_bot/webhook_server/payment_queue.py" },
     @{ Local = "bot_src\webhook_server\app.py"; Host = "/opt/remna-shop/src/shop_bot/webhook_server/app.py"; Container = "/app/src/shop_bot/webhook_server/app.py" },
+    @{ Local = "bot_src\webhook_server\auth.py"; Host = "/opt/remna-shop/src/shop_bot/webhook_server/auth.py"; Container = "/app/src/shop_bot/webhook_server/auth.py" },
+    @{ Local = "bot_src\main.py"; Host = "/opt/remna-shop/src/shop_bot/main.py"; Container = "/app/src/shop_bot/main.py" },
     @{ Local = "bot_src\handlers.py"; Host = "/opt/remna-shop/src/shop_bot/bot/handlers.py"; Container = "/app/src/shop_bot/bot/handlers.py" }
 )
 
@@ -37,6 +39,8 @@ for pair in \
   "database.py:/opt/remna-shop/src/shop_bot/data_manager/database.py:/app/src/shop_bot/data_manager/database.py" \
   "payment_queue.py:/opt/remna-shop/src/shop_bot/webhook_server/payment_queue.py:/app/src/shop_bot/webhook_server/payment_queue.py" \
   "app.py:/opt/remna-shop/src/shop_bot/webhook_server/app.py:/app/src/shop_bot/webhook_server/app.py" \
+  "auth.py:/opt/remna-shop/src/shop_bot/webhook_server/auth.py:/app/src/shop_bot/webhook_server/auth.py" \
+  "main.py:/opt/remna-shop/src/shop_bot/main.py:/app/src/shop_bot/main.py" \
   "handlers.py:/opt/remna-shop/src/shop_bot/bot/handlers.py:/app/src/shop_bot/bot/handlers.py"
 do
   base="${pair%%:*}"
@@ -56,4 +60,9 @@ docker exec remna-shop-bot python -c "from shop_bot.data_manager.database import
 Write-Host "[deploy] install + restart..."
 & ssh @($Common + @("-p", "$Port", "root@${HostAms}", $sshCmd))
 if ($LASTEXITCODE -ne 0) { throw "ssh failed" }
-Write-Host "Done. Smoke: docker exec remna-shop-bot python /tmp/smoke_webhook_payment_idempotency_ams.py"
+& scp @($Common + @("-P", "$Port", (Join-Path $RepoRoot "ops\smoke_webhook_auth_ams.py"), "root@${HostAms}:/tmp/smoke_webhook_auth_ams.py"))
+& scp @($Common + @("-P", "$Port", (Join-Path $RepoRoot "ops\smoke_webhook_payment_idempotency_ams.py"), "root@${HostAms}:/tmp/smoke_webhook_payment_idempotency_ams.py"))
+Write-Host "[deploy] smoke auth..."
+& ssh @($Common + @("-p", "$Port", "root@${HostAms}", "docker cp /tmp/smoke_webhook_auth_ams.py remna-shop-bot:/tmp/smoke_webhook_auth_ams.py && docker exec remna-shop-bot python /tmp/smoke_webhook_auth_ams.py"))
+if ($LASTEXITCODE -ne 0) { throw "smoke_webhook_auth failed" }
+Write-Host "Done. WEBHOOK_AUTH_OK. Idempotency: docker exec remna-shop-bot python /tmp/smoke_webhook_payment_idempotency_ams.py"

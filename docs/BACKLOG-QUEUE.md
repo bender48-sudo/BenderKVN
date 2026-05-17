@@ -52,8 +52,8 @@
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
 | 023 | **P2-OPS-AMS-SAFE-DEPLOY-01** | **DONE** | Чеклист gate + smoke pre/post наката AMS; урок **502 2026-05-17** в runbook | **AMS_SAFE_DEPLOY_OK** §12 | **`RUNBOOK-AMS-SAFE-DEPLOY`**, **§6** |
-| 024 | **P6-RED-PAY-02** | **NEXT** | Webhook: подпись YooKassa / allowlist; Flask **:1488** только за proxy; отклонение подделки | **`smoke_webhook_auth_ams.py`** → **WEBHOOK_AUTH_OK** §12 | **§5.1** |
-| 025 | **P1-RED-SSH-01** | **TODO** | Per-host/per-role ключи; таблица; нет одного root на все VPS | **`ssh_audit`** / чеклист §12 | **§5.1** |
+| 024 | **P6-RED-PAY-02** | **DONE** | Webhook: YooKassa API verify + IP/proxy; Flask **127.0.0.1:1488**; crypto secret | **WEBHOOK_AUTH_OK** §12 | **§5.1**, **`RUNBOOK-COMMERCE-GO-LIVE` §2** |
+| 025 | **P1-RED-SSH-01** | **NEXT** | Per-host/per-role ключи; таблица; нет одного root на все VPS | **`ssh_audit`** / чеклист §12 | **§5.1** |
 | 026 | **P1-RED-DNS-01** | **TODO** | ≥2 регистратора/DNS для критичных имён; DNSSEC; recovery offline | wiki + делегирование §12 | **§5.1**, **P4-DNS-04** |
 | 027 | **P1-RED-DATA-01** | **TODO** | Шифрование тома Postgres AMS; ключ не на том же VPS | схема + прод включено §12 | **§5.1** |
 | 028 | **P1-RED-SEC-01** | **TODO** | Пилот short-lived creds (мониторинг → панель) | runbook + 1 workload §12 | **§5.1** |
@@ -134,3 +134,4 @@
 | 2026-05-17 | **Q022** P6-RED-PG-01 | — (фаза 1 закрыта) |
 | 2026-05-17 | — | **Q023** (**P2-OPS-AMS-SAFE-DEPLOY-01**) — фаза 2 Red team / 30k |
 | 2026-05-17 | **Q023** P2-OPS-AMS-SAFE-DEPLOY-01 | **Q024** P6-RED-PAY-02 |
+| 2026-05-17 | **Q024** P6-RED-PAY-02 | **Q025** P1-RED-SSH-01 |

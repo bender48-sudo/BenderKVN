@@ -18,6 +18,10 @@
 | `${WEBHOOK_SECRET_HEADER}` | `compose/ams/remnawave/panel.env.tmpl`<br>`compose/_archive/lv-remnawave-2026-04/panel.env.tmpl` | Shared secret для webhook-receiver'а. У нас `WEBHOOK_ENABLED=false`, реально не используется. | n/a (placeholder ставится при init). | Не ротируется (не активен). |
 | `${CLOUDFLARE_TOKEN}` | `compose/ams/remnawave/panel.env.tmpl`<br>`compose/_archive/lv-remnawave-2026-04/panel.env.tmpl` | API-токен Cloudflare для DNS-челленджа Let's Encrypt. На проде сейчас placeholder `ey...` — функция не используется. | Cloudflare dashboard → My Profile → API Tokens. | Если включим — генерируем zone-scoped token и обновляем. |
 | `${REMNA_PUBLIC_KEY}` | `compose/ams/remna-shop/bot.env.tmpl` | Reality public key для VLESS-конфигов в боте. **НЕ секрет** (буквально public key), но привязан к pair private/public Reality на ноде. | Output `xray x25519` при инициализации Reality. | Ротация только при перевыпуске Reality-keypair (комплексно). |
+| `${YOOKASSA_SHOP_ID}` / `${YOOKASSA_SECRET_KEY}` | `/opt/remna-shop/.env` (бот) | Креды YooKassa; webhook проверяется **API round-trip** `Payment.find_one` (**P6-RED-PAY-02**), не HMAC тела. | ЛК YooKassa. | При смене — обновить `.env`, restart бота; webhook URL без изменений. |
+| `${CRYPTO_WEBHOOK_SECRET}` | `/opt/remna-shop/.env` | Shared secret для **`/crypto-webhook`** и **`/cryptobot-webhook`**: заголовок **`X-Webhook-Secret`** или query **`secret`**. | `openssl rand -hex 24` в Bitwarden **`BenderVPN/prod / CRYPTO_WEBHOOK_SECRET`**. | Смена → обновить callback URL у провайдера + `.env` + restart. |
+| `WEBHOOK_BIND_HOST` | runtime бота (не vault) | По умолчанию **`127.0.0.1`** — Flask **:1488** не слушает WAN; nginx на AMS проксирует. | Код **`bot_src/main.py`**. | Не менять без runbook. |
+| `WEBHOOK_ALLOWED_IPS` | runtime (опционально) | Доп. CIDR если webhook слушает не только loopback. | ops | Редко. |
 
 ## 2. Где НА САМОМ ДЕЛЕ хранятся текущие значения
 

@@ -2,6 +2,11 @@ import logging
 
 from flask import Flask, request
 
+from shop_bot.webhook_server.auth import (
+    is_client_allowed,
+    verify_crypto_shared_secret,
+    verify_yookassa_notification,
+)
 from shop_bot.webhook_server.payment_queue import (
     PaymentWebhookQueue,
     idempotency_key_crypto,
@@ -23,6 +28,9 @@ def create_webhook_app(bot, payment_processor):
             pay_queue = PaymentWebhookQueue(bot, payment_processor, loop)
         return pay_queue
 
+    def _reject_auth() -> tuple[str, int]:
+        return "forbidden", 403
+
     def _accept(key: str | None, source: str, payload: dict) -> tuple[str, int]:
         if not key:
             logger.warning("Webhook without idempotency key from %s", source)
@@ -35,7 +43,12 @@ def create_webhook_app(bot, payment_processor):
     @flask_app.route("/yookassa-webhook", methods=["POST"])
     def yookassa_webhook_handler():
         try:
+            if not is_client_allowed(request):
+                return _reject_auth()
             event_json = request.json or {}
+            if event_json.get("event") == "payment.succeeded":
+                if not verify_yookassa_notification(event_json):
+                    return _reject_auth()
             key = idempotency_key_yookassa(event_json)
             if event_json.get("event") != "payment.succeeded":
                 return "ignored", 200
@@ -48,6 +61,8 @@ def create_webhook_app(bot, payment_processor):
     @flask_app.route("/crypto-webhook", methods=["POST"])
     def crypto_webhook_handler():
         try:
+            if not is_client_allowed(request) or not verify_crypto_shared_secret(request):
+                return _reject_auth()
             data = request.json or {}
             logger.info("Crypto webhook received: %s", data.get("status"))
             if data.get("status") != "paid":
@@ -62,6 +77,8 @@ def create_webhook_app(bot, payment_processor):
     @flask_app.route("/cryptobot-webhook", methods=["GET"])
     def crypto_webhook_get_handler():
         try:
+            if not is_client_allowed(request) or not verify_crypto_shared_secret(request):
+                return _reject_auth()
             data = request.args.to_dict()
             logger.info("Crypto bot webhook received: %s", data.get("status"))
             if data.get("status") != "paid":
