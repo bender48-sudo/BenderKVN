@@ -1,6 +1,6 @@
 # BenderVPN — коммерческий бэклог
 
-**Версия документа:** 2026-05-17 — **фаза 2 очереди Q023+** (P1-RED, **P6-RED-PAY-02**, safe-deploy gate); фаза 1 (**Q001–Q022**) закрыта; **P4-DNS** — параллельный поток. Прежнее: **2026-05-16** (коммерция, Red team P2/P6, GTM).
+**Версия документа:** 2026-05-17 — **фаза 3 (P3-FLOW)** пользовательский флоу + bootstrap-сайт; фаза 2 очереди (**Q023–Q031**) закрыта; **P4-DNS** — параллельный поток. Прежнее: **2026-05-17** (Red team), **2026-05-16** (коммерция, P6).
 **Цель:** стабильный **8–9/10** (нишевый коммерческий VPN в РФ); измеримый рост к максимально достижимому качеству.  
 **Определение «готово»:** по каждой задаче выполнен критерий в колонке **Done when** + при необходимости запись в трекере (статусы `TODO` / `DOING` / `DONE`).
 
@@ -33,7 +33,7 @@
 | **P0** | Безопасность, целостность, компрометация = конец доверия |
 | **P1** | Продукт, РФ‑выживаемость, конфигурация матрицы |
 | **P2** | Надёжность, мониторинг, бэкапы, SSH‑дисциплина |
-| **P3** | Юзерфлоу, поддержка, коммуникация инцидентов |
+| **P3** | Юзерфлоу, поддержка, коммуникация инцидентов (**P3-FLOW-*** — см. **`docs/USER-FLOW-BACKLOG.md`**) |
 | **P4** | DNS‑bootstrap / белые списки (**не** основной VPN) |
 | **P5** | Полировка после «восьмёрки» |
 | **P6** | Ёмкость: метрики, пороги, ноды, подписка, рост до **10k–30k+** |
@@ -65,6 +65,7 @@
 | 10 | **(после §2.1 — UX не раньше продукта)** Онбординг и тексты | ~~**P1-PRO-01…04**~~ ✅ (см. **`docs/FAQ.md`**, **`docs/RUNBOOK-INCIDENT.md`**, **`docs/HAPP-MATRIX.md`**, **`docs/POLICY-SNI-MONITORING.md`**), ~~**P3-UX-01**~~ ✅ (**`docs/ONBOARDING.md`**), ~~**P3-UX-02**~~ ✅ (**`bot_src/user_messages.py`**, **`docs/support/USER-FACING-ERRORS.md`**), ~~**P3-UX-03**~~ ✅ (**`docs/templates/USER-INCIDENT-BROADCAST.md`**) |
 | 11 | DNS PoC → FAQ (по ресурсу) | **P4-DNS-01** → ~~**P4-DNS-02**~~ ✅ (блок DNS bootstrap **`docs/FAQ.md`**) → **P4-DNS-03** |
 | 12 | **Red team / ТПСУ** — порядок **§5.1** (фаза роста 10k): **P2-RED-SUB/MUX** → **P6-RED-PAY/SUBHA** → **P1-RED-DATA/Vault** после monetize или **2k** users | см. **§5.1** |
+| **13** | **Пользовательский флоу (бабушка-тест, bootstrap без VPN)** | **P3-FLOW-00…13** → **`docs/USER-FLOW-BACKLOG.md`**, очередь **фаза 3** в **`BACKLOG-QUEUE.md`** |
 
 ---
 
@@ -185,6 +186,31 @@
 | ~~**P3-OPS-SUPPORT-REMNA-LOGIN**~~ ✅ | Саппорт / операторы: панель Remnawave показывает **Forbidden + E000** не только из‑за прокси, но и при **неверном пароле** и др. политиках (**403**, не **401**). | Абзац **`docs/RUNBOOK-INCIDENT.md`** § «Логин в панель Remnawave» + отсылка к Rescue CLI. **2026‑05‑15** |
 | ~~**P3-TR-01**~~ ✅ (репо) | Политика логов (что, сколько, кто читает). | **`docs/POLICY-LOGS-DATA.md`** — внутренний черновик; публичная политика/оферта — вне репо при согласовании. |
 
+### 7.1 Пользовательский флоу (P3-FLOW) — «бабушка-тест» и bootstrap без VPN
+
+**Проблема:** без работающего VPN клиент часто **не доходит до Telegram-бота** → не получает подписку.  
+**Детали, карта пути, приоритеты:** **`docs/USER-FLOW-BACKLOG.md`**.
+
+| ID | Задача | Done when |
+|----|--------|-----------|
+| ~~**P3-FLOW-00**~~ ✅ | Карта флоу + критерии приёмки (3 персоны). | **2026-05-17:** **`USER-FLOW-JOURNEY.md`**; smoke **`USER_FLOW_JOURNEY_OK`**. Бумажное ревью 3× — владелец. |
+| **P3-FLOW-14** | **Единый портал** `web/portal/` + **`content/ru.json`** — один UI для сайта и Mini App. | Дерево в репо; **`site_urls.public_portal_url()`**; нет расхождения текстов. |
+| **P3-FLOW-01** | **Bootstrap-сайт** (clearnet): `/start` → тот же portal, legal, `/status`. | **`PUBLIC_BOOTSTRAP_OK`**; **`RUNBOOK-USER-BOOTSTRAP-SITE`**. |
+| **P3-FLOW-02** | **Веб-выдача конфига**: `/setup?token=`, QR, copy, Happ. | **`PORTAL_SETUP_PAGE_OK`**; E2E без VPN. |
+| **P3-FLOW-12** | **Telegram Mini App** — **дубликат portal** (не отдельный дизайн); Menu Button + WebApp. | **`TELEGRAM_MINIAPP_PORTAL_OK`**; **`RUNBOOK-TELEGRAM-MINIAPP`**. |
+| **P3-FLOW-03** | Бот: WebApp «Инструкция», браузер `/start`, setup link. | **`BOT_PORTAL_LINKS_OK`**; ≤ 3 тапа. |
+| **P3-FLOW-04** | Мастер **«Подключить VPN»**; главный CTA → Mini App. | FSM; journey OK. |
+| **P3-FLOW-05** | QR подписки (бот + web). | Скан → профиль в Happ. |
+| **P3-FLOW-06** | Видео/GIF первого коннекта на сайте (не только TG). | Просмотр без VPN с телефона. |
+| **P3-FLOW-07** | Синхронизация FAQ / онбординг / бот / сайт (в т.ч. **live-оплата**). | Нет противоречий с **`P2-COM-MONETIZE-02`**. |
+| **P3-FLOW-08** | Ошибки на сайте (как **`USER-FACING-ERRORS.md`**). | `/help/errors` или блок на bootstrap. |
+| **P3-FLOW-09** | Ветки по типу устройства (бот + сайт). | ≤ 5 шагов на ветку. |
+| **P3-FLOW-10** | Метрики воронки (сайт → бот → ключ → sub). | Wiki + еженедельный срез; без PII в git. |
+| **P3-FLOW-11** | Запасной домен bootstrap (блокировки). | Второе имя + probe; связь **P2-RED-SUB-01**. |
+| **P3-FLOW-13** | A11y portal (контраст, шрифт 18px+, `lang=ru`). | Lighthouse a11y ≥ 95. |
+
+**Продуктовые хвосты (не FLOW):** ~~**P3-UX-01…03**~~ ✅; открыто **P5-COM-02** (возвраты).
+
 ---
 
 ## 8. P4 — DNS / белые списки (отдельный SKU)
@@ -262,11 +288,11 @@
 
 **Закрыто (фаза 1):** **P0**, **P1**, большинство **P2/P6**, **§5.3** коммерция, **P2/P6-RED** из Q001–Q022. **`docs/P1-POST-AUDIT.md`** — **2026-05-16**.
 
-**Что делать сейчас:** линейная очередь **Q001–Q031 закрыта** (**2026-05-17**). Новые задачи — §3/§9 или строка в **`BACKLOG-QUEUE.md`**. Ручные хвосты: **`docs/MANUAL-OWNER-CHECKLIST.md`**.
+**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q034`** (**P3-FLOW-14** portal bundle). Ручные хвосты: **`docs/MANUAL-OWNER-CHECKLIST.md`**.
 
-**Открыто:** **P5-COM-02**, **P4-DNS***, gate **safe-deploy** (Q023).
+**Открыто (продукт):** **P5-COM-02**, **P3-FLOW-01…13**, **P3-FLOW-14**; **`docs/USER-FLOW-JOURNEY.md`**. **P5-ENG-01**.
 
-**Параллельно:** **P4-DNS-01…06** (mobile), отдельный владелец.
+**Параллельно:** **P4-DNS-01…06** (mobile SKU), отдельный владелец.
 
 **Операционная память:** **`docs/KNOWLEDGE-BASE.md`**, **`docs/POLICY-REPO-WORKFLOW.md`**, **`docs/NODE-POLICY-LV-NL.md`**.
 
@@ -276,6 +302,9 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-17 | **P3-FLOW-00 — DONE (Q033):** **`USER-FLOW-JOURNEY.md`** (3 персоны, 10×3 канала); **`user_flow_journey_audit.py`** → **`USER_FLOW_JOURNEY_OK`**. **NEXT=Q034** P3-FLOW-14. |
+| 2026-05-17 | **Агент-бэклог флоу:** **`docs/AGENT-FLOW-BACKLOG.md`** — Q032–Q047, portal=сайт+Mini App; **NEXT=Q033**. |
+| 2026-05-17 | **Бэклог P3-FLOW:** **`docs/USER-FLOW-BACKLOG.md`**, §7.1 + спринт §3 п.13; фаза 3 в **`BACKLOG-QUEUE.md`** (bootstrap без VPN, веб-выдача конфига, мастер в боте). |
 | 2026-05-17 | **P5-COM-01 — DONE (Q031):** публичная страница **`/status`**, **`public_status_page.py`**, **`incidents.json`**; deploy **`deploy-public-status-page-lv.ps1`**; smoke **`PUBLIC_STATUS_PAGE_OK`**. **Фаза 2 очереди закрыта.** |
 | 2026-05-17 | **P3-RED-JURIS-01 — DONE (Q030):** wiki + runbook VPS/PSP failover, tabletop template; **`jurisdiction_failover_audit.py`** → **`JURIS_FAILOVER_OK`**. **NEXT=Q031** P5-COM-01. |
 | 2026-05-17 | **P3-RED-MIN-01 — DONE (Q029):** **`DATA-MINIMIZATION-POLICY`**, **`DATA-INVENTORY-INTERNAL`**, **`payload_redact`**; smoke **`DATA_MINIMIZATION_OK`**. **NEXT=Q030** P3-RED-JURIS-01. |

@@ -65,6 +65,31 @@
 
 **Параллельно (другой человек, не трогать NEXT):** **P4-DNS-01…06** (mobile bootstrap / whitelist SKU).
 
+### Фаза 3 — продукт, флоу, GTM (после Q031)
+
+**Старт:** после закрытия фазы 2 (**2026-05-17**).  
+**Инструкции для агента:** **`docs/AGENT-FLOW-BACKLOG.md`** (портал = сайт + Mini App).  
+**NEXT:** **Q034** (**P3-FLOW-14**).
+
+| Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
+|---|-----|--------|-------------------|--------|-------------|
+| 032 | **P5-COM-02** | **TODO** | Возвраты при массовом дауне в оферте | Текст согласован владельцем | **`AGENT-FLOW-BACKLOG` §Q032** |
+| 033 | **P3-FLOW-00** | **DONE** | Карта флоу: сайт = Mini App = бот | **USER_FLOW_JOURNEY_OK** §12 | **`USER-FLOW-JOURNEY.md`** |
+| 034 | **P3-FLOW-14** | **NEXT** | Единый `web/portal/` + `ru.json` | Локально открывается index | §Q034 |
+| 035 | **P3-FLOW-01** | **TODO** | `/start` на LV (clearnet) | **`PUBLIC_BOOTSTRAP_OK`** | **`RUNBOOK-USER-BOOTSTRAP-SITE`** |
+| 036 | **P3-FLOW-02** | **TODO** | `/setup?token=` QR + copy | **`PORTAL_SETUP_PAGE_OK`** | §Q036 |
+| 037 | **P3-FLOW-12** | **TODO** | **Mini App** = тот же portal URL | **`TELEGRAM_MINIAPP_PORTAL_OK`** | **`RUNBOOK-TELEGRAM-MINIAPP`** |
+| 038 | **P3-FLOW-03** | **TODO** | Бот: WebApp + браузер + setup link | **`BOT_PORTAL_LINKS_OK`** | §Q038 |
+| 039 | **P3-FLOW-04** | **TODO** | Мастер «Подключить VPN»; CTA → Mini App | Сценарий journey | §Q039 |
+| 040 | **P3-FLOW-07** | **TODO** | FAQ/онбординг/ru.json — оплата live | Diff OK | **`FAQ.md`** |
+| 041 | **P3-FLOW-05** | **TODO** | QR (бот + portal) | Скан → Happ | §7.1 |
+| 042 | **P3-FLOW-06** | **TODO** | Видео/GIF на portal | Без VPN с телефона | §7.1 |
+| 043 | **P3-FLOW-08** | **TODO** | Страница ошибок на portal | 5 кейсов | §7.1 |
+| 044 | **P3-FLOW-09** | **TODO** | Ветки iPhone / Android / Win | ≤ 5 шагов | §7.1 |
+| 045 | **P3-FLOW-13** | **TODO** | a11y portal | Lighthouse ≥ 95 | §7.1 |
+| 046 | **P3-FLOW-10** | **TODO** | Метрики воронки | Wiki + §12 | §7.1 |
+| 047 | **P3-FLOW-11** | **TODO** | Запасной домен bootstrap | Tabletop | §7.1 |
+
 ---
 
 ## Шаблоны коммитов
@@ -101,6 +126,22 @@
 | 029 | `docs: P3-RED-MIN-01 — data minimization policy + DB checklist` |
 | 030 | `docs: P3-RED-JURIS-01 — jurisdiction failover runbook` |
 | 031 | `product: P5-COM-01 — public incident status page` |
+| 032 | `docs: P5-COM-02 — правила возвратов в оферте` |
+| 033 | `docs: P3-FLOW-00 — user journey map + grandma-test criteria` |
+| 034 | `product: P3-FLOW-14 — shared portal bundle (ru.json + base UI)` |
+| 035 | `product: P3-FLOW-01 — bootstrap /start on LV + smoke` |
+| 036 | `product: P3-FLOW-02 — setup page + signed token helper` |
+| 037 | `product: P3-FLOW-12 — Telegram Mini App mirrors portal` |
+| 038 | `product: P3-FLOW-03 — bot portal + setup links` |
+| 039 | `product: P3-FLOW-04 — VPN setup wizard + Mini App CTA` |
+| 040 | `docs: P3-FLOW-07 — FAQ/onboarding/portal payment copy sync` |
+| 041 | `product: P3-FLOW-05 — subscription QR in bot and portal` |
+| 042 | `product: P3-FLOW-06 — setup video on portal` |
+| 043 | `product: P3-FLOW-08 — human-readable errors on portal` |
+| 044 | `product: P3-FLOW-09 — device-specific portal branches` |
+| 045 | `product: P3-FLOW-13 — portal a11y pass` |
+| 046 | `ops: P3-FLOW-10 — funnel metrics hooks` |
+| 047 | `docs: P3-FLOW-11 — backup bootstrap domain runbook` |
 
 После коммита с закрытием задачи — в **`BACKLOG-QUEUE.md`**: сменить статусы и при необходимости добавить подстроку в §12 бэклога (в том же коммите).
 
@@ -142,3 +183,6 @@
 | 2026-05-17 | **Q029** P3-RED-MIN-01 | **Q030** P3-RED-JURIS-01 |
 | 2026-05-17 | **Q030** P3-RED-JURIS-01 | **Q031** P5-COM-01 |
 | 2026-05-17 | **Q031** P5-COM-01 | — (**фаза 2 закрыта**) |
+| 2026-05-17 | — | **Фаза 3** Q032–Q047; **`docs/AGENT-FLOW-BACKLOG.md`** |
+| 2026-05-17 | — | **NEXT=Q033** (**P3-FLOW-00** journey map) |
+| 2026-05-17 | **Q033** P3-FLOW-00 | **Q034** P3-FLOW-14 |
