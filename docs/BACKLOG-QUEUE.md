@@ -54,8 +54,8 @@
 | 023 | **P2-OPS-AMS-SAFE-DEPLOY-01** | **DONE** | Чеклист gate + smoke pre/post наката AMS; урок **502 2026-05-17** в runbook | **AMS_SAFE_DEPLOY_OK** §12 | **`RUNBOOK-AMS-SAFE-DEPLOY`**, **§6** |
 | 024 | **P6-RED-PAY-02** | **DONE** | Webhook: YooKassa API verify + IP/proxy; Flask **127.0.0.1:1488**; crypto secret | **WEBHOOK_AUTH_OK** §12 | **§5.1**, **`RUNBOOK-COMMERCE-GO-LIVE` §2** |
 | 025 | **P1-RED-SSH-01** | **DONE** | Per-host ключи LV/AMS/NL; legacy shared key снят; audit с панели + workstation | **SSH_AUDIT_OK** §12 | **§5.1**, **`SSH-KEY-INVENTORY`** |
-| 026 | **P1-RED-DNS-01** | **NEXT** | ≥2 регистратора/DNS для критичных имён; DNSSEC; recovery offline | wiki + делегирование §12 | **§5.1**, **P4-DNS-04** |
-| 027 | **P1-RED-DATA-01** | **TODO** | Шифрование тома Postgres AMS; ключ не на том же VPS | схема + прод включено §12 | **§5.1** |
+| 026 | **P1-RED-DNS-01** | **DONE** | ≥2 регистратора в wiki; DNSSEC runbook; probe делегирования на LV | **DNS_DELEGATION_OK** §12 | **§5.1**, **`DNS-CRITICAL-NAMES`** |
+| 027 | **P1-RED-DATA-01** | **NEXT** | Шифрование тома Postgres AMS; ключ не на том же VPS | схема + прод включено §12 | **§5.1** |
 | 028 | **P1-RED-SEC-01** | **TODO** | Пилот short-lived creds (мониторинг → панель) | runbook + 1 workload §12 | **§5.1** |
 | 029 | **P3-RED-MIN-01** | **TODO** | Политика минимизации данных + чеклист полей БД | privacy + internal checklist §12 | **§5.1** |
 | 030 | **P3-RED-JURIS-01** | **TODO** | Runbook «один VPS/платёжка отключили за день» | wiki + tabletop §12 | **§5.1** |
@@ -136,3 +136,4 @@
 | 2026-05-17 | **Q023** P2-OPS-AMS-SAFE-DEPLOY-01 | **Q024** P6-RED-PAY-02 |
 | 2026-05-17 | **Q024** P6-RED-PAY-02 | **Q025** P1-RED-SSH-01 |
 | 2026-05-17 | **Q025** P1-RED-SSH-01 | **Q026** P1-RED-DNS-01 |
+| 2026-05-17 | **Q026** P1-RED-DNS-01 | **Q027** P1-RED-DATA-01 |

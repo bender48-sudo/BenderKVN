@@ -22,6 +22,7 @@
 | `${CRYPTO_WEBHOOK_SECRET}` | `/opt/remna-shop/.env` | Shared secret для **`/crypto-webhook`** и **`/cryptobot-webhook`**: заголовок **`X-Webhook-Secret`** или query **`secret`**. | `openssl rand -hex 24` в Bitwarden **`BenderVPN/prod / CRYPTO_WEBHOOK_SECRET`**. | Смена → обновить callback URL у провайдера + `.env` + restart. |
 | `WEBHOOK_BIND_HOST` | runtime бота (не vault) | По умолчанию **`127.0.0.1`** — Flask **:1488** не слушает WAN; nginx на AMS проксирует. | Код **`bot_src/main.py`**. | Не менять без runbook. |
 | `WEBHOOK_ALLOWED_IPS` | runtime (опционально) | Доп. CIDR если webhook слушает не только loopback. | ops | Редко. |
+| DNS registrar recovery | Bitwarden only | Dynadot + reserve registrar 2FA/recovery codes | **`docs/DNS-CRITICAL-NAMES.md`**, **`docs/RUNBOOK-DNS-RED-TEAM.md` §4** | Офлайн-копия обязательна; не только email VPS-хостера. |
 
 ## 2. Где НА САМОМ ДЕЛЕ хранятся текущие значения
 

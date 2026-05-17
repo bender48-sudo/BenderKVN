@@ -196,7 +196,7 @@
 | **P4-DNS-01** | PoC: **dnstt** или **slipstream** + свой домен; замер через НСДИ и провайдера. | Внутренний doc с цифрами. |
 | ~~**P4-DNS-02**~~ ✅ | Позиционирование: bootstrap **≠** полноценный VPN. | Блок **`docs/FAQ.md`** («DNS bootstrap ≠ VPN»); PoC (**P4-DNS-01**) отдельно. |
 | **P4-DNS-03** | Гайд пользователя (iOS/Android, DNS, ключ). | Прохождение без root. |
-| **P4-DNS-04** | Мониторинг зоны/authoritative отдельно от RU SNI‑проб. | Отдельный алерт. |
+| **P4-DNS-04** | Мониторинг зоны/authoritative отдельно от RU SNI‑проб. | **`ops/dns_delegation_probe.py`** на LV → **`DNS_DELEGATION_OK`** (P1-RED-DNS-01); TG-алерт — по необходимости. |
 | **P4-DNS-05** | План Б: второй домен/ключ; ToS хостинга; внутренняя юр. оценка. | Wiki + owner. |
 | **P4-DNS-06** | (Опц.) Только статический bootstrap через DNS. | Спека «что разрешено». |
 
@@ -262,9 +262,9 @@
 
 **Закрыто (фаза 1):** **P0**, **P1**, большинство **P2/P6**, **§5.3** коммерция, **P2/P6-RED** из Q001–Q022. **`docs/P1-POST-AUDIT.md`** — **2026-05-16**.
 
-**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q026`** (**P1-RED-DNS-01**), затем **P1-RED-*** по фазе 2. Правило: **`docs/POLICY-SEQUENTIAL-WORK.md`**.
+**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q027`** (**P1-RED-DATA-01**), затем **P1-RED-*** по фазе 2. Правило: **`docs/POLICY-SEQUENTIAL-WORK.md`**.
 
-**Открыто (фаза 2):** **P1-RED-DATA/SEC/DNS**, **P3-RED-***, **P5-COM-01**; gate **safe-deploy** (Q023).
+**Открыто (фаза 2):** **P1-RED-DATA/SEC**, **P3-RED-***, **P5-COM-01**; gate **safe-deploy** (Q023).
 
 **Параллельно:** **P4-DNS-01…06** (mobile), отдельный владелец.
 
@@ -276,6 +276,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-17 | **P1-RED-DNS-01 — DONE (Q026):** wiki **`DNS-CRITICAL-NAMES`** + **`RUNBOOK-DNS-RED-TEAM`**; Dynadot **`conntest.xyz`** + reserve registrar; **`dns_delegation_probe.py`** на LV → **`DNS_DELEGATION_OK`**; DNSSEC — runbook (включить в Dynadot). **NEXT=Q027** P1-RED-DATA-01. |
 | 2026-05-17 | **P1-RED-SSH-01 — DONE (Q025):** per-host **`bvpn_lv_ed25519`** / **`bvpn_ams_ed25519`**; legacy shared key снят с LV+AMS; **`ops/ssh_audit.py`** + **`ssh_audit_from_ams.sh`** → **`SSH_AUDIT_OK`** (AMS+NL с панели, все три с workstation). **NEXT=Q026** P1-RED-DNS-01. |
 | 2026-05-17 | **P6-RED-PAY-02 — DONE (Q024):** **`webhook_server/auth.py`** — loopback allowlist, YooKassa **`Payment.find_one`**, **`CRYPTO_WEBHOOK_SECRET`**; Flask **`WEBHOOK_BIND_HOST=127.0.0.1`**; smoke **`WEBHOOK_AUTH_OK`**. **NEXT=Q025** P1-RED-SSH-01. |
 | 2026-05-17 | **P2-OPS-AMS-SAFE-DEPLOY-01 — DONE (Q023):** **`ops/smoke_ams_safe_deploy.py`** + **`ops/ams_safe_deploy_bundle.sh`**; runbook §3 smoke + §4 урок **502/P1000**; прод **`AMS_SAFE_DEPLOY_OK`**. **NEXT=Q024** P6-RED-PAY-02. |

@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "registrars": [
+    {
+      "id": "dynadot",
+      "name": "Dynadot",
+      "recovery_bitwarden": "BenderVPN/dns/dynadot-recovery-codes"
+    },
+    {
+      "id": "reserve",
+      "name": "Reserve registrar (second account — fill name in wiki)",
+      "recovery_bitwarden": "BenderVPN/dns/reserve-registrar-recovery-codes"
+    }
+  ],
+  "zones": [
+    {
+      "apex": "conntest.xyz",
+      "registrar_id": "dynadot",
+      "dns_operator": "Dynadot DNS (dyna-ns.net)",
+      "expected_ns": ["ns1.dyna-ns.net.", "ns2.dyna-ns.net."],
+      "dnssec_enabled": false,
+      "dnssec_runbook": "docs/RUNBOOK-DNS-RED-TEAM.md#2-dnssec"
+    }
+  ],
+  "critical_hosts": [
+    {
+      "fqdn": "k9x2m1.conntest.xyz",
+      "role": "panel, sub-alt, status mirror",
+      "must_resolve": true
+    },
+    {
+      "fqdn": "p4n7q.conntest.xyz",
+      "role": "subscription primary",
+      "must_resolve": true
+    }
+  ],
+  "backup_apex": {
+    "registrar_id": "reserve",
+    "apex": null,
+    "notes": "Second apex at different registrar before mass GTM (see RUNBOOK §3)"
+  }
+}
