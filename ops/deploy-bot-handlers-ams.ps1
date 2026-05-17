@@ -27,7 +27,10 @@ for name in ('handlers.py', 'user_messages.py', 'scheduler.py', 'keyboards.py', 
 
 $HostAms = "168.100.11.140"
 $Port = 3344
-$Key = Join-Path $env:USERPROFILE ".ssh\id_ed25519"
+$Key = Join-Path $env:USERPROFILE ".ssh\bvpn_ams_ed25519"
+if (-not (Test-Path $Key)) {
+    $Key = Join-Path $env:USERPROFILE ".ssh\id_ed25519"
+}
 $Common = @(
     "-i", $Key,
     "-o", "BatchMode=yes",
