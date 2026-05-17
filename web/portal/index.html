@@ -25,8 +25,9 @@
       <p id="devices-note" class="note note-accent"></p>
       <div class="actions">
         <button type="button" class="btn btn-primary" id="btn-connect"></button>
+        <a class="btn btn-secondary" id="btn-setup" href="/setup/">Получить настройку</a>
         <a class="btn btn-secondary" id="btn-status" href="/status"></a>
-        <a class="btn btn-secondary" id="btn-support" href="#" target="_blank" rel="noopener"></a>
+        <a class="btn btn-secondary" id="btn-support" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
         <button type="button" class="btn btn-ghost" id="btn-stuck"></button>
       </div>
       <div class="panel">
@@ -34,6 +35,10 @@
         <p id="tg-blocked-body" class="muted"></p>
       </div>
       <p id="happ-note" class="muted"></p>
+      <section id="help-stuck" class="panel hidden">
+        <h2 id="help-stuck-title"></h2>
+        <ol class="steps" id="help-stuck-steps"></ol>
+      </section>
     </section>
 
     <section data-view="devices" class="hidden">

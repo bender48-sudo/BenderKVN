@@ -42,6 +42,7 @@ def main() -> int:
     json_needles = [
         doc["home"]["title"],
         doc["buttons"]["connect"],
+        doc["buttons"].get("setup_browser", "настройку"),
         doc["home"].get("hero_badge", "60"),
         "Быстро",
         "Windows",
@@ -54,6 +55,7 @@ def main() -> int:
         "brand-mark",
         "hero-badge",
         "pill-row",
+        "btn-setup",
         "BenderVPN",
     ]
 

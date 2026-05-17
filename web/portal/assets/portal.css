@@ -332,6 +332,36 @@ ol.steps li::before {
   margin-top: 1.5rem;
 }
 
+.field-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+}
+
+.field-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.75rem 0.9rem;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: rgba(167, 139, 250, 0.65);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+#help-stuck:not(.hidden) {
+  margin-top: 1rem;
+}
+
 .tg-webapp .btn-secondary {
   border-color: var(--card-border);
 }

@@ -18,8 +18,22 @@
     </header>
     <p id="setup-lead" class="lead"></p>
 
-    <p id="setup-loading" class="note">Загружаем…</p>
+    <p id="setup-loading" class="note hidden">Загружаем…</p>
     <p id="setup-error" class="note note-accent hidden" role="alert"></p>
+
+    <section id="setup-paste" class="panel hidden">
+      <h2 id="paste-heading">Вставьте ссылку</h2>
+      <p id="paste-hint" class="muted"></p>
+      <label class="field-label" for="setup-paste-input" id="paste-label">Ссылка</label>
+      <input type="url" class="field-input" id="setup-paste-input" autocomplete="off" spellcheck="false" inputmode="url">
+      <div class="actions" style="margin-top:0.75rem">
+        <button type="button" class="btn btn-primary" id="btn-paste-submit">Показать QR</button>
+      </div>
+      <div class="panel" style="margin-top:1rem">
+        <h3 id="no-access-title"></h3>
+        <p id="no-access-body" class="muted"></p>
+      </div>
+    </section>
 
     <section id="setup-content" class="hidden">
       <div class="panel qr-wrap">
@@ -32,7 +46,7 @@
       </div>
       <div class="panel">
         <h2>Дальше в Happ</h2>
-        <ol class="steps">
+        <ol class="steps" id="happ-steps">
           <li>Установите Happ (App Store, Google Play или версия для Windows/Mac).</li>
           <li>Нажмите + → «Из буфера обмена» или отсканируйте QR.</li>
           <li>Обновите подписку в Happ при необходимости.</li>
@@ -43,6 +57,7 @@
 
     <nav class="footer-nav">
       <a class="btn btn-ghost" href="/portal/">← Инструкция</a>
+      <a class="btn btn-ghost" href="/start/">← На главную</a>
       <a class="btn btn-ghost" href="/status">Статус сервиса</a>
     </nav>
   </main>

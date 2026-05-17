@@ -3,16 +3,45 @@
 
   var params = new URLSearchParams(window.location.search);
   var token = params.get("t") || "";
+  var SUB_RE = /^https:\/\/.+\/api\/sub\/[A-Za-z0-9_-]{8,128}(\?.*)?$/i;
 
   function $(id) {
     return document.getElementById(id);
   }
 
+  function hide(el) {
+    if (el) el.classList.add("hidden");
+  }
+
+  function showEl(el) {
+    if (el) el.classList.remove("hidden");
+  }
+
   function showError(msg) {
-    $("setup-loading").classList.add("hidden");
-    $("setup-content").classList.add("hidden");
+    hide($("setup-loading"));
+    hide($("setup-content"));
+    hide($("setup-paste"));
     $("setup-error").textContent = msg;
-    $("setup-error").classList.remove("hidden");
+    showEl($("setup-error"));
+  }
+
+  function normalizeSubUrl(raw) {
+    var text = (raw || "").trim();
+    if (!text) return "";
+    if (!/^https?:\/\//i.test(text)) {
+      text = "https://" + text.replace(/^\/+/, "");
+    }
+    try {
+      var u = new URL(text);
+      if (u.protocol !== "https:") return "";
+      return u.toString();
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function isValidSubUrl(url) {
+    return SUB_RE.test(url.split("#")[0]);
   }
 
   function renderQr(url) {
@@ -29,8 +58,9 @@
 
   function bindCopy(url, labelCopy, labelCopied) {
     var btn = $("btn-copy");
+    if (!btn) return;
     btn.textContent = labelCopy;
-    btn.addEventListener("click", function () {
+    btn.onclick = function () {
       var done = function () {
         btn.textContent = labelCopied;
         setTimeout(function () {
@@ -45,6 +75,55 @@
         window.prompt("Скопируйте ссылку:", url);
         done();
       }
+    };
+  }
+
+  function showSetupResult(url, content) {
+    var s = content.setup;
+    hide($("setup-loading"));
+    hide($("setup-paste"));
+    hide($("setup-error"));
+    $("setup-link").textContent = url;
+    $("setup-link").href = url;
+    $("btn-open-happ").href = url;
+    $("btn-open-happ").textContent = s.open_happ || "Открыть в Happ";
+    renderQr(url);
+    bindCopy(url, s.copy, s.copied);
+    showEl($("setup-content"));
+  }
+
+  function showPasteForm(content) {
+    var s = content.setup;
+    hide($("setup-loading"));
+    hide($("setup-error"));
+    hide($("setup-content"));
+    $("setup-lead").textContent = s.lead_paste || s.lead_token;
+    $("paste-hint").textContent = s.paste_hint || "";
+    $("paste-label").textContent = s.paste_label || "Ссылка";
+    $("setup-paste-input").placeholder = s.paste_placeholder || "";
+    $("btn-paste-submit").textContent = s.paste_submit || "Показать QR";
+    $("no-access-title").textContent = s.no_access_title || "";
+    $("no-access-body").textContent = s.no_access_body || "";
+    showEl($("setup-paste"));
+    $("setup-paste-input").focus();
+  }
+
+  function bindPasteForm(content) {
+    var input = $("setup-paste-input");
+    var submit = $("btn-paste-submit");
+    function tryPaste() {
+      var url = normalizeSubUrl(input.value);
+      if (!url || !isValidSubUrl(url)) {
+        showError(content.setup.paste_invalid);
+        showPasteForm(content);
+        return;
+      }
+      $("setup-lead").textContent = content.setup.lead_token;
+      showSetupResult(url, content);
+    }
+    submit.addEventListener("click", tryPaste);
+    input.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter") tryPaste();
     });
   }
 
@@ -55,13 +134,15 @@
     .then(function (content) {
       var s = content.setup;
       $("setup-title").textContent = s.title;
-      $("setup-lead").textContent = s.lead;
-      $("btn-copy").textContent = s.copy;
+      bindPasteForm(content);
 
       if (!token) {
-        showError(s.invalid_token);
+        showPasteForm(content);
         return;
       }
+
+      showEl($("setup-loading"));
+      $("setup-lead").textContent = s.lead_token || s.lead;
 
       fetch("api/verify?t=" + encodeURIComponent(token))
         .then(function (r) {
@@ -71,17 +152,12 @@
         })
         .then(function (res) {
           if (!res.body.ok || !res.body.sub_url) {
-            showError(s.invalid_token);
+            $("setup-error").textContent = s.invalid_token;
+            showPasteForm(content);
+            showEl($("setup-error"));
             return;
           }
-          var url = res.body.sub_url;
-          $("setup-link").textContent = url;
-          $("setup-link").href = url;
-          $("btn-open-happ").href = url;
-          renderQr(url);
-          bindCopy(url, s.copy, s.copied);
-          $("setup-loading").classList.add("hidden");
-          $("setup-content").classList.remove("hidden");
+          showSetupResult(res.body.sub_url, content);
         })
         .catch(function () {
           showError(content.errors.generic);

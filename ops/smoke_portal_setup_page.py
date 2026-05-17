@@ -95,6 +95,17 @@ def main() -> int:
         print("PORTAL_SETUP_FAIL: sub_url mismatch", file=sys.stderr)
         return 1
 
+    paste_url = site_urls.public_setup_url("")
+    pcode, pbody = _get(paste_url)
+    print(f"setup paste url={paste_url} http={pcode}")
+    if pcode != 200:
+        print("PORTAL_SETUP_FAIL: setup paste page not 200", file=sys.stderr)
+        return 1
+    for needle in ("setup-paste", "setup-paste-input", "btn-paste-submit"):
+        if needle not in pbody:
+            print(f"PORTAL_SETUP_FAIL: paste page missing {needle!r}", file=sys.stderr)
+            return 1
+
     print("PORTAL_SETUP_PAGE_OK")
     return 0
 

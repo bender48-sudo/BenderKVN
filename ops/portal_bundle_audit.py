@@ -58,6 +58,13 @@ def main() -> int:
         errors.append("index.html missing pill-row")
     if "telegram-web-app.js" not in html:
         errors.append("index.html missing telegram-web-app.js (Mini App)")
+    if "btn-setup" not in html:
+        errors.append("index.html missing btn-setup (browser setup path)")
+    setup_html = (PORTAL / "setup.html").read_text(encoding="utf-8") if (
+        PORTAL / "setup.html"
+    ).is_file() else ""
+    if "setup-paste" not in setup_html:
+        errors.append("setup.html missing setup-paste (no-Telegram flow)")
     if RU.is_file():
         doc2 = json.loads(RU.read_text(encoding="utf-8"))
         feats = (doc2.get("home") or {}).get("features") or []

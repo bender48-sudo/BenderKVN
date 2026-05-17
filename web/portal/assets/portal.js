@@ -4,6 +4,7 @@
   const CONTENT_URL = "content/ru.json";
   const STATUS_PATH = "/status";
   const SUPPORT_URL = "https://t.me/Bender_KVN_bot";
+  const SETUP_PATH = "/setup/";
 
   let content = null;
 
@@ -97,9 +98,29 @@
     }
     $("devices-note").textContent = home.devices_note;
     $("btn-connect").textContent = content.buttons.connect;
+    var setupBtn = $("btn-setup");
+    if (setupBtn && content.buttons.setup_browser) {
+      setupBtn.textContent = content.buttons.setup_browser;
+      setupBtn.href = SETUP_PATH;
+    }
     $("btn-status").textContent = content.buttons.status;
-    $("btn-support").textContent = content.buttons.support;
+    var supportBtn = $("btn-support");
+    supportBtn.textContent = content.buttons.support;
+    supportBtn.href = SUPPORT_URL;
     $("btn-stuck").textContent = content.buttons.stuck;
+    var help = content.help || {};
+    if ($("help-stuck-title") && help.stuck_title) {
+      $("help-stuck-title").textContent = help.stuck_title;
+    }
+    if ($("help-stuck-steps") && help.stuck_steps) {
+      var helpList = $("help-stuck-steps");
+      helpList.innerHTML = "";
+      help.stuck_steps.forEach(function (step) {
+        var li = document.createElement("li");
+        li.textContent = step;
+        helpList.appendChild(li);
+      });
+    }
     $("tg-blocked-title").textContent = content.telegram_blocked.title;
     $("tg-blocked-body").textContent = content.telegram_blocked.body;
     $("happ-note").textContent = content.happ.phone_and_pc;
@@ -173,7 +194,15 @@
       show("devices");
     });
     $("btn-stuck").addEventListener("click", function () {
-      openExternal(SUPPORT_URL);
+      var helpPanel = $("help-stuck");
+      if (helpPanel) {
+        helpPanel.classList.toggle("hidden");
+        if (!helpPanel.classList.contains("hidden")) {
+          helpPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+        return;
+      }
+      window.location.href = SETUP_PATH;
     });
     var statusBtn = $("btn-status");
     statusBtn.addEventListener("click", function (ev) {
@@ -189,6 +218,17 @@
         openExternal(SUPPORT_URL);
       }
     });
+    var setupLink = $("btn-setup");
+    if (setupLink) {
+      setupLink.addEventListener("click", function (ev) {
+        if (getTelegramWebApp()) {
+          ev.preventDefault();
+          openExternal(
+            window.location.origin.replace(/\/$/, "") + SETUP_PATH
+          );
+        }
+      });
+    }
     var deviceSupport = $("btn-device-support");
     if (deviceSupport) {
       deviceSupport.addEventListener("click", function (ev) {
