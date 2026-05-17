@@ -40,17 +40,24 @@ fi
 FILE_SIZE=$(du -sh "$BACKUP_FILE" | cut -f1)
 echo "[$(date)] Backup created: $BACKUP_FILE ($FILE_SIZE)"
 
-# Send to Telegram
-SEND_RESULT=$(curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument"     -F "chat_id=${ADMIN_CHAT_ID}"     -F "document=@${BACKUP_FILE}"     -F "caption=💾 Remnawave DB Backup
+# Success: log only (no Telegram). Set REMNA_BACKUP_NOTIFY=1 to restore TG document on success.
+REMNA_BACKUP_NOTIFY="${REMNA_BACKUP_NOTIFY:-0}"
+if [ "$REMNA_BACKUP_NOTIFY" = "1" ]; then
+    SEND_RESULT=$(curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument" \
+        -F "chat_id=${ADMIN_CHAT_ID}" \
+        -F "document=@${BACKUP_FILE}" \
+        -F "caption=💾 Remnawave DB Backup
 📅 Time: $(date '+%Y-%m-%d %H:%M UTC')
-📦 Size: ${FILE_SIZE}
-🖥 Server: Latvia (176.126.162.158)"     -F "parse_mode=HTML")
-
-if echo "$SEND_RESULT" | grep -q '"ok":true'; then
-    echo "[$(date)] Sent to Telegram OK"
+📦 Size: ${FILE_SIZE}" \
+        -F "parse_mode=HTML")
+    if echo "$SEND_RESULT" | grep -q '"ok":true'; then
+        echo "[$(date)] Sent to Telegram OK"
+    else
+        echo "[$(date)] ERROR: Failed to send to Telegram: $SEND_RESULT"
+        exit 1
+    fi
 else
-    echo "[$(date)] ERROR: Failed to send to Telegram: $SEND_RESULT"
-    exit 1
+    echo "[$(date)] Telegram notify skipped (REMNA_BACKUP_NOTIFY=0)"
 fi
 
 # Keep only last MAX_BACKUPS files

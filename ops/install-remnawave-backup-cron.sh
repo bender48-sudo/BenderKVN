@@ -23,7 +23,7 @@ esac
 
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
-crontab -l 2>/dev/null | grep -vF "${MARKER}" | grep -v '^[[:space:]]*$' >"$TMP" || true
+crontab -l 2>/dev/null | grep -vF "${MARKER}" | grep -vF 'backup-remnawave.sh' | grep -v '^[[:space:]]*$' >"$TMP" || true
 echo "${LINE}" >>"$TMP"
 crontab "$TMP"
 echo "OK: crontab updated for ${ROLE}"

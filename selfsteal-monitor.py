@@ -54,6 +54,16 @@ NODES = [
     # ("amsterdam", AMSTERDAM_HOST),  # disabled 2026-05-14 — AMS xray drain
 ]
 
+# Display names for Telegram (flag + label)
+NODE_LABELS = {
+    "latvia": "\U0001f1fb\U0001f1f7 Latvia",
+    "amsterdam": "\U0001f1f3\U0001f1f1 Amsterdam",
+}
+
+
+def node_label(node: str) -> str:
+    return NODE_LABELS.get(node, node)
+
 # --- Expectations (from doc section 5.6) ---
 # Baseline verification: проверены руками `curl -sk --resolve sni:9443:127.0.0.1
 # https://sni:9443/` против Caddy reality на каждой ноде (дата округления —
@@ -419,6 +429,7 @@ def run_checks_remote(ssh_host):
 
 
 def format_alert_down(node, sni, code, prev):
+    node = node_label(node)
     """Format CRITICAL alert: Caddy not responding (HTTP 000)."""
     if prev:
         prev_text = f"OK (last change {prev.get('last_change', 'unknown')})"
@@ -442,6 +453,7 @@ def format_alert_down(node, sni, code, prev):
 
 
 def format_alert_drift(node, sni, expected, got, prev):
+    node = node_label(node)
     """Format CRITICAL alert: fingerprint drift."""
     if prev:
         prev_text = f"OK (last seen {prev.get('last_change', 'unknown')})"
@@ -460,6 +472,7 @@ def format_alert_drift(node, sni, expected, got, prev):
 
 
 def format_alert_recovered(node, sni, code, prev):
+    node = node_label(node)
     """Format OK alert: recovered."""
     down_since_raw = prev.get("last_change", "unknown") if prev else "unknown"
     down_since = humanize_since(down_since_raw) if down_since_raw != "unknown" else "unknown"

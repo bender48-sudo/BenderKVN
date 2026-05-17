@@ -201,24 +201,37 @@ async def create_backup_and_send(bot: Bot, admin_id: str, is_auto: bool = False)
             f"📊 <b>File Size:</b> <code>{file_size_str}</code>"
         )
         
-        # Отправляем файл админу
-        bot_logger.backup("SEND_TO_ADMIN", f"Sending backup ({file_size_str})")
-        try:
-            with open(backup_file, 'rb') as f:
-                backup_document = BufferedInputFile(f.read(), filename=f"{backup_name}.tar.gz")
-                
-            await bot.send_document(
-                chat_id=admin_id,
-                document=backup_document,
-                caption=backup_text
+        # Auto-backup: file on disk only (no TG spam). Manual backup still sends document.
+        notify_admin = not is_auto or os.getenv("BOT_BACKUP_NOTIFY", "").strip() in (
+            "1",
+            "true",
+            "yes",
+        )
+        if notify_admin:
+            bot_logger.backup("SEND_TO_ADMIN", f"Sending backup ({file_size_str})")
+            try:
+                with open(backup_file, 'rb') as f:
+                    backup_document = BufferedInputFile(
+                        f.read(), filename=f"{backup_name}.tar.gz"
+                    )
+                await bot.send_document(
+                    chat_id=admin_id,
+                    document=backup_document,
+                    caption=backup_text,
+                )
+                bot_logger.backup(
+                    "SUCCESS", f"Backup sent: {backup_file.name} ({file_size_str})", "OK"
+                )
+            except Exception as e:
+                bot_logger.backup("SEND_FAILED", f"Failed to send: {e}", "ERROR")
+                return False
+        else:
+            bot_logger.backup(
+                "SILENT",
+                f"Auto backup saved locally: {backup_file.name} ({file_size_str})",
+                "OK",
             )
-            
-            bot_logger.backup("SUCCESS", f"Backup sent: {backup_file.name} ({file_size_str})", "OK")
-            return True
-            
-        except Exception as e:
-            bot_logger.backup("SEND_FAILED", f"Failed to send: {e}", "ERROR")
-            return False
+        return True
         
     except Exception as e:
         bot_logger.backup("CRITICAL_ERROR", f"Backup creation failed: {e}", "ERROR")
