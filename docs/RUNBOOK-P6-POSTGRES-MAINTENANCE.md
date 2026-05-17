@@ -80,7 +80,7 @@ bash ops/install-remnawave-backup-cron.sh lv
 | **Ежемесячно** | **`pg_remnawave_audit.py`** → сохранить `--json` в тикет / §12 при аномалиях |
 | **После релиза панели** | Повтор аудита; при миграции — бэкап до наката |
 | **Раз в квартал** | Restore test (**`RUNBOOK-BACKUP-REMNAWAVE` §4**) |
-| **При users > 8000** | Обязательный load test подписки + рассмотреть read-replica (**P6-RED-PG-01**) |
+| **При users > 8000** | Обязательный **`pg_stampede_load_probe`** + read-replica (**`RUNBOOK-P6-POSTGRES-RED`**) |
 
 ---
 

@@ -120,7 +120,7 @@
 | ~~**P2-RED-MUX-01**~~ ✅ | **Не один транспорт для всех**: продуктовая матрица **≥2 независимых транспортных профиля** (разные инбаунды/порты/узлы), чтобы DPI не кластеризовал всю аудиторию по одному JA3/Reality‑шаблону. | **2026-05-16:** **`TRANSPORT-MUX-MATRIX`**, **`transport_mux_audit.py`** — sample 25: **100%** users both primary+alt, **alt_ob_share≈56%**. |
 | ~~**P2-RED-TLS-01**~~ ✅ | **Клиентский стек**: квартальный обзор **sing-box / uTLS / ECH**. | **`TLS-CLIENT-STACK-REVIEW`**, **`tls_client_stack_audit.py`**, **`reviews/TLS-QUARTERLY-2026-Q2`** §12 |
 | ~~**P6-RED-SUBHA-01**~~ ✅ | **Горизонталь subscription-page**: несколько инстансов за LB + кэш на edge для «утреннего stampede» обновления подписок (дополняет **P6-SCALE-04**). | **2026-05-16:** split-host **p4n7q→:3010**, **k9x2m1→:3011**; **`RUNBOOK-P6-SUBSCRIPTION-HA`**; HA load **60×200** p95≈**1.48s** / **1.51s**. |
-| **P6-RED-PG-01** | **Postgres**: read‑реплики (или managed Postgres при переносе), явный **pool limit** приложений, нагрузочный тест «массовое обновление клиентов за 1 ч». | Отчёт теста + пороги в **§10.1**. |
+| ~~**P6-RED-PG-01**~~ ✅ | **Postgres**: read‑реплики (или managed Postgres при переносе), явный **pool limit** приложений, нагрузочный тест «массовое обновление клиентов за 1 ч». | **`RUNBOOK-P6-POSTGRES-RED`**, Prisma **`connection_limit=15`**, stampede probe §12 |
 | ~~**P6-RED-PAY-01**~~ ✅ | **Очередь платежей бота**: webhook **idempotency**, DLQ, чтобы TG‑бот не был узким горлышком при всплеске продаж. | **2026-05-16:** **`PaymentWebhookQueue`**, таблица **`webhook_deliveries`**, деплой **`deploy-bot-payment-webhook-ams.ps1`**, smoke **`WEBHOOK_PAY_IDEMPOTENCY_OK`**. |
 | **P3-RED-MIN-01** | **Минимизация данных пользователя**: где юридически возможно — развязать платёжный след и тех‑UUID; явная политика «что не собираем». | Страница политики + внутренний чеклист полей БД. |
 | **P3-RED-JURIS-01** | **Гео‑ и провайнер‑диверсификация**: runbook «нас отключил один VPS/агентство платежей за день» — перенос DNS/IP без зависимости от одной юрисдикции. | Wiki + tabletop exercise раз в год. |
@@ -223,6 +223,9 @@
 | **Сессий на LV или NL > soft-cap** (`P6-SCALE-02`) | Добавление третьей prod-ноды; пересмотр распределения в `injectHosts` |
 | **Ошибки / таймауты** на `p4n7q…/api/sub/*` при пике | **P6-SCALE-04**: CDN / rate limit / кэш (не откладывать) |
 | **RU-monitor** > **4 мин** на цикл | **P6-SCALE-06**: батчи / меньше целей / параллель |
+| **Postgres** `active_connections` **> 85%** `max_connections` устойчиво 10+ мин | Снизить `connection_limit` / убрать лишние клиенты; апгрейд AMS; read-replica (**P6-RED-PG-01**) |
+| **Stampede load test** `pg_stampede_load_probe`: `bad_http_rate` **> 2%** или `p95` refresh **> 3 s** | **P6-SCALE-04** edge + **P6-SCALE-05** panel; повторить после фикса |
+| **`users` > 8 000** без read-replica / managed Postgres | Обязательный stampede test + решение по §2 **`RUNBOOK-P6-POSTGRES-RED`** |
 
 ### 10.2 Задачи P6
 
@@ -264,6 +267,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-17 | **P6-RED-PG-01 — DONE (Q022):** Prisma **`connection_limit=15`** на AMS (patch + tmpl); Postgres **`max_connections=100`**; **`pg_stampede_load_probe`** **120×25** (60+60 на **p4n7q**/**k9x2m1**) → **120×200**, **p95≈1.15–1.20s**, **peak_conn=15/100** (15%), **PG_STAMPEDE_LOAD_OK**; read-replica — при **users≥8k** (**`RUNBOOK-P6-POSTGRES-RED`**). Очередь фазы закрыта. |
 | 2026-05-16 | **P2-RED-TLS-01 — DONE (Q2 2026):** Xray **26.3.27** LV+NL; sing-box **v1.13.12**; sub **vless+reality+vision**; mux OK; шаблон без изменений. След. ревью **2026-08-16**. **NEXT=Q022** P6-RED-PG-01. |
 | 2026-05-16 | **P2-RED-BOOT-01 — DONE:** HTTPS mirror **`/api/ops/status.json`** на **k9x2m1** (Caddy file_server + cron ***/2**); **`smoke_status_channels.py`** → **STATUS_CHANNELS_OK**; § в **`RUNBOOK-INCIDENT`**. |
 | 2026-05-16 | **P6-SCALE-07 — DONE:** метрика очереди (**`support_queue_snapshot.py`**: pending/SLA/tickets_24h); бот — timestamps **`support_last_*_at`**; шаблоны **`SUPPORT-REPLY-TEMPLATES`**; пороги 2-й линии **15/25**. Smoke: **active_topics=21**, **SUPPORT_QUEUE_OK**. |
