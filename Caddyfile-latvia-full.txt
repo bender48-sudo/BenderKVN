@@ -300,6 +300,32 @@ k9x2m1.conntest.xyz:2053 {
         file_server
     }
 
+    # USER_PORTAL_BOOT_01 — bootstrap + Mini App static portal (P3-FLOW-01)
+    handle_path /start/* {
+        root * /var/www/bvpn-portal
+        try_files {path} /index.html
+        file_server
+    }
+    handle /start {
+        redir /start/ 308
+    }
+    handle_path /portal/* {
+        root * /var/www/bvpn-portal
+        try_files {path} /index.html
+        file_server
+    }
+    handle /portal {
+        redir /portal/ 308
+    }
+    handle_path /setup/* {
+        root * /var/www/bvpn-portal
+        try_files {path} /setup.html
+        file_server
+    }
+    handle /setup {
+        redir /setup/ 308
+    }
+
     # P2-RED-SUB-01 + P6-RED-SUBHA-01: alt origin -> AMS :3011 (primary p4n7q -> :3010)
     @sub_path_alt path /api/sub/*
     handle @sub_path_alt {

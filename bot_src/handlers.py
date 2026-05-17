@@ -580,7 +580,6 @@ async def trial_period_handler(callback: types.CallbackQuery):
         new_key_id = add_new_key(user_id, vless_uuid, email, expiry_ms)
         
         # Показываем созданный ключ пользователю
-        from .keyboards import create_main_menu_keyboard
         expiry_str = expiry_dt.strftime("%d.%m.%Y %H:%M")
         message_text = "\u2705 <b>Готово!</b> Сейчас даём <b>бесплатную подписку примерно на 3 месяца</b> "
         message_text += f"(до <b>{expiry_str}</b>). Дальше — платный доступ.\n\n"
@@ -596,16 +595,10 @@ async def trial_period_handler(callback: types.CallbackQuery):
         message_text += "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
         message_text += "Что-то не так? Напиши нам \U0001f447"
         
-        # Получаем данные пользователя для клавиатуры
-        user_keys = get_user_keys(user_id)
-        user_data = get_user(user_id)
-        is_admin = str(user_id) == ADMIN_ID
-        auto_renew = user_data.get('auto_renew', False) if user_data else False
-        
         await callback.message.edit_text(
             message_text,
             parse_mode="HTML",
-            reply_markup=create_main_menu_keyboard(user_keys, trial_available=False, is_admin=is_admin, auto_renew=auto_renew)
+            reply_markup=keyboards.create_trial_success_keyboard(sub_url or uri),
         )
     except Exception as e:
         logger.error(f"Error creating trial key for user {user_id}: {e}", exc_info=True)

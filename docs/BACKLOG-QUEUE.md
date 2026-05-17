@@ -69,15 +69,15 @@
 
 **Старт:** после закрытия фазы 2 (**2026-05-17**).  
 **Инструкции для агента:** **`docs/AGENT-FLOW-BACKLOG.md`** (портал = сайт + Mini App).  
-**NEXT:** **Q035** (**P3-FLOW-01**).
+**NEXT:** **Q036** (**P3-FLOW-02**).
 
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
 | 032 | **P5-COM-02** | **TODO** | Возвраты при массовом дауне в оферте | Текст согласован владельцем | **`AGENT-FLOW-BACKLOG` §Q032** |
 | 033 | **P3-FLOW-00** | **DONE** | Карта флоу: сайт = Mini App = бот | **USER_FLOW_JOURNEY_OK** §12 | **`USER-FLOW-JOURNEY.md`** |
 | 034 | **P3-FLOW-14** | **DONE** | `web/portal/` + ru.json (iPhone/Android/Win/Mac, Happ) | **PORTAL_BUNDLE_OK** §12 | §Q034 |
-| 035 | **P3-FLOW-01** | **NEXT** | `/start` на LV (clearnet) | **`PUBLIC_BOOTSTRAP_OK`** | **`RUNBOOK-USER-BOOTSTRAP-SITE`** |
-| 036 | **P3-FLOW-02** | **TODO** | `/setup?token=` QR + copy | **`PORTAL_SETUP_PAGE_OK`** | §Q036 |
+| 035 | **P3-FLOW-01** | **DONE** | `/start` + `/portal` на LV; as-is бот в journey | **`PUBLIC_BOOTSTRAP_OK`** §12 | **`RUNBOOK-USER-BOOTSTRAP-SITE`** |
+| 036 | **P3-FLOW-02** | **NEXT** | `/setup?token=` QR + copy | **`PORTAL_SETUP_PAGE_OK`** | §Q036 |
 | 037 | **P3-FLOW-12** | **TODO** | **Mini App** = тот же portal URL | **`TELEGRAM_MINIAPP_PORTAL_OK`** | **`RUNBOOK-TELEGRAM-MINIAPP`** |
 | 038 | **P3-FLOW-03** | **TODO** | Бот: WebApp + браузер + setup link | **`BOT_PORTAL_LINKS_OK`** | §Q038 |
 | 039 | **P3-FLOW-04** | **TODO** | Мастер «Подключить VPN»; CTA → Mini App | Сценарий journey | §Q039 |
@@ -187,3 +187,4 @@
 | 2026-05-17 | — | **NEXT=Q033** (**P3-FLOW-00** journey map) |
 | 2026-05-17 | **Q033** P3-FLOW-00 | **Q034** P3-FLOW-14 |
 | 2026-05-17 | **Q034** P3-FLOW-14 | **Q035** P3-FLOW-01 |
+| 2026-05-17 | **Q035** P3-FLOW-01 | **Q036** P3-FLOW-02 |

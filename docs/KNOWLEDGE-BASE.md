@@ -9,7 +9,7 @@
 | Что нужно | Документ / артефакт |
 |-----------|---------------------|
 | Очередь задач по приоритетам | **`docs/COMMERCIAL-BACKLOG.md`** |
-| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **Q035** (**P3-FLOW-01**); портал: **`web/portal/`**; карта: **`docs/USER-FLOW-JOURNEY.md`** |
+| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **Q036** (**P3-FLOW-02**); bootstrap: **`https://k9x2m1.conntest.xyz:2053/start/`** |
 | **Бэклог пользовательского флоу (bootstrap без VPN)** | **`docs/USER-FLOW-BACKLOG.md`** — сайт выдачи конфига, «бабушка-тест», §7.1 бэклога |
 | **Инструкции агента (фаза 3, Q032–Q047, Mini App)** | **`docs/AGENT-FLOW-BACKLOG.md`** — один `web/portal/` = сайт + Telegram Mini App |
 | Правило: одна задача → коммит → стоп | **`docs/POLICY-SEQUENTIAL-WORK.md`** |
@@ -43,6 +43,7 @@
 | Публичный статус для пользователей (P5-COM-01) | **`https://k9x2m1.conntest.xyz:2053/status`**, **`docs/RUNBOOK-PUBLIC-STATUS-PAGE.md`** |
 | Карта пути пользователя (P3-FLOW-00) | **`docs/USER-FLOW-JOURNEY.md`**, **`docs/USER-FLOW-BACKLOG.md`**, **`docs/AGENT-FLOW-BACKLOG.md`** |
 | Портал / Mini App (P3-FLOW-14) | **`web/portal/`**, **`ops/site_urls.py`** (`public_portal_url`) |
+| Bootstrap без VPN (P3-FLOW-01) | **`https://k9x2m1.conntest.xyz:2053/start/`**, **`docs/RUNBOOK-USER-BOOTSTRAP-SITE.md`** |
 | Ротация панели + LV legacy архив | **`docs/RUNBOOK-P0-SEC04-SEC05.md`** |
 | Смена **`REMNA_API_TOKEN`** без 502 | **`docs/RUNBOOK-REMNA-API-TOKEN.md`** |
 | Логи Caddy без сырого **`/api/sub/`** в access-log | **`docs/RUNBOOK-CADDY-SUBSCRIPTION-LOGS.md`** |
