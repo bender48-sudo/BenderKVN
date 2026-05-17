@@ -82,7 +82,19 @@
   function renderHome() {
     var home = content.home;
     $("page-title").textContent = home.title;
+    if ($("hero-badge") && home.hero_badge) {
+      $("hero-badge").textContent = home.hero_badge;
+    }
     $("page-subtitle").textContent = home.subtitle;
+    var pills = $("feature-pills");
+    if (pills && home.features && home.features.length) {
+      pills.innerHTML = "";
+      home.features.forEach(function (label) {
+        var li = document.createElement("li");
+        li.textContent = label;
+        pills.appendChild(li);
+      });
+    }
     $("devices-note").textContent = home.devices_note;
     $("btn-connect").textContent = content.buttons.connect;
     $("btn-status").textContent = content.buttons.status;
@@ -94,6 +106,13 @@
   }
 
   function renderDevices() {
+    var screens = content.screens || {};
+    if ($("devices-heading") && screens.devices_heading) {
+      $("devices-heading").textContent = screens.devices_heading;
+    }
+    if ($("devices-lead") && screens.devices_lead) {
+      $("devices-lead").textContent = screens.devices_lead;
+    }
     var grid = $("device-grid");
     grid.innerHTML = "";
     content.devices.forEach(function (dev) {
@@ -118,6 +137,13 @@
       return d.id === deviceId;
     });
     if (!dev) return;
+    var screens = content.screens || {};
+    if ($("install-steps-title") && screens.install_steps_title) {
+      $("install-steps-title").textContent = screens.install_steps_title;
+    }
+    if ($("after-title") && screens.after_title) {
+      $("after-title").textContent = screens.after_title;
+    }
     $("device-detail-title").textContent = dev.install_title;
     var list = $("device-install-steps");
     list.innerHTML = "";
@@ -163,7 +189,7 @@
         openExternal(SUPPORT_URL);
       }
     });
-    var deviceSupport = document.querySelector('[data-view="device"] .btn-primary');
+    var deviceSupport = $("btn-device-support");
     if (deviceSupport) {
       deviceSupport.addEventListener("click", function (ev) {
         if (getTelegramWebApp()) {

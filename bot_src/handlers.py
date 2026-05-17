@@ -593,7 +593,7 @@ async def trial_period_handler(callback: types.CallbackQuery):
         message_text += '4\ufe0f\u20e3 Выбери "Из буфера обмена"\n\n'
         message_text += "5\ufe0f\u20e3 Нажми кнопку питания \u2014 готово! \U0001f389\n"
         message_text += "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-        message_text += "Что-то не так? Напиши нам \U0001f447"
+        message_text += user_messages.MSG_TRIAL_PORTAL_HINT
         
         await callback.message.edit_text(
             message_text,
@@ -636,7 +636,15 @@ async def my_account_handler(callback: types.CallbackQuery):
         if balance > 0
         else f"💰 <b>Баланс:</b> 0 ₽ — пополните, чтобы продлить доступ\n"
     )
+    sub_url = None
     if active_keys:
+        try:
+            async with aiohttp.ClientSession() as session:
+                remote = await remnawave_api.get_user_by_telegram_id(session, str(user_id))
+                if remote:
+                    sub_url = remote.get("subscriptionUrl")
+        except Exception as e:
+            logger.warning("subscriptionUrl fetch for account: %s", e)
         latest = max(active_keys, key=lambda k: datetime.fromisoformat(k["expiry_date"]))
         exp = datetime.fromisoformat(latest["expiry_date"])
         text = (
@@ -645,7 +653,9 @@ async def my_account_handler(callback: types.CallbackQuery):
             f"📅 Подписка на панели: до {exp.strftime('%d.%m.%Y')}\n"
             f"👥 Приглашено друзей: {ref_count}"
         )
-        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboards.create_account_keyboard(True))
+        await callback.message.edit_text(
+            text, parse_mode="HTML", reply_markup=keyboards.create_account_keyboard(sub_url)
+        )
     else:
         trial_available = not (user_db_data and user_db_data.get("trial_used"))
         text = (

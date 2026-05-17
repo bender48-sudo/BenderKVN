@@ -2,8 +2,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from shop_bot.config import TELEGRAM_WEBAPP_URL
-from datetime import datetime
-import os
+from shop_bot.bot import portal_links
 
 from shop_bot.config import DAILY_RATE, TOPUP_PRESETS, topup_button_label
 
@@ -14,17 +13,27 @@ main_reply_keyboard = ReplyKeyboardMarkup(
 )
 
 
-def _portal_webapp_button(builder: InlineKeyboardBuilder) -> None:
+def _add_portal_link_buttons(builder: InlineKeyboardBuilder, setup_url: str | None = None) -> None:
     if TELEGRAM_WEBAPP_URL:
         builder.button(
-            text="\U0001f4f1 \u041e\u0442\u043a\u0440\u044b\u0442\u044c \u0438\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0438\u044e",
+            text="\U0001f4f1 \u0418\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0438\u044f (Mini App)",
             web_app=WebAppInfo(url=TELEGRAM_WEBAPP_URL),
+        )
+    if portal_links.PUBLIC_BOOTSTRAP_URL:
+        builder.button(
+            text="\U0001f310 \u041e\u0442\u043a\u0440\u044b\u0442\u044c \u0432 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0435",
+            url=portal_links.PUBLIC_BOOTSTRAP_URL,
+        )
+    if setup_url:
+        builder.button(
+            text="\U0001f517 \u041c\u043e\u044f \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430",
+            url=setup_url,
         )
 
 
 def create_main_menu_keyboard(has_active_sub=False, trial_available=True, is_admin=False, **kwargs):
     builder = InlineKeyboardBuilder()
-    _portal_webapp_button(builder)
+    _add_portal_link_buttons(builder)
     if not has_active_sub and trial_available:
         builder.button(
             text="🎁 Бесплатно 3 месяца",
@@ -42,19 +51,22 @@ def create_main_menu_keyboard(has_active_sub=False, trial_available=True, is_adm
 
 def create_trial_success_keyboard(sub_url):
     builder = InlineKeyboardBuilder()
-    _portal_webapp_button(builder)
+    setup_url = portal_links.setup_url_for_sub(sub_url)
+    _add_portal_link_buttons(builder, setup_url=setup_url)
     builder.button(text="\U0001f4cb \u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443 \u043f\u043e\u0434\u043f\u0438\u0441\u043a\u0438", callback_data="copy_sub_url")
     builder.button(text="\U0001f34e App Store", url="https://apps.apple.com/ru/app/happ-proxy-utility-plus/id6746188973")
     builder.button(text="\U0001f916 Google Play", url="https://play.google.com/store/apps/details?id=com.happproxy.happ")
     builder.button(text="\U0001f464 \u041c\u043e\u0439 \u0430\u043a\u043a\u0430\u0443\u043d\u0442", callback_data="my_account")
     builder.button(text="\U0001f4ac \u041d\u0430\u043f\u0438\u0441\u0430\u0442\u044c \u043d\u0430\u043c", callback_data="contact_support")
-    builder.adjust(1, 2, 1, 1)
+    builder.adjust(1, 1, 1, 2, 1, 1)
     return builder.as_markup()
 
 
 def create_account_keyboard(sub_url=None):
     builder = InlineKeyboardBuilder()
     if sub_url:
+        setup_url = portal_links.setup_url_for_sub(sub_url)
+        _add_portal_link_buttons(builder, setup_url=setup_url)
         builder.button(text="\U0001f4cb \u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443 \u043f\u043e\u0434\u043f\u0438\u0441\u043a\u0438", callback_data="copy_sub_url")
     builder.button(text="\U0001f4b0 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u0431\u0430\u043b\u0430\u043d\u0441", callback_data="show_topup")
     builder.button(text="\U0001f465 \u041f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u0442\u044c \u0434\u0440\u0443\u0437\u0430", callback_data="invite_friend")
@@ -118,10 +130,12 @@ def create_admin_keyboard():
     builder.adjust(1)
     return builder.as_markup()
 
+
 def create_admin_cancel_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="\u274c \u041e\u0442\u043c\u0435\u043d\u0430", callback_data="admin_cancel_edit")
     return builder.as_markup()
+
 
 def create_admin_promos_keyboard():
     builder = InlineKeyboardBuilder()
@@ -131,6 +145,7 @@ def create_admin_promos_keyboard():
     builder.adjust(1)
     return builder.as_markup()
 
+
 def create_plans_keyboard(plans, action, key_id=0):
     builder = InlineKeyboardBuilder()
     for plan_id, (name, price_rub, _) in plans.items():
@@ -138,6 +153,7 @@ def create_plans_keyboard(plans, action, key_id=0):
     builder.button(text="\U0001f519 \u041d\u0430\u0437\u0430\u0434", callback_data="back_to_main_menu")
     builder.adjust(1)
     return builder.as_markup()
+
 
 def create_payment_method_keyboard(payment_methods, plan_id, action, key_id):
     builder = InlineKeyboardBuilder()
@@ -151,15 +167,18 @@ def create_payment_method_keyboard(payment_methods, plan_id, action, key_id):
     builder.adjust(1)
     return builder.as_markup()
 
+
 def create_payment_keyboard(payment_url):
     builder = InlineKeyboardBuilder()
     builder.button(text="\u041f\u0435\u0440\u0435\u0439\u0442\u0438 \u043a \u043e\u043f\u043b\u0430\u0442\u0435", url=payment_url)
     return builder.as_markup()
 
+
 def create_agreement_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="\u2705 \u041f\u0440\u0438\u043d\u0438\u043c\u0430\u044e", callback_data="agree_to_terms")
     return builder.as_markup()
+
 
 # Legacy stubs
 def create_keys_management_keyboard(keys): return create_back_to_menu_keyboard()

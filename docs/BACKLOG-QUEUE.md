@@ -69,7 +69,7 @@
 
 **Старт:** после закрытия фазы 2 (**2026-05-17**).  
 **Инструкции для агента:** **`docs/AGENT-FLOW-BACKLOG.md`** (портал = сайт + Mini App).  
-**NEXT:** **Q038** (**P3-FLOW-03**).
+**NEXT:** **Q039** (**P3-FLOW-04**).
 
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
@@ -79,8 +79,8 @@
 | 035 | **P3-FLOW-01** | **DONE** | `/start` + `/portal` на LV; as-is бот в journey | **`PUBLIC_BOOTSTRAP_OK`** §12 | **`RUNBOOK-USER-BOOTSTRAP-SITE`** |
 | 036 | **P3-FLOW-02** | **DONE** | `/setup/?t=` HMAC + QR + verify API | **`PORTAL_SETUP_PAGE_OK`** §12 | **`RUNBOOK-USER-BOOTSTRAP-SITE`** |
 | 037 | **P3-FLOW-12** | **DONE** | Mini App = portal; Menu Button + WebApp | **`TELEGRAM_MINIAPP_PORTAL_OK`** §12 | **`RUNBOOK-TELEGRAM-MINIAPP`** |
-| 038 | **P3-FLOW-03** | **NEXT** | Бот: WebApp + браузер + setup link | **`BOT_PORTAL_LINKS_OK`** | §Q038 |
-| 039 | **P3-FLOW-04** | **TODO** | Мастер «Подключить VPN»; CTA → Mini App | Сценарий journey | §Q039 |
+| 038 | **P3-FLOW-03** | **DONE** | Бот: WebApp + браузер + setup; UI ≈ HITVPN | **`BOT_PORTAL_LINKS_OK`** §12 | §Q038 |
+| 039 | **P3-FLOW-04** | **NEXT** | Мастер «Подключить VPN»; CTA → Mini App | Сценарий journey | §Q039 |
 | 040 | **P3-FLOW-07** | **TODO** | FAQ/онбординг/ru.json — оплата live | Diff OK | **`FAQ.md`** |
 | 041 | **P3-FLOW-05** | **TODO** | QR (бот + portal) | Скан → Happ | §7.1 |
 | 042 | **P3-FLOW-06** | **TODO** | Видео/GIF на portal | Без VPN с телефона | §7.1 |
@@ -190,3 +190,4 @@
 | 2026-05-17 | **Q035** P3-FLOW-01 | **Q036** P3-FLOW-02 |
 | 2026-05-17 | **Q036** P3-FLOW-02 | **Q037** P3-FLOW-12 |
 | 2026-05-17 | **Q037** P3-FLOW-12 | **Q038** P3-FLOW-03 |
+| 2026-05-17 | **Q038** P3-FLOW-03 | **Q039** P3-FLOW-04 |

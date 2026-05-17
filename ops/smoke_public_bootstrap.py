@@ -42,11 +42,20 @@ def main() -> int:
     json_needles = [
         doc["home"]["title"],
         doc["buttons"]["connect"],
+        doc["home"].get("hero_badge", "60"),
+        "Быстро",
         "Windows",
         "Mac",
         "Happ",
     ]
-    html_needles = ["device-grid", "portal.js", "BenderVPN"]
+    html_needles = [
+        "device-grid",
+        "portal.js",
+        "brand-mark",
+        "hero-badge",
+        "pill-row",
+        "BenderVPN",
+    ]
 
     ok = True
     for url in urls:

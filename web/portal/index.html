@@ -2,7 +2,8 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07070f">
   <title>BenderVPN — подключение</title>
   <link rel="stylesheet" href="assets/portal.css">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
@@ -10,12 +11,18 @@
 </head>
 <body>
   <main>
-    <p id="load-error" class="note hidden" role="alert"></p>
+    <header class="brand">
+      <div class="brand-mark" aria-hidden="true">🛡️</div>
+      <h1 class="brand-name" id="page-title">BenderVPN</h1>
+    </header>
+
+    <p id="load-error" class="note note-accent hidden" role="alert"></p>
 
     <section data-view="home">
-      <h1 id="page-title">BenderVPN</h1>
+      <p class="hero-badge" id="hero-badge"></p>
       <p id="page-subtitle" class="lead"></p>
-      <p id="devices-note" class="note"></p>
+      <ul class="pill-row" id="feature-pills" aria-label="Преимущества"></ul>
+      <p id="devices-note" class="note note-accent"></p>
       <div class="actions">
         <button type="button" class="btn btn-primary" id="btn-connect"></button>
         <a class="btn btn-secondary" id="btn-status" href="/status"></a>
@@ -31,8 +38,8 @@
 
     <section data-view="devices" class="hidden">
       <button type="button" class="btn btn-ghost" id="btn-back-home">← Назад</button>
-      <h2>На каком устройстве настраиваем?</h2>
-      <p class="muted">VPN ставится на телефон, Android, Windows и Mac. Happ — на каждое устройство отдельно.</p>
+      <h2 id="devices-heading">На каком устройстве настраиваем?</h2>
+      <p class="muted" id="devices-lead"></p>
       <div id="device-grid" class="device-grid"></div>
     </section>
 
@@ -40,13 +47,14 @@
       <button type="button" class="btn btn-ghost" id="btn-back-devices">← Назад к выбору устройства</button>
       <h2 id="device-detail-title"></h2>
       <div class="panel">
+        <h3 id="install-steps-title">Установка</h3>
         <ol id="device-install-steps" class="steps"></ol>
       </div>
       <div class="panel">
-        <h2>Дальше</h2>
+        <h2 id="after-title">Дальше</h2>
         <ol id="after-device-steps" class="steps"></ol>
       </div>
-      <a class="btn btn-primary" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener">Написать в поддержку</a>
+      <a class="btn btn-primary" id="btn-device-support" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener">Написать в поддержку</a>
     </section>
   </main>
 </body>

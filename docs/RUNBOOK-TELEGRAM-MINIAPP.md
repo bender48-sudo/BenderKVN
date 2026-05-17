@@ -2,6 +2,8 @@
 
 Один и тот же bundle, что на сайте: **`web/portal/`** → **`https://k9x2m1.conntest.xyz:2053/portal/`**.
 
+UI ориентирован на **HITVPN**: тёмный градиент, pills «Быстро / Стабильно / Безопасно», крупные CTA, нумерованные шаги.
+
 ## BotFather (владелец, один раз)
 
 1. [@BotFather](https://t.me/BotFather) → ваш бот → **Bot Settings** → **Menu Button** → **Configure menu button**.

@@ -198,7 +198,7 @@
 | ~~**P3-FLOW-01**~~ ✅ | **Bootstrap-сайт** (clearnet): `/start`, `/portal` на LV; journey **as-is бот** (App Store/Google Play без шага устройства). | **2026-05-17:** **`PUBLIC_BOOTSTRAP_OK`**; **`RUNBOOK-USER-BOOTSTRAP-SITE`**. |
 | ~~**P3-FLOW-02**~~ ✅ | **Веб-выдача конфига**: `/setup/?t=`, QR, copy; HMAC + verify API на LV. | **2026-05-17:** **`PORTAL_SETUP_PAGE_OK`**; бот → ссылка в **Q038**. |
 | ~~**P3-FLOW-12**~~ ✅ | **Telegram Mini App** — тот же `web/portal/`; Menu Button + inline WebApp. | **2026-05-17:** **`TELEGRAM_MINIAPP_PORTAL_OK`**; **`RUNBOOK-TELEGRAM-MINIAPP`**. |
-| **P3-FLOW-03** | Бот: WebApp «Инструкция», браузер `/start`, setup link. | **`BOT_PORTAL_LINKS_OK`**; ≤ 3 тапа. |
+| ~~**P3-FLOW-03**~~ ✅ | Бот: Mini App + браузер + `/setup/?t=`; портал UI в стиле HITVPN. | **2026-05-17:** **`BOT_PORTAL_LINKS_OK`**; **`portal_links.py`**. |
 | **P3-FLOW-04** | Мастер **«Подключить VPN»**; главный CTA → Mini App. | FSM; journey OK. |
 | **P3-FLOW-05** | QR подписки (бот + web). | Скан → профиль в Happ. |
 | **P3-FLOW-06** | Видео/GIF первого коннекта на сайте (не только TG). | Просмотр без VPN с телефона. |
@@ -288,9 +288,9 @@
 
 **Закрыто (фаза 1):** **P0**, **P1**, большинство **P2/P6**, **§5.3** коммерция, **P2/P6-RED** из Q001–Q022. **`docs/P1-POST-AUDIT.md`** — **2026-05-16**.
 
-**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q038`** (**P3-FLOW-03** бот ↔ портал). Ручные хвосты: **`docs/MANUAL-OWNER-CHECKLIST.md`**, BotFather Menu Button.
+**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q039`** (**P3-FLOW-04** мастер в боте). Ручные хвосты: **`docs/MANUAL-OWNER-CHECKLIST.md`**, BotFather, **`PORTAL_SETUP_HMAC_SECRET`** на AMS для бота.
 
-**Открыто (продукт):** **P5-COM-02**, **P3-FLOW-03…13** (кроме закрытых FLOW-00…02,12,14). **P5-ENG-01**.
+**Открыто (продукт):** **P5-COM-02**, **P3-FLOW-04…13** (кроме закрытых FLOW-00…03,12,14). **P5-ENG-01**.
 
 **Параллельно:** **P4-DNS-01…06** (mobile SKU), отдельный владелец.
 
@@ -302,6 +302,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-17 | **P3-FLOW-03 — DONE (Q038):** кнопки Mini App / браузер / «Моя настройка»; HIT-style portal CSS; **`BOT_PORTAL_LINKS_OK`**. **NEXT=Q039** P3-FLOW-04. |
 | 2026-05-17 | **P3-FLOW-12 — DONE (Q037):** Mini App = **`/portal/`**; **`portal.js`** + WebApp в боте; **`TELEGRAM_MINIAPP_PORTAL_OK`**. **NEXT=Q038** P3-FLOW-03. |
 | 2026-05-17 | **P3-FLOW-02 — DONE (Q036):** **`portal_setup_token.py`**, **`/setup/?t=`** + QR, **`bvpn-setup-verify`**, **`PORTAL_SETUP_PAGE_OK`**. **NEXT=Q037** P3-FLOW-12. |
 | 2026-05-17 | **P3-FLOW-01 — DONE (Q035):** **`/start/`**, **`/portal/`** на LV; journey as-is бот; trial → **App Store/Google Play** в репо; **`PUBLIC_BOOTSTRAP_OK`**. **NEXT=Q036** P3-FLOW-02. |

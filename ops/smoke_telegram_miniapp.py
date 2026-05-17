@@ -48,6 +48,8 @@ def main() -> int:
         "portal.js",
         "device-grid",
         "btn-connect",
+        "brand-mark",
+        "hero-badge",
     ]
 
     code, body = _get(url)

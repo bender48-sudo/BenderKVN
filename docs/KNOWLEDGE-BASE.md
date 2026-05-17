@@ -9,7 +9,7 @@
 | Что нужно | Документ / артефакт |
 |-----------|---------------------|
 | Очередь задач по приоритетам | **`docs/COMMERCIAL-BACKLOG.md`** |
-| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **Q038** (**P3-FLOW-03** бот → portal/setup ссылки) |
+| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **Q039** (**P3-FLOW-04** мастер «Подключить VPN») |
 | **Бэклог пользовательского флоу (bootstrap без VPN)** | **`docs/USER-FLOW-BACKLOG.md`** — сайт выдачи конфига, «бабушка-тест», §7.1 бэклога |
 | **Инструкции агента (фаза 3, Q032–Q047, Mini App)** | **`docs/AGENT-FLOW-BACKLOG.md`** — один `web/portal/` = сайт + Telegram Mini App |
 | Правило: одна задача → коммит → стоп | **`docs/POLICY-SEQUENTIAL-WORK.md`** |

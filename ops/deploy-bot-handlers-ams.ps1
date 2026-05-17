@@ -12,7 +12,8 @@ $Scheduler = Join-Path $RepoRoot "bot_src\scheduler.py"
 $Keyboards = Join-Path $RepoRoot "bot_src\keyboards.py"
 $MainPy = Join-Path $RepoRoot "bot_src\main.py"
 $ConfigPy = Join-Path $RepoRoot "bot_src\config.py"
-foreach ($f in @($Handlers, $UserMsgs, $Scheduler, $Keyboards, $MainPy, $ConfigPy)) {
+$PortalLinks = Join-Path $RepoRoot "bot_src\portal_links.py"
+foreach ($f in @($Handlers, $UserMsgs, $Scheduler, $Keyboards, $MainPy, $ConfigPy, $PortalLinks)) {
     if (-not (Test-Path $f)) { throw "Missing: $f" }
 }
 
@@ -20,7 +21,7 @@ python -c @"
 import ast
 from pathlib import Path
 root = Path(r'$RepoRoot')
-for name in ('handlers.py', 'user_messages.py', 'scheduler.py', 'keyboards.py', 'main.py', 'config.py'):
+for name in ('handlers.py', 'user_messages.py', 'scheduler.py', 'keyboards.py', 'main.py', 'config.py', 'portal_links.py'):
     ast.parse((root / 'bot_src' / name).read_text(encoding='utf-8'))
 "@
 
@@ -43,13 +44,14 @@ Write-Host "[deploy-bot-handlers-ams] scp..."
 & scp @($Common + @("-P", "$Port", "${Keyboards}", "root@${HostAms}:/tmp/keyboards.py"))
 & scp @($Common + @("-P", "$Port", "${MainPy}", "root@${HostAms}:/tmp/main.py"))
 & scp @($Common + @("-P", "$Port", "${ConfigPy}", "root@${HostAms}:/tmp/config.py"))
+& scp @($Common + @("-P", "$Port", "${PortalLinks}", "root@${HostAms}:/tmp/portal_links.py"))
 
 $sshCmd = @'
 set -e
 ts=$(date +%Y%m%d-%H%M%S)
 BT=/opt/remna-shop/src/shop_bot/bot
 DM=/opt/remna-shop/src/shop_bot/data_manager
-sed -i 's/\r$//' /tmp/handlers.py /tmp/user_messages.py /tmp/scheduler.py /tmp/keyboards.py /tmp/main.py /tmp/config.py
+sed -i 's/\r$//' /tmp/handlers.py /tmp/user_messages.py /tmp/scheduler.py /tmp/keyboards.py /tmp/main.py /tmp/config.py /tmp/portal_links.py
 mkdir -p "$BT" "$DM"
 CFG=/opt/remna-shop/src/shop_bot/config.py
 for f in handlers.py user_messages.py keyboards.py; do
@@ -63,12 +65,14 @@ install -m 0644 /tmp/user_messages.py "$BT/user_messages.py"
 install -m 0644 /tmp/keyboards.py "$BT/keyboards.py"
 install -m 0644 /tmp/scheduler.py "$DM/scheduler.py"
 install -m 0644 /tmp/config.py "$CFG"
+install -m 0644 /tmp/portal_links.py "$BT/portal_links.py"
 install -m 0644 /tmp/main.py /opt/remna-shop/src/shop_bot/main.py
 docker cp /tmp/handlers.py remna-shop-bot:/app/src/shop_bot/bot/handlers.py
 docker cp /tmp/user_messages.py remna-shop-bot:/app/src/shop_bot/bot/user_messages.py
 docker cp /tmp/keyboards.py remna-shop-bot:/app/src/shop_bot/bot/keyboards.py
 docker cp /tmp/scheduler.py remna-shop-bot:/app/src/shop_bot/data_manager/scheduler.py
 docker cp /tmp/config.py remna-shop-bot:/app/src/shop_bot/config.py
+docker cp /tmp/portal_links.py remna-shop-bot:/app/src/shop_bot/bot/portal_links.py
 docker cp /tmp/main.py remna-shop-bot:/app/src/shop_bot/main.py
 docker restart remna-shop-bot
 echo "Remote md5:"
