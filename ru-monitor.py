@@ -346,6 +346,13 @@ def main():
         balancer_env = load_env("/etc/bvpn/balancer.env")
 
         api_token = monitor_env.get("REMNA_API_TOKEN")
+        try:
+            sys.path.insert(0, "/opt/scripts")
+            from remna_credential_broker import get_panel_token
+
+            api_token = get_panel_token("ru-monitor")
+        except Exception as exc:
+            log(f"WARN: credential broker fallback: {exc}")
         api_url = monitor_env.get("REMNA_API_URL")
         relay_host = monitor_env.get("RELAY_HOST")
         relay_port = monitor_env.get("RELAY_SSH_PORT", "3344")

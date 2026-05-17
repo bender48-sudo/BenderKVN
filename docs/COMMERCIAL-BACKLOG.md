@@ -262,9 +262,9 @@
 
 **Закрыто (фаза 1):** **P0**, **P1**, большинство **P2/P6**, **§5.3** коммерция, **P2/P6-RED** из Q001–Q022. **`docs/P1-POST-AUDIT.md`** — **2026-05-16**.
 
-**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q028`** (**P1-RED-SEC-01**), затем **P3-RED-*** / **P5-COM-01**. Ручные хвосты: **`docs/MANUAL-OWNER-CHECKLIST.md`**.
+**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q029`** (**P3-RED-MIN-01**), затем **P3-RED-JURIS** / **P5-COM-01**. Ручные хвосты: **`docs/MANUAL-OWNER-CHECKLIST.md`**.
 
-**Открыто (фаза 2):** **P1-RED-SEC**, **P3-RED-***, **P5-COM-01**; gate **safe-deploy** (Q023).
+**Открыто (фаза 2):** **P3-RED-***, **P5-COM-01**; gate **safe-deploy** (Q023).
 
 **Параллельно:** **P4-DNS-01…06** (mobile), отдельный владелец.
 
@@ -276,6 +276,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-17 | **P1-RED-SEC-01 — DONE (Q028):** **`remna_credential_broker.py`** на LV (TTL **3600s**, audit log); **ru-monitor** + **balancer**; smoke **`SHORT_LIVED_TOKEN_OK`**. **NEXT=Q029** P3-RED-MIN-01. |
 | 2026-05-17 | **P1-RED-DATA-01 — DONE (Q027):** LUKS2 **`postgres.luks.img`** → **`/mnt/remnawave-pgdata`**; compose bind mount; **`POSTGRES_CRYPT_OK`** + **`AMS_SAFE_DEPLOY_OK`**; ключ только Bitwarden. **NEXT=Q028** P1-RED-SEC-01. |
 | 2026-05-17 | **P1-RED-DNS-01 — DONE (Q026):** wiki **`DNS-CRITICAL-NAMES`** + **`RUNBOOK-DNS-RED-TEAM`**; Dynadot **`conntest.xyz`** + reserve registrar; **`dns_delegation_probe.py`** на LV → **`DNS_DELEGATION_OK`**; DNSSEC — runbook (включить в Dynadot). **NEXT=Q027** P1-RED-DATA-01. |
 | 2026-05-17 | **P1-RED-SSH-01 — DONE (Q025):** per-host **`bvpn_lv_ed25519`** / **`bvpn_ams_ed25519`**; legacy shared key снят с LV+AMS; **`ops/ssh_audit.py`** + **`ssh_audit_from_ams.sh`** → **`SSH_AUDIT_OK`** (AMS+NL с панели, все три с workstation). **NEXT=Q026** P1-RED-DNS-01. |

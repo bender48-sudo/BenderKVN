@@ -56,8 +56,8 @@
 | 025 | **P1-RED-SSH-01** | **DONE** | Per-host ключи LV/AMS/NL; legacy shared key снят; audit с панели + workstation | **SSH_AUDIT_OK** §12 | **§5.1**, **`SSH-KEY-INVENTORY`** |
 | 026 | **P1-RED-DNS-01** | **DONE** | ≥2 регистратора в wiki; DNSSEC runbook; probe делегирования на LV | **DNS_DELEGATION_OK** §12 | **§5.1**, **`DNS-CRITICAL-NAMES`** |
 | 027 | **P1-RED-DATA-01** | **DONE** | LUKS2 том Postgres AMS; ключ в Bitwarden; probe + safe-deploy | **POSTGRES_CRYPT_OK** §12 | **`POSTGRES-ENCRYPTION-AMS`** |
-| 028 | **P1-RED-SEC-01** | **NEXT** | Пилот short-lived creds (мониторинг → панель) | runbook + 1 workload §12 | **§5.1** |
-| 029 | **P3-RED-MIN-01** | **TODO** | Политика минимизации данных + чеклист полей БД | privacy + internal checklist §12 | **§5.1** |
+| 028 | **P1-RED-SEC-01** | **DONE** | Broker TTL+audit; ru-monitor + balancer на LV | **SHORT_LIVED_TOKEN_OK** §12 | **`RUNBOOK-SHORT-LIVED-CREDS`** |
+| 029 | **P3-RED-MIN-01** | **NEXT** | Политика минимизации данных + чеклист полей БД | privacy + internal checklist §12 | **§5.1** |
 | 030 | **P3-RED-JURIS-01** | **TODO** | Runbook «один VPS/платёжка отключили за день» | wiki + tabletop §12 | **§5.1** |
 | 031 | **P5-COM-01** | **TODO** | Публичный статус инцидентов (не только TG/mirror) | URL **200** без админ-TG §12 | **§9** |
 
@@ -138,3 +138,4 @@
 | 2026-05-17 | **Q025** P1-RED-SSH-01 | **Q026** P1-RED-DNS-01 |
 | 2026-05-17 | **Q026** P1-RED-DNS-01 | **Q027** P1-RED-DATA-01 |
 | 2026-05-17 | **Q027** P1-RED-DATA-01 | **Q028** P1-RED-SEC-01 |
+| 2026-05-17 | **Q028** P1-RED-SEC-01 | **Q029** P3-RED-MIN-01 |

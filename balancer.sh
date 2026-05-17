@@ -11,6 +11,15 @@ if [ ! -f /etc/bvpn/balancer.env ]; then
 fi
 source /etc/bvpn/balancer.env
 
+# P1-RED-SEC-01: short-lived panel token (fallback: static PANEL_TOKEN in env)
+if command -v python3 >/dev/null && [ -f /opt/scripts/remna_credential_broker.py ]; then
+    _bvpn_tok=$(python3 /opt/scripts/remna_credential_broker.py get --consumer balancer 2>/dev/null || true)
+    if [ -n "${_bvpn_tok}" ]; then
+        PANEL_TOKEN="${_bvpn_tok}"
+    fi
+    unset _bvpn_tok
+fi
+
 # Anti-correlation jitter: random delay 0-600s
 sleep $((RANDOM % 600))
 

@@ -33,6 +33,7 @@
 ## Мониторинг (по желанию)
 
 - [ ] Cron на LV: `dns_delegation_probe.py` раз в час (`docs/RUNBOOK-DNS-RED-TEAM.md` §5).
+- [ ] Cron на LV: `remna_credential_broker.py refresh` каждые 30 мин (`docs/RUNBOOK-SHORT-LIVED-CREDS.md`).
 - [ ] Telegram-алерт при `DNS_DELEGATION_FAIL` / `POSTGRES_CRYPT_FAIL` (сейчас — ручной smoke).
 
 ---
@@ -41,7 +42,7 @@
 
 | Q | ID | Статус в репо |
 |---|-----|----------------|
-| 028 | P1-RED-SEC-01 | short-lived creds pilot |
+| 028 | P1-RED-SEC-01 | ✅ broker на LV |
 | 029 | P3-RED-MIN-01 | data minimization |
 | 030 | P3-RED-JURIS-01 | jurisdiction failover runbook |
 | 031 | P5-COM-01 | public status page |
@@ -57,6 +58,7 @@ cd d:\Va\projects\VPN
 python ops/ssh_audit.py
 pwsh -File ops/ssh_audit_from_ams.ps1
 ssh bvpn-lv 'python3 /opt/scripts/dns_delegation_probe.py'
+ssh bvpn-lv 'python3 /opt/scripts/smoke_short_lived_token_lv.py'
 ssh bvpn-ams 'python3 /opt/scripts/ams_postgres_crypt_probe.py'
 python ops/smoke_ams_safe_deploy.py
 ```
