@@ -46,7 +46,7 @@
 | 028 | P1-RED-SEC-01 | ✅ broker на LV |
 | 029 | P3-RED-MIN-01 | ✅ policy + webhook redact |
 | 030 | P3-RED-JURIS-01 | ✅ docs в репо; **раз в год** tabletop по **`TABLETOP-JURISDICTION-EXERCISE.md`** → §12 |
-| 031 | P5-COM-01 | public status page |
+| 031 | P5-COM-01 | ✅ **`/status`** на проде; при дауне — **`incidents.json`** на LV |
 
 Параллельно (не NEXT): **P4-DNS-01…06** mobile bootstrap.
 

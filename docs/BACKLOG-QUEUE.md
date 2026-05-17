@@ -47,7 +47,7 @@
 
 ### Фаза 2 — Red team (P1-RED) + платежи + путь к 30k
 
-**Старт:** после закрытия Q022 (**2026-05-17**). Цель фазы: закрыть **P1-RED***, **P6-RED-PAY-02**, gate **safe-deploy** до массового GTM.
+**Старт:** после закрытия Q022 (**2026-05-17**). **Фаза 2 закрыта** (**2026-05-17**, Q031). Следующий **NEXT** — из §3/§9 бэклога или новая строка в этой таблице.
 
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
@@ -59,7 +59,7 @@
 | 028 | **P1-RED-SEC-01** | **DONE** | Broker TTL+audit; ru-monitor + balancer на LV | **SHORT_LIVED_TOKEN_OK** §12 | **`RUNBOOK-SHORT-LIVED-CREDS`** |
 | 029 | **P3-RED-MIN-01** | **DONE** | Политика + инвентарь полей; redact webhook; audit | **DATA_MINIMIZATION_OK** §12 | **`DATA-MINIMIZATION-POLICY`** |
 | 030 | **P3-RED-JURIS-01** | **DONE** | Wiki + runbook VPS/PSP; tabletop шаблон; audit | **JURIS_FAILOVER_OK** §12 | **`JURISDICTION-FAILOVER-WIKI`** |
-| 031 | **P5-COM-01** | **NEXT** | Публичный статус инцидентов (не только TG/mirror) | URL **200** без админ-TG §12 | **§9** |
+| 031 | **P5-COM-01** | **DONE** | HTML `/status` на k9x2m1; incidents.json; cron | **PUBLIC_STATUS_PAGE_OK** §12 | **`RUNBOOK-PUBLIC-STATUS-PAGE`** |
 
 **Gate (не отдельный Q):** любой накат AMS compose/env — только по **`RUNBOOK-AMS-SAFE-DEPLOY`** (закрепляется **Q023**).
 
@@ -141,3 +141,4 @@
 | 2026-05-17 | **Q028** P1-RED-SEC-01 | **Q029** P3-RED-MIN-01 |
 | 2026-05-17 | **Q029** P3-RED-MIN-01 | **Q030** P3-RED-JURIS-01 |
 | 2026-05-17 | **Q030** P3-RED-JURIS-01 | **Q031** P5-COM-01 |
+| 2026-05-17 | **Q031** P5-COM-01 | — (**фаза 2 закрыта**) |

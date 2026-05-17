@@ -29,6 +29,7 @@ if _BAL_ENV.is_file() and not os.environ.get("PANEL_TOKEN"):
 
 import site_urls  # noqa: E402
 from panel_client import PanelClient  # noqa: E402
+from public_status_page import render_public_html  # noqa: E402
 
 DECOM_NODES = {"Amsterdam-01"}
 
@@ -148,7 +149,22 @@ def main() -> int:
     tmp = out.with_suffix(".tmp")
     tmp.write_text(text, encoding="utf-8")
     tmp.replace(out)
-    print(f"STATUS_MIRROR_WRITTEN {out} overall={doc['overall']}")
+
+    html_path = out.parent / "index.html"
+    incidents = out.parent / "incidents.json"
+    html_tmp = html_path.with_suffix(".html.tmp")
+    html_tmp.write_text(
+        render_public_html(
+            doc,
+            incidents if incidents.is_file() else None,
+            json_url=site_urls.status_mirror_url(),
+        ),
+        encoding="utf-8",
+    )
+    html_tmp.replace(html_path)
+    print(
+        f"STATUS_MIRROR_WRITTEN {out} html={html_path} overall={doc['overall']}"
+    )
     return 0
 
 

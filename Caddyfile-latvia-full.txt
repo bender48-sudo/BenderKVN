@@ -293,6 +293,13 @@ k9x2m1.conntest.xyz:2053 {
         file_server
     }
 
+    # PUBLIC_STATUS_PAGE_01 — user-facing incident status (P5-COM-01)
+    handle /status {
+        root * /var/www/bvpn-status
+        rewrite * /index.html
+        file_server
+    }
+
     # P2-RED-SUB-01 + P6-RED-SUBHA-01: alt origin -> AMS :3011 (primary p4n7q -> :3010)
     @sub_path_alt path /api/sub/*
     handle @sub_path_alt {

@@ -77,6 +77,21 @@ def status_mirror_url() -> str:
     return f"{origin}/{STATUS_MIRROR_PATH}"
 
 
+PUBLIC_STATUS_PATH = os.environ.get("PUBLIC_STATUS_PATH", "/status").strip()
+if not PUBLIC_STATUS_PATH.startswith("/"):
+    PUBLIC_STATUS_PATH = "/" + PUBLIC_STATUS_PATH
+
+
+def public_status_url() -> str:
+    """User-facing HTML incident status page (P5-COM-01)."""
+    origin = os.environ.get(
+        "PUBLIC_STATUS_ORIGIN",
+        SUB_ALT_PUBLIC_ORIGINS[0] if SUB_ALT_PUBLIC_ORIGINS else PANEL_URL,
+    ).rstrip("/")
+    path = PUBLIC_STATUS_PATH.rstrip("/") or "/status"
+    return f"{origin}{path}"
+
+
 def sub_all_probe_urls() -> list[str]:
     """Primary + alternate subscription smoke URLs (same shortId path)."""
     urls = [sub_monitor_probe_url()]

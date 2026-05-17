@@ -17,8 +17,9 @@
 |-------|--------|
 | **Telegram** | Админ-бот `/status`, алерты мониторинга |
 | **HTTPS JSON mirror** | `https://k9x2m1.conntest.xyz:2053/api/ops/status.json` — обновление каждые 2 мин |
+| **Публичная HTML-страница** | `https://k9x2m1.conntest.xyz:2053/status` — для пользователей (P5-COM-01) |
 
-Проверка: **`python ops/smoke_status_channels.py`**. Drill «TG недоступен» — **`docs/RUNBOOK-P2-STATUS-BOOT-CHANNEL.md`**.
+Проверка: **`python ops/smoke_status_channels.py`**, **`python ops/smoke_public_status_page.py`**. Drill «TG недоступен» — **`docs/RUNBOOK-P2-STATUS-BOOT-CHANNEL.md`**. Ручные инциденты — **`docs/RUNBOOK-PUBLIC-STATUS-PAGE.md`**.
 
 **Целевое время первого ответа пользователю** — зафиксировать локально командой (рекомендация: до **60 минут** в рабочее окно; вне её — сообщение автоматически/заготовка «разбираемся»).
 

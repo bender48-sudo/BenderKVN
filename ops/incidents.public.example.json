@@ -1,0 +1,13 @@
+{
+  "schema": "public-incidents/v1",
+  "incidents": [
+    {
+      "id": "example-2026-05-17",
+      "status": "investigating",
+      "title": "Пример: задержка выдачи подписки",
+      "message": "VPN-подключение работает. Новые ключи могут выдаваться с задержкой.",
+      "affected": ["subscription"],
+      "updated_at": "2026-05-17T12:00:00Z"
+    }
+  ]
+}

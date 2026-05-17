@@ -206,7 +206,7 @@
 
 | ID | Задача | Done when |
 |----|--------|-----------|
-| **P5-COM-01** | Публичный статус инцидентов. | URL без доступа к админскому TG. |
+| ~~**P5-COM-01**~~ ✅ | Публичный статус инцидентов. | **2026-05-17:** HTML **`/status`** на **k9x2m1**, **`incidents.json`**, smoke **`PUBLIC_STATUS_PAGE_OK`**. |
 | **P5-COM-02** | Правила возвратов при массовом дауне. | Текст в оферте. |
 | **P5-ENG-01** | Общий HTTP‑клиент для Python ops (TLS, таймауты). | Новые скрипты без `CERT_NONE`. |
 | ~~**P5-ENG-02**~~ ✅ | Общий `load_env` для мониторов. | **`ops/load_env_file.py`** + **`ops/site_urls.py`**; тест **`tests/test_load_env_file.py`** (`python -m unittest discover -s tests`). |
@@ -262,9 +262,9 @@
 
 **Закрыто (фаза 1):** **P0**, **P1**, большинство **P2/P6**, **§5.3** коммерция, **P2/P6-RED** из Q001–Q022. **`docs/P1-POST-AUDIT.md`** — **2026-05-16**.
 
-**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q031`** (**P5-COM-01**). Ручные хвосты: **`docs/MANUAL-OWNER-CHECKLIST.md`**.
+**Что делать сейчас:** линейная очередь **Q001–Q031 закрыта** (**2026-05-17**). Новые задачи — §3/§9 или строка в **`BACKLOG-QUEUE.md`**. Ручные хвосты: **`docs/MANUAL-OWNER-CHECKLIST.md`**.
 
-**Открыто (фаза 2):** **P5-COM-01**; gate **safe-deploy** (Q023).
+**Открыто:** **P5-COM-02**, **P4-DNS***, gate **safe-deploy** (Q023).
 
 **Параллельно:** **P4-DNS-01…06** (mobile), отдельный владелец.
 
@@ -276,6 +276,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-17 | **P5-COM-01 — DONE (Q031):** публичная страница **`/status`**, **`public_status_page.py`**, **`incidents.json`**; deploy **`deploy-public-status-page-lv.ps1`**; smoke **`PUBLIC_STATUS_PAGE_OK`**. **Фаза 2 очереди закрыта.** |
 | 2026-05-17 | **P3-RED-JURIS-01 — DONE (Q030):** wiki + runbook VPS/PSP failover, tabletop template; **`jurisdiction_failover_audit.py`** → **`JURIS_FAILOVER_OK`**. **NEXT=Q031** P5-COM-01. |
 | 2026-05-17 | **P3-RED-MIN-01 — DONE (Q029):** **`DATA-MINIMIZATION-POLICY`**, **`DATA-INVENTORY-INTERNAL`**, **`payload_redact`**; smoke **`DATA_MINIMIZATION_OK`**. **NEXT=Q030** P3-RED-JURIS-01. |
 | 2026-05-17 | **P1-RED-SEC-01 — DONE (Q028):** **`remna_credential_broker.py`** на LV (TTL **3600s**, audit log); **ru-monitor** + **balancer**; smoke **`SHORT_LIVED_TOKEN_OK`**. **NEXT=Q029** P3-RED-MIN-01. |
