@@ -16,7 +16,9 @@
 
 ---
 
-## Текущая очередь (фаза роста → 10k, лето 2026)
+## Текущая очередь
+
+### Фаза 1 — рост → 10k (лето 2026) — **закрыта**
 
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
@@ -42,9 +44,26 @@
 | 020 | **P2-RED-BOOT-01** | **DONE** | Резервный канал статуса (не только TG) | **`STATUS_CHANNELS_OK`** §12 | **`RUNBOOK-P2-STATUS-BOOT-CHANNEL`** |
 | 021 | **P2-RED-TLS-01** | **DONE** | Квартальный обзор sing-box / uTLS / ECH | **`TLS-QUARTERLY-2026-Q2`** + audit OK §12 | **`TLS-CLIENT-STACK-REVIEW`** |
 | 022 | **P6-RED-PG-01** | **DONE** | Postgres read replicas / pool limit / load test | **PG_STAMPEDE_LOAD_OK** §12 | **`RUNBOOK-P6-POSTGRES-RED`** |
-**Gate (не отдельный Q):** любой накат AMS compose/env — только по **`RUNBOOK-AMS-SAFE-DEPLOY`** (**`P2-OPS-AMS-SAFE-DEPLOY-01`**, runbook в репо ✅).
 
-**Параллельно (другой человек, не трогать NEXT):** **P4-DNS-01…03**.
+### Фаза 2 — Red team (P1-RED) + платежи + путь к 30k
+
+**Старт:** после закрытия Q022 (**2026-05-17**). Цель фазы: закрыть **P1-RED***, **P6-RED-PAY-02**, gate **safe-deploy** до массового GTM.
+
+| Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
+|---|-----|--------|-------------------|--------|-------------|
+| 023 | **P2-OPS-AMS-SAFE-DEPLOY-01** | **DONE** | Чеклист gate + smoke pre/post наката AMS; урок **502 2026-05-17** в runbook | **AMS_SAFE_DEPLOY_OK** §12 | **`RUNBOOK-AMS-SAFE-DEPLOY`**, **§6** |
+| 024 | **P6-RED-PAY-02** | **NEXT** | Webhook: подпись YooKassa / allowlist; Flask **:1488** только за proxy; отклонение подделки | **`smoke_webhook_auth_ams.py`** → **WEBHOOK_AUTH_OK** §12 | **§5.1** |
+| 025 | **P1-RED-SSH-01** | **TODO** | Per-host/per-role ключи; таблица; нет одного root на все VPS | **`ssh_audit`** / чеклист §12 | **§5.1** |
+| 026 | **P1-RED-DNS-01** | **TODO** | ≥2 регистратора/DNS для критичных имён; DNSSEC; recovery offline | wiki + делегирование §12 | **§5.1**, **P4-DNS-04** |
+| 027 | **P1-RED-DATA-01** | **TODO** | Шифрование тома Postgres AMS; ключ не на том же VPS | схема + прод включено §12 | **§5.1** |
+| 028 | **P1-RED-SEC-01** | **TODO** | Пилот short-lived creds (мониторинг → панель) | runbook + 1 workload §12 | **§5.1** |
+| 029 | **P3-RED-MIN-01** | **TODO** | Политика минимизации данных + чеклист полей БД | privacy + internal checklist §12 | **§5.1** |
+| 030 | **P3-RED-JURIS-01** | **TODO** | Runbook «один VPS/платёжка отключили за день» | wiki + tabletop §12 | **§5.1** |
+| 031 | **P5-COM-01** | **TODO** | Публичный статус инцидентов (не только TG/mirror) | URL **200** без админ-TG §12 | **§9** |
+
+**Gate (не отдельный Q):** любой накат AMS compose/env — только по **`RUNBOOK-AMS-SAFE-DEPLOY`** (закрепляется **Q023**).
+
+**Параллельно (другой человек, не трогать NEXT):** **P4-DNS-01…06** (mobile bootstrap / whitelist SKU).
 
 ---
 
@@ -73,6 +92,15 @@
 | 020 | `ops: P2-RED-BOOT-01 — HTTPS status JSON mirror + dual-channel smoke` |
 | 021 | `docs: P2-RED-TLS-01 — quarterly TLS/sing-box review checklist + audit` |
 | 022 | `ops: P6-RED-PG-01 — Postgres pool limits + stampede load probe` |
+| 023 | `ops: P2-OPS-AMS-SAFE-DEPLOY-01 — gate smoke + runbook post-502 checklist` |
+| 024 | `security: P6-RED-PAY-02 — webhook signature/allowlist + smoke` |
+| 025 | `ops: P1-RED-SSH-01 — per-host SSH keys + inventory` |
+| 026 | `ops: P1-RED-DNS-01 — multi-registrar DNS + DNSSEC wiki` |
+| 027 | `ops: P1-RED-DATA-01 — Postgres volume encryption AMS` |
+| 028 | `ops: P1-RED-SEC-01 — short-lived creds pilot (monitors)` |
+| 029 | `docs: P3-RED-MIN-01 — data minimization policy + DB checklist` |
+| 030 | `docs: P3-RED-JURIS-01 — jurisdiction failover runbook` |
+| 031 | `product: P5-COM-01 — public incident status page` |
 
 После коммита с закрытием задачи — в **`BACKLOG-QUEUE.md`**: сменить статусы и при необходимости добавить подстроку в §12 бэклога (в том же коммите).
 
@@ -103,4 +131,6 @@
 | 2026-05-16 | **Q019** P6-SCALE-07 | **Q020** P2-RED-BOOT-01 |
 | 2026-05-16 | **Q020** P2-RED-BOOT-01 | **Q021** P2-RED-TLS-01 |
 | 2026-05-16 | **Q021** P2-RED-TLS-01 | **Q022** P6-RED-PG-01 |
-| 2026-05-17 | **Q022** P6-RED-PG-01 | — (очередь фазы закрыта) |
+| 2026-05-17 | **Q022** P6-RED-PG-01 | — (фаза 1 закрыта) |
+| 2026-05-17 | — | **Q023** (**P2-OPS-AMS-SAFE-DEPLOY-01**) — фаза 2 Red team / 30k |
+| 2026-05-17 | **Q023** P2-OPS-AMS-SAFE-DEPLOY-01 | **Q024** P6-RED-PAY-02 |

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # AMS (root): FAIL if JWT is inlined in compose (regression detector).
 # Run: ssh bvpn-ams bash -s < ops/check-ams-subscription-token-layout.sh
-set -euo pipefail
+set -eu
 dc=/opt/remnawave/sub/docker-compose.yml
 if [[ ! -r "$dc" ]]; then echo "fatal: missing $dc" >&2; exit 2; fi
 if grep -qE '^\s*-\s*REMNAWAVE_API_TOKEN=eyJ' "$dc"; then

@@ -1,6 +1,6 @@
 # BenderVPN — коммерческий бэклог
 
-**Версия документа:** 2026-05-16 — **`docs/BACKLOG-QUEUE.md`** + **`POLICY-SEQUENTIAL-WORK`**; цели роста **§1**, спринт **коммерция §3 п.9a**, **`§5.3`**, переупорядочен **§11** (Red team под 10k/30k), runbook’и **`RUNBOOK-AMS-SAFE-DEPLOY`**, **`RUNBOOK-COMMERCE-GO-LIVE`**, **`GTM-GROWTH-OUTLINE`**; прежнее: P3-UX, AMS 502 (§12).
+**Версия документа:** 2026-05-17 — **фаза 2 очереди Q023+** (P1-RED, **P6-RED-PAY-02**, safe-deploy gate); фаза 1 (**Q001–Q022**) закрыта; **P4-DNS** — параллельный поток. Прежнее: **2026-05-16** (коммерция, Red team P2/P6, GTM).
 **Цель:** стабильный **8–9/10** (нишевый коммерческий VPN в РФ); измеримый рост к максимально достижимому качеству.  
 **Определение «готово»:** по каждой задаче выполнен критерий в колонке **Done when** + при необходимости запись в трекере (статусы `TODO` / `DOING` / `DONE`).
 
@@ -61,7 +61,7 @@
 | 8 | Бэкапы (off-host + restore test) + patches | ~~**P2-BAK-01**~~ ✅, ~~**P2-BAK-02**~~ ✅ |
 | 9 | Метрики ёмкости (**старт P6 до роста базы**) | ~~**P6-SCALE-01**~~ ✅, ~~**P6-SCALE-04**~~ ✅ (a)(b)(c) §12 **2026-05-16** — **`RUNBOOK-P6-SUBSCRIPTION-EDGE`**) |
 | **9a** | **Коммерция (до массового привлечения)** | **P2-COM-MONETIZE-01…04** → **`RUNBOOK-COMMERCE-GO-LIVE`**; затем **P6-RED-PAY-01** при включении оплаты |
-| 9b | **Эксплуатация (хвост P2):** drift post-P0, TG/SSH/утечки, gates | ~~**P2-OPS-DRIFT-POST-P0**~~ ✅, ~~**P2-MON-03**~~ ✅, ~~**P2-SSH-01**~~ ✅, ~~**P2-SEC-LOG-01**~~ ✅, **P2-OPS-AMS-SAFE-DEPLOY-01**, ~~**P2-OPS-RESTORE-TEST-01**~~ ✅ |
+| 9b | **Эксплуатация (хвост P2):** drift post-P0, TG/SSH/утечки, gates | ~~**P2-OPS-DRIFT-POST-P0**~~ ✅, ~~**P2-MON-03**~~ ✅, ~~**P2-SSH-01**~~ ✅, ~~**P2-SEC-LOG-01**~~ ✅, ~~**P2-OPS-AMS-SAFE-DEPLOY-01**~~ ✅, ~~**P2-OPS-RESTORE-TEST-01**~~ ✅ |
 | 10 | **(после §2.1 — UX не раньше продукта)** Онбординг и тексты | ~~**P1-PRO-01…04**~~ ✅ (см. **`docs/FAQ.md`**, **`docs/RUNBOOK-INCIDENT.md`**, **`docs/HAPP-MATRIX.md`**, **`docs/POLICY-SNI-MONITORING.md`**), ~~**P3-UX-01**~~ ✅ (**`docs/ONBOARDING.md`**), ~~**P3-UX-02**~~ ✅ (**`bot_src/user_messages.py`**, **`docs/support/USER-FACING-ERRORS.md`**), ~~**P3-UX-03**~~ ✅ (**`docs/templates/USER-INCIDENT-BROADCAST.md`**) |
 | 11 | DNS PoC → FAQ (по ресурсу) | **P4-DNS-01** → ~~**P4-DNS-02**~~ ✅ (блок DNS bootstrap **`docs/FAQ.md`**) → **P4-DNS-03** |
 | 12 | **Red team / ТПСУ** — порядок **§5.1** (фаза роста 10k): **P2-RED-SUB/MUX** → **P6-RED-PAY/SUBHA** → **P1-RED-DATA/Vault** после monetize или **2k** users | см. **§5.1** |
@@ -106,7 +106,11 @@
 
 **Порядок по умолчанию (таблица ниже):** P1‑RED → P2‑RED → P6‑RED → P3‑RED → P5‑RED.
 
-**Фаза роста до ~10k (лето 2026)** — сдвиг вперёд (см. **§11**): сначала **P2-RED-SUB-01**, **P2-RED-MUX-01**, **P6-RED-PAY-01**, **P6-RED-SUBHA-01**; **P1-RED-DATA-01**, **P1-RED-SEC-01** (Vault/SPIFFE), **P1-RED-SSH-01**, **P1-RED-DNS-01** — после **P2-COM-MONETIZE-02** или при **users > 2k**, отдельный владелец. **P5-RED-RD-01** — не на критическом пути.
+**Фаза 1 (Q001–Q022, закрыта 2026-05-17):** **P2-RED-SUB/MUX**, **P6-RED-PAY-01** (idempotency), **P6-RED-SUBHA/PG**, коммерция **§5.3**, **P6-SCALE-***.
+
+**Фаза 2 (Q023+, линейная очередь):** **P2-OPS-AMS-SAFE-DEPLOY-01** → **P6-RED-PAY-02** (auth webhook) → **P1-RED-SSH-01** → **P1-RED-DNS-01** → **P1-RED-DATA-01** → **P1-RED-SEC-01** → **P3-RED-MIN/JURIS** → **P5-COM-01**. Старт после go-live монетизации (**P2-COM-MONETIZE-02** ✅); при **users > 2k** — ускорить **P1-RED-DATA/SEC**. **P5-RED-RD-01** — вне критического пути.
+
+**Параллельно (не NEXT):** **P4-DNS-01…06** — mobile bootstrap / whitelist SKU.
 
 | ID | Задача | Done when |
 |----|--------|-----------|
@@ -122,6 +126,7 @@
 | ~~**P6-RED-SUBHA-01**~~ ✅ | **Горизонталь subscription-page**: несколько инстансов за LB + кэш на edge для «утреннего stampede» обновления подписок (дополняет **P6-SCALE-04**). | **2026-05-16:** split-host **p4n7q→:3010**, **k9x2m1→:3011**; **`RUNBOOK-P6-SUBSCRIPTION-HA`**; HA load **60×200** p95≈**1.48s** / **1.51s**. |
 | ~~**P6-RED-PG-01**~~ ✅ | **Postgres**: read‑реплики (или managed Postgres при переносе), явный **pool limit** приложений, нагрузочный тест «массовое обновление клиентов за 1 ч». | **`RUNBOOK-P6-POSTGRES-RED`**, Prisma **`connection_limit=15`**, stampede probe §12 |
 | ~~**P6-RED-PAY-01**~~ ✅ | **Очередь платежей бота**: webhook **idempotency**, DLQ, чтобы TG‑бот не был узким горлышком при всплеске продаж. | **2026-05-16:** **`PaymentWebhookQueue`**, таблица **`webhook_deliveries`**, деплой **`deploy-bot-payment-webhook-ams.ps1`**, smoke **`WEBHOOK_PAY_IDEMPOTENCY_OK`**. |
+| **P6-RED-PAY-02** | **Auth webhook (доп. к PAY-01)**: проверка подписи **YooKassa** (и иных включённых PSP); **IP allowlist** / только reverse proxy на **`/yookassa-webhook`**, **`/crypto-webhook`**, **`/cryptobot-webhook`**; Flask **:1488** не слушает публично; отклонение подделанного payload без начисления баланса. | Код в **`bot_src/webhook_server/`**; **`ops/smoke_webhook_auth_ams.py`** → **`WEBHOOK_AUTH_OK`**; runbook в **`RUNBOOK-COMMERCE-GO-LIVE`** или **`docs/SECRETS.md`** § webhook. |
 | **P3-RED-MIN-01** | **Минимизация данных пользователя**: где юридически возможно — развязать платёжный след и тех‑UUID; явная политика «что не собираем». | Страница политики + внутренний чеклист полей БД. |
 | **P3-RED-JURIS-01** | **Гео‑ и провайнер‑диверсификация**: runbook «нас отключил один VPS/агентство платежей за день» — перенос DNS/IP без зависимости от одной юрисдикции. | Wiki + tabletop exercise раз в год. |
 | **P5-RED-RD-01** | **R&D**: PoC канала bootstrap по модели **эфемерных посредников** (идеология [**Snowflake**](https://github.com/cohosh/snowflake)) — только для получения статуса/нового endpoint’а, не замена нодам. | Внутренний doc go/no-go + оценка стоимости поддержки. |
@@ -162,7 +167,7 @@
 | ~~**P2-SEC-LOG-01**~~ ✅ | Гигиена секретов: если **`BOT_TOKEN`** / JWT попали в **транскрипты Cursor**, скриншоты, общие логи — считать компрометацией до проверки. | **`docs/POLICY-SECRET-LEAK-RESPONSE.md`** (2026-05-16). |
 | ~~**P2-ENG-DRIFT-CHECK-01**~~ ✅ | **`ops/drift-check.py`**: нестабильные **TIMEOUT** на LV. | Retry + растущий deadline на chunk (**4×** попытки для **`bvpn-lv`**, **2×** прочие) + backoff; см. **`docs/DEPLOY.md`** (§ drift-check примечание). Репо **2026‑05‑15**. |
 | ~~**P2-MON-BALANCER-PANEL-URL**~~ ✅ | **`balancer.sh`** на LV после переноса панели на AMS всё ещё бил в **`http://localhost:3000`** → **`USERS=0 NODES=0`** в логе, алерты вместимости бессмысленны. | **DONE 2026‑05‑15**: **`PANEL_URL`** в **`/etc/bvpn/balancer.env`** + правка **`balancer.sh`** (репо **`compose/_shared/etc-bvpn-lv/balancer.env.tmpl`**); smoke **`HTTP 200`** на **`/api/users`** (журнал §12). |
-| **P2-OPS-AMS-SAFE-DEPLOY-01** | **Gate наката AMS** compose/env: бэкап → **`extract_vault.py`** → dry-run токена → render в `/tmp` → smoke sub/panel → **`drift-check`**. | **`docs/RUNBOOK-AMS-SAFE-DEPLOY.md`**; каждый накат AMS tmpl по чеклисту; урок **2026-05-17** в §12. |
+| ~~**P2-OPS-AMS-SAFE-DEPLOY-01**~~ ✅ | **Gate наката AMS** compose/env: бэкап → **`extract_vault.py`** → dry-run токена → render в `/tmp` → smoke sub/panel → **`drift-check`**. | **`RUNBOOK-AMS-SAFE-DEPLOY`** §3–4, **`ops/smoke_ams_safe_deploy.py`** → **AMS_SAFE_DEPLOY_OK** §12 |
 | ~~**P2-OPS-RESTORE-TEST-01**~~ ✅ | **Квартальный restore test** дампа Remnawave (изолированный Postgres). | **2026-05-16** на **bvpn-lv**: **`ops/remnawave_restore_test.sh`**, дамп с LV после pull AMS, **36** tables, **97** migrations — §4 runbook + §12. |
 | ~~**P2-OPS-IMAGE-PIN-01**~~ ✅ | **Digest pin** хвоста образов: **adguard**, **postgres**, **caddy**, **valkey** (см. журнал **P0-OPS-02**). | **`docs/IMAGE-PINS.md`**, **`check_compose_image_pins.py`**; digests с прода AMS/LV **2026-05-16**. |
 
@@ -183,6 +188,8 @@
 ---
 
 ## 8. P4 — DNS / белые списки (отдельный SKU)
+
+**Исполнение:** **не** в линейной очереди **Q023+** — параллельный поток (**`docs/BACKLOG-QUEUE.md`**). Связь с **P1-RED-DNS-01** (критичные имена) и **P4-DNS-04** (мониторинг зоны).
 
 | ID | Задача | Done when |
 |----|--------|-----------|
@@ -236,7 +243,7 @@
 | ~~**P6-SCALE-03**~~ ✅ | Postgres: индексы, `pg_stat_statements`, окно бэкапа не в пик. | **`RUNBOOK-P6-POSTGRES-MAINTENANCE`**, **`pg_remnawave_audit.py`**; cron **35 1,7,13,19** AMS / **50** LV. |
 | ~~**P6-SCALE-04**~~ ✅ | Публичная подписка: edge/CDN, **rate limit** по IP, защита от абьюза. | **(a)(b)(c)** закрыты §12 **2026-05-16**: Caddy RL **120/min/IP** на LV; post-RL probe **120** req **c=30** → **120×200**, **p95≈1.83s**, **5xx=0**. Репо: **`RUNBOOK-P6-SUBSCRIPTION-EDGE`**, **`subscription_load_probe`**, **`capacity_snapshot`**. |
 | ~~**P6-SCALE-05**~~ ✅ | Рост API панели: вертикаль/горизонталь по доке; Redis eviction. | **`RUNBOOK-P6-PANEL-API-SCALE`**; Valkey **256mb/allkeys-lru**; **`panel_refresh_load_probe`** **100×200** p95≈**1.4s** §12 |
-| **P6-SCALE-06** | RU-monitor укладывается в cron **< 5 мин** при текущем числе хостов. | Лог с длительностью |
+| ~~**P6-SCALE-06**~~ ✅ | RU-monitor укладывается в cron **< 5 мин** при текущем числе хостов. | **2026-05-16:** **`duration_sec`**, **`RU_MONITOR_CYCLE_OK`** §12; **`RUNBOOK-P6-RU-MONITOR-SCALE`** (Q017). |
 | ~~**P6-SCALE-07**~~ ✅ | Нагрузка на поддержку: шаблоны (P3) + при росте очереди — вторая линия / SLA ответа. | **`RUNBOOK-P6-SUPPORT-SCALE`**, **`support_queue_snapshot.py`**; **21** topics, **SUPPORT_QUEUE_OK** §12 |
 | ~~**P6-SCALE-NL-VERIFY**~~ ✅ (репо) | Продукт / ёмкость: все активные пользователи на **LV** при живой **NL** — осознанная политика (**leastLoad**, squads, запасная нода) или ошибка конфигурации? | **`docs/NODE-POLICY-LV-NL.md`** — критерии проверки; фактический аудит squads/UI — по окну эксплуатации. |
 
@@ -253,13 +260,15 @@
 
 ## 11. Связь с аудитом репозитория
 
-**Закрыто:** **P0** (вкл. ~~**P0-SEC-04/05**~~ на проде, §12), **P1**, большинство **P2**, репозиторные **P3-UX/TR**. **`docs/P1-POST-AUDIT.md`** синхронизирован (**2026-05-16**).
+**Закрыто (фаза 1):** **P0**, **P1**, большинство **P2/P6**, **§5.3** коммерция, **P2/P6-RED** из Q001–Q022. **`docs/P1-POST-AUDIT.md`** — **2026-05-16**.
 
-**Что делать сейчас:** смотреть **`docs/BACKLOG-QUEUE.md`** — одна строка **`NEXT`**, после закрытия — коммит и новая сессия (правило: **`docs/POLICY-SEQUENTIAL-WORK.md`**, **`.cursor/rules/sequential-backlog.mdc`**).
+**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q024`** (**P6-RED-PAY-02**), затем **P1-RED-*** по фазе 2. Правило: **`docs/POLICY-SEQUENTIAL-WORK.md`**.
 
-**Операционная память:** **`docs/KNOWLEDGE-BASE.md`**, **`docs/POLICY-REPO-WORKFLOW.md`**. **Ёмкость нод:** **`docs/NODE-POLICY-LV-NL.md`**.
+**Открыто (фаза 2):** **P1-RED-DATA/SEC/SSH/DNS**, **P6-RED-PAY-02**, **P3-RED-***, **P5-COM-01**; gate **safe-deploy** (Q023).
 
-**P4** — отдельный SKU, не смешивать с основным VPN.
+**Параллельно:** **P4-DNS-01…06** (mobile), отдельный владелец.
+
+**Операционная память:** **`docs/KNOWLEDGE-BASE.md`**, **`docs/POLICY-REPO-WORKFLOW.md`**, **`docs/NODE-POLICY-LV-NL.md`**.
 
 ---
 
@@ -267,6 +276,8 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-17 | **P2-OPS-AMS-SAFE-DEPLOY-01 — DONE (Q023):** **`ops/smoke_ams_safe_deploy.py`** + **`ops/ams_safe_deploy_bundle.sh`**; runbook §3 smoke + §4 урок **502/P1000**; прод **`AMS_SAFE_DEPLOY_OK`**. **NEXT=Q024** P6-RED-PAY-02. |
+| 2026-05-17 | **Фаза 2 очереди:** в **`BACKLOG-QUEUE.md`** добавлены **Q023–Q031**; **NEXT=Q023** (**P2-OPS-AMS-SAFE-DEPLOY-01**). В бэклог — **P6-RED-PAY-02** (webhook auth); **§5.1** / **§11** / **§8 P4** синхронизированы; **P6-SCALE-06** → ✅ в §10.2. |
 | 2026-05-17 | **P6-RED-PG-01 — DONE (Q022):** Prisma **`connection_limit=15`** на AMS (patch + tmpl); Postgres **`max_connections=100`**; **`pg_stampede_load_probe`** **120×25** (60+60 на **p4n7q**/**k9x2m1**) → **120×200**, **p95≈1.15–1.20s**, **peak_conn=15/100** (15%), **PG_STAMPEDE_LOAD_OK**; read-replica — при **users≥8k** (**`RUNBOOK-P6-POSTGRES-RED`**). Очередь фазы закрыта. |
 | 2026-05-16 | **P2-RED-TLS-01 — DONE (Q2 2026):** Xray **26.3.27** LV+NL; sing-box **v1.13.12**; sub **vless+reality+vision**; mux OK; шаблон без изменений. След. ревью **2026-08-16**. **NEXT=Q022** P6-RED-PG-01. |
 | 2026-05-16 | **P2-RED-BOOT-01 — DONE:** HTTPS mirror **`/api/ops/status.json`** на **k9x2m1** (Caddy file_server + cron ***/2**); **`smoke_status_channels.py`** → **STATUS_CHANNELS_OK**; § в **`RUNBOOK-INCIDENT`**. |

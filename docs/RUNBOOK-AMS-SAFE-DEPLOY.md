@@ -46,7 +46,32 @@ cd /opt/remna-shop && docker compose up -d
 
 ---
 
-## 3. Связанные документы
+## 3. Автоматический gate-smoke (до и после наката)
+
+С рабочей станции (SSH к AMS + HTTPS к панели/sub на LV):
+
+```bash
+python ops/smoke_ams_safe_deploy.py
+python ops/smoke_ams_safe_deploy.py --skip-sub-probe   # быстрее, без 12× load probe
+```
+
+Ожидание: **`AMS_SAFE_DEPLOY_OK`**. Проверяет: контейнеры AMS, layout sub-токена (без inline `eyJ…`), форму `DATABASE_URL` + `connection_limit`, **`GET /api/nodes`**, публичные sub-origin **200/304**, лёгкий **`subscription_load_probe`**.
+
+При падении — **не накатывать** (или откат по §2) до зелёного smoke.
+
+---
+
+## 4. Урок инцидента 2026-05-17 (502 / P1000)
+
+| Ошибка | Причина | Действие |
+|--------|---------|----------|
+| **Prisma P1000** | `POSTGRES_PASSWORD` в vault ≠ пароль инициализированного тома `remnawave-db` | Сверить с **прод-бэкапом** `.env`, не с шаблоном; ротация только по **`RUNBOOK-P0-SEC04-SEC05`**. |
+| **502 на sub** | Inline JWT в `sub/docker-compose.yml` или рассинхрон `sub/.env` / shop | **`verify-ams`** + **`sync-ams-sub`**; только `${REMNA_API_TOKEN}` в YAML. |
+| **Панель crash loop** | `docker compose up` без `--force-recreate remnawave` после смены `env_file` | **`docker compose up -d --no-deps --force-recreate remnawave`**. |
+
+---
+
+## 5. Связанные документы
 
 - **`docs/DEPLOY.md` §7.2–7.3** — render, sanitize, extract_vault  
 - **`docs/RUNBOOK-REMNA-API-TOKEN.md`**  
