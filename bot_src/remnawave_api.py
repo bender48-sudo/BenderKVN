@@ -101,6 +101,20 @@ async def get_user_by_telegram_id(session: aiohttp.ClientSession, telegram_id: s
             return resp
     return None
 
+
+async def get_user_by_email(session: aiohttp.ClientSession, email: str) -> Optional[dict]:
+    """Lookup panel user by subscription email (web-only customers)."""
+    if not email:
+        return None
+    data = await _fetch_json(session, 'GET', f'/api/users/by-email/{email}')
+    if data and 'response' in data:
+        resp = data['response']
+        if isinstance(resp, list) and resp:
+            return resp[0]
+        if isinstance(resp, dict):
+            return resp
+    return None
+
 TRAFFIC_LIMIT_GB = int(os.getenv("REMNA_TRAFFIC_LIMIT_GB", "500"))  # 500 GB default
 TRAFFIC_LIMIT_BYTES = TRAFFIC_LIMIT_GB * 1024 * 1024 * 1024
 TRAFFIC_STRATEGY = os.getenv("REMNA_TRAFFIC_STRATEGY", "MONTH")  # MONTH resets monthly in panel

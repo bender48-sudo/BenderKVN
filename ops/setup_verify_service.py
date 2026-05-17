@@ -58,18 +58,18 @@ def _rate_ok(ip: str) -> bool:
     return True
 
 
-def _ams_web_trial(email: str, phone: str = "") -> dict:
+def _ams_portal_post(path: str, body: dict) -> dict:
     secret = os.environ.get("PORTAL_WEB_TRIAL_SECRET", "").strip()
     if not secret:
         raise ValueError("PORTAL_WEB_TRIAL_SECRET is not set")
-    payload = json.dumps({"email": email, "phone": phone}, ensure_ascii=False)
+    payload = json.dumps(body, ensure_ascii=False)
     pl = shlex.quote(payload)
     remote = (
         "curl -fsS -X POST "
         "-H 'Content-Type: application/json' "
         f"-H 'X-Portal-Web-Trial-Key: {secret}' "
         f"-d {pl} "
-        "http://127.0.0.1:1488/portal-web-trial"
+        f"http://127.0.0.1:1488{path}"
     )
     cmd = [
         "ssh",
@@ -110,7 +110,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
-        if parsed.path not in ("/web-trial", "/web-trial/"):
+        path = parsed.path.rstrip("/") or "/"
+        if path not in ("/web-trial", "/web-trial-recover"):
             self._json(404, {"ok": False, "error": "not_found"})
             return
         ip = _client_ip(self)
@@ -129,8 +130,12 @@ class Handler(BaseHTTPRequestHandler):
         if not email or "@" not in email:
             self._json(400, {"ok": False, "error": "invalid_email"})
             return
+        ams_path = "/portal-web-trial-recover" if path == "/web-trial-recover" else "/portal-web-trial"
+        body = {"email": email}
+        if ams_path == "/portal-web-trial":
+            body["phone"] = phone
         try:
-            ams = _ams_web_trial(email, phone)
+            ams = _ams_portal_post(ams_path, body)
         except subprocess.CalledProcessError as e:
             self._json(502, {"ok": False, "error": "upstream_failed", "detail": str(e)[:120]})
             return
@@ -138,7 +143,13 @@ class Handler(BaseHTTPRequestHandler):
             self._json(500, {"ok": False, "error": str(e)[:200]})
             return
         if not ams.get("ok"):
-            code = 409 if ams.get("error") == "trial_already_claimed" else 400
+            err = ams.get("error")
+            if err == "trial_already_claimed":
+                code = 409
+            elif err == "not_found":
+                code = 404
+            else:
+                code = 400
             self._json(code, ams)
             return
         sub_url = ams.get("sub_url") or ""
@@ -157,6 +168,7 @@ class Handler(BaseHTTPRequestHandler):
                 "token": token,
                 "expire_at": ams.get("expire_at"),
                 "days": ams.get("days"),
+                "customer_id": ams.get("customer_id"),
             },
         )
 

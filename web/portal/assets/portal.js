@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const CONTENT_URL = "content/ru.json";
+  const CONTENT_URL = "/portal/content/ru.json";
   const STATUS_JSON = "/api/ops/status.json";
   const STATUS_PATH = "/status";
   const SUPPORT_URL = "https://t.me/Bender_KVN_bot";
@@ -198,6 +198,8 @@
       });
     }
     $("devices-note").textContent = home.devices_note;
+    var cabBtn = $("btn-cabinet");
+    if (cabBtn) cabBtn.textContent = content.buttons.cabinet || "Личный кабинет";
     $("btn-connect").textContent = content.buttons.connect;
     var setupBtn = $("btn-setup");
     if (setupBtn && content.buttons.setup_browser) {
@@ -269,9 +271,22 @@
     $("device-detail-title").textContent = dev.install_title;
     var list = $("device-install-steps");
     list.innerHTML = "";
-    dev.install_steps.forEach(function (step) {
+    var storeKey = dev.install_store_key || dev.id;
+    var stores = content.happ_install || {};
+    var store = stores[storeKey] || stores.generic;
+    dev.install_steps.forEach(function (step, idx) {
       var li = document.createElement("li");
       li.textContent = step;
+      if (idx === 0 && store) {
+        var a = document.createElement("a");
+        a.className = "store-link";
+        a.href = store.url;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.textContent = "↓ " + store.label;
+        li.appendChild(document.createElement("br"));
+        li.appendChild(a);
+      }
       list.appendChild(li);
     });
     var after = $("after-device-steps");
@@ -284,7 +299,30 @@
     show("device");
   }
 
+  function renderCabinet() {
+    var cab = content.cabinet || {};
+    var tg = getTelegramWebApp();
+    $("cabinet-title").textContent = cab.title || "Личный кабинет";
+    $("cabinet-lead").textContent = tg ? cab.lead_tg : cab.lead_web;
+    $("cabinet-balance-label").textContent = cab.balance_label || "Баланс";
+    $("cabinet-balance").textContent = cab.balance_na || "—";
+    $("cabinet-balance-hint").textContent = cab.balance_hint || "";
+    $("btn-cabinet-bot").textContent = cab.open_bot || "Открыть бота";
+    $("btn-cabinet-setup").textContent = content.buttons.setup_browser;
+    bindExternalLink($("btn-cabinet-bot"));
+    bindExternalLink($("btn-cabinet-setup"));
+  }
+
   function bindActions() {
+    var cabBtn = $("btn-cabinet");
+    if (cabBtn) {
+      cabBtn.addEventListener("click", function () {
+        renderCabinet();
+        show("cabinet");
+      });
+    }
+    var backCab = $("btn-back-home-cabinet");
+    if (backCab) backCab.addEventListener("click", function () { show("home"); });
     $("btn-connect").addEventListener("click", function () {
       show("devices");
     });
@@ -342,8 +380,13 @@
       initTelegram();
       renderHome();
       renderDevices();
+      renderCabinet();
       bindActions();
-      show("home");
+      if (window.location.hash === "#cabinet") {
+        show("cabinet");
+      } else {
+        show("home");
+      }
     })
     .catch(function () {
       showError(

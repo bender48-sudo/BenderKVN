@@ -56,6 +56,35 @@ def web_user_id_from_email(contact_email: str) -> int:
     return -int(n or 1)
 
 
+def format_customer_id(web_user_id: int) -> str:
+    """Public ID for support / self-service (no email in UI)."""
+    return f"BVPN-{abs(int(web_user_id)) % 100_000_000:08d}"
+
+
+def get_web_trial_claim(contact_email: str) -> dict | None:
+    ensure_web_trial_schema()
+    em = normalize_contact_email(contact_email)
+    try:
+        with _conn() as conn:
+            row = conn.execute(
+                """SELECT contact_email, web_user_id, panel_email, contact_phone, claimed_at
+                   FROM web_trial_claims WHERE contact_email = ?""",
+                (em,),
+            ).fetchone()
+        if not row:
+            return None
+        return {
+            "contact_email": row[0],
+            "web_user_id": int(row[1]),
+            "panel_email": row[2] or "",
+            "contact_phone": row[3] or "",
+            "claimed_at": row[4] or "",
+        }
+    except Exception as exc:
+        logger.error("get_web_trial_claim failed: %s", exc)
+        return None
+
+
 def web_trial_contact_claimed(contact_email: str) -> bool:
     ensure_web_trial_schema()
     em = normalize_contact_email(contact_email)

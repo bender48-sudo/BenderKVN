@@ -1,8 +1,8 @@
 {
-  "meta": { "lang": "ru", "version": 5 },
+  "meta": { "lang": "ru", "version": 6 },
   "home": {
-    "title": "bendervpn",
-    "hero_badge": "Без Telegram",
+    "title": "BenderVPN",
+    "hero_badge": "Модуль Bender · без Telegram",
     "hero_mono": "VPN в браузере: email → QR для Happ. Telegram не нужен.",
     "subtitle": "Новый пользователь? Получите бесплатный VPN в браузере — без бота и без Telegram.",
     "features": ["Быстрый", "Стабильный", "Безопасный"],
@@ -11,10 +11,34 @@
   "buttons": {
     "connect": "Как установить Happ",
     "setup_browser": "Получить бесплатный VPN",
+    "cabinet": "Личный кабинет",
+    "miniapp": "Mini App",
     "status": "Подробный статус",
     "support": "Помощь в Telegram",
     "stuck": "Не получается — подсказки",
     "back": "Назад"
+  },
+  "happ_install": {
+    "ios": {
+      "label": "App Store (iPhone / iPad)",
+      "url": "https://apps.apple.com/ru/app/happ-proxy-utility-plus/id6746188973"
+    },
+    "android": {
+      "label": "Google Play",
+      "url": "https://play.google.com/store/apps/details?id=com.happproxy.happ"
+    },
+    "windows": {
+      "label": "Скачать Happ для Windows",
+      "url": "https://www.happ.su/happ"
+    },
+    "mac": {
+      "label": "Mac App Store",
+      "url": "https://apps.apple.com/ru/app/happ-proxy-utility-plus/id6746188973"
+    },
+    "generic": {
+      "label": "Сайт Happ",
+      "url": "https://www.happ.su/happ"
+    }
   },
   "events": {
     "title": "Обновления VPN",
@@ -32,6 +56,18 @@
     "incident_detail": "Часть сервисов работает с ограничениями. Подробности — на странице статуса. Если VPN не подключается, после восстановления обновите подписку в Happ.",
     "more": "Открыть статус сервиса"
   },
+  "cabinet": {
+    "title": "Личный кабинет",
+    "lead_tg": "В Telegram: баланс, пополнение и «Моя настройка» — в боте. Эта страница — та же инструкция, что Mini App.",
+    "lead_web": "Вы зарегистрировались по email. Сохраните ID — по нему поддержка перевыпустит настройку без повторной регистрации.",
+    "balance_label": "Баланс",
+    "balance_hint": "Пополнение и тариф — в Telegram-боте (когда доступен).",
+    "balance_na": "—",
+    "open_bot": "Открыть бота",
+    "recover_title": "Уже получали доступ?",
+    "recover_lead": "Введите тот же email — покажем QR и ссылку снова.",
+    "recover_submit": "Восстановить настройку"
+  },
   "screens": {
     "devices_heading": "Выберите устройство",
     "devices_lead": "Сначала установите Happ. Настройку вы уже получили на предыдущем шаге.",
@@ -47,8 +83,9 @@
       "label": "iPhone или iPad",
       "icon": "📱",
       "install_title": "iPhone",
+      "install_store_key": "ios",
       "install_steps": [
-        "Установите Happ из App Store.",
+        "Установите Happ из магазина (кнопка ниже).",
         "Откройте QR или ссылку со страницы настройки.",
         "В Happ: + → «Из буфера обмена»."
       ]
@@ -58,6 +95,7 @@
       "label": "Android",
       "icon": "🤖",
       "install_title": "Android",
+      "install_store_key": "android",
       "install_steps": [
         "Установите Happ из Google Play.",
         "Скопируйте ссылку со страницы настройки.",
@@ -69,8 +107,9 @@
       "label": "Windows",
       "icon": "🖥️",
       "install_title": "Windows",
+      "install_store_key": "windows",
       "install_steps": [
-        "Установите Happ для Windows.",
+        "Скачайте и установите Happ для Windows.",
         "На этом ПК откройте страницу настройки.",
         "Импортируйте ссылку в Happ."
       ]
@@ -80,8 +119,9 @@
       "label": "Mac",
       "icon": "💻",
       "install_title": "Mac",
+      "install_store_key": "mac",
       "install_steps": [
-        "Установите Happ из App Store на Mac.",
+        "Установите Happ из Mac App Store.",
         "Используйте QR или ссылку на этом Mac.",
         "Отдельно от iPhone, если пользуетесь обоими."
       ]
@@ -105,8 +145,11 @@
     "title_browser": "Получить VPN без Telegram",
     "lead_browser": "Укажите email — создадим бесплатный доступ (~3 месяца) и покажем QR для Happ.",
     "lead_token": "Ваша персональная настройка для Happ.",
-    "signup_heading": "Регистрация в браузере",
+    "signup_heading": "Новый пользователь",
     "signup_lead": "Мы создадим VPN-доступ на сервере. Email нужен, чтобы не выдавать trial повторно и связаться при проблемах.",
+    "recover_heading": "Уже регистрировались?",
+    "recover_lead": "Введите тот же email — вернём QR и ссылку (тот же аккаунт на сервере).",
+    "recover_submit": "Восстановить настройку",
     "signup_email_label": "Email",
     "signup_email_placeholder": "name@example.com",
     "signup_phone_label": "Телефон (необязательно)",
@@ -114,18 +157,24 @@
     "signup_terms_required": "Отметьте согласие с условиями.",
     "signup_submit": "Получить бесплатный VPN",
     "signup_loading": "Создаём доступ на сервере…",
-    "signup_note": "Один бесплатный trial на email. Продление — через поддержку или Telegram, когда будет доступен.",
+    "recover_loading": "Ищем вашу настройку…",
+    "signup_note": "Один бесплатный trial на email. Сохраните ID после регистрации — пригодится в поддержке.",
+    "customer_id_label": "Ваш ID в BenderVPN",
+    "customer_id_hint": "Сообщите этот ID в поддержке — перевыпустим настройку без нового email.",
     "signup_email_invalid": "Введите корректный email.",
     "signup_error_generic": "Не удалось создать доступ. Попробуйте позже или напишите в поддержку.",
-    "signup_error_used": "На этот email trial уже выдавался. Используйте другой email или напишите в поддержку.",
+    "signup_error_used": "На этот email доступ уже выдавался. Нажмите «Восстановить настройку» ниже.",
     "signup_error_rate": "Слишком много попыток с этого устройства. Подождите час и попробуйте снова.",
+    "signup_error_not_found": "Регистрация на этот email не найдена. Сначала получите бесплатный доступ.",
     "success_trial": "Готово! Бесплатный доступ до",
     "copy": "Скопировать ссылку",
     "copied": "Скопировано",
+    "copy_id": "Скопировать ID",
+    "copied_id": "ID скопирован",
     "open_happ": "Открыть в Happ",
     "invalid_token": "Ссылка устарела. Получите новый доступ через форму ниже.",
     "happ_steps": [
-      "Установите Happ (App Store, Google Play или Windows/Mac).",
+      "Установите Happ (кнопка магазина ниже, если ещё не ставили).",
       "Нажмите + → «Из буфера обмена» или отсканируйте QR выше.",
       "Нажмите «Обновить», если Happ просит.",
       "Включите VPN переключателем."
@@ -135,8 +184,8 @@
     "stuck_title": "Что проверить",
     "stuck_steps": [
       "Нажмите «Получить бесплатный VPN» и дождитесь QR.",
-      "Проверьте блок «Обновления VPN» выше.",
-      "Напишите в поддержку, если email уже использовали."
+      "Проверьте блок «Обновления VPN» на главной.",
+      "Сохраните ID и напишите в поддержку, если email уже использовали."
     ]
   },
   "errors": {

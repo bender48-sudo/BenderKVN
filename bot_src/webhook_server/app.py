@@ -97,6 +97,25 @@ def create_webhook_app(bot, payment_processor):
             logger.error("portal-web-trial: %s", e, exc_info=True)
             return jsonify({"ok": False, "error": "server_error"}), 500
 
+    @flask_app.route("/portal-web-trial-recover", methods=["POST"])
+    def portal_web_trial_recover_handler():
+        secret = os.getenv("PORTAL_WEB_TRIAL_SECRET", "").strip()
+        if not secret or request.headers.get("X-Portal-Web-Trial-Key") != secret:
+            return _reject_auth()
+        data = request.get_json(silent=True) or {}
+        email = (data.get("email") or "").strip()
+        try:
+            from shop_bot.portal_web_trial import recover_web_trial
+
+            result = asyncio.run(recover_web_trial(email))
+            code = 200 if result.get("ok") else 404
+            if result.get("error") == "invalid_email":
+                code = 400
+            return jsonify(result), code
+        except Exception as e:
+            logger.error("portal-web-trial-recover: %s", e, exc_info=True)
+            return jsonify({"ok": False, "error": "server_error"}), 500
+
     @flask_app.route("/cryptobot-webhook", methods=["GET"])
     def crypto_webhook_get_handler():
         try:
