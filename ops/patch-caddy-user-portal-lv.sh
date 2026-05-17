@@ -37,13 +37,14 @@ insert = """
     handle /portal {
         redir /portal/ 308
     }
-    handle_path /setup/* {
+    @setup_pages path /setup /setup/*
+    handle @setup_pages {
         root * /var/www/bvpn-portal
-        try_files {path} /setup.html
-        file_server
-    }
-    handle /setup {
-        redir /setup/ 308
+        @not_api not path /setup/api/*
+        handle @not_api {
+            rewrite * /setup.html
+            file_server
+        }
     }
 
 """

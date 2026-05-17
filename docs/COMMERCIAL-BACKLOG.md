@@ -196,7 +196,7 @@
 | ~~**P3-FLOW-00**~~ ✅ | Карта флоу + критерии приёмки (3 персоны). | **2026-05-17:** **`USER-FLOW-JOURNEY.md`**; smoke **`USER_FLOW_JOURNEY_OK`**. Бумажное ревью 3× — владелец. |
 | ~~**P3-FLOW-14**~~ ✅ | **Единый портал** `web/portal/` + **`content/ru.json`** — один UI для сайта и Mini App (iPhone/Android/**Windows**/**Mac**, Happ на телефон и ПК). | **2026-05-17:** **`portal_bundle_audit.py`** → **`PORTAL_BUNDLE_OK`**; **`site_urls.public_*_url()`**. |
 | ~~**P3-FLOW-01**~~ ✅ | **Bootstrap-сайт** (clearnet): `/start`, `/portal` на LV; journey **as-is бот** (App Store/Google Play без шага устройства). | **2026-05-17:** **`PUBLIC_BOOTSTRAP_OK`**; **`RUNBOOK-USER-BOOTSTRAP-SITE`**. |
-| **P3-FLOW-02** | **Веб-выдача конфига**: `/setup?token=`, QR, copy, Happ. | **`PORTAL_SETUP_PAGE_OK`**; E2E без VPN. |
+| ~~**P3-FLOW-02**~~ ✅ | **Веб-выдача конфига**: `/setup/?t=`, QR, copy; HMAC + verify API на LV. | **2026-05-17:** **`PORTAL_SETUP_PAGE_OK`**; бот → ссылка в **Q038**. |
 | **P3-FLOW-12** | **Telegram Mini App** — **дубликат portal** (не отдельный дизайн); Menu Button + WebApp. | **`TELEGRAM_MINIAPP_PORTAL_OK`**; **`RUNBOOK-TELEGRAM-MINIAPP`**. |
 | **P3-FLOW-03** | Бот: WebApp «Инструкция», браузер `/start`, setup link. | **`BOT_PORTAL_LINKS_OK`**; ≤ 3 тапа. |
 | **P3-FLOW-04** | Мастер **«Подключить VPN»**; главный CTA → Mini App. | FSM; journey OK. |
@@ -288,9 +288,9 @@
 
 **Закрыто (фаза 1):** **P0**, **P1**, большинство **P2/P6**, **§5.3** коммерция, **P2/P6-RED** из Q001–Q022. **`docs/P1-POST-AUDIT.md`** — **2026-05-16**.
 
-**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q036`** (**P3-FLOW-02** setup page). Ручные хвосты: **`docs/MANUAL-OWNER-CHECKLIST.md`**.
+**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q037`** (**P3-FLOW-12** Mini App). Ручные хвосты: **`docs/MANUAL-OWNER-CHECKLIST.md`**.
 
-**Открыто (продукт):** **P5-COM-02**, **P3-FLOW-02…13**; bootstrap **`/start`** на проде. **P5-ENG-01**.
+**Открыто (продукт):** **P5-COM-02**, **P3-FLOW-03…13**; **`/setup/?t=`** на проде. **P5-ENG-01**.
 
 **Параллельно:** **P4-DNS-01…06** (mobile SKU), отдельный владелец.
 
@@ -302,6 +302,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-17 | **P3-FLOW-02 — DONE (Q036):** **`portal_setup_token.py`**, **`/setup/?t=`** + QR, **`bvpn-setup-verify`**, **`PORTAL_SETUP_PAGE_OK`**. **NEXT=Q037** P3-FLOW-12. |
 | 2026-05-17 | **P3-FLOW-01 — DONE (Q035):** **`/start/`**, **`/portal/`** на LV; journey as-is бот; trial → **App Store/Google Play** в репо; **`PUBLIC_BOOTSTRAP_OK`**. **NEXT=Q036** P3-FLOW-02. |
 | 2026-05-17 | **P3-FLOW-14 — DONE (Q034):** **`web/portal/`** (ru.json, 4 устройства, Happ phone+PC); journey/FAQ обновлены; **`PORTAL_BUNDLE_OK`**. **NEXT=Q035** P3-FLOW-01. |
 | 2026-05-17 | **P3-FLOW-00 — DONE (Q033):** **`USER-FLOW-JOURNEY.md`** (персоны + Win/Mac); **`USER_FLOW_JOURNEY_OK`**. **NEXT=Q034** P3-FLOW-14. |

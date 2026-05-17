@@ -317,13 +317,21 @@ k9x2m1.conntest.xyz:2053 {
     handle /portal {
         redir /portal/ 308
     }
-    handle_path /setup/* {
-        root * /var/www/bvpn-portal
-        try_files {path} /setup.html
-        file_server
+    # SETUP_API_BOOT_02 — verify setup token (P3-FLOW-02)
+    handle /setup/api/* {
+        uri strip_prefix /setup/api
+        reverse_proxy 127.0.0.1:8871 {
+            header_up Host {host}
+        }
     }
-    handle /setup {
-        redir /setup/ 308
+    @setup_pages path /setup /setup/*
+    handle @setup_pages {
+        root * /var/www/bvpn-portal
+        @not_api not path /setup/api/*
+        handle @not_api {
+            rewrite * /setup.html
+            file_server
+        }
     }
 
     # P2-RED-SUB-01 + P6-RED-SUBHA-01: alt origin -> AMS :3011 (primary p4n7q -> :3010)

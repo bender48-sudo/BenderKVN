@@ -5,13 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BenderVPN — моя настройка</title>
   <link rel="stylesheet" href="assets/portal.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" defer></script>
+  <script src="assets/setup.js" defer></script>
 </head>
 <body>
   <main>
-    <h1>Моя настройка</h1>
-    <p class="lead">Страница выдачи конфига — в разработке (P3-FLOW-02). Пока получите ссылку в Telegram-боте.</p>
-    <a class="btn btn-primary" href="index.html">На главную</a>
-    <a class="btn btn-secondary" href="/status">Статус сервиса</a>
+    <h1 id="setup-title">Моя настройка</h1>
+    <p id="setup-lead" class="lead"></p>
+
+    <p id="setup-loading" class="note">Загружаем…</p>
+    <p id="setup-error" class="note hidden" role="alert"></p>
+
+    <section id="setup-content" class="hidden">
+      <div class="panel" style="text-align:center">
+        <canvas id="setup-qr" aria-label="QR-код"></canvas>
+      </div>
+      <p><a id="setup-link" class="muted" href="#" rel="noopener"></a></p>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="btn-copy">Скопировать ссылку</button>
+        <a class="btn btn-secondary" id="btn-open-happ" href="#" rel="noopener">Открыть в Happ</a>
+      </div>
+      <div class="panel">
+        <h2>Дальше в Happ</h2>
+        <ol class="steps">
+          <li>Установите Happ (App Store, Google Play или версия для Windows/Mac).</li>
+          <li>Нажмите + → «Из буфера обмена» или отсканируйте QR выше.</li>
+          <li>Обновите подписку в Happ при необходимости.</li>
+          <li>Включите VPN переключателем.</li>
+        </ol>
+      </div>
+    </section>
+
+    <a class="btn btn-ghost" href="index.html">← На главную</a>
+    <a class="btn btn-ghost" href="/status">Статус сервиса</a>
   </main>
 </body>
 </html>

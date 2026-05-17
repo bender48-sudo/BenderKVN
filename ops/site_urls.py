@@ -131,8 +131,19 @@ def public_setup_url(token: str = "") -> str:
     path = PUBLIC_SETUP_PATH.rstrip("/") or "/setup"
     base = f"{_portal_origin()}{path}"
     if token:
-        return f"{base}?t={token}"
-    return base
+        return f"{base}/?t={token}"
+    return f"{base}/"
+
+
+def sub_url_from_short_id(short_id: str) -> str:
+    """Public subscription URL for a panel shortId (capability URL)."""
+    sid = short_id.strip().lstrip("/")
+    return f"{SUB_PUBLIC_ORIGIN}/api/sub/{sid}"
+
+
+def probe_short_id() -> str:
+    """shortId segment from monitor smoke path (public, not secret)."""
+    return _SUB_MONITOR_SUFFIX.split("/")[-1]
 
 
 def sub_all_probe_urls() -> list[str]:

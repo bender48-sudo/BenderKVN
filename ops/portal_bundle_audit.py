@@ -15,6 +15,7 @@ REQUIRED_FILES = [
     PORTAL / "setup.html",
     PORTAL / "assets" / "portal.css",
     PORTAL / "assets" / "portal.js",
+    PORTAL / "assets" / "setup.js",
     RU,
 ]
 
