@@ -9,6 +9,7 @@ $Files = @(
     @{ Local = "bot_src\database.py"; Host = "/opt/remna-shop/src/shop_bot/data_manager/database.py"; Container = "/app/src/shop_bot/data_manager/database.py" },
     @{ Local = "bot_src\webhook_server\payment_queue.py"; Host = "/opt/remna-shop/src/shop_bot/webhook_server/payment_queue.py"; Container = "/app/src/shop_bot/webhook_server/payment_queue.py" },
     @{ Local = "bot_src\webhook_server\app.py"; Host = "/opt/remna-shop/src/shop_bot/webhook_server/app.py"; Container = "/app/src/shop_bot/webhook_server/app.py" },
+    @{ Local = "bot_src\webhook_server\payload_redact.py"; Host = "/opt/remna-shop/src/shop_bot/webhook_server/payload_redact.py"; Container = "/app/src/shop_bot/webhook_server/payload_redact.py" },
     @{ Local = "bot_src\webhook_server\auth.py"; Host = "/opt/remna-shop/src/shop_bot/webhook_server/auth.py"; Container = "/app/src/shop_bot/webhook_server/auth.py" },
     @{ Local = "bot_src\main.py"; Host = "/opt/remna-shop/src/shop_bot/main.py"; Container = "/app/src/shop_bot/main.py" },
     @{ Local = "bot_src\handlers.py"; Host = "/opt/remna-shop/src/shop_bot/bot/handlers.py"; Container = "/app/src/shop_bot/bot/handlers.py" }

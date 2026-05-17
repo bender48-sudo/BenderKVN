@@ -9,7 +9,7 @@
 | Что нужно | Документ / артефакт |
 |-----------|---------------------|
 | Очередь задач по приоритетам | **`docs/COMMERCIAL-BACKLOG.md`** |
-| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **Q029** (**P3-RED-MIN-01**); ручное: **`docs/MANUAL-OWNER-CHECKLIST.md`** |
+| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **Q030** (**P3-RED-JURIS-01**); ручное: **`docs/MANUAL-OWNER-CHECKLIST.md`** |
 | Правило: одна задача → коммит → стоп | **`docs/POLICY-SEQUENTIAL-WORK.md`** |
 | Журнал «что уже сделали на проде» | тот же файл, **§12** |
 | Очередь capacity (users/nodes vs §10.1) | `python ops/capacity_snapshot.py` (токен в `.secrets/panel-token.txt`) |

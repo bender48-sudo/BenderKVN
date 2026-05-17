@@ -16,6 +16,7 @@ from shop_bot.data_manager.database import (
     mark_webhook_failed,
     mark_webhook_processing,
 )
+from shop_bot.webhook_server.payload_redact import redact_webhook_payload
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,8 @@ class PaymentWebhookQueue:
         self._worker.start()
 
     def submit(self, idempotency_key: str, source: str, payload: dict[str, Any]) -> str:
-        payload_json = json.dumps(payload, ensure_ascii=False)
+        stored = redact_webhook_payload(source, payload)
+        payload_json = json.dumps(stored, ensure_ascii=False)
         status = claim_webhook_delivery(idempotency_key, source, payload_json)
         if status == "duplicate":
             logger.info("Webhook duplicate (done): %s", idempotency_key)

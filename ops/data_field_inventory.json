@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "not_collected_global": [
+    "passport_or_government_id",
+    "phone_number_required",
+    "email_required_for_signup",
+    "full_payment_card_pan",
+    "bank_account",
+    "precise_geolocation",
+    "browsing_history_outside_vpn_metadata"
+  ],
+  "systems": {
+    "bot_sqlite": {
+      "path": "data/shop_bot.db",
+      "tables": {
+        "users": [
+          {"field": "telegram_id", "class": "identifier", "purpose": "account", "retention_days": "account_lifetime"},
+          {"field": "username", "class": "optional_pii", "purpose": "support_display", "retention_days": "account_lifetime"},
+          {"field": "balance", "class": "billing", "purpose": "prepaid_balance", "retention_days": "account_lifetime"},
+          {"field": "total_spent", "class": "aggregate", "purpose": "stats", "retention_days": "account_lifetime"},
+          {"field": "ref_code", "class": "referral", "purpose": "referral_program", "retention_days": "account_lifetime"},
+          {"field": "support_topic_id", "class": "ops", "purpose": "support_sla", "retention_days": "account_lifetime"},
+          {"field": "support_last_user_at", "class": "ops", "purpose": "support_sla", "retention_days": "account_lifetime"},
+          {"field": "support_last_staff_at", "class": "ops", "purpose": "support_sla", "retention_days": "account_lifetime"}
+        ],
+        "vpn_keys": [
+          {"field": "vless_uuid", "class": "technical", "purpose": "vpn_credential", "retention_days": "key_lifetime"},
+          {"field": "key_email", "class": "technical", "purpose": "panel_user_alias", "retention_days": "key_lifetime"},
+          {"field": "expiry_date", "class": "technical", "purpose": "subscription", "retention_days": "key_lifetime"}
+        ],
+        "webhook_deliveries": [
+          {"field": "idempotency_key", "class": "billing_ref", "purpose": "dedup", "retention_days": 90},
+          {"field": "payload_json", "class": "billing_ref_redacted", "purpose": "audit_minimal", "retention_days": 90},
+          {"field": "status", "class": "ops", "purpose": "dlq", "retention_days": 90}
+        ],
+        "user_actions": [
+          {"field": "action", "class": "ops", "purpose": "idempotency_log", "retention_days": 365},
+          {"field": "meta", "class": "ops", "purpose": "short_meta", "retention_days": 365}
+        ]
+      }
+    },
+    "remnawave_postgres": {
+      "location": "AMS LUKS /mnt/remnawave-pgdata",
+      "notes": "Panel DB: users, nodes, hosts, subscription templates — no bot payment PAN",
+      "not_duplicated_in_bot": ["panel_user_uuid", "node_secrets", "full_subscription_config"]
+    }
+  },
+  "separation": {
+    "payment_vs_vpn": "Telegram ID + balance in bot; VLESS UUID in panel; YooKassa payment id only in redacted webhook row",
+    "psp_data": "Card/bank details stay at YooKassa/Telegram Stars; bot stores provider payment id + amount metadata only"
+  },
+  "code_requirements": {
+    "webhook_payload_redaction": "shop_bot.webhook_server.payload_redact.redact_webhook_payload",
+    "legal_urls": "bot_settings terms_url + privacy_url non-stub"
+  }
+}

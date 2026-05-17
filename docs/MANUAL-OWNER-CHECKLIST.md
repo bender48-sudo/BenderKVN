@@ -34,6 +34,7 @@
 
 - [ ] Cron на LV: `dns_delegation_probe.py` раз в час (`docs/RUNBOOK-DNS-RED-TEAM.md` §5).
 - [ ] Cron на LV: `remna_credential_broker.py refresh` каждые 30 мин (`docs/RUNBOOK-SHORT-LIVED-CREDS.md`).
+- [ ] Cron на AMS: purge `webhook_deliveries` старше 90 дней (`docs/RUNBOOK-DATA-RETENTION.md`).
 - [ ] Telegram-алерт при `DNS_DELEGATION_FAIL` / `POSTGRES_CRYPT_FAIL` (сейчас — ручной smoke).
 
 ---
@@ -43,7 +44,7 @@
 | Q | ID | Статус в репо |
 |---|-----|----------------|
 | 028 | P1-RED-SEC-01 | ✅ broker на LV |
-| 029 | P3-RED-MIN-01 | data minimization |
+| 029 | P3-RED-MIN-01 | ✅ policy + webhook redact |
 | 030 | P3-RED-JURIS-01 | jurisdiction failover runbook |
 | 031 | P5-COM-01 | public status page |
 
