@@ -7,7 +7,10 @@ from dotenv import load_dotenv
 from yookassa import Configuration
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode 
+from aiogram.enums import ParseMode
+from aiogram.types import MenuButtonWebApp, WebAppInfo
+
+from shop_bot.config import TELEGRAM_WEBAPP_URL
 
 from shop_bot.bot import handlers
 from shop_bot.bot import admin_handlers
@@ -119,6 +122,26 @@ def main():
 
         if database.get_all_vpn_users():
             asyncio.create_task(start_subscription_monitor(bot))
+
+        if TELEGRAM_WEBAPP_URL:
+            try:
+                await bot.set_chat_menu_button(
+                    menu_button=MenuButtonWebApp(
+                        text="\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u044c VPN",
+                        web_app=WebAppInfo(url=TELEGRAM_WEBAPP_URL),
+                    )
+                )
+                bot_logger.system(
+                    "TELEGRAM",
+                    f"Menu WebApp -> {TELEGRAM_WEBAPP_URL}",
+                    "OK",
+                )
+            except Exception as e:
+                bot_logger.system(
+                    "TELEGRAM",
+                    f"Menu WebApp not set: {e}",
+                    "WARNING",
+                )
 
         bot_logger.system("TELEGRAM", "Bot polling started", "OK")
         await dp.start_polling(bot)

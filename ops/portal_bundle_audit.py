@@ -50,6 +50,8 @@ def main() -> int:
     ).is_file() else ""
     if "device-grid" not in html:
         errors.append("index.html missing device-grid")
+    if "telegram-web-app.js" not in html:
+        errors.append("index.html missing telegram-web-app.js (Mini App)")
 
     if errors:
         for e in errors:

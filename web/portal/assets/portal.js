@@ -17,17 +17,66 @@
     });
   }
 
+  function getTelegramWebApp() {
+    return window.Telegram && window.Telegram.WebApp;
+  }
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    return Promise.reject(new Error("clipboard unavailable"));
+  }
+
   function initTelegram() {
-    var tg = window.Telegram && window.Telegram.WebApp;
+    var tg = getTelegramWebApp();
     if (!tg) return;
+    document.documentElement.classList.add("tg-webapp");
     tg.ready();
     tg.expand();
-    if (tg.themeParams && tg.themeParams.bg_color) {
-      document.documentElement.style.setProperty(
-        "--bg",
-        tg.themeParams.bg_color
-      );
+    try {
+      tg.enableClosingConfirmation();
+    } catch (e) {
+      /* older clients */
     }
+    var tp = tg.themeParams || {};
+    var cssMap = {
+      bg_color: "--bg",
+      text_color: "--text",
+      hint_color: "--muted",
+      button_color: "--accent",
+      button_text_color: "--text",
+      secondary_bg_color: "--card",
+    };
+    Object.keys(cssMap).forEach(function (key) {
+      if (tp[key]) {
+        document.documentElement.style.setProperty(cssMap[key], tp[key]);
+      }
+    });
+    var headerColor = tp.bg_color || "#0f1419";
+    if (typeof tg.setHeaderColor === "function") {
+      try {
+        tg.setHeaderColor(headerColor);
+      } catch (e) {
+        /* ignore */
+      }
+    }
+    if (typeof tg.setBackgroundColor === "function" && tp.bg_color) {
+      try {
+        tg.setBackgroundColor(tp.bg_color);
+      } catch (e) {
+        /* ignore */
+      }
+    }
+  }
+
+  function openExternal(url) {
+    var tg = getTelegramWebApp();
+    if (tg && typeof tg.openLink === "function") {
+      tg.openLink(url);
+      return;
+    }
+    window.open(url, "_blank", "noopener");
   }
 
   function renderHome() {
@@ -98,17 +147,39 @@
       show("devices");
     });
     $("btn-stuck").addEventListener("click", function () {
-      window.open(SUPPORT_URL, "_blank", "noopener");
+      openExternal(SUPPORT_URL);
     });
     var statusBtn = $("btn-status");
-    statusBtn.href = STATUS_PATH;
-    $("btn-support").href = SUPPORT_URL;
+    statusBtn.addEventListener("click", function (ev) {
+      if (getTelegramWebApp()) {
+        ev.preventDefault();
+        openExternal(statusBtn.href);
+      }
+    });
+    var supportBtn = $("btn-support");
+    supportBtn.addEventListener("click", function (ev) {
+      if (getTelegramWebApp()) {
+        ev.preventDefault();
+        openExternal(SUPPORT_URL);
+      }
+    });
+    var deviceSupport = document.querySelector('[data-view="device"] .btn-primary');
+    if (deviceSupport) {
+      deviceSupport.addEventListener("click", function (ev) {
+        if (getTelegramWebApp()) {
+          ev.preventDefault();
+          openExternal(SUPPORT_URL);
+        }
+      });
+    }
   }
 
   function showError(msg) {
     $("load-error").textContent = msg || content.errors.generic;
     $("load-error").classList.remove("hidden");
   }
+
+  window.bvpnCopyText = copyToClipboard;
 
   fetch(CONTENT_URL)
     .then(function (r) {

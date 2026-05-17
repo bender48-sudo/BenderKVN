@@ -126,6 +126,14 @@ def public_portal_url() -> str:
     return f"{_portal_origin()}{path}/"
 
 
+def telegram_webapp_url() -> str:
+    """Telegram Mini App URL (BotFather Menu Button); defaults to public_portal_url()."""
+    explicit = os.environ.get("TELEGRAM_WEBAPP_URL", "").strip()
+    if explicit:
+        return explicit.rstrip("/") + "/"
+    return public_portal_url()
+
+
 def public_setup_url(token: str = "") -> str:
     """Personal setup page (P3-FLOW-02). Token appended as ?t= when set."""
     path = PUBLIC_SETUP_PATH.rstrip("/") or "/setup"

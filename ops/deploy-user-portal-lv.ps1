@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path $PSScriptRoot -Parent
 Set-Location $RepoRoot
 
-python -m py_compile ops/smoke_public_bootstrap.py ops/site_urls.py ops/portal_bundle_audit.py
+python -m py_compile ops/smoke_public_bootstrap.py ops/smoke_telegram_miniapp.py ops/site_urls.py ops/portal_bundle_audit.py
 
 $Key = Join-Path $env:USERPROFILE ".ssh\bvpn_lv_ed25519"
 $Common = @("-i", $Key, "-o", "BatchMode=yes", "-o", "ConnectTimeout=40")
@@ -33,4 +33,5 @@ test -f /var/www/bvpn-portal/index.html
 Write-Host "[deploy] smoke ..."
 python ops/portal_bundle_audit.py
 python ops/smoke_public_bootstrap.py
+python ops/smoke_telegram_miniapp.py
 Write-Host "DEPLOY_USER_PORTAL_LV_OK"

@@ -56,6 +56,14 @@ CUSTOM_AMOUNT_UNAVAILABLE = (
 )
 KEY_EMAIL_DOMAIN = os.getenv("KEY_EMAIL_DOMAIN", "kitsura.fun")
 
+# P3-FLOW-12: same URL as site portal (BotFather Menu Button + inline WebApp)
+TELEGRAM_WEBAPP_URL = (
+    os.getenv("TELEGRAM_WEBAPP_URL", "https://k9x2m1.conntest.xyz:2053/portal/")
+    .strip()
+    .rstrip("/")
+    + "/"
+)
+
 ABOUT_TEXT = "Настройки не установлены. Установите их в админ-панели."
 TERMS_URL = "Ссылка на условия использования не установлена. Установите её в админ-панели."
 PRIVACY_URL = "Ссылка на политику конфиденциальности не установлена. Установите её в админ-панели."

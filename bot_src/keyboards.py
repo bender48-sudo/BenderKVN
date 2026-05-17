@@ -1,5 +1,7 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+from shop_bot.config import TELEGRAM_WEBAPP_URL
 from datetime import datetime
 import os
 
@@ -12,8 +14,17 @@ main_reply_keyboard = ReplyKeyboardMarkup(
 )
 
 
+def _portal_webapp_button(builder: InlineKeyboardBuilder) -> None:
+    if TELEGRAM_WEBAPP_URL:
+        builder.button(
+            text="\U0001f4f1 \u041e\u0442\u043a\u0440\u044b\u0442\u044c \u0438\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0438\u044e",
+            web_app=WebAppInfo(url=TELEGRAM_WEBAPP_URL),
+        )
+
+
 def create_main_menu_keyboard(has_active_sub=False, trial_available=True, is_admin=False, **kwargs):
     builder = InlineKeyboardBuilder()
+    _portal_webapp_button(builder)
     if not has_active_sub and trial_available:
         builder.button(
             text="🎁 Бесплатно 3 месяца",
@@ -31,6 +42,7 @@ def create_main_menu_keyboard(has_active_sub=False, trial_available=True, is_adm
 
 def create_trial_success_keyboard(sub_url):
     builder = InlineKeyboardBuilder()
+    _portal_webapp_button(builder)
     builder.button(text="\U0001f4cb \u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443 \u043f\u043e\u0434\u043f\u0438\u0441\u043a\u0438", callback_data="copy_sub_url")
     builder.button(text="\U0001f34e App Store", url="https://apps.apple.com/ru/app/happ-proxy-utility-plus/id6746188973")
     builder.button(text="\U0001f916 Google Play", url="https://play.google.com/store/apps/details?id=com.happproxy.happ")
