@@ -3,6 +3,25 @@
 # From Windows: scp ops/pull-latest-dump-ams-to-lv.sh bvpn-lv:/tmp/ && ssh bvpn-lv "sed -i 's/\r$//' /tmp/pull-latest-dump-ams-to-lv.sh; bash /tmp/pull-latest-dump-ams-to-lv.sh"
 # Pulls latest /opt/backups/remnawave-*.sql.gz from AMS and verifies SHA256.
 set -euo pipefail
+
+_notify_pull_fail() {
+  local msg="$1"
+  for f in /etc/bvpn/balancer.env /opt/remna-shop/.env; do
+    if [ -f "$f" ]; then
+      # shellcheck disable=SC1091
+      source "$f"
+      break
+    fi
+  done
+  BOT_TOKEN="${BOT_TOKEN:-${TELEGRAM_BOT_TOKEN:-}}"
+  ADMIN_CHAT_ID="${ADMIN_CHAT_ID:-${ADMIN_TELEGRAM_ID:-}}"
+  [ -n "${BOT_TOKEN:-}" ] && [ -n "${ADMIN_CHAT_ID:-}" ] || return 0
+  curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+    -d "chat_id=${ADMIN_CHAT_ID}" \
+    --data-urlencode "text=❌ Remnawave pull AMS→LV failed: ${msg}" >/dev/null 2>&1 || true
+}
+
+trap '_notify_pull_fail "exit code $? (see /var/log/remnawave-pull.log)"' ERR
 AMS_IP="${AMS_IP:-168.100.11.140}"
 AMS_PORT="${AMS_PORT:-3344}"
 SSH=(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=20 -p "${AMS_PORT}" "root@${AMS_IP}")

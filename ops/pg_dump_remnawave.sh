@@ -2,6 +2,26 @@
 # Run on the host where Docker remnawave-db runs (Amsterdam after migration).
 # From Windows: [IO.File]::ReadAllText('ops/pg_dump_remnawave.sh').Replace("`r`n","`n") | ssh bvpn-ams bash
 set -euo pipefail
+
+_notify_pg_dump_fail() {
+  local msg="$1"
+  for f in /etc/bvpn/balancer.env /opt/remna-shop/.env; do
+    if [ -f "$f" ]; then
+      # shellcheck disable=SC1091
+      source "$f"
+      break
+    fi
+  done
+  BOT_TOKEN="${BOT_TOKEN:-${TELEGRAM_BOT_TOKEN:-}}"
+  ADMIN_CHAT_ID="${ADMIN_CHAT_ID:-${ADMIN_TELEGRAM_ID:-}}"
+  [ -n "${BOT_TOKEN:-}" ] && [ -n "${ADMIN_CHAT_ID:-}" ] || return 0
+  curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+    -d "chat_id=${ADMIN_CHAT_ID}" \
+    --data-urlencode "text=❌ Remnawave pg_dump on $(hostname -s): ${msg}" >/dev/null 2>&1 || true
+}
+
+trap '_notify_pg_dump_fail "exit code $? (see /var/log/pg_dump_remnawave.log)"' ERR
+
 OUT_DIR="${OUT_DIR:-/opt/backups}"
 mkdir -p "$OUT_DIR"
 TS="$(date +%Y%m%d-%H%M%S)"

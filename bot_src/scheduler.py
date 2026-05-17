@@ -18,9 +18,11 @@ logger = logging.getLogger(__name__)
 THRESHOLDS = [50, 80, 90, 100]
 
 BACKUP_INTERVAL_HOURS = 6  # Продакшн значение - бэкап каждые 6 часов
+BACKUP_CHECK_INTERVAL_SECONDS = 3600  # не решать «пора ли бэкап» каждые 5 мин
 
 async def start_subscription_monitor(bot: Bot):
     bot_logger.system("MONITOR", "Subscription monitor started", "OK")
+    last_backup_decision_at = 0.0
     while True:
         try:
             sub_ok, sub_fail = await run_sub_refresh_notify_batch(bot)
@@ -197,66 +199,84 @@ async def start_subscription_monitor(bot: Bot):
         except Exception as e:
             bot_logger.error(f"Monitor loop critical error: {e}", exc_info=True)
         
-        # 💾 Автоматический бэкап системы
+        # 💾 Автоматический бэкап (решение раз в час, не каждые 5 мин)
         try:
-            now = datetime.utcnow()
-            
-            # Получаем время последнего бэкапа из базы данных
-            last_backup_iso = database.get_last_backup_timestamp()
-            should_backup = True
-            
-            if last_backup_iso:
-                try:
-                    last_backup_dt = datetime.fromisoformat(last_backup_iso.replace('Z', ''))
-                    hours_since_backup = (now - last_backup_dt).total_seconds() / 3600
-                    
-                    # Красивое форматирование времени
-                    if hours_since_backup < 1:
-                        time_str = f"{int(hours_since_backup * 60)} мин"
-                    elif hours_since_backup < 24:
-                        time_str = f"{hours_since_backup:.1f} ч"
-                    else:
-                        time_str = f"{hours_since_backup/24:.1f} дн"
-                    
-                    should_backup = hours_since_backup >= BACKUP_INTERVAL_HOURS
-                    
-                    if should_backup:
-                        bot_logger.backup("SCHEDULED", f"Time for backup (last: {time_str} ago)")
-                except ValueError as e:
-                    bot_logger.backup("PARSE_ERROR", f"Invalid timestamp: {last_backup_iso}", "ERROR")
-                    should_backup = True
-            else:
-                bot_logger.backup("FIRST_BACKUP", "No previous backup found")
-            
-            if should_backup:
-                # Используем универсальную функцию для создания и отправки бэкапа
-                from shop_bot.bot.handlers import create_backup_and_send
-                import os
-                
-                admin_id = os.getenv("ADMIN_TELEGRAM_ID")
-                if admin_id:
-                    success = await create_backup_and_send(bot, admin_id, is_auto=True)
-                    if success:
-                        bot_logger.backup("AUTO_COMPLETE", "Backup created and sent to admin", "OK")
-                    else:
-                        bot_logger.backup("AUTO_FAILED", "Failed to create backup", "ERROR")
+            import os
+            import time as _time
+
+            now_mono = _time.monotonic()
+            if now_mono - last_backup_decision_at >= BACKUP_CHECK_INTERVAL_SECONDS:
+                last_backup_decision_at = now_mono
+                now = datetime.now(timezone.utc)
+                last_backup_iso = database.get_last_backup_timestamp()
+                should_backup = not last_backup_iso
+
+                if last_backup_iso:
+                    try:
+                        raw = last_backup_iso.replace("Z", "+00:00")
+                        last_backup_dt = datetime.fromisoformat(raw)
+                        if last_backup_dt.tzinfo is None:
+                            last_backup_dt = last_backup_dt.replace(tzinfo=timezone.utc)
+                        hours_since_backup = (now - last_backup_dt).total_seconds() / 3600
+                        if hours_since_backup < 1:
+                            time_str = f"{int(hours_since_backup * 60)} мин"
+                        elif hours_since_backup < 24:
+                            time_str = f"{hours_since_backup:.1f} ч"
+                        else:
+                            time_str = f"{hours_since_backup / 24:.1f} дн"
+                        should_backup = hours_since_backup >= BACKUP_INTERVAL_HOURS
+                        if should_backup:
+                            bot_logger.backup(
+                                "SCHEDULED", f"Time for backup (last: {time_str} ago)"
+                            )
+                    except ValueError:
+                        bot_logger.backup(
+                            "PARSE_ERROR",
+                            f"Invalid timestamp (skip run): {last_backup_iso}",
+                            "ERROR",
+                        )
+                        should_backup = False
                 else:
-                    bot_logger.backup("NO_ADMIN", "ADMIN_TELEGRAM_ID not configured", "WARNING")
-                
-                # Очистка старых бэкапов (оставляем только файлы, не tar.gz)
-                backups_dir = Path(database.DB_FILE.parent) / 'backups'
-                if backups_dir.exists():
-                    files = sorted(backups_dir.glob('shop_bot_*.db'))
-                    if len(files) > 20:
-                        cleaned_count = 0
-                        for old in files[:-20]:
-                            try: 
-                                old.unlink()
-                                cleaned_count += 1
-                            except Exception: 
-                                pass
-                        if cleaned_count > 0:
-                            bot_logger.backup("CLEANUP", f"Removed {cleaned_count} old backup files", "OK")
+                    bot_logger.backup("FIRST_BACKUP", "No previous backup found")
+
+                if should_backup:
+                    from shop_bot.bot.handlers import create_backup_and_send
+
+                    admin_id = os.getenv("ADMIN_TELEGRAM_ID")
+                    if admin_id:
+                        success = await create_backup_and_send(
+                            bot, admin_id, is_auto=True
+                        )
+                        if success:
+                            bot_logger.backup(
+                                "AUTO_COMPLETE", "Backup saved on disk (silent)", "OK"
+                            )
+                        else:
+                            bot_logger.backup(
+                                "AUTO_FAILED", "Failed to create backup", "ERROR"
+                            )
+                    else:
+                        bot_logger.backup(
+                            "NO_ADMIN", "ADMIN_TELEGRAM_ID not configured", "WARNING"
+                        )
+
+                    backups_dir = Path(database.DB_FILE.parent) / "backups"
+                    if backups_dir.exists():
+                        files = sorted(backups_dir.glob("shop_bot_*.db"))
+                        if len(files) > 20:
+                            cleaned_count = 0
+                            for old in files[:-20]:
+                                try:
+                                    old.unlink()
+                                    cleaned_count += 1
+                                except Exception:
+                                    pass
+                            if cleaned_count > 0:
+                                bot_logger.backup(
+                                    "CLEANUP",
+                                    f"Removed {cleaned_count} old backup files",
+                                    "OK",
+                                )
         except Exception as e:
             bot_logger.backup("SYSTEM_ERROR", str(e), "ERROR")
         

@@ -1,7 +1,7 @@
 import logging
 import uuid
 from io import BytesIO
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import qrcode
 from yookassa import Payment
 import aiohttp
@@ -140,8 +140,25 @@ async def sync_panel_access_from_balance(user_id: int, balance: float) -> bool:
         add_new_key(user_id, vless_uuid, email, expiry_ms)
     return True
 
+async def notify_backup_failure(
+    bot: Bot, admin_id: str, title: str, detail: str, is_auto: bool = False
+) -> None:
+    """Telegram alert for backup failures only (no success spam)."""
+    kind = "Auto" if is_auto else "Manual"
+    text = (
+        f"❌ <b>Backup failed</b> ({kind})\n\n"
+        f"<b>{title}</b>\n"
+        f"<code>{detail[:500]}</code>\n"
+        f"🕐 {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC"
+    )
+    try:
+        await bot.send_message(chat_id=admin_id, text=text, parse_mode="HTML")
+    except Exception as e:
+        bot_logger.backup("NOTIFY_FAILED", f"Could not alert admin: {e}", "ERROR")
+
+
 async def create_backup_and_send(bot: Bot, admin_id: str, is_auto: bool = False) -> bool:
-    """Создает бэкап базы данных и отправляет админу.
+    """Create shop SQLite backup on disk. Telegram — failures only.
     
     Args:
         bot: Экземпляр бота
@@ -186,55 +203,19 @@ async def create_backup_and_send(bot: Bot, admin_id: str, is_auto: bool = False)
         # Получаем реальный IP сервера
         server_ip = "168.100.11.140"  # Можно вынести в env переменную
         
-        # Обновляем timestamp последнего бэкапа (используем UTC)
-        set_last_backup_timestamp(datetime.utcnow().isoformat())
-        bot_logger.backup("UPDATE_TIMESTAMP", "Last backup timestamp updated")
-        
-        # Создаем красивое сообщение как в Marzban
-        backup_type_text = "🤖 Auto Backup" if is_auto else "📦 Manual Backup"
-        backup_text = (
-            f"💾 <b>Backup Information</b>\n\n"
-            f"🔧 <b>Type:</b> <code>{backup_type_text}</code>\n"
-            f"🌐 <b>Server IP:</b> <code>{server_ip}</code>\n"
-            f"📁 <b>Backup File:</b> <code>{backup_name}.tar.gz</code>\n"
-            f"📅 <b>Backup Time:</b> <code>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</code>\n"
-            f"📊 <b>File Size:</b> <code>{file_size_str}</code>"
+        set_last_backup_timestamp(datetime.now(timezone.utc).isoformat())
+        bot_logger.backup(
+            "OK",
+            f"{'Auto' if is_auto else 'Manual'} backup saved: {backup_file.name} ({file_size_str})",
+            "OK",
         )
-        
-        # Auto-backup: file on disk only (no TG spam). Manual backup still sends document.
-        notify_admin = not is_auto or os.getenv("BOT_BACKUP_NOTIFY", "").strip() in (
-            "1",
-            "true",
-            "yes",
-        )
-        if notify_admin:
-            bot_logger.backup("SEND_TO_ADMIN", f"Sending backup ({file_size_str})")
-            try:
-                with open(backup_file, 'rb') as f:
-                    backup_document = BufferedInputFile(
-                        f.read(), filename=f"{backup_name}.tar.gz"
-                    )
-                await bot.send_document(
-                    chat_id=admin_id,
-                    document=backup_document,
-                    caption=backup_text,
-                )
-                bot_logger.backup(
-                    "SUCCESS", f"Backup sent: {backup_file.name} ({file_size_str})", "OK"
-                )
-            except Exception as e:
-                bot_logger.backup("SEND_FAILED", f"Failed to send: {e}", "ERROR")
-                return False
-        else:
-            bot_logger.backup(
-                "SILENT",
-                f"Auto backup saved locally: {backup_file.name} ({file_size_str})",
-                "OK",
-            )
         return True
         
     except Exception as e:
         bot_logger.backup("CRITICAL_ERROR", f"Backup creation failed: {e}", "ERROR")
+        await notify_backup_failure(
+            bot, admin_id, "Shop bot SQLite backup", str(e), is_auto=is_auto
+        )
         return False
 
 admin_router = Router()
@@ -801,7 +782,7 @@ async def admin_backup_handler(callback: types.CallbackQuery):
     success = await create_backup_and_send(callback.bot, ADMIN_ID, is_auto=False)
     
     if success:
-        final_text = "✅ Бэкап успешно создан и отправлен!"
+        final_text = "✅ Бэкап создан на сервере (в TG — только при ошибке)."
     else:
         final_text = "❌ " + user_messages.ERR_ADMIN_BACKUP
     
