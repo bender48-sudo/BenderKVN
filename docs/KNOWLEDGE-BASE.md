@@ -9,7 +9,7 @@
 | Что нужно | Документ / артефакт |
 |-----------|---------------------|
 | Очередь задач по приоритетам | **`docs/COMMERCIAL-BACKLOG.md`** |
-| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **Q030** (**P3-RED-JURIS-01**); ручное: **`docs/MANUAL-OWNER-CHECKLIST.md`** |
+| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **Q031** (**P5-COM-01**); ручное: **`docs/MANUAL-OWNER-CHECKLIST.md`** |
 | Правило: одна задача → коммит → стоп | **`docs/POLICY-SEQUENTIAL-WORK.md`** |
 | Журнал «что уже сделали на проде» | тот же файл, **§12** |
 | Очередь capacity (users/nodes vs §10.1) | `python ops/capacity_snapshot.py` (токен в `.secrets/panel-token.txt`) |
@@ -37,6 +37,7 @@
 | Онбординг пользователя / поддержка первого коннекта | **`docs/ONBOARDING.md`** |
 | Реестр секретов и путей на хостах | **`docs/SECRETS.md`** |
 | Инциденты (роли, первый ответ) | **`docs/RUNBOOK-INCIDENT.md`** |
+| VPS / платёжка / DNS отключили за день (P3-RED-JURIS) | **`docs/JURISDICTION-FAILOVER-WIKI.md`**, **`docs/RUNBOOK-JURISDICTION-FAILOVER.md`**, tabletop **`docs/TABLETOP-JURISDICTION-EXERCISE.md`** |
 | Ротация панели + LV legacy архив | **`docs/RUNBOOK-P0-SEC04-SEC05.md`** |
 | Смена **`REMNA_API_TOKEN`** без 502 | **`docs/RUNBOOK-REMNA-API-TOKEN.md`** |
 | Логи Caddy без сырого **`/api/sub/`** в access-log | **`docs/RUNBOOK-CADDY-SUBSCRIPTION-LOGS.md`** |

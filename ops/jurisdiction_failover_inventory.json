@@ -1,0 +1,38 @@
+{
+  "task_id": "P3-RED-JURIS-01",
+  "version": "2026-05-17",
+  "required_docs": [
+    "docs/JURISDICTION-FAILOVER-WIKI.md",
+    "docs/RUNBOOK-JURISDICTION-FAILOVER.md",
+    "docs/TABLETOP-JURISDICTION-EXERCISE.md"
+  ],
+  "required_doc_sections": {
+    "docs/RUNBOOK-JURISDICTION-FAILOVER.md": [
+      "§ A — отключили один VPS",
+      "§ B — отключили платёжку",
+      "AMS compose/env"
+    ],
+    "docs/JURISDICTION-FAILOVER-WIKI.md": [
+      "mermaid",
+      "RUNBOOK-JURISDICTION-FAILOVER"
+    ],
+    "docs/TABLETOP-JURISDICTION-EXERCISE.md": [
+      "Сценарий 1",
+      "Сценарий 2",
+      "§12"
+    ]
+  },
+  "cross_links": [
+    "RUNBOOK-DNS-RED-TEAM",
+    "RUNBOOK-AMS-SAFE-DEPLOY",
+    "RUNBOOK-P6-SUBSCRIPTION-MULTI-ORIGIN",
+    "RUNBOOK-BACKUP-REMNAWAVE",
+    "RUNBOOK-INCIDENT"
+  ],
+  "hosts": {
+    "bvpn_lv": { "ip": "176.126.162.158", "ssh_port": 3333 },
+    "bvpn_ams": { "ip": "168.100.11.140", "ssh_port": 3344 }
+  },
+  "critical_fqdn": ["k9x2m1.conntest.xyz", "p4n7q.conntest.xyz"],
+  "payment_channels": ["YooKassa", "Telegram Stars", "crypto"]
+}

@@ -128,7 +128,7 @@
 | ~~**P6-RED-PAY-01**~~ ✅ | **Очередь платежей бота**: webhook **idempotency**, DLQ, чтобы TG‑бот не был узким горлышком при всплеске продаж. | **2026-05-16:** **`PaymentWebhookQueue`**, таблица **`webhook_deliveries`**, деплой **`deploy-bot-payment-webhook-ams.ps1`**, smoke **`WEBHOOK_PAY_IDEMPOTENCY_OK`**. |
 | **P6-RED-PAY-02** | **Auth webhook (доп. к PAY-01)**: проверка подписи **YooKassa** (и иных включённых PSP); **IP allowlist** / только reverse proxy на **`/yookassa-webhook`**, **`/crypto-webhook`**, **`/cryptobot-webhook`**; Flask **:1488** не слушает публично; отклонение подделанного payload без начисления баланса. | Код в **`bot_src/webhook_server/`**; **`ops/smoke_webhook_auth_ams.py`** → **`WEBHOOK_AUTH_OK`**; runbook в **`RUNBOOK-COMMERCE-GO-LIVE`** или **`docs/SECRETS.md`** § webhook. |
 | **P3-RED-MIN-01** | **Минимизация данных пользователя**: где юридически возможно — развязать платёжный след и тех‑UUID; явная политика «что не собираем». | Страница политики + внутренний чеклист полей БД. |
-| **P3-RED-JURIS-01** | **Гео‑ и провайнер‑диверсификация**: runbook «нас отключил один VPS/агентство платежей за день» — перенос DNS/IP без зависимости от одной юрисдикции. | Wiki + tabletop exercise раз в год. |
+| ~~**P3-RED-JURIS-01**~~ ✅ | **Гео‑ и провайнер‑диверсификация**: runbook «нас отключил один VPS/агентство платежей за день» — перенос DNS/IP без зависимости от одной юрисдикции. | **2026-05-17:** **`JURISDICTION-FAILOVER-WIKI`**, **`RUNBOOK-JURISDICTION-FAILOVER`**, **`TABLETOP-JURISDICTION-EXERCISE`**; smoke **`JURIS_FAILOVER_OK`**. Tabletop на проде — **1×/год** (календарь владельца). |
 | **P5-RED-RD-01** | **R&D**: PoC канала bootstrap по модели **эфемерных посредников** (идеология [**Snowflake**](https://github.com/cohosh/snowflake)) — только для получения статуса/нового endpoint’а, не замена нодам. | Внутренний doc go/no-go + оценка стоимости поддержки. |
 
 ### 5.2 Смена `REMNA_API_TOKEN` без регресса (после остального бэклога)
@@ -262,9 +262,9 @@
 
 **Закрыто (фаза 1):** **P0**, **P1**, большинство **P2/P6**, **§5.3** коммерция, **P2/P6-RED** из Q001–Q022. **`docs/P1-POST-AUDIT.md`** — **2026-05-16**.
 
-**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q030`** (**P3-RED-JURIS-01**), затем **P5-COM-01**. Ручные хвосты: **`docs/MANUAL-OWNER-CHECKLIST.md`**.
+**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q031`** (**P5-COM-01**). Ручные хвосты: **`docs/MANUAL-OWNER-CHECKLIST.md`**.
 
-**Открыто (фаза 2):** **P3-RED-JURIS**, **P5-COM-01**; gate **safe-deploy** (Q023).
+**Открыто (фаза 2):** **P5-COM-01**; gate **safe-deploy** (Q023).
 
 **Параллельно:** **P4-DNS-01…06** (mobile), отдельный владелец.
 
@@ -276,6 +276,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-17 | **P3-RED-JURIS-01 — DONE (Q030):** wiki + runbook VPS/PSP failover, tabletop template; **`jurisdiction_failover_audit.py`** → **`JURIS_FAILOVER_OK`**. **NEXT=Q031** P5-COM-01. |
 | 2026-05-17 | **P3-RED-MIN-01 — DONE (Q029):** **`DATA-MINIMIZATION-POLICY`**, **`DATA-INVENTORY-INTERNAL`**, **`payload_redact`**; smoke **`DATA_MINIMIZATION_OK`**. **NEXT=Q030** P3-RED-JURIS-01. |
 | 2026-05-17 | **P1-RED-SEC-01 — DONE (Q028):** **`remna_credential_broker.py`** на LV (TTL **3600s**, audit log); **ru-monitor** + **balancer**; smoke **`SHORT_LIVED_TOKEN_OK`**. **NEXT=Q029** P3-RED-MIN-01. |
 | 2026-05-17 | **P1-RED-DATA-01 — DONE (Q027):** LUKS2 **`postgres.luks.img`** → **`/mnt/remnawave-pgdata`**; compose bind mount; **`POSTGRES_CRYPT_OK`** + **`AMS_SAFE_DEPLOY_OK`**; ключ только Bitwarden. **NEXT=Q028** P1-RED-SEC-01. |

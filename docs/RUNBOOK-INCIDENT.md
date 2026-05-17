@@ -55,4 +55,5 @@
 ## Эскалация
 
 - Если подозревается компрометация / утечка секретов — **немедленно** **`docs/SECRETS.md`**, задачи **P0-SEC-***.
+- **Отключили VPS / платёжку / регистратор** (юрисдикция, провайдер) — **`docs/RUNBOOK-JURISDICTION-FAILOVER.md`**, wiki **`docs/JURISDICTION-FAILOVER-WIKI.md`**; ежегодное учение — **`docs/TABLETOP-JURISDICTION-EXERCISE.md`**.
 - После mitigation — строка в **`docs/COMMERCIAL-BACKLOG.md` §12** (дата, что случилось, что сделали).

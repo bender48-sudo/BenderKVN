@@ -58,8 +58,8 @@
 | 027 | **P1-RED-DATA-01** | **DONE** | LUKS2 том Postgres AMS; ключ в Bitwarden; probe + safe-deploy | **POSTGRES_CRYPT_OK** §12 | **`POSTGRES-ENCRYPTION-AMS`** |
 | 028 | **P1-RED-SEC-01** | **DONE** | Broker TTL+audit; ru-monitor + balancer на LV | **SHORT_LIVED_TOKEN_OK** §12 | **`RUNBOOK-SHORT-LIVED-CREDS`** |
 | 029 | **P3-RED-MIN-01** | **DONE** | Политика + инвентарь полей; redact webhook; audit | **DATA_MINIMIZATION_OK** §12 | **`DATA-MINIMIZATION-POLICY`** |
-| 030 | **P3-RED-JURIS-01** | **NEXT** | Runbook «один VPS/платёжка отключили за день» | wiki + tabletop §12 | **§5.1** |
-| 031 | **P5-COM-01** | **TODO** | Публичный статус инцидентов (не только TG/mirror) | URL **200** без админ-TG §12 | **§9** |
+| 030 | **P3-RED-JURIS-01** | **DONE** | Wiki + runbook VPS/PSP; tabletop шаблон; audit | **JURIS_FAILOVER_OK** §12 | **`JURISDICTION-FAILOVER-WIKI`** |
+| 031 | **P5-COM-01** | **NEXT** | Публичный статус инцидентов (не только TG/mirror) | URL **200** без админ-TG §12 | **§9** |
 
 **Gate (не отдельный Q):** любой накат AMS compose/env — только по **`RUNBOOK-AMS-SAFE-DEPLOY`** (закрепляется **Q023**).
 
@@ -140,3 +140,4 @@
 | 2026-05-17 | **Q027** P1-RED-DATA-01 | **Q028** P1-RED-SEC-01 |
 | 2026-05-17 | **Q028** P1-RED-SEC-01 | **Q029** P3-RED-MIN-01 |
 | 2026-05-17 | **Q029** P3-RED-MIN-01 | **Q030** P3-RED-JURIS-01 |
+| 2026-05-17 | **Q030** P3-RED-JURIS-01 | **Q031** P5-COM-01 |
