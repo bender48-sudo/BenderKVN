@@ -94,8 +94,94 @@ recover() {
     if [ -f "$state_file" ]; then
         _tg_send "$message"
         rm -f "$state_file"
+        date +%s >"$STATE_DIR/cooldown_${check_name}"
+        rm -f "$STATE_DIR/fail_streak_${check_name}" "$STATE_DIR/ok_streak_${check_name}"
         log "RECOVERED: $check_name"
     fi
+}
+
+# Anti-flap: N failures → one ALERT; M successes while alerting → one RECOVERED.
+# After RECOVERED, cooldown suppresses new ALERT (short blips at night).
+FAIL_STREAK_THRESHOLD="${FAIL_STREAK_THRESHOLD:-3}"
+OK_STREAK_THRESHOLD="${OK_STREAK_THRESHOLD:-2}"
+RE_ALERT_COOLDOWN_SEC="${RE_ALERT_COOLDOWN_SEC:-900}"
+
+_streak_bump() {
+    local f="$1"
+    local n=1
+    if [ -f "$f" ]; then
+        n=$(($(cat "$f" 2>/dev/null || echo 0) + 1))
+    fi
+    echo "$n" >"$f"
+    echo "$n"
+}
+
+monitor_check_ok() {
+    local name="$1"
+    local recover_msg="$2"
+    local ok_need="${3:-$OK_STREAK_THRESHOLD}"
+
+    rm -f "$STATE_DIR/fail_streak_${name}"
+
+    if [ ! -f "$STATE_DIR/alert_${name}" ]; then
+        rm -f "$STATE_DIR/ok_streak_${name}"
+        return 0
+    fi
+
+    local n
+    n=$(_streak_bump "$STATE_DIR/ok_streak_${name}")
+    if [ "$n" -ge "$ok_need" ]; then
+        recover "$name" "$recover_msg"
+    fi
+}
+
+monitor_check_fail() {
+    local name="$1"
+    local alert_msg="$2"
+    local fail_need="${3:-$FAIL_STREAK_THRESHOLD}"
+
+    rm -f "$STATE_DIR/ok_streak_${name}"
+
+    if [ -f "$STATE_DIR/alert_${name}" ]; then
+        return 0
+    fi
+
+    local cd="$STATE_DIR/cooldown_${name}"
+    if [ -f "$cd" ]; then
+        local now last
+        now=$(date +%s)
+        last=$(cat "$cd" 2>/dev/null || echo 0)
+        if [ "$((now - last))" -lt "$RE_ALERT_COOLDOWN_SEC" ]; then
+            return 0
+        fi
+    fi
+
+    local n
+    n=$(_streak_bump "$STATE_DIR/fail_streak_${name}")
+    if [ "$n" -ge "$fail_need" ]; then
+        alert "$name" "$alert_msg"
+        rm -f "$STATE_DIR/fail_streak_${name}"
+    fi
+}
+
+_curl_http() {
+    curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 "$@" 2>/dev/null
+}
+
+_http_probe_retries() {
+    local tries="${1:-3}"
+    shift
+    local code attempt=0
+    while [ "$attempt" -lt "$tries" ]; do
+        attempt=$((attempt + 1))
+        code=$(_curl_http "$@")
+        if [ "$code" = "200" ] || [ "$code" = "304" ]; then
+            echo "$code"
+            return 0
+        fi
+        [ "$attempt" -lt "$tries" ] && sleep 2
+    done
+    echo "${code:-0}"
 }
 
 NOW=$(date '+%Y-%m-%d %H:%M UTC')
@@ -114,22 +200,22 @@ xray_core_ok() {
 # CHECK 1–2: XRay Latvia — remnanode, xray core, :443 / :8443
 # ==========================================
 if remnanode_is_running && xray_core_ok; then
-    recover "xray_lv_remnanode" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s remnanode + Xray — OK\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_LV" "$NOW")"
-    recover "xray_lv_core" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s Xray core — OK\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_LV" "$NOW")"
+    monitor_check_ok "xray_lv_remnanode" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s remnanode + Xray — OK\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_LV" "$NOW")"
+    monitor_check_ok "xray_lv_core" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s Xray core — OK\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_LV" "$NOW")"
     if ss -tlnp | grep -q ":443 "; then
-        recover "xray_lv_443" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s XRay :443 — back up\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_LV" "$NOW")"
+        monitor_check_ok "xray_lv_443" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s XRay :443 — back up\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_LV" "$NOW")"
     else
-        alert "xray_lv_443" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s XRay :443 — port closed\n🕐 %s\n🖥 176.126.162.158' "$ICON_ALERT" "$ICON_RED" "$FLAG_LV" "$NOW")"
+        monitor_check_fail "xray_lv_443" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s XRay :443 — port closed\n🕐 %s\n🖥 176.126.162.158' "$ICON_ALERT" "$ICON_RED" "$FLAG_LV" "$NOW")"
     fi
     if ss -tlnp | grep -q ":8443 "; then
-        recover "xray_lv_8443" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s XRay :8443 — back up\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_LV" "$NOW")"
+        monitor_check_ok "xray_lv_8443" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s XRay :8443 — back up\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_LV" "$NOW")"
     else
-        alert "xray_lv_8443" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s XRay :8443 — port closed\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_LV" "$NOW")"
+        monitor_check_fail "xray_lv_8443" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s XRay :8443 — port closed\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_LV" "$NOW")"
     fi
 elif ! remnanode_is_running; then
-    alert "xray_lv_remnanode" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s remnanode — not running\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_LV" "$NOW")"
+    monitor_check_fail "xray_lv_remnanode" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s remnanode — not running\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_LV" "$NOW")"
 elif ! xray_core_ok; then
-    alert "xray_lv_core" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s Xray core — dead in container\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_LV" "$NOW")"
+    monitor_check_fail "xray_lv_core" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s Xray core — dead in container\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_LV" "$NOW")"
 fi
 
 # ==========================================
@@ -158,21 +244,19 @@ fi
 # ==========================================
 # CHECK 5: Subscription endpoint
 # ==========================================
-SUB_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 \
-    "$SUB_MONITOR_PROBE_URL" 2>/dev/null)
+SUB_STATUS=$(_http_probe_retries 3 "$SUB_MONITOR_PROBE_URL")
 if [ "$SUB_STATUS" = "200" ]; then
-    recover "subscription" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s Subscription — back up (HTTP 200)\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$NOW")"
+    monitor_check_ok "subscription" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s Subscription — back up (HTTP 200)\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$NOW")"
 else
-    alert "subscription" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s Subscription — DOWN (HTTP %s)\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "${SUB_STATUS:-timeout}" "$NOW")"
+    monitor_check_fail "subscription" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s Subscription — DOWN (HTTP %s)\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "${SUB_STATUS:-timeout}" "$NOW")"
 fi
 
 # CHECK 5b: Alternate subscription origin (P2-RED-SUB-01)
-SUB_ALT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 \
-    "$SUB_ALT_MONITOR_PROBE_URL" 2>/dev/null)
+SUB_ALT_STATUS=$(_http_probe_retries 3 "$SUB_ALT_MONITOR_PROBE_URL")
 if [ "$SUB_ALT_STATUS" = "200" ]; then
-    recover "subscription_alt" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s alt subscription — back up\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_NL" "$NOW")"
+    monitor_check_ok "subscription_alt" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s alt subscription — back up\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_NL" "$NOW")"
 else
-    alert "subscription_alt" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s alt subscription — DOWN (HTTP %s)\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_NL" "${SUB_ALT_STATUS:-timeout}" "$NOW")"
+    monitor_check_fail "subscription_alt" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s alt subscription — DOWN (HTTP %s)\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_NL" "${SUB_ALT_STATUS:-timeout}" "$NOW")"
 fi
 
 # ==========================================
@@ -181,31 +265,31 @@ fi
 SELFSTEAL=$(curl -sk -o /dev/null -w "%{http_code}" --connect-timeout 5 \
     --resolve "id.x5.ru:9443:127.0.0.1" https://id.x5.ru:9443 2>/dev/null)
 if [ "$SELFSTEAL" = "200" ]; then
-    recover "selfsteal_lv" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s Selfsteal — back up\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_LV" "$NOW")"
+    monitor_check_ok "selfsteal_lv" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s Selfsteal — back up\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_LV" "$NOW")"
 else
-    alert "selfsteal_lv" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s Selfsteal — DOWN (HTTP %s)\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_LV" "${SELFSTEAL:-timeout}" "$NOW")"
+    monitor_check_fail "selfsteal_lv" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s Selfsteal — DOWN (HTTP %s)\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_LV" "${SELFSTEAL:-timeout}" "$NOW")"
 fi
 
 # ==========================================
 # CHECK 7: Relay tunnel
 # ==========================================
 if nc -zw5 72.56.0.145 443 2>/dev/null; then
-    recover "relay_443" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s Relay :443 — back up\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_RU" "$NOW")"
+    monitor_check_ok "relay_443" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s Relay :443 — back up\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_RU" "$NOW")"
 else
-    alert "relay_443" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s Relay :443 — unreachable\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_RU" "$NOW")"
+    monitor_check_fail "relay_443" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s Relay :443 — unreachable\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_RU" "$NOW")"
 fi
 
 # ==========================================
 # CHECK 8: Remnawave panel API
 # ==========================================
-PANEL_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 \
+PANEL_STATUS=$(_http_probe_retries 3 \
     -H "Authorization: Bearer ${PANEL_TOKEN}" \
     -H "X-Forwarded-Proto: https" -H "X-Forwarded-For: 127.0.0.1" \
-    "${PANEL_URL}/api/nodes" 2>/dev/null)
+    "${PANEL_URL}/api/nodes")
 if [ "$PANEL_STATUS" = "200" ]; then
-    recover "panel" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s Remnawave panel — back up\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_AMS" "$NOW")"
+    monitor_check_ok "panel" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s Remnawave panel — back up\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_AMS" "$NOW")"
 else
-    alert "panel" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s Remnawave panel — DOWN (HTTP %s)\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_AMS" "${PANEL_STATUS:-timeout}" "$NOW")"
+    monitor_check_fail "panel" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s Remnawave panel — DOWN (HTTP %s)\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_AMS" "${PANEL_STATUS:-timeout}" "$NOW")"
 fi
 
 # ==========================================
@@ -213,9 +297,9 @@ fi
 # ==========================================
 DISK_USAGE=$(df / | awk 'NR==2 {print $5}' | tr -d '%')
 if [ "$DISK_USAGE" -lt 90 ] 2>/dev/null; then
-    recover "disk_lv" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s Disk — %s%%\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_LV" "$DISK_USAGE" "$NOW")"
+    monitor_check_ok "disk_lv" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s Disk — %s%%\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_LV" "$DISK_USAGE" "$NOW")"
 else
-    alert "disk_lv" "$(printf '%s <b>BenderVPN WARNING</b>\n\n%s %s Disk — %s%%\n🕐 %s' "$ICON_WARN" "$FLAG_LV" "$DISK_USAGE" "$NOW")"
+    monitor_check_fail "disk_lv" "$(printf '%s <b>BenderVPN WARNING</b>\n\n%s %s Disk — %s%%\n🕐 %s' "$ICON_WARN" "$FLAG_LV" "$DISK_USAGE" "$NOW")"
 fi
 
 # ==========================================
@@ -224,9 +308,9 @@ fi
 BOT_RUNNING=$(ssh -i "$AMS_SSH_KEY" -p "$AMS_SSH_PORT" -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
     root@"$AMS_IP" 'docker ps --format "{{.Names}}" | grep -c remna-shop-bot' 2>/dev/null || echo 0)
 if [ "$BOT_RUNNING" -gt 0 ] 2>/dev/null; then
-    recover "bot" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s Telegram bot — back up\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_AMS" "$NOW")"
+    monitor_check_ok "bot" "$(printf '%s <b>BenderVPN RECOVERED</b>\n\n%s %s Telegram bot — back up\n🕐 %s' "$ICON_OK" "$ICON_GREEN" "$FLAG_AMS" "$NOW")"
 else
-    alert "bot" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s Telegram bot — DOWN\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_AMS" "$NOW")"
+    monitor_check_fail "bot" "$(printf '%s <b>BenderVPN ALERT</b>\n\n%s %s Telegram bot — DOWN\n🕐 %s' "$ICON_ALERT" "$ICON_RED" "$FLAG_AMS" "$NOW")"
 fi
 
 log "Monitor check completed"
