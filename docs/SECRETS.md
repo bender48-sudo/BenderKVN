@@ -23,6 +23,7 @@
 | `WEBHOOK_BIND_HOST` | runtime бота (не vault) | По умолчанию **`127.0.0.1`** — Flask **:1488** не слушает WAN; nginx на AMS проксирует. | Код **`bot_src/main.py`**. | Не менять без runbook. |
 | `WEBHOOK_ALLOWED_IPS` | runtime (опционально) | Доп. CIDR если webhook слушает не только loopback. | ops | Редко. |
 | DNS registrar recovery | Bitwarden only | Dynadot + reserve registrar 2FA/recovery codes | **`docs/DNS-CRITICAL-NAMES.md`**, **`docs/RUNBOOK-DNS-RED-TEAM.md` §4** | Офлайн-копия обязательна; не только email VPS-хостера. |
+| Postgres LUKS (AMS) | Bitwarden only | Passphrase для **`/opt/remnawave/postgres.luks.img`** | **`BenderVPN/ams/postgres-luks-key`**, **`docs/RUNBOOK-POSTGRES-LUKS-AMS.md`** | **Не** хранить на AMS; после reboot — **`ams_postgres_luks_unlock.sh`**. |
 
 ## 2. Где НА САМОМ ДЕЛЕ хранятся текущие значения
 

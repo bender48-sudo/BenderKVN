@@ -55,8 +55,8 @@
 | 024 | **P6-RED-PAY-02** | **DONE** | Webhook: YooKassa API verify + IP/proxy; Flask **127.0.0.1:1488**; crypto secret | **WEBHOOK_AUTH_OK** §12 | **§5.1**, **`RUNBOOK-COMMERCE-GO-LIVE` §2** |
 | 025 | **P1-RED-SSH-01** | **DONE** | Per-host ключи LV/AMS/NL; legacy shared key снят; audit с панели + workstation | **SSH_AUDIT_OK** §12 | **§5.1**, **`SSH-KEY-INVENTORY`** |
 | 026 | **P1-RED-DNS-01** | **DONE** | ≥2 регистратора в wiki; DNSSEC runbook; probe делегирования на LV | **DNS_DELEGATION_OK** §12 | **§5.1**, **`DNS-CRITICAL-NAMES`** |
-| 027 | **P1-RED-DATA-01** | **NEXT** | Шифрование тома Postgres AMS; ключ не на том же VPS | схема + прод включено §12 | **§5.1** |
-| 028 | **P1-RED-SEC-01** | **TODO** | Пилот short-lived creds (мониторинг → панель) | runbook + 1 workload §12 | **§5.1** |
+| 027 | **P1-RED-DATA-01** | **DONE** | LUKS2 том Postgres AMS; ключ в Bitwarden; probe + safe-deploy | **POSTGRES_CRYPT_OK** §12 | **`POSTGRES-ENCRYPTION-AMS`** |
+| 028 | **P1-RED-SEC-01** | **NEXT** | Пилот short-lived creds (мониторинг → панель) | runbook + 1 workload §12 | **§5.1** |
 | 029 | **P3-RED-MIN-01** | **TODO** | Политика минимизации данных + чеклист полей БД | privacy + internal checklist §12 | **§5.1** |
 | 030 | **P3-RED-JURIS-01** | **TODO** | Runbook «один VPS/платёжка отключили за день» | wiki + tabletop §12 | **§5.1** |
 | 031 | **P5-COM-01** | **TODO** | Публичный статус инцидентов (не только TG/mirror) | URL **200** без админ-TG §12 | **§9** |
@@ -137,3 +137,4 @@
 | 2026-05-17 | **Q024** P6-RED-PAY-02 | **Q025** P1-RED-SSH-01 |
 | 2026-05-17 | **Q025** P1-RED-SSH-01 | **Q026** P1-RED-DNS-01 |
 | 2026-05-17 | **Q026** P1-RED-DNS-01 | **Q027** P1-RED-DATA-01 |
+| 2026-05-17 | **Q027** P1-RED-DATA-01 | **Q028** P1-RED-SEC-01 |

@@ -48,7 +48,8 @@ services:
         ports:
             - '127.0.0.1:6767:5432'
         volumes:
-            - remnawave-db-data:/var/lib/postgresql/data
+            # P1-RED-DATA-01: LUKS at /mnt/remnawave-pgdata (see docs/RUNBOOK-POSTGRES-LUKS-AMS.md)
+            - /mnt/remnawave-pgdata:/var/lib/postgresql/data
         healthcheck:
             test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
             interval: 3s

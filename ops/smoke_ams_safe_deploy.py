@@ -32,7 +32,7 @@ from panel_client import PanelClient  # noqa: E402
 
 AMS = "root@168.100.11.140"
 SSH_PORT = "3344"
-SSH_KEY = Path.home() / ".ssh" / "id_ed25519"
+SSH_KEY = Path.home() / ".ssh" / "bvpn_ams_ed25519"
 def _lf(text: str) -> str:
     return text.replace("\r\n", "\n").replace("\r", "\n")
 
@@ -174,6 +174,13 @@ def check_sub_edges() -> tuple[bool, str]:
     return True, f"sub edges OK ({len(site_urls.sub_all_probe_urls())} origins)"
 
 
+def check_postgres_luks() -> tuple[bool, str]:
+    code, out = _ssh("python3 /opt/scripts/ams_postgres_crypt_probe.py 2>&1", timeout=30)
+    if code == 0 and "POSTGRES_CRYPT_OK" in out:
+        return True, "POSTGRES_CRYPT_OK"
+    return False, out[-400:]
+
+
 def check_sub_load_probe() -> tuple[bool, str]:
     probe = ROOT / "ops" / "subscription_load_probe.py"
     proc = subprocess.run(
@@ -207,6 +214,7 @@ def main() -> int:
         ("ams_bundle", check_ams_bundle),
         ("panel_api", check_panel_api),
         ("sub_edges", check_sub_edges),
+        ("postgres_luks", check_postgres_luks),
     ]:
         ok, detail = fn()
         checks.append((name, ok, detail))
