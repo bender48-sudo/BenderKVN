@@ -30,9 +30,11 @@ ssh -i $env:USERPROFILE\.ssh\bvpn_ams_ed25519 -p 3344 root@168.100.11.140 "hostn
 ```powershell
 .\scripts\ssh-smoke-test.ps1
 python ops/ssh_audit.py
+# С панели AMS (NL + AMS; LV — с workstation):
+pwsh -File ops/ssh_audit_from_ams.ps1
 ```
 
-Ожидается **`SSH_AUDIT_OK`**.
+Ожидается **`SSH_AUDIT_OK`**. Синхронизация ключей: **`ops/ssh_sync_operator_keys.ps1`**.
 
 ## 4. Убрать legacy shared key (после входа новыми ключами)
 

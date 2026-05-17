@@ -14,6 +14,13 @@ from pathlib import Path
 # EU prod hosts (SSH config aliases). Relay excluded — separate blast domain.
 PROD_HOSTS = ("bvpn-lv", "bvpn-ams", "bvpn-nl")
 
+# Per-host operator keys (P1-RED-SSH-01); override via env if needed.
+_HOST_IDENTITY: dict[str, Path] = {
+    "bvpn-lv": Path.home() / ".ssh" / "bvpn_lv_ed25519",
+    "bvpn-ams": Path.home() / ".ssh" / "bvpn_ams_ed25519",
+    "bvpn-nl": Path.home() / ".ssh" / "bvpn_nl",
+}
+
 KEY_LINE = re.compile(
     r"^(?:(?:no-)?[-a-z]+(?:,(?:no-)?[-a-z]+)*\s+)?"
     r"(ssh-(?:ed25519|rsa)|ecdsa-sha2-nistp256)\s+([A-Za-z0-9+/=]+)"
@@ -41,18 +48,14 @@ class PubKey:
 
 def _fetch_authorized(host: str, timeout: int = 12) -> str:
     # Full `cat` can hang on some hosts (sshd/audit); head is enough for audit.
-    remote = "head -n 50 /root/.ssh/authorized_keys 2>/dev/null || true"
-    cmd = [
-        "ssh",
-        "-o",
-        "BatchMode=yes",
-        "-o",
-        f"ConnectTimeout={timeout}",
-        "-o",
-        "StrictHostKeyChecking=accept-new",
-        host,
-        remote,
-    ]
+    # LV: `head -n` can hang; byte cap is reliable.
+    remote = "head -c 4096 /root/.ssh/authorized_keys 2>/dev/null || true"
+    cmd = ["ssh", "-o", "BatchMode=yes", "-o", f"ConnectTimeout={timeout}",
+           "-o", "StrictHostKeyChecking=accept-new"]
+    ident = _HOST_IDENTITY.get(host)
+    if ident and ident.is_file():
+        cmd.extend(["-i", str(ident), "-o", "IdentitiesOnly=yes"])
+    cmd.extend([host, remote])
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout + 5)
     out = (proc.stdout or "").strip()
     if proc.returncode != 0 and not out:

@@ -262,9 +262,9 @@
 
 **Закрыто (фаза 1):** **P0**, **P1**, большинство **P2/P6**, **§5.3** коммерция, **P2/P6-RED** из Q001–Q022. **`docs/P1-POST-AUDIT.md`** — **2026-05-16**.
 
-**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q025`** (**P1-RED-SSH-01**), затем **P1-RED-*** по фазе 2. Правило: **`docs/POLICY-SEQUENTIAL-WORK.md`**.
+**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q026`** (**P1-RED-DNS-01**), затем **P1-RED-*** по фазе 2. Правило: **`docs/POLICY-SEQUENTIAL-WORK.md`**.
 
-**Открыто (фаза 2):** **P1-RED-DATA/SEC/SSH/DNS**, **P3-RED-***, **P5-COM-01**; gate **safe-deploy** (Q023).
+**Открыто (фаза 2):** **P1-RED-DATA/SEC/DNS**, **P3-RED-***, **P5-COM-01**; gate **safe-deploy** (Q023).
 
 **Параллельно:** **P4-DNS-01…06** (mobile), отдельный владелец.
 
@@ -276,6 +276,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-17 | **P1-RED-SSH-01 — DONE (Q025):** per-host **`bvpn_lv_ed25519`** / **`bvpn_ams_ed25519`**; legacy shared key снят с LV+AMS; **`ops/ssh_audit.py`** + **`ssh_audit_from_ams.sh`** → **`SSH_AUDIT_OK`** (AMS+NL с панели, все три с workstation). **NEXT=Q026** P1-RED-DNS-01. |
 | 2026-05-17 | **P6-RED-PAY-02 — DONE (Q024):** **`webhook_server/auth.py`** — loopback allowlist, YooKassa **`Payment.find_one`**, **`CRYPTO_WEBHOOK_SECRET`**; Flask **`WEBHOOK_BIND_HOST=127.0.0.1`**; smoke **`WEBHOOK_AUTH_OK`**. **NEXT=Q025** P1-RED-SSH-01. |
 | 2026-05-17 | **P2-OPS-AMS-SAFE-DEPLOY-01 — DONE (Q023):** **`ops/smoke_ams_safe_deploy.py`** + **`ops/ams_safe_deploy_bundle.sh`**; runbook §3 smoke + §4 урок **502/P1000**; прод **`AMS_SAFE_DEPLOY_OK`**. **NEXT=Q024** P6-RED-PAY-02. |
 | 2026-05-17 | **Фаза 2 очереди:** в **`BACKLOG-QUEUE.md`** добавлены **Q023–Q031**; **NEXT=Q023** (**P2-OPS-AMS-SAFE-DEPLOY-01**). В бэклог — **P6-RED-PAY-02** (webhook auth); **§5.1** / **§11** / **§8 P4** синхронизированы; **P6-SCALE-06** → ✅ в §10.2. |
