@@ -28,7 +28,8 @@ $WebhookAppMain = Join-Path $RepoRoot "bot_src\webhook_server\app.py"
 $WebhookAuth = Join-Path $RepoRoot "bot_src\webhook_server\auth.py"
 $WebhookPayQ = Join-Path $RepoRoot "bot_src\webhook_server\payment_queue.py"
 $WebhookPayAmt = Join-Path $RepoRoot "bot_src\webhook_server\payment_amount_verify.py"
-foreach ($f in @($Handlers, $UserMsgs, $Scheduler, $Keyboards, $MainPy, $ConfigPy, $PortalLinks, $PortalWebTrial, $WebTrialDb, $WebTgBind, $VpnWizard, $SubQr, $AutoRenew, $SupportAuth, $SupportHandler, $RemnaApi, $Database, $WebhookApp, $WebhookAppMain, $WebhookAuth, $WebhookPayQ, $WebhookPayAmt)) {
+$PortalCabinet = Join-Path $RepoRoot "bot_src\portal_cabinet.py"
+foreach ($f in @($Handlers, $UserMsgs, $Scheduler, $Keyboards, $MainPy, $ConfigPy, $PortalLinks, $PortalWebTrial, $WebTrialDb, $WebTgBind, $VpnWizard, $SubQr, $AutoRenew, $SupportAuth, $SupportHandler, $RemnaApi, $PortalCabinet, $Database, $WebhookApp, $WebhookAppMain, $WebhookAuth, $WebhookPayQ, $WebhookPayAmt)) {
     if (-not (Test-Path $f)) { throw "Missing: $f" }
 }
 
@@ -79,6 +80,7 @@ Write-Host "[deploy-bot-handlers-ams] scp..."
 & scp @($Common + @("-P", "$Port", "${WebhookAuth}", "root@${HostAms}:/tmp/webhook_auth.py"))
 & scp @($Common + @("-P", "$Port", "${WebhookPayQ}", "root@${HostAms}:/tmp/webhook_payment_queue.py"))
 & scp @($Common + @("-P", "$Port", "${WebhookPayAmt}", "root@${HostAms}:/tmp/webhook_payment_amount_verify.py"))
+& scp @($Common + @("-P", "$Port", "${PortalCabinet}", "root@${HostAms}:/tmp/portal_cabinet.py"))
 
 $sshCmd = @'
 set -e
@@ -87,7 +89,7 @@ BT=/opt/remna-shop/src/shop_bot/bot
 SB=/opt/remna-shop/src/shop_bot
 DM=/opt/remna-shop/src/shop_bot/data_manager
 WH=/opt/remna-shop/src/shop_bot/webhook_server
-sed -i 's/\r$//' /tmp/handlers.py /tmp/user_messages.py /tmp/scheduler.py /tmp/keyboards.py /tmp/main.py /tmp/config.py /tmp/portal_links.py /tmp/portal_web_trial.py /tmp/web_trial_db.py /tmp/web_tg_bind.py /tmp/vpn_setup_wizard.py /tmp/subscription_qr.py /tmp/auto_renew_billing.py /tmp/support_auth.py /tmp/support_handler.py /tmp/remnawave_api.py /tmp/database.py /tmp/webhook_app_ams.py /tmp/webhook_app_main.py /tmp/webhook_auth.py /tmp/webhook_payment_queue.py /tmp/webhook_payment_amount_verify.py
+sed -i 's/\r$//' /tmp/handlers.py /tmp/user_messages.py /tmp/scheduler.py /tmp/keyboards.py /tmp/main.py /tmp/config.py /tmp/portal_links.py /tmp/portal_web_trial.py /tmp/web_trial_db.py /tmp/web_tg_bind.py /tmp/vpn_setup_wizard.py /tmp/subscription_qr.py /tmp/auto_renew_billing.py /tmp/support_auth.py /tmp/support_handler.py /tmp/remnawave_api.py /tmp/portal_cabinet.py /tmp/database.py /tmp/webhook_app_ams.py /tmp/webhook_app_main.py /tmp/webhook_auth.py /tmp/webhook_payment_queue.py /tmp/webhook_payment_amount_verify.py
 mkdir -p "$BT" "$DM" "$WH"
 CFG=/opt/remna-shop/src/shop_bot/config.py
 for f in handlers.py user_messages.py keyboards.py; do
@@ -112,6 +114,7 @@ install -m 0644 /tmp/database.py "$DM/database.py"
 install -m 0644 /tmp/support_auth.py "$SB/support_auth.py"
 install -m 0644 /tmp/support_handler.py "$BT/support_handler.py"
 install -m 0644 /tmp/remnawave_api.py "$SB/remnawave_api.py"
+install -m 0644 /tmp/portal_cabinet.py "$SB/portal_cabinet.py"
 install -m 0644 /tmp/webhook_app_ams.py "$WH/app_ams_with_portal_trial.py"
 install -m 0644 /tmp/webhook_app_main.py "$WH/app.py"
 install -m 0644 /tmp/webhook_auth.py "$WH/auth.py"
@@ -134,6 +137,7 @@ docker cp /tmp/database.py remna-shop-bot:/app/src/shop_bot/data_manager/databas
 docker cp /tmp/support_auth.py remna-shop-bot:/app/src/shop_bot/support_auth.py
 docker cp /tmp/support_handler.py remna-shop-bot:/app/src/shop_bot/bot/support_handler.py
 docker cp /tmp/remnawave_api.py remna-shop-bot:/app/src/shop_bot/remnawave_api.py
+docker cp /tmp/portal_cabinet.py remna-shop-bot:/app/src/shop_bot/portal_cabinet.py
 docker cp /tmp/webhook_app_ams.py remna-shop-bot:/app/src/shop_bot/webhook_server/app_ams_with_portal_trial.py
 docker cp /tmp/webhook_app_main.py remna-shop-bot:/app/src/shop_bot/webhook_server/app.py
 docker cp /tmp/webhook_auth.py remna-shop-bot:/app/src/shop_bot/webhook_server/auth.py

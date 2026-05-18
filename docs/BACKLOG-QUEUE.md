@@ -136,13 +136,13 @@
 | 060 | **P4-DNS-07/08** | **DONE** | **P4** RF egress PoC wiki | **`P4_RF_EGRESS_POC_OK`** §12 | **`P4-DNS-RF-EGRESS-POC.md`** |
 | 061 | **P1-RED-NODE-DNS-01** | **DONE** | **P1** DNS на нодах | **`NODE_DNS_RESOLVER_OK`** §12 | **`RUNBOOK-NODE-DNS-RESOLVER.md`** |
 | 062 | **P1-PRO-SUB-TIER-01** | **DONE** | **P0** 3 tier sub (portal + docs) | **`SUB_TIER_PROFILES_OK`** §12 | **`PRODUCT-TIER-PROFILES.md`** |
-| 044 | **P3-FLOW-09** | **NEXT** | **ФЛОУ** Ветки iPhone/Android/Win | ≤ 5 шагов | **`AGENT-FLOW-BACKLOG` §Q044** |
-| 045 | **P3-FLOW-13** | **TODO** | a11y portal | Lighthouse ≥ 95 | §7.1 |
-| 046 | **P3-FLOW-10** | **TODO** | Метрики воронки | Wiki + §12 | §7.1 |
-| 047 | **P3-FLOW-11** | **TODO** | Запасной домен bootstrap | Tabletop | §7.1 |
-| 048 | **P3-FLOW-15** | **TODO** | Баланс в веб-ЛК (read API; оплата после эквайринга) | **`PORTAL_CABINET_BALANCE_OK`** | §7.1, **`AGENT-FLOW-BACKLOG` §Q048** |
-| 049 | **P3-FLOW-16** | **TODO** | Привязка TG ↔ web (`BVPN-ID` / email) | **`WEB_TG_BIND_OK`** | §7.1, **`USER-FLOW-JOURNEY`** §Web |
-| 050 | **P3-FLOW-17** | **TODO** | Уведомления web-only (portal + опц. email) | **`WEB_NOTIFY_CHANNEL_OK`** | §7.1, **P2-RED-BOOT-01** |
+| 044 | **P3-FLOW-09** | **DONE** | **ФЛОУ** Ветки iPhone/Android/Win | **`PORTAL_DEVICE_BRANCHES_OK`** §12 | **`AGENT-FLOW-BACKLOG` §Q044** |
+| 045 | **P3-FLOW-13** | **DONE** | a11y portal | **`PORTAL_A11Y_OK`** §12 | §7.1 |
+| 046 | **P3-FLOW-10** | **DONE** | Метрики воронки | **`FUNNEL_METRICS_OK`** §12 | **`FUNNEL-METRICS.md`** |
+| 047 | **P3-FLOW-11** | **DONE** | Запасной домен bootstrap | **`BACKUP_BOOTSTRAP_DOMAIN_OK`** §12 | **`RUNBOOK-BACKUP-BOOTSTRAP-DOMAIN.md`** |
+| 048 | **P3-FLOW-15** | **DONE** | Баланс в веб-ЛК (read API) | **`PORTAL_CABINET_BALANCE_OK`** §12 | `portal_cabinet.py` |
+| 049 | **P3-FLOW-16** | **DONE** | Привязка TG ↔ web (`BVPN-ID` / email) | **`WEB_TG_BIND_OK`** §12 | `web_tg_bind.py` |
+| 050 | **P3-FLOW-17** | **DONE** | Уведомления web-only (portal) | **`WEB_NOTIFY_CHANNEL_OK`** §12 | events card + cabinet |
 
 ---
 

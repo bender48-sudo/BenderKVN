@@ -11,7 +11,8 @@
   <script src="/portal/assets/portal.js" defer></script>
 </head>
 <body>
-  <main>
+  <a class="skip-link" href="#main-content">К основному содержимому</a>
+  <main id="main-content" tabindex="-1">
     <header class="site-header">
       <div class="brand">
         <span class="brand-mark" aria-hidden="true">🤖</span>
@@ -69,23 +70,33 @@
       </section>
     </section>
 
-    <section data-view="devices" class="hidden">
+    <section data-view="devices" class="hidden" aria-labelledby="devices-heading">
       <button type="button" class="btn btn-ghost btn-no-code" id="btn-back-home">← Назад</button>
       <h2 id="devices-heading">На каком устройстве настраиваем?</h2>
       <p class="muted" id="devices-lead"></p>
-      <div id="device-grid" class="device-grid"></div>
+      <div id="device-grid" class="device-grid" role="list"></div>
     </section>
 
-    <section data-view="cabinet" class="hidden">
+    <section data-view="cabinet" class="hidden" aria-labelledby="cabinet-title">
       <button type="button" class="btn btn-ghost btn-no-code" id="btn-back-home-cabinet">← Назад</button>
       <h2 id="cabinet-title">Личный кабинет</h2>
       <p class="muted" id="cabinet-lead"></p>
-      <div class="panel">
+      <div class="panel" id="cabinet-login-panel">
+        <label class="field-label" for="cabinet-customer-id" id="cabinet-customer-id-label">BVPN-ID</label>
+        <input type="text" id="cabinet-customer-id" class="field-input" autocomplete="off" />
+        <label class="field-label" for="cabinet-email" id="cabinet-email-label">Email</label>
+        <input type="email" id="cabinet-email" class="field-input" autocomplete="email" />
+        <button type="button" class="btn btn-primary" id="btn-cabinet-load"></button>
+        <p class="note hidden" id="cabinet-load-error" role="alert"></p>
+      </div>
+      <div class="panel hidden" id="cabinet-balance-panel">
         <p class="field-label" id="cabinet-balance-label">Баланс</p>
         <p class="cabinet-balance" id="cabinet-balance">—</p>
         <p class="muted" id="cabinet-balance-hint"></p>
+        <p class="muted" id="cabinet-web-notify"></p>
       </div>
       <div class="actions">
+        <a class="btn btn-primary hidden" id="btn-cabinet-bind" href="#" target="_blank" rel="noopener"></a>
         <a class="btn btn-primary" id="btn-cabinet-bot" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
         <a class="btn btn-secondary" id="btn-cabinet-setup" href="/setup/"></a>
       </div>

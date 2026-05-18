@@ -23,6 +23,8 @@
 
 **ТСПУ / VLESS:** [`RUNBOOK-TSPU-VLESS-INCIDENT.md`](RUNBOOK-TSPU-VLESS-INCIDENT.md) · модель угроз [`TSPU-THREAT-MODEL.md`](TSPU-THREAT-MODEL.md) · probe **`ops/tspu_block_probe.py`** (с RU relay).
 
+**Запасной bootstrap-домен:** [`RUNBOOK-BACKUP-BOOTSTRAP-DOMAIN.md`](RUNBOOK-BACKUP-BOOTSTRAP-DOMAIN.md). **Воронка:** [`FUNNEL-METRICS.md`](FUNNEL-METRICS.md).
+
 **Целевое время первого ответа пользователю** — зафиксировать локально командой (рекомендация: до **60 минут** в рабочее окно; вне её — сообщение автоматически/заготовка «разбираемся»).
 
 ## Быстрая классификация

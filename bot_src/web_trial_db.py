@@ -139,6 +139,23 @@ def get_web_trial_claim_by_web_user_id(web_user_id: int) -> dict | None:
         return None
 
 
+def get_claim_by_customer_id(customer_id: str) -> dict | None:
+    cid = (customer_id or "").strip().upper()
+    if not cid.startswith("BVPN-"):
+        return None
+    ensure_web_trial_schema()
+    try:
+        with _conn() as conn:
+            rows = conn.execute(_CLAIM_SELECT).fetchall()
+        for row in rows:
+            claim = _claim_row_to_dict(row)
+            if format_customer_id(claim["web_user_id"]).upper() == cid:
+                return claim
+    except Exception as exc:
+        logger.error("get_claim_by_customer_id failed: %s", exc)
+    return None
+
+
 def get_claim_by_bind_token(bind_token: str) -> dict | None:
     token = (bind_token or "").strip().lower()
     if not token or len(token) < 16:

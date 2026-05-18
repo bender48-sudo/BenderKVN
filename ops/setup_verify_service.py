@@ -2,6 +2,7 @@
 """P3-FLOW-02/WEB: setup verify + browser web trial (behind Caddy on LV)."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shlex
@@ -34,6 +35,18 @@ def _short_id_from_sub_url(sub_url: str) -> str | None:
 
 _RATE: dict[str, list[float]] = {}
 _RATE_LIMIT = int(os.environ.get("WEB_TRIAL_RATE_PER_HOUR", "5"))
+_FUNNEL_LOG = Path(os.environ.get("BVPN_FUNNEL_LOG", "/var/log/bvpn-funnel.jsonl"))
+
+
+def _funnel_log(event: str, meta: dict | None = None) -> None:
+    doc = {"ts": int(time.time()), "event": event, "meta": meta or {}}
+    line = json.dumps(doc, ensure_ascii=False) + "\n"
+    try:
+        _FUNNEL_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with open(_FUNNEL_LOG, "a", encoding="utf-8") as f:
+            f.write(line)
+    except OSError:
+        pass
 _AMS_KEY = Path.home() / ".ssh" / "bvpn_ams_ed25519"
 _AMS_HOST = os.environ.get("AMS_OPS_HOST", "168.100.11.140")
 _AMS_PORT = os.environ.get("AMS_OPS_SSH_PORT", "3344")
@@ -111,6 +124,43 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
+        if path == "/funnel-event":
+            length = int(self.headers.get("Content-Length", "0") or "0")
+            raw = self.rfile.read(length) if length > 0 else b"{}"
+            try:
+                data = json.loads(raw.decode("utf-8"))
+            except json.JSONDecodeError:
+                self._json(400, {"ok": False, "error": "invalid_json"})
+                return
+            ev = (data.get("event") or "").strip()[:64]
+            if not ev or not re.match(r"^[a-z][a-z0-9_]{0,63}$", ev):
+                self._json(400, {"ok": False, "error": "bad_event"})
+                return
+            _funnel_log(ev, {"ip_hash": hashlib.sha256(_client_ip(self).encode()).hexdigest()[:16]})
+            self._json(200, {"ok": True})
+            return
+        if path == "/cabinet":
+            length = int(self.headers.get("Content-Length", "0") or "0")
+            raw = self.rfile.read(length) if length > 0 else b"{}"
+            try:
+                data = json.loads(raw.decode("utf-8"))
+            except json.JSONDecodeError:
+                self._json(400, {"ok": False, "error": "invalid_json"})
+                return
+            try:
+                ams = _ams_portal_post(
+                    "/portal-cabinet",
+                    {
+                        "customer_id": (data.get("customer_id") or "").strip(),
+                        "email": (data.get("email") or "").strip(),
+                    },
+                )
+            except Exception as e:
+                self._json(502, {"ok": False, "error": str(e)[:120]})
+                return
+            code = 200 if ams.get("ok") else 404
+            self._json(code, ams)
+            return
         if path not in ("/web-trial", "/web-trial-recover"):
             self._json(404, {"ok": False, "error": "not_found"})
             return

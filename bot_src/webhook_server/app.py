@@ -138,6 +138,25 @@ def create_webhook_app(bot, payment_processor):
             return False
         return request.headers.get("X-Portal-Lookup-Key", "") == secret
 
+    @flask_app.route("/portal-cabinet", methods=["POST"])
+    def portal_cabinet_handler():
+        """Read-only balance for web trial (BVPN-ID or email)."""
+        try:
+            if not _portal_lookup_auth():
+                return _reject_auth()
+            data = request.get_json(silent=True) or {}
+            from shop_bot.portal_cabinet import cabinet_snapshot
+
+            doc = cabinet_snapshot(
+                customer_id=(data.get("customer_id") or "").strip(),
+                email=(data.get("email") or "").strip(),
+            )
+            code = 200 if doc.get("ok") else 404
+            return jsonify(doc), code
+        except Exception as e:
+            logger.error("portal-cabinet: %s", e, exc_info=True)
+            return jsonify({"ok": False, "error": "server_error"}), 500
+
     @flask_app.route("/portal-setup-resolve", methods=["POST"])
     def portal_setup_resolve_handler():
         """Browser setup: resolve @username / telegram id → subscription URL."""

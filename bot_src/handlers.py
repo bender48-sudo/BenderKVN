@@ -339,6 +339,7 @@ async def start_handler(message: types.Message, state: FSMContext):
         elif arg.startswith("bind_"):
             bind_token = arg[5:]
     register_user_if_not_exists(user_id, username)
+    log_action(user_id, "funnel_bot_start", bind_token or ref_code or "")
     user_data = get_user(user_id)
     if ref_code and user_data and not user_data.get("referred_by"):
         if link_referral(ref_code, user_id):

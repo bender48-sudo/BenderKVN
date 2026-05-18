@@ -6,8 +6,12 @@
   const STATUS_PATH = "/status";
   const SUPPORT_URL = "https://t.me/Bender_KVN_bot";
   const SETUP_PATH = "/setup/";
+  const API_FUNNEL = "/setup/api/funnel-event";
+  const API_CABINET = "/setup/api/cabinet";
   const ACK_KEY = "bvpn_vpn_config_ack";
   const SUB_URL_KEY = "bvpn_subscription_url";
+  const CID_KEY = "bvpn_customer_id";
+  const EMAIL_KEY = "bvpn_customer_email";
 
   let content = null;
 
@@ -79,6 +83,19 @@
       return;
     }
     window.open(url, "_blank", "noopener");
+  }
+
+  function trackFunnel(event) {
+    try {
+      fetch(API_FUNNEL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: event }),
+        keepalive: true,
+      }).catch(function () {});
+    } catch (e) {
+      /* ignore */
+    }
   }
 
   function bindExternalLink(el) {
@@ -259,7 +276,15 @@
         dev.icon +
         "</span>" +
         dev.label;
+      btn.setAttribute("role", "listitem");
+      btn.setAttribute("aria-label", dev.label);
       btn.addEventListener("click", function () {
+        try {
+          history.replaceState(null, "", "#device=" + dev.id);
+        } catch (e) {
+          window.location.hash = "device=" + dev.id;
+        }
+        trackFunnel("portal_device_" + dev.id);
         showDeviceDetail(dev.id);
       });
       grid.appendChild(btn);
@@ -328,7 +353,8 @@
     var storeKey = dev.install_store_key || dev.id;
     var stores = content.happ_install || {};
     var store = stores[storeKey] || stores.generic;
-    dev.install_steps.forEach(function (step, idx) {
+    var steps = (dev.install_steps || []).slice(0, 3);
+    steps.forEach(function (step, idx) {
       var li = document.createElement("li");
       li.textContent = step;
       if (idx === 0 && store) {
@@ -343,9 +369,15 @@
       }
       list.appendChild(li);
     });
+    if (dev.alt_client && dev.id === "windows") {
+      var note = document.createElement("p");
+      note.className = "muted";
+      note.textContent = dev.alt_client;
+      list.parentElement.appendChild(note);
+    }
     var after = $("after-device-steps");
     after.innerHTML = "";
-    content.steps.after_device.forEach(function (step) {
+    (content.steps.after_device || []).slice(0, 2).forEach(function (step) {
       var li = document.createElement("li");
       li.textContent = step;
       after.appendChild(li);
@@ -361,10 +393,102 @@
     $("cabinet-balance-label").textContent = cab.balance_label || "Баланс";
     $("cabinet-balance").textContent = cab.balance_na || "—";
     $("cabinet-balance-hint").textContent = cab.balance_hint || "";
+    if ($("cabinet-customer-id-label")) {
+      $("cabinet-customer-id-label").textContent = cab.customer_id_label || "BVPN-ID";
+    }
+    if ($("cabinet-email-label")) {
+      $("cabinet-email-label").textContent = cab.email_label || "Email";
+    }
+    if ($("btn-cabinet-load")) {
+      $("btn-cabinet-load").textContent = cab.load_balance || "Показать баланс";
+    }
+    if ($("cabinet-web-notify")) {
+      $("cabinet-web-notify").textContent = cab.web_notify_lead || "";
+    }
     $("btn-cabinet-bot").textContent = cab.open_bot || "Открыть бота";
     $("btn-cabinet-setup").textContent = content.buttons.setup_browser;
+    var bindBtn = $("btn-cabinet-bind");
+    if (bindBtn) {
+      bindBtn.textContent = cab.bind_tg || "Привязать Telegram";
+    }
     bindExternalLink($("btn-cabinet-bot"));
     bindExternalLink($("btn-cabinet-setup"));
+    bindExternalLink(bindBtn);
+    try {
+      var cid = localStorage.getItem(CID_KEY) || "";
+      var em = localStorage.getItem(EMAIL_KEY) || "";
+      if ($("cabinet-customer-id") && cid) $("cabinet-customer-id").value = cid;
+      if ($("cabinet-email") && em) $("cabinet-email").value = em;
+    } catch (e) {
+      /* ignore */
+    }
+    if (tg) {
+      var login = $("cabinet-login-panel");
+      if (login) login.classList.add("hidden");
+    }
+  }
+
+  function applyCabinetData(doc) {
+    var cab = content.cabinet || {};
+    var balEl = $("cabinet-balance");
+    var panel = $("cabinet-balance-panel");
+    var err = $("cabinet-load-error");
+    if (err) err.classList.add("hidden");
+    if (!doc || !doc.ok) {
+      if (err) {
+        err.textContent = "Не найдено. Проверьте email или BVPN-ID.";
+        err.classList.remove("hidden");
+      }
+      return;
+    }
+    var fmt = cab.balance_format || "{balance} ₽ · ~{days} дн.";
+    balEl.textContent = fmt
+      .replace("{balance}", String(Math.round(doc.balance_rub)))
+      .replace("{days}", String(doc.days_left));
+    if (doc.days_left <= 3) {
+      balEl.classList.add("cabinet-balance--low");
+    }
+    if (panel) panel.classList.remove("hidden");
+    var bindBtn = $("btn-cabinet-bind");
+    if (bindBtn) {
+      if (doc.bind_url && !doc.telegram_bound) {
+        bindBtn.href = doc.bind_url;
+        bindBtn.classList.remove("hidden");
+      } else {
+        bindBtn.classList.add("hidden");
+      }
+    }
+    try {
+      if (doc.customer_id) localStorage.setItem(CID_KEY, doc.customer_id);
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function loadCabinetBalance() {
+    var cid = ($("cabinet-customer-id") && $("cabinet-customer-id").value) || "";
+    var email = ($("cabinet-email") && $("cabinet-email").value) || "";
+    try {
+      if (email) localStorage.setItem(EMAIL_KEY, email.trim());
+    } catch (e) {
+      /* ignore */
+    }
+    trackFunnel("portal_cabinet_load");
+    fetch(API_CABINET, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customer_id: cid.trim(),
+        email: email.trim(),
+      }),
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(applyCabinetData)
+      .catch(function () {
+        applyCabinetData({ ok: false });
+      });
   }
 
   function applyRouteFromHash() {
@@ -372,10 +496,15 @@
     if (raw === "cabinet") {
       renderCabinet();
       show("cabinet");
+      trackFunnel("portal_view_cabinet");
+      if (!getTelegramWebApp()) {
+        loadCabinetBalance();
+      }
       return;
     }
     if (raw === "devices" || raw === "connect") {
       show("devices");
+      trackFunnel("portal_view_devices");
       return;
     }
     var dm = raw.match(/^device=(iphone|android|windows|mac)$/);
@@ -394,14 +523,30 @@
     var cabBtn = $("btn-cabinet");
     if (cabBtn) {
       cabBtn.addEventListener("click", function () {
+        try {
+          history.replaceState(null, "", "#cabinet");
+        } catch (e) {
+          window.location.hash = "cabinet";
+        }
         renderCabinet();
         show("cabinet");
+        trackFunnel("portal_view_cabinet");
       });
+    }
+    var loadBal = $("btn-cabinet-load");
+    if (loadBal) {
+      loadBal.addEventListener("click", loadCabinetBalance);
     }
     var backCab = $("btn-back-home-cabinet");
     if (backCab) backCab.addEventListener("click", function () { show("home"); });
     $("btn-connect").addEventListener("click", function () {
+      try {
+        history.replaceState(null, "", "#devices");
+      } catch (e) {
+        window.location.hash = "devices";
+      }
       show("devices");
+      trackFunnel("portal_view_devices");
     });
     $("btn-back-home").addEventListener("click", function () {
       show("home");
@@ -460,6 +605,7 @@
       renderCabinet();
       bindActions();
       applyRouteFromHash();
+      trackFunnel("portal_view_home");
     })
     .catch(function () {
       showError(
