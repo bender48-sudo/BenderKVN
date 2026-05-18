@@ -1,67 +1,92 @@
 # Чеклист владельца (ручные доработки)
 
-Задачи, которые **не автоматизируются** в репо или требуют действий вне Cursor. Отмечай `[x]` по мере выполнения.
+Задачи **вне** линейной очереди Q (или согласование после агента). Очередь агента: **`docs/BACKLOG-QUEUE.md`** (**`NEXT`**).
 
 ---
 
 ## Критично (безопасность / доступ)
 
-- [ ] **LUKS Postgres AMS** — сохранить passphrase в Bitwarden **`BenderVPN/ams/postgres-luks-key`** + офлайн-копия (показан один раз при `deploy-postgres-luks-ams.ps1 -Enable`; если потерян — см. runbook откат/новый ключ).
-- [ ] После **перезагрузки AMS** — unlock тома: `pwsh -File ops/deploy-postgres-luks-ams.ps1 -ProbeOnly` (если FAIL → `ssh bvpn-ams 'bash /opt/scripts/ams_postgres_luks_unlock.sh'` с ключом из Bitwarden).
-- [ ] **`%USERPROFILE%\.ssh\config`** — уже обновлён на `bvpn_lv_ed25519` / `bvpn_ams_ed25519`; проверить: `.\scripts\ssh-smoke-test.ps1`.
-- [ ] **Crypto webhook** (если включён) — `CRYPTO_WEBHOOK_SECRET` в `/opt/remna-shop/.env` + callback у провайдера (`docs/RUNBOOK-COMMERCE-GO-LIVE.md` §2).
+- [ ] **LUKS Postgres AMS** — passphrase в Bitwarden **`BenderVPN/ams/postgres-luks-key`** + офлайн-копия.
+- [ ] После **перезагрузки AMS** — `pwsh -File ops/deploy-postgres-luks-ams.ps1 -ProbeOnly` (FAIL → unlock по runbook).
+- [ ] **`%USERPROFILE%\.ssh\config`** — `bvpn_lv_ed25519` / `bvpn_ams_ed25519`; `.\scripts\ssh-smoke-test.ps1`.
+- [ ] **AMS `authorized_keys`** — убрать дубликат **`root@vinni204329`** (оставить **`bender-bvpn_ams_ed25519`**).
+- [ ] **Crypto webhook** (если включён) — `CRYPTO_WEBHOOK_SECRET` в `/opt/remna-shop/.env`.
+- [ ] **`PORTAL_SETUP_HMAC_SECRET`** на AMS в `/opt/remna-shop/.env` (для ссылок `/setup/?t=` из бота) — см. **`RUNBOOK-USER-BOOTSTRAP-SITE`**.
+
+---
+
+## Portal / Mini App (после Q037)
+
+- [ ] **BotFather** — Menu Button / Web App URL = **`https://k9x2m1.conntest.xyz:2053/portal/`** (как в **`ops/site.env.example`**).
+- [ ] Ручной тест: Mini App на телефоне = тот же экран, что **`/start`** в браузере.
+- [ ] Деплой portal после правок: `pwsh -File ops/deploy-user-portal-lv.ps1` (если скрипт есть).
+
+---
+
+## Видео «первый коннект» (Q042 — плейсхолдеры → прод)
+
+Сейчас на **`/portal/guide.html`** стоят **схематичные GIF** из репо. Код и кнопки в боте уже на проде; нужны **настоящие** записи экрана.
+
+- [ ] **Снять iPhone** (≤ 90 с): установка Happ → вставка ссылки / QR → включение VPN. Без жаргона (TLS, Reality, shortUuid).
+- [ ] **Снять Android** (≤ 90 с): то же для Google Play + Happ.
+- [ ] **Положить файлы** в репо (заменить плейсхолдеры):
+  - `web/portal/media/ios-first-connect.gif` — или `.mp4`
+  - `web/portal/media/android-first-connect.gif` — или `.mp4`
+- [ ] **Если MP4** (предпочтительно для качества): в **`web/portal/content/ru.json`** → `setup_videos` указать пути:
+  - `media_ios_mp4`: `/portal/media/ios-first-connect.mp4`
+  - `media_android_mp4`: `/portal/media/android-first-connect.mp4`
+  - (GIF оставить как `poster` / запасной вариант — см. `guide.js`)
+- [ ] **Деплой на LV:** `pwsh -File ops/deploy-portal-setup-lv.ps1` (каталог `media/` + `ru.json` + `guide.html`).
+- [ ] **Проверка без VPN** с телефона (мобильная сеть, не Wi‑Fi офиса с VPN):
+  - [guide.html](https://k9x2m1.conntest.xyz:2053/portal/guide.html) — оба таба открываются, ролик/GIF проигрывается;
+  - кнопка в боте **«🎬 Видео: как подключить»** ведёт на ту же страницу;
+  - с главной portal и после `/setup/` — ссылка «Видео: как подключить».
+- [ ] **Smoke:** `python ops/smoke_portal_setup_video.py` → **`PORTAL_SETUP_VIDEO_OK`**.
+- [ ] (Опционально) перегенерировать плейсхолдеры локально: `python ops/generate_setup_guide_media.py` — только для черновика, не для прода.
 
 ---
 
 ## DNS (P1-RED-DNS-01)
 
-- [ ] Bitwarden: recovery-коды **Dynadot** → `BenderVPN/dns/dynadot-recovery-codes` (+ офлайн).
-- [ ] Завести **второй регистратор** (reserve) и item `BenderVPN/dns/reserve-registrar-recovery-codes`.
-- [ ] Включить **DNSSEC** для `conntest.xyz` в Dynadot → обновить `ops/dns_critical_inventory.json` (`dnssec_enabled: true`).
-- [ ] До массового GTM: **backup apex** на втором регистраторе (`docs/RUNBOOK-DNS-RED-TEAM.md` §3).
+- [ ] Recovery-коды **Dynadot** в Bitwarden + офлайн.
+- [ ] **Второй регистратор** (reserve) заведён.
+- [ ] **DNSSEC** для `conntest.xyz` → `dnssec_enabled: true` в inventory.
+- [ ] Backup apex на втором регистраторе до GTM.
 
 ---
 
 ## Postgres / AMS ops
 
-- [ ] Удалить архивный Docker volume (после 7 дней стабильной работы):  
-  `ssh bvpn-ams 'du -sh /var/lib/docker/volumes/remnawave_remnawave-db-data/_data'` → backup off-box → `docker volume rm` (опционально).
-- [ ] Накат **compose tmpl** на прод при следующем safe-deploy (`connection_limit`, bind mount уже на проде).
+- [ ] Legacy docker volume Postgres (после 7 дней стабильности) — backup → `docker volume rm`.
+- [ ] Следующий накат compose — только **`RUNBOOK-AMS-SAFE-DEPLOY`**.
 
 ---
 
-## Мониторинг (по желанию)
+## Продукт / очередь
 
-- [ ] Cron на LV: `dns_delegation_probe.py` раз в час (`docs/RUNBOOK-DNS-RED-TEAM.md` §5).
-- [ ] Cron на LV: `remna_credential_broker.py refresh` каждые 30 мин (`docs/RUNBOOK-SHORT-LIVED-CREDS.md`).
-- [ ] Cron на AMS: purge `webhook_deliveries` старше 90 дней (`docs/RUNBOOK-DATA-RETENTION.md`).
-- [ ] Telegram-алерт при `DNS_DELEGATION_FAIL` / `POSTGRES_CRYPT_FAIL` (сейчас — ручной smoke).
+| Что | Статус |
+|-----|--------|
+| Portal + Mini App (Q033–038) | ✅ в репо; см. §12 |
+| Видео guide (Q042) | ✅ код на проде; **ручная замена GIF/MP4** — § выше |
+| **NEXT агента** | **Q043** — страница ошибок на portal |
+| **До GTM** | **Q032** — возвраты в оферте |
+| Tabletop jurisdiction | 1×/год — **`TABLETOP-JURISDICTION-EXERCISE.md`** |
 
----
-
-## Продукт / очередь (следующие Q в бэклоге)
-
-| Q | ID | Статус в репо |
-|---|-----|----------------|
-| 028 | P1-RED-SEC-01 | ✅ broker на LV |
-| 029 | P3-RED-MIN-01 | ✅ policy + webhook redact |
-| 030 | P3-RED-JURIS-01 | ✅ docs в репо; **раз в год** tabletop по **`TABLETOP-JURISDICTION-EXERCISE.md`** → §12 |
-| 031 | P5-COM-01 | ✅ **`/status`** на проде; при дауне — **`incidents.json`** на LV |
-
-Параллельно (не NEXT): **P4-DNS-01…06** mobile bootstrap.
+**Параллельно (не NEXT):** **P4-DNS-01…06**.
 
 ---
 
-## Быстрые smoke (здоровье)
+## Smoke (здоровье)
 
 ```powershell
 cd d:\Va\projects\VPN
-python ops/ssh_audit.py
-pwsh -File ops/ssh_audit_from_ams.ps1
-ssh bvpn-lv 'python3 /opt/scripts/dns_delegation_probe.py'
-ssh bvpn-lv 'python3 /opt/scripts/smoke_short_lived_token_lv.py'
-ssh bvpn-ams 'python3 /opt/scripts/ams_postgres_crypt_probe.py'
+python ops/portal_bundle_audit.py
+python ops/smoke_public_bootstrap.py
+python ops/smoke_telegram_miniapp.py
+python ops/smoke_portal_setup_video.py
 python ops/smoke_ams_safe_deploy.py
+ssh bvpn-lv 'python3 /opt/scripts/dns_delegation_probe.py'
+ssh bvpn-ams 'python3 /opt/scripts/ams_postgres_crypt_probe.py'
 ```
 
-Ожидаемые маркеры: **`SSH_AUDIT_OK`**, **`DNS_DELEGATION_OK`**, **`POSTGRES_CRYPT_OK`**, **`AMS_SAFE_DEPLOY_OK`**.
+Ожидаемые маркеры: **`PORTAL_BUNDLE_OK`**, **`PUBLIC_BOOTSTRAP_OK`**, **`TELEGRAM_MINIAPP_PORTAL_OK`**, **`PORTAL_SETUP_VIDEO_OK`**, **`AMS_SAFE_DEPLOY_OK`**, **`DNS_DELEGATION_OK`**, **`POSTGRES_CRYPT_OK`**.
