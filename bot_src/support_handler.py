@@ -2,23 +2,42 @@ import os
 import logging
 import sqlite3
 import time
-from pathlib import Path
 
 from aiogram import Bot, Router, F, types
 from aiogram.filters import Command
 from aiogram.exceptions import TelegramBadRequest
 
+from shop_bot.data_manager import database
+from shop_bot.support_auth import is_authorized_support_staff
+
 logger = logging.getLogger(__name__)
 
 SUPPORT_GROUP_ID = int(os.getenv("SUPPORT_GROUP_ID", "0"))
 ADMIN_ID = os.getenv("ADMIN_TELEGRAM_ID")
-DB_FILE = Path("/app/data/shop_bot.db")
+SUPPORT_USER_RL_WINDOW = int(os.getenv("SUPPORT_USER_RL_WINDOW", "60"))
+SUPPORT_USER_RL_MAX = int(os.getenv("SUPPORT_USER_RL_MAX", "8"))
+
+
+def _db_path():
+    return database.DB_FILE
 
 support_router = Router()
+_user_msg_times: dict[int, list[float]] = {}
+
+
+def _support_rate_limited(user_id: int) -> bool:
+    now = time.time()
+    times = _user_msg_times.setdefault(user_id, [])
+    cutoff = now - SUPPORT_USER_RL_WINDOW
+    times[:] = [t for t in times if t >= cutoff]
+    if len(times) >= SUPPORT_USER_RL_MAX:
+        return True
+    times.append(now)
+    return False
 
 
 def _get_support_topic(telegram_id: int):
-    with sqlite3.connect(DB_FILE) as conn:
+    with sqlite3.connect(_db_path()) as conn:
         c = conn.cursor()
         c.execute("SELECT support_topic_id FROM users WHERE telegram_id = ?", (telegram_id,))
         row = c.fetchone()
@@ -26,7 +45,7 @@ def _get_support_topic(telegram_id: int):
 
 
 def _set_support_topic(telegram_id: int, topic_id):
-    with sqlite3.connect(DB_FILE) as conn:
+    with sqlite3.connect(_db_path()) as conn:
         c = conn.cursor()
         c.execute(
             "INSERT INTO users (telegram_id, support_topic_id) VALUES (?, ?) "
@@ -38,7 +57,7 @@ def _set_support_topic(telegram_id: int, topic_id):
 
 def _touch_support_user(telegram_id: int) -> None:
     ts = int(time.time())
-    with sqlite3.connect(DB_FILE) as conn:
+    with sqlite3.connect(_db_path()) as conn:
         conn.execute(
             "UPDATE users SET support_last_user_at = ? WHERE telegram_id = ?",
             (ts, telegram_id),
@@ -48,7 +67,7 @@ def _touch_support_user(telegram_id: int) -> None:
 
 def _touch_support_staff(topic_id: int) -> None:
     ts = int(time.time())
-    with sqlite3.connect(DB_FILE) as conn:
+    with sqlite3.connect(_db_path()) as conn:
         conn.execute(
             "UPDATE users SET support_last_staff_at = ? WHERE support_topic_id = ?",
             (ts, topic_id),
@@ -57,7 +76,7 @@ def _touch_support_staff(topic_id: int) -> None:
 
 
 def _find_user_by_topic(topic_id: int):
-    with sqlite3.connect(DB_FILE) as conn:
+    with sqlite3.connect(_db_path()) as conn:
         c = conn.cursor()
         c.execute("SELECT telegram_id FROM users WHERE support_topic_id = ?", (topic_id,))
         row = c.fetchone()
@@ -84,6 +103,11 @@ async def user_message_to_support(message: types.Message, bot: Bot):
         return
 
     user_id = message.from_user.id
+    if _support_rate_limited(user_id):
+        await message.answer(
+            "Слишком много сообщений подряд. Подождите минуту и напишите снова."
+        )
+        return
     topic_id = _get_support_topic(user_id)
     is_new_topic = False
 
@@ -140,6 +164,14 @@ async def admin_reply_in_topic(message: types.Message, bot: Bot):
 
     user_id = _find_user_by_topic(message.message_thread_id)
     if not user_id:
+        return
+
+    if not is_authorized_support_staff(message.from_user):
+        logger.warning(
+            "Ignored support reply from unauthorized tg_id=%s in topic=%s",
+            getattr(message.from_user, "id", None),
+            message.message_thread_id,
+        )
         return
 
     try:

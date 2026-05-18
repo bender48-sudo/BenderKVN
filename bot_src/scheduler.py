@@ -79,11 +79,11 @@ async def start_subscription_monitor(bot: Bot):
                                 o.id = remote.get('vlessUuid')
                                 database.update_key_status_from_server(key_email, o)
                         
-                        # Уведомления об истечении (отправляем только один раз для пользователя)
-                        # Конвертируем remote_dt в локальное время для корректного сравнения
-                        now_local = datetime.now()
-                        remote_local = remote_dt.replace(tzinfo=None)  # убираем timezone info
-                        days_left = (remote_local - now_local).days
+                        # Уведомления об истечении (UTC-aware, P2-OPS-SCHED-01)
+                        if remote_dt.tzinfo is None:
+                            remote_dt = remote_dt.replace(tzinfo=timezone.utc)
+                        now_utc = datetime.now(timezone.utc)
+                        days_left = (remote_dt - now_utc).days
                         last_days_notified = database.get_last_expiry_notified_days(user_id)
                         for mark in EXPIRY_NOTIFY_DAYS:
                             if days_left <= mark and last_days_notified > mark:

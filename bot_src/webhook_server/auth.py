@@ -40,12 +40,12 @@ def _allowed_networks() -> list[ipaddress._BaseNetwork]:  # type: ignore[name-de
 
 def client_ip(req: Request) -> str:
     """Client IP; X-Forwarded-For only when behind trusted reverse proxy."""
-    if _env_bool("WEBHOOK_TRUST_PROXY_HEADERS", True):
+    if _env_bool("WEBHOOK_TRUST_PROXY_HEADERS", False):
         xff = (req.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
         if xff:
             return xff
     x_real = (req.headers.get("X-Real-IP") or "").strip()
-    if x_real and _env_bool("WEBHOOK_TRUST_PROXY_HEADERS", True):
+    if x_real and _env_bool("WEBHOOK_TRUST_PROXY_HEADERS", False):
         return x_real
     return req.remote_addr or ""
 
@@ -70,11 +70,13 @@ def is_client_allowed(req: Request) -> bool:
 
 
 def verify_crypto_shared_secret(req: Request) -> bool:
+    import hmac
+
     expected = os.getenv("CRYPTO_WEBHOOK_SECRET", "").strip()
     if not expected:
         return _env_bool("WEBHOOK_ALLOW_OPEN_CRYPTO", False)
     got = (req.headers.get("X-Webhook-Secret") or req.args.get("secret") or "").strip()
-    return got == expected
+    return hmac.compare_digest(got, expected)
 
 
 def verify_yookassa_notification(event_json: dict[str, Any]) -> bool:
@@ -87,6 +89,9 @@ def verify_yookassa_notification(event_json: dict[str, Any]) -> bool:
         logger.warning("YooKassa webhook missing object.id")
         return False
     if _env_bool("YOOKASSA_WEBHOOK_SKIP_API_VERIFY", False):
+        logger.critical(
+            "YOOKASSA_WEBHOOK_SKIP_API_VERIFY is enabled — webhook API verify disabled"
+        )
         return True
     shop = os.getenv("YOOKASSA_SHOP_ID", "").strip()
     secret = os.getenv("YOOKASSA_SECRET_KEY", "").strip()

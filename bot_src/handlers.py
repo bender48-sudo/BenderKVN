@@ -182,8 +182,8 @@ async def create_backup_and_send(bot: Bot, admin_id: str, is_auto: bool = False)
         bot_logger.backup("CREATE_DIR", f"Backup directory: {backups_dir}")
         
         # Генерируем имя файла бэкапа
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        backup_name = f"backup_part_aa"
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        backup_name = f"backup_{timestamp}"
         
         # Создаем tar.gz архив
         backup_file = backups_dir / f"{backup_name}.tar.gz"
@@ -200,9 +200,11 @@ async def create_backup_and_send(bot: Bot, admin_id: str, is_auto: bool = False)
         else:
             file_size_str = f"{file_size / 1024:.1f} KB"
         
-        # Получаем реальный IP сервера
-        server_ip = "168.100.11.140"  # Можно вынести в env переменную
-        
+        server_ip = (
+            os.getenv("BACKUP_SERVER_IP", "").strip()
+            or os.getenv("AMS_PANEL_HOST_IP", "").strip()
+        )
+
         set_last_backup_timestamp(datetime.now(timezone.utc).isoformat())
         bot_logger.backup(
             "OK",

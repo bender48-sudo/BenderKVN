@@ -325,7 +325,7 @@
 
 **Закрыто:** **P0–P2**, **P6** (фаза 1), **P1/P3-RED** + **P5-COM-01** (фаза 2), **P3-FLOW-00, 14, 01, 02, 12, 03** (Q033–038).
 
-**Сейчас (агент):** **`NEXT=Q064`** (**P3-RED-SUP-01**). Порядок: **Q063–078** (security) → **Q051–062** (продукт) → **Q044–050** (флоу).
+**Сейчас (агент):** **`NEXT=Q051`** (**P2-RED-EDGE-PORT-01**). Security **Q063–078** ✅. Далее **Q051–062** (продукт) → **Q044–050** (флоу).
 
 **До GTM:** **Q032** **P5-COM-02** (только владелец, не NEXT агента).
 
@@ -343,7 +343,8 @@
 
 | Дата | Что сделано |
 |------|-------------|
-| 2026-05-18 | **P6-RED-PAY-03 — DONE (Q063):** auto-renew списывает баланс до `provision_key`; skip + уведомление при нехватке; **`AUTO_RENEW_BILLING_OK`**. **NEXT=Q064**. |
+| 2026-05-18 | **P6-RED-PAY-03 — DONE (Q063):** auto-renew списывает баланс до `provision_key`; skip + уведомление при нехватке; **`AUTO_RENEW_BILLING_OK`**. |
+| 2026-05-18 | **Security Q064–078 — DONE:** support staff allowlist, UTC expiry notify, k9 `log_skip`, CryptoBot POST + `compare_digest`, XFF default off, panel `127.0.0.1:3000`, payment amount verify, YooKassa skip CRITICAL log, setup API RL, support flood RL, backup timestamp, support `DB_FILE`, lazy Remna token, handlers IP env, `REMNA_PUBLIC_KEY` fail-fast; smokes §12. **NEXT=Q051**. |
 | 2026-05-18 | **Очередь:** линейный порядок **Q063–078 → Q051–062 → Q044–050**; **NEXT=Q063**. |
 | 2026-05-18 | **CodeRabbit audit:** **`docs/AUDIT-2026-05-SECURITY.md`**; **Q063–Q078** в очереди. |
 | 2026-05-18 | **Handoff агенту:** **`AGENT-PRODUCT-BACKLOG.md`** (Q051–062: что/зачем/почему), **`.cursor/rules/product-backlog.mdc`**. Продукт **впереди** флоу. **NEXT=Q051**. |

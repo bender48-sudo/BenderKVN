@@ -1,6 +1,7 @@
 import os
 import logging
 import base64
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 
@@ -24,8 +25,8 @@ logger = logging.getLogger(__name__)
 # REMNA_FP - fingerprint value for utls (optional)
 
 BASE_URL = os.getenv("REMNA_BASE_URL", "").rstrip("/")
-API_TOKEN = os.getenv("REMNA_API_TOKEN")
 COOKIE = os.getenv("REMNA_COOKIE")
+INBOUND_CACHE_TTL = int(os.getenv("REMNA_INBOUND_CACHE_TTL", "300"))
 INBOUND_TAG = os.getenv("REMNA_INBOUND_TAG")
 INBOUND_UUID = os.getenv("REMNA_INBOUND_UUID")
 SQUAD_UUID = os.getenv("REMNA_SQUAD_UUID")
@@ -33,9 +34,19 @@ DEFAULT_DAYS = int(os.getenv("REMNA_DEFAULT_DAYS", "90"))
 SERVER_SNI = os.getenv("REMNA_SERVER_SNI")
 UTLS_FP = os.getenv("REMNA_FP") or os.getenv("FP")  # reuse old var if present
 
-HEADERS = {"Authorization": f"Bearer {API_TOKEN}"} if API_TOKEN else {}
-if COOKIE:
-    HEADERS["Cookie"] = COOKIE
+def get_api_token() -> str | None:
+    """Read token at call time so rotation does not require bot restart (P5-ENG-03)."""
+    return (os.getenv("REMNA_API_TOKEN") or "").strip() or None
+
+
+def _request_headers() -> dict[str, str]:
+    hdrs: dict[str, str] = {}
+    token = get_api_token()
+    if token:
+        hdrs["Authorization"] = f"Bearer {token}"
+    if COOKIE:
+        hdrs["Cookie"] = COOKIE
+    return hdrs
 
 class RemnaInbound:
     def __init__(self, uuid: str, tag: str, port: int, network: str, security: str, raw: dict):
@@ -52,7 +63,7 @@ def _iso_expiry(days: int) -> str:
 async def _fetch_json(session: aiohttp.ClientSession, method: str, path: str, **kwargs) -> Optional[dict]:
     url = f"{BASE_URL}{path}"
     try:
-        async with session.request(method, url, headers=HEADERS, **kwargs) as resp:
+        async with session.request(method, url, headers=_request_headers(), **kwargs) as resp:
             txt = await resp.text()
             if resp.status >= 400:
                 logger.error(f"Remna API {method} {path} failed {resp.status}: {txt}")
@@ -67,12 +78,17 @@ async def _fetch_json(session: aiohttp.ClientSession, method: str, path: str, **
         return None
 
 _INBOUND_CACHE: Optional[RemnaInbound] = None
+_INBOUND_CACHE_AT: float = 0.0
 
 async def get_inbound(session: aiohttp.ClientSession, force_refresh: bool = False) -> Optional[RemnaInbound]:
-    global _INBOUND_CACHE
-    if _INBOUND_CACHE and not force_refresh:
+    global _INBOUND_CACHE, _INBOUND_CACHE_AT
+    if (
+        _INBOUND_CACHE
+        and not force_refresh
+        and (time.time() - _INBOUND_CACHE_AT) < INBOUND_CACHE_TTL
+    ):
         return _INBOUND_CACHE
-    if not BASE_URL or not API_TOKEN:
+    if not BASE_URL or not get_api_token():
         logger.error("Remna config incomplete: BASE_URL or API_TOKEN missing")
         return None
     data = await _fetch_json(session, 'GET', '/api/config-profiles/inbounds')
@@ -83,10 +99,12 @@ async def get_inbound(session: aiohttp.ClientSession, force_refresh: bool = Fals
         if INBOUND_UUID and inbound.get('uuid') == INBOUND_UUID:
             raw = inbound.get('rawInbound', {})
             _INBOUND_CACHE = RemnaInbound(inbound['uuid'], inbound['tag'], inbound['port'], inbound['network'], inbound['security'], raw)
+            _INBOUND_CACHE_AT = time.time()
             return _INBOUND_CACHE
         if INBOUND_TAG and inbound.get('tag') == INBOUND_TAG:
             raw = inbound.get('rawInbound', {})
             _INBOUND_CACHE = RemnaInbound(inbound['uuid'], inbound['tag'], inbound['port'], inbound['network'], inbound['security'], raw)
+            _INBOUND_CACHE_AT = time.time()
             return _INBOUND_CACHE
     logger.error("Desired inbound not found (tag/uuid)")
     return None
@@ -203,11 +221,13 @@ def build_vless_uri(inbound: RemnaInbound, vless_uuid: str, email: str) -> Optio
     sni = SERVER_SNI or server_names[0]
     # NOTE: Remnawave full inbound JSON не возвращает publicKey Reality напрямую (есть только privateKey).
     # Пользователь должен указать REMNA_PUBLIC_KEY в .env (получается при настройке Reality пары ключей в Xray).
-    pbk = os.getenv('REMNA_PUBLIC_KEY')
+    pbk = (os.getenv('REMNA_PUBLIC_KEY') or '').strip()
     if not pbk:
         private_key = reality.get('privateKey')
-        derived = _derive_public_key_from_private(private_key)
-        pbk = derived or 'PUBLIC_KEY_PLACEHOLDER'
+        pbk = _derive_public_key_from_private(private_key) or ''
+    if not pbk:
+        logger.error("REMNA_PUBLIC_KEY missing; cannot build VLESS URI (P2-OPS-REMNA-KEY-01)")
+        return None
     short_id = short_ids[0]
     fp = UTLS_FP or 'chrome'
     host = sni

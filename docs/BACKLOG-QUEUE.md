@@ -109,22 +109,22 @@
 | 042 | **P3-FLOW-06** | **DONE** | Видео/GIF на portal | **PORTAL_SETUP_VIDEO_OK** §12 | §7.1 |
 | 043 | **P3-FLOW-08** | **DONE** | Страница ошибок на portal | **PORTAL_HELP_ERRORS_OK** §12 | §7.1 |
 | 063 | **P6-RED-PAY-03** | **DONE** | Auto-renew: списание баланса / отказ + уведомление | **`AUTO_RENEW_BILLING_OK`** §12 | **`AUDIT-2026-05-SECURITY`**, `scheduler.py` |
-| 064 | **P3-RED-SUP-01** | **NEXT** | Ответы из support group только **SUPPORT_STAFF_IDS** / admin | **`SUPPORT_REPLY_AUTHZ_OK`** | `support_handler.py` |
-| 065 | **P2-OPS-SCHED-01** | **TODO** | Expiry notify: сравнение в **UTC** (aware datetime) | **`EXPIRY_TZ_OK`** | `scheduler.py` |
-| 066 | **P1-RED-LOG-02** | **TODO** | **`log_skip`** `/api/sub/*` на **k9x2m1** | grep access-log без token path | **`RUNBOOK-CADDY-SUBSCRIPTION-LOGS`** |
-| 067 | **P6-RED-PAY-04** | **TODO** | **CryptoBot POST** + `hmac.compare_digest` | **`CRYPTOBOT_WEBHOOK_POST_OK`** | `app.py` |
-| 068 | **P6-RED-PAY-05** | **TODO** | **`WEBHOOK_TRUST_PROXY_HEADERS` default false** | **`WEBHOOK_XFF_HARDEN_OK`** | `auth.py` |
-| 069 | **P1-RED-NET-01** | **TODO** | Panel **127.0.0.1:3000** в compose tmpl | external :3000 fail | `docker-compose.yml.tmpl` |
-| 070 | **P6-RED-PAY-06** | **TODO** | Cross-check суммы платежа vs invoice | **`PAYMENT_AMOUNT_VERIFY_OK`** | `payment_queue.py` |
-| 071 | **P6-RED-PAY-07** | **TODO** | CRITICAL log если `SKIP_API_VERIFY` на проде | smoke flag unset | `app.py` |
-| 072 | **P3-RED-SETUP-01** | **TODO** | Caddy **rate_limit** `/setup/api/*` | burst → **429** | Caddy k9x2m1 |
-| 073 | **P3-RED-SUP-02** | **TODO** | Rate limit user→support | flood test | `support_handler.py` |
-| 074 | **P2-OPS-BACKUP-01** | **TODO** | Backup filename с **timestamp** | `backup_YYYYMMDD_*` | `handlers.py` |
-| 075 | **P2-CHORE-SUP-01** | **TODO** | `support_handler` → `DB_FILE` из `database.py` | один путь | `support_handler.py` |
-| 076 | **P5-ENG-03** | **TODO** | Lazy `REMNA_API_TOKEN` + inbound cache TTL | ротация без restart | `remnawave_api.py` |
-| 077 | **P1-ENG-04** | **TODO** | Hardcoded IP в bot → env / `site_urls` | grep clean | `handlers.py` |
-| 078 | **P2-OPS-REMNA-KEY-01** | **TODO** | Fail fast без `REMNA_PUBLIC_KEY` | smoke URI | `remnawave_api.py` |
-| 051 | **P2-RED-EDGE-PORT-01** | **TODO** | **P0** Edge **2053→8443** | **`SUB_EDGE_PORT_OK`** | **`AGENT-PRODUCT-BACKLOG` §Q051** |
+| 064 | **P3-RED-SUP-01** | **DONE** | Ответы из support group только **SUPPORT_STAFF_IDS** / admin | **`SUPPORT_REPLY_AUTHZ_OK`** §12 | `support_handler.py` |
+| 065 | **P2-OPS-SCHED-01** | **DONE** | Expiry notify: сравнение в **UTC** (aware datetime) | **`EXPIRY_TZ_OK`** §12 | `scheduler.py` |
+| 066 | **P1-RED-LOG-02** | **DONE** | **`log_skip`** `/api/sub/*` на **k9x2m1** | **`SUB_LOG_SKIP_K9_OK`** §12 | **`RUNBOOK-CADDY-SUBSCRIPTION-LOGS`** |
+| 067 | **P6-RED-PAY-04** | **DONE** | **CryptoBot POST** + `hmac.compare_digest` | **`CRYPTOBOT_WEBHOOK_POST_OK`** §12 | `app.py` |
+| 068 | **P6-RED-PAY-05** | **DONE** | **`WEBHOOK_TRUST_PROXY_HEADERS` default false** | **`WEBHOOK_XFF_HARDEN_OK`** §12 | `auth.py` |
+| 069 | **P1-RED-NET-01** | **DONE** | Panel **127.0.0.1:3000** в compose tmpl | compose tmpl §12 | `docker-compose.yml.tmpl` |
+| 070 | **P6-RED-PAY-06** | **DONE** | Cross-check суммы платежа vs invoice | **`PAYMENT_AMOUNT_VERIFY_OK`** §12 | `payment_queue.py` |
+| 071 | **P6-RED-PAY-07** | **DONE** | CRITICAL log если `SKIP_API_VERIFY` на проде | **`YOOKASSA_SKIP_VERIFY_OK`** §12 | `auth.py` |
+| 072 | **P3-RED-SETUP-01** | **DONE** | Caddy **rate_limit** `/setup/api/*` | Caddy tmpl §12 | Caddy k9x2m1 |
+| 073 | **P3-RED-SUP-02** | **DONE** | Rate limit user→support | `support_handler.py` §12 | `support_handler.py` |
+| 074 | **P2-OPS-BACKUP-01** | **DONE** | Backup filename с **timestamp** | **`BACKUP_FILENAME_OK`** §12 | `handlers.py` |
+| 075 | **P2-CHORE-SUP-01** | **DONE** | `support_handler` → `DB_FILE` из `database.py` | **`SUPPORT_DB_UNIFY_OK`** §12 | `support_handler.py` |
+| 076 | **P5-ENG-03** | **DONE** | Lazy `REMNA_API_TOKEN` + inbound cache TTL | `remnawave_api.py` §12 | `remnawave_api.py` |
+| 077 | **P1-ENG-04** | **DONE** | Hardcoded IP в bot → env / `site_urls` | **`HANDLERS_IP_OK`** §12 | `handlers.py` |
+| 078 | **P2-OPS-REMNA-KEY-01** | **DONE** | Fail fast без `REMNA_PUBLIC_KEY` | **`REMNA_PUBLIC_KEY_OK`** §12 | `remnawave_api.py` |
+| 051 | **P2-RED-EDGE-PORT-01** | **NEXT** | **P0** Edge **2053→8443** | **`SUB_EDGE_PORT_OK`** | **`AGENT-PRODUCT-BACKLOG` §Q051** |
 | 052 | **P1-PRO-CLIENT-V2RAYN-01** | **TODO** | **P1** v2rayN Win | **`V2RAYN_CLIENT_OK`** | **§Q052** |
 | 053 | **P5-PROD-NATIVE-APP-01** | **TODO** | **P2** Brief iOS/Android | **`NATIVE-APP-BACKLOG.md`** | **§Q053** |
 | 054 | **P2-RED-TSPU-VLESS-01** | **TODO** | **P1** Runbook VLESS / ТСПУ | **`TSPU_VLESS_PLAYBOOK_OK`** | **§Q054** |

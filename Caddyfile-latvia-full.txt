@@ -283,6 +283,9 @@ k9x2m1.conntest.xyz:2053 {
         -Alt-Svc
     }
 
+    @sub_path_k9 path /api/sub/*
+    log_skip @sub_path_k9
+
     @fingerprint path /swagger* /health /metrics /api-docs* /docs*
     respond @fingerprint 404
 
@@ -317,8 +320,15 @@ k9x2m1.conntest.xyz:2053 {
     handle /portal {
         redir /portal/ 308
     }
-    # SETUP_API_BOOT_02 — verify setup token (P3-FLOW-02)
+    # SETUP_API_BOOT_02 — verify setup token (P3-FLOW-02); P3-RED-SETUP-01 rate limit
     handle /setup/api/* {
+        rate_limit {
+            zone setup_api_per_ip {
+                key {remote_host}
+                events 30
+                window 1m
+            }
+        }
         uri strip_prefix /setup/api
         reverse_proxy 127.0.0.1:8871 {
             header_up Host {host}

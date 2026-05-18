@@ -51,6 +51,7 @@ REMNA_TEMPLATE_UUID = os.environ.get(
     "REMNA_TEMPLATE_UUID", "9ebbce97-ae45-4f39-a7e6-d7e675a94a73"
 )
 RU_RELAY_HOST = os.environ.get("RU_RELAY_HOST", "72.56.0.145")
+AMS_PANEL_HOST_IP = os.environ.get("AMS_PANEL_HOST_IP", "168.100.11.140")
 RU_RELAY_SSH_PORT = os.environ.get("RU_RELAY_SSH_PORT", "3344")
 
 # Same shortId path as monitor.sh / daily-report.sh (public smoke URL, not a secret).

@@ -17,6 +17,10 @@ from shop_bot.data_manager.database import (
     mark_webhook_processing,
 )
 from shop_bot.webhook_server.payload_redact import redact_webhook_payload
+from shop_bot.webhook_server.payment_amount_verify import (
+    verify_crypto_amount,
+    verify_yookassa_amount,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +124,8 @@ class PaymentWebhookQueue:
         event_json = job.payload
         if event_json.get("event") != "payment.succeeded":
             return
+        if not verify_yookassa_amount(event_json):
+            raise ValueError("yookassa amount verification failed")
         metadata = (event_json.get("object") or {}).get("metadata") or {}
         obj = event_json.get("object") or {}
         if metadata.get("t") == "topup":
@@ -143,6 +149,8 @@ class PaymentWebhookQueue:
         data = job.payload
         if data.get("status") != "paid":
             return
+        if not verify_crypto_amount(data):
+            raise ValueError("crypto amount verification failed")
         metadata = data.get("metadata") or data
         if not metadata:
             return

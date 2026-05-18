@@ -116,12 +116,12 @@ def create_webhook_app(bot, payment_processor):
             logger.error("portal-web-trial-recover: %s", e, exc_info=True)
             return jsonify({"ok": False, "error": "server_error"}), 500
 
-    @flask_app.route("/cryptobot-webhook", methods=["GET"])
-    def crypto_webhook_get_handler():
+    @flask_app.route("/cryptobot-webhook", methods=["POST"])
+    def crypto_webhook_post_handler():
         try:
             if not is_client_allowed(request) or not verify_crypto_shared_secret(request):
                 return _reject_auth()
-            data = request.args.to_dict()
+            data = request.get_json(silent=True) or {}
             logger.info("Crypto bot webhook received: %s", data.get("status"))
             if data.get("status") != "paid":
                 return "ignored", 200
