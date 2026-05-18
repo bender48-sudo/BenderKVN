@@ -43,6 +43,7 @@ for pair in \
   "database.py:/opt/remna-shop/src/shop_bot/data_manager/database.py:/app/src/shop_bot/data_manager/database.py" \
   "payment_queue.py:/opt/remna-shop/src/shop_bot/webhook_server/payment_queue.py:/app/src/shop_bot/webhook_server/payment_queue.py" \
   "app.py:/opt/remna-shop/src/shop_bot/webhook_server/app.py:/app/src/shop_bot/webhook_server/app.py" \
+  "payload_redact.py:/opt/remna-shop/src/shop_bot/webhook_server/payload_redact.py:/app/src/shop_bot/webhook_server/payload_redact.py" \
   "auth.py:/opt/remna-shop/src/shop_bot/webhook_server/auth.py:/app/src/shop_bot/webhook_server/auth.py" \
   "main.py:/opt/remna-shop/src/shop_bot/main.py:/app/src/shop_bot/main.py" \
   "handlers.py:/opt/remna-shop/src/shop_bot/bot/handlers.py:/app/src/shop_bot/bot/handlers.py"

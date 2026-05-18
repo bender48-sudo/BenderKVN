@@ -79,7 +79,7 @@
 4. **Q079–Q084** — **накат на LV/AMS** (агент + SSH) ← **сейчас**
 5. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** **Q079** (**P2-OPS-DEPLOY-BOT-SEC-01** — бот AMS + security smokes).
+**NEXT:** **Q080** (**P2-OPS-DEPLOY-EDGE-01** — Caddy LV **:8443** + portal).
 
 | Кому | Документ |
 |------|----------|
@@ -150,8 +150,8 @@
 
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
-| 079 | **P2-OPS-DEPLOY-BOT-SEC-01** | **NEXT** | Бот AMS: security-код + env; webhook/support smokes | **`WEBHOOK_AUTH_OK`** + **`AUTO_RENEW_BILLING_OK`** | **`AGENT-PROD-DEPLOY-BACKLOG` §Q079** |
-| 080 | **P2-OPS-DEPLOY-EDGE-01** | **TODO** | Caddy LV **:8443** + portal; live sub/bootstrap smoke | **`SUB_EDGE_PORT_OK`** live | **`RUNBOOK-P6-EDGE-PORT-MIGRATION`** |
+| 079 | **P2-OPS-DEPLOY-BOT-SEC-01** | **DONE** | Бот AMS: security-код + env; webhook/support smokes | **`WEBHOOK_AUTH_OK`** + **`AUTO_RENEW_BILLING_OK`** | **`AGENT-PROD-DEPLOY-BACKLOG` §Q079** |
+| 080 | **P2-OPS-DEPLOY-EDGE-01** | **NEXT** | Caddy LV **:8443** + portal; live sub/bootstrap smoke | **`SUB_EDGE_PORT_OK`** live | **`RUNBOOK-P6-EDGE-PORT-MIGRATION`** |
 | 081 | **P2-OPS-DEPLOY-PANEL-01** | **TODO** | Panel **127.0.0.1:3000** на AMS (safe-deploy) | external :3000 fail | **`RUNBOOK-AMS-SAFE-DEPLOY`** |
 | 082 | **P2-OPS-SSH-HYGIENE-01** | **TODO** | Убрать дубликат SSH key на AMS | **`SSH_AUDIT_OK`** | **`SSH-KEY-INVENTORY`** |
 | 083 | **P2-OPS-PROD-SMOKE-01** | **TODO** | Батарея prod smokes + LUKS/DNS probes | **`PROD_SMOKE_BATTERY_OK`** | §Q083 в prod-deploy doc |
@@ -306,5 +306,6 @@
 | 2026-05-18 | — | CodeRabbit audit → **Q063–Q078** pre-GTM security; **`AUDIT-2026-05-SECURITY.md`** |
 | 2026-05-18 | **Q051** P2-RED-EDGE-PORT-01 | **Q063** P6-RED-PAY-03 — порядок: **security → продукт → флоу** |
 | 2026-05-18 | **Q063** P6-RED-PAY-03 | **Q064** P3-RED-SUP-01 |
-| 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy; **NEXT=Q079** |
+| 2026-05-18 | **Q079** P2-OPS-DEPLOY-BOT-SEC-01 | **Q080** P2-OPS-DEPLOY-EDGE-01 |
+| 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy |
 | 2026-05-17 | — | Синхронизация бэклога: **`BACKLOG-MAP.md`**, §5.1 ✅, FAQ, Q032 помечен «до GTM» |

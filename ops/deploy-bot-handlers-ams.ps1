@@ -18,6 +18,7 @@ $WebTrialDb = Join-Path $RepoRoot "bot_src\web_trial_db.py"
 $WebTgBind = Join-Path $RepoRoot "bot_src\web_tg_bind.py"
 $VpnWizard = Join-Path $RepoRoot "bot_src\vpn_setup_wizard.py"
 $SubQr = Join-Path $RepoRoot "bot_src\subscription_qr.py"
+$SubRefresh = Join-Path $RepoRoot "bot_src\subscription_refresh.py"
 $AutoRenew = Join-Path $RepoRoot "bot_src\auto_renew_billing.py"
 $SupportAuth = Join-Path $RepoRoot "bot_src\support_auth.py"
 $SupportHandler = Join-Path $RepoRoot "bot_src\support_handler.py"
@@ -28,8 +29,9 @@ $WebhookAppMain = Join-Path $RepoRoot "bot_src\webhook_server\app.py"
 $WebhookAuth = Join-Path $RepoRoot "bot_src\webhook_server\auth.py"
 $WebhookPayQ = Join-Path $RepoRoot "bot_src\webhook_server\payment_queue.py"
 $WebhookPayAmt = Join-Path $RepoRoot "bot_src\webhook_server\payment_amount_verify.py"
+$WebhookPayloadRedact = Join-Path $RepoRoot "bot_src\webhook_server\payload_redact.py"
 $PortalCabinet = Join-Path $RepoRoot "bot_src\portal_cabinet.py"
-foreach ($f in @($Handlers, $UserMsgs, $Scheduler, $Keyboards, $MainPy, $ConfigPy, $PortalLinks, $PortalWebTrial, $WebTrialDb, $WebTgBind, $VpnWizard, $SubQr, $AutoRenew, $SupportAuth, $SupportHandler, $RemnaApi, $PortalCabinet, $Database, $WebhookApp, $WebhookAppMain, $WebhookAuth, $WebhookPayQ, $WebhookPayAmt)) {
+foreach ($f in @($Handlers, $UserMsgs, $Scheduler, $Keyboards, $MainPy, $ConfigPy, $PortalLinks, $PortalWebTrial, $WebTrialDb, $WebTgBind, $VpnWizard, $SubQr, $SubRefresh, $AutoRenew, $SupportAuth, $SupportHandler, $RemnaApi, $PortalCabinet, $Database, $WebhookApp, $WebhookAppMain, $WebhookAuth, $WebhookPayQ, $WebhookPayAmt, $WebhookPayloadRedact)) {
     if (-not (Test-Path $f)) { throw "Missing: $f" }
 }
 
@@ -70,6 +72,7 @@ Write-Host "[deploy-bot-handlers-ams] scp..."
 & scp @($Common + @("-P", "$Port", "${WebTgBind}", "root@${HostAms}:/tmp/web_tg_bind.py"))
 & scp @($Common + @("-P", "$Port", "${VpnWizard}", "root@${HostAms}:/tmp/vpn_setup_wizard.py"))
 & scp @($Common + @("-P", "$Port", "${SubQr}", "root@${HostAms}:/tmp/subscription_qr.py"))
+& scp @($Common + @("-P", "$Port", "${SubRefresh}", "root@${HostAms}:/tmp/subscription_refresh.py"))
 & scp @($Common + @("-P", "$Port", "${AutoRenew}", "root@${HostAms}:/tmp/auto_renew_billing.py"))
 & scp @($Common + @("-P", "$Port", "${Database}", "root@${HostAms}:/tmp/database.py"))
 & scp @($Common + @("-P", "$Port", "${SupportAuth}", "root@${HostAms}:/tmp/support_auth.py"))
@@ -80,6 +83,7 @@ Write-Host "[deploy-bot-handlers-ams] scp..."
 & scp @($Common + @("-P", "$Port", "${WebhookAuth}", "root@${HostAms}:/tmp/webhook_auth.py"))
 & scp @($Common + @("-P", "$Port", "${WebhookPayQ}", "root@${HostAms}:/tmp/webhook_payment_queue.py"))
 & scp @($Common + @("-P", "$Port", "${WebhookPayAmt}", "root@${HostAms}:/tmp/webhook_payment_amount_verify.py"))
+& scp @($Common + @("-P", "$Port", "${WebhookPayloadRedact}", "root@${HostAms}:/tmp/webhook_payload_redact.py"))
 & scp @($Common + @("-P", "$Port", "${PortalCabinet}", "root@${HostAms}:/tmp/portal_cabinet.py"))
 
 $sshCmd = @'
@@ -89,7 +93,7 @@ BT=/opt/remna-shop/src/shop_bot/bot
 SB=/opt/remna-shop/src/shop_bot
 DM=/opt/remna-shop/src/shop_bot/data_manager
 WH=/opt/remna-shop/src/shop_bot/webhook_server
-sed -i 's/\r$//' /tmp/handlers.py /tmp/user_messages.py /tmp/scheduler.py /tmp/keyboards.py /tmp/main.py /tmp/config.py /tmp/portal_links.py /tmp/portal_web_trial.py /tmp/web_trial_db.py /tmp/web_tg_bind.py /tmp/vpn_setup_wizard.py /tmp/subscription_qr.py /tmp/auto_renew_billing.py /tmp/support_auth.py /tmp/support_handler.py /tmp/remnawave_api.py /tmp/portal_cabinet.py /tmp/database.py /tmp/webhook_app_ams.py /tmp/webhook_app_main.py /tmp/webhook_auth.py /tmp/webhook_payment_queue.py /tmp/webhook_payment_amount_verify.py
+sed -i 's/\r$//' /tmp/handlers.py /tmp/user_messages.py /tmp/scheduler.py /tmp/keyboards.py /tmp/main.py /tmp/config.py /tmp/portal_links.py /tmp/portal_web_trial.py /tmp/web_trial_db.py /tmp/web_tg_bind.py /tmp/vpn_setup_wizard.py /tmp/subscription_qr.py /tmp/subscription_refresh.py /tmp/auto_renew_billing.py /tmp/support_auth.py /tmp/support_handler.py /tmp/remnawave_api.py /tmp/portal_cabinet.py /tmp/database.py /tmp/webhook_app_ams.py /tmp/webhook_app_main.py /tmp/webhook_auth.py /tmp/webhook_payment_queue.py /tmp/webhook_payment_amount_verify.py /tmp/webhook_payload_redact.py
 mkdir -p "$BT" "$DM" "$WH"
 CFG=/opt/remna-shop/src/shop_bot/config.py
 for f in handlers.py user_messages.py keyboards.py; do
@@ -109,6 +113,7 @@ install -m 0644 /tmp/web_trial_db.py "$SB/web_trial_db.py"
 install -m 0644 /tmp/web_tg_bind.py "$SB/web_tg_bind.py"
 install -m 0644 /tmp/vpn_setup_wizard.py "$SB/vpn_setup_wizard.py"
 install -m 0644 /tmp/subscription_qr.py "$SB/subscription_qr.py"
+install -m 0644 /tmp/subscription_refresh.py "$BT/subscription_refresh.py"
 install -m 0644 /tmp/auto_renew_billing.py "$SB/auto_renew_billing.py"
 install -m 0644 /tmp/database.py "$DM/database.py"
 install -m 0644 /tmp/support_auth.py "$SB/support_auth.py"
@@ -120,6 +125,7 @@ install -m 0644 /tmp/webhook_app_main.py "$WH/app.py"
 install -m 0644 /tmp/webhook_auth.py "$WH/auth.py"
 install -m 0644 /tmp/webhook_payment_queue.py "$WH/payment_queue.py"
 install -m 0644 /tmp/webhook_payment_amount_verify.py "$WH/payment_amount_verify.py"
+install -m 0644 /tmp/webhook_payload_redact.py "$WH/payload_redact.py"
 install -m 0644 /tmp/main.py /opt/remna-shop/src/shop_bot/main.py
 docker cp /tmp/handlers.py remna-shop-bot:/app/src/shop_bot/bot/handlers.py
 docker cp /tmp/user_messages.py remna-shop-bot:/app/src/shop_bot/bot/user_messages.py
@@ -132,6 +138,7 @@ docker cp /tmp/web_trial_db.py remna-shop-bot:/app/src/shop_bot/web_trial_db.py
 docker cp /tmp/web_tg_bind.py remna-shop-bot:/app/src/shop_bot/web_tg_bind.py
 docker cp /tmp/vpn_setup_wizard.py remna-shop-bot:/app/src/shop_bot/vpn_setup_wizard.py
 docker cp /tmp/subscription_qr.py remna-shop-bot:/app/src/shop_bot/subscription_qr.py
+docker cp /tmp/subscription_refresh.py remna-shop-bot:/app/src/shop_bot/bot/subscription_refresh.py
 docker cp /tmp/auto_renew_billing.py remna-shop-bot:/app/src/shop_bot/auto_renew_billing.py
 docker cp /tmp/database.py remna-shop-bot:/app/src/shop_bot/data_manager/database.py
 docker cp /tmp/support_auth.py remna-shop-bot:/app/src/shop_bot/support_auth.py
@@ -143,6 +150,7 @@ docker cp /tmp/webhook_app_main.py remna-shop-bot:/app/src/shop_bot/webhook_serv
 docker cp /tmp/webhook_auth.py remna-shop-bot:/app/src/shop_bot/webhook_server/auth.py
 docker cp /tmp/webhook_payment_queue.py remna-shop-bot:/app/src/shop_bot/webhook_server/payment_queue.py
 docker cp /tmp/webhook_payment_amount_verify.py remna-shop-bot:/app/src/shop_bot/webhook_server/payment_amount_verify.py
+docker cp /tmp/webhook_payload_redact.py remna-shop-bot:/app/src/shop_bot/webhook_server/payload_redact.py
 docker cp /tmp/main.py remna-shop-bot:/app/src/shop_bot/main.py
 docker restart remna-shop-bot
 echo "Remote md5:"

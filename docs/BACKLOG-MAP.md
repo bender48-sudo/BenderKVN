@@ -31,7 +31,7 @@
 | **3** | 033–050, 063–078, 051–062 | **Репо закрыто** | Код/docs: security → продукт → флоу |
 | **4** | 079–084 | **В работе** | Накат LV/AMS (агент + SSH) |
 
-**Сейчас:** **`NEXT = Q079`**. **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`**. Владелец: **`MANUAL-OWNER-CHECKLIST.md`**.
+**Сейчас:** **`NEXT = Q080`**. **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`**. Владелец: **`MANUAL-OWNER-CHECKLIST.md`**.
 
 ---
 
