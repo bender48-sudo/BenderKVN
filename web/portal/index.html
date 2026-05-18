@@ -7,6 +7,7 @@
   <title>BenderVPN — подключение</title>
   <link rel="stylesheet" href="/portal/assets/portal.css">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" defer></script>
   <script src="/portal/assets/portal.js" defer></script>
 </head>
 <body>
@@ -91,6 +92,12 @@
     <section data-view="device" class="hidden">
       <button type="button" class="btn btn-ghost btn-no-code" id="btn-back-devices">← Назад к выбору устройства</button>
       <h2 id="device-detail-title"></h2>
+      <div id="device-qr-panel" class="panel qr-wrap hidden">
+        <h3 id="device-qr-title">QR для Happ</h3>
+        <p class="muted" id="device-qr-hint"></p>
+        <canvas id="device-sub-qr" aria-label="QR подписки"></canvas>
+        <p class="muted hidden" id="device-qr-missing"></p>
+      </div>
       <div class="panel">
         <h3 id="install-steps-title">Установка</h3>
         <ol id="device-install-steps" class="steps"></ol>

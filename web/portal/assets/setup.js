@@ -164,6 +164,11 @@
     $("setup-link").href = url;
     $("btn-open-happ").href = url;
     renderQr(url);
+    try {
+      localStorage.setItem("bvpn_subscription_url", url);
+    } catch (e) {
+      /* ignore */
+    }
     bindCopy($("btn-copy"), url, s.copied);
     if (extra && extra.customer_id) {
       bindCopy($("btn-copy-id"), extra.customer_id, s.copied_id);

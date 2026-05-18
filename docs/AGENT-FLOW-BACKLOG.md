@@ -65,7 +65,7 @@ web/portal/
 | **049** | P3-FLOW-16 | Q048, web trial | Bind TG ↔ `BVPN-ID` / email |
 | **050** | P3-FLOW-17 | Q049, P2-RED-BOOT-01 | Web/email notify без TG |
 
-**Текущий NEXT:** **`BACKLOG-QUEUE.md`** → **Q041** (**P3-FLOW-05**). Карта: **`BACKLOG-MAP.md`**.
+**Текущий NEXT:** **`BACKLOG-QUEUE.md`** → **Q042** (**P3-FLOW-06**). Карта: **`BACKLOG-MAP.md`**.
 
 **Уже закрыто в фазе 3:** Q033–038 (journey, portal, deploy, setup, Mini App, bot links) — не переделывать без регрессии.
 

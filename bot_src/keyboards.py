@@ -66,12 +66,13 @@ def create_trial_success_keyboard(sub_url):
     builder = InlineKeyboardBuilder()
     setup_url = portal_links.setup_url_for_sub(sub_url)
     _add_portal_link_buttons(builder, setup_url=setup_url)
+    builder.button(text="\U0001f4f7 QR \u0434\u043b\u044f Happ", callback_data="show_sub_qr")
     builder.button(text="\U0001f4cb \u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443 \u043f\u043e\u0434\u043f\u0438\u0441\u043a\u0438", callback_data="copy_sub_url")
     builder.button(text="\U0001f34e App Store", url="https://apps.apple.com/ru/app/happ-proxy-utility-plus/id6746188973")
     builder.button(text="\U0001f916 Google Play", url="https://play.google.com/store/apps/details?id=com.happproxy.happ")
     builder.button(text="\U0001f464 \u041c\u043e\u0439 \u0430\u043a\u043a\u0430\u0443\u043d\u0442", callback_data="my_account")
     builder.button(text="\U0001f4ac \u041d\u0430\u043f\u0438\u0441\u0430\u0442\u044c \u043d\u0430\u043c", callback_data="contact_support")
-    builder.adjust(1, 1, 1, 2, 1, 1)
+    builder.adjust(1, 1, 1, 1, 2, 1, 1)
     return builder.as_markup()
 
 
@@ -80,6 +81,7 @@ def create_account_keyboard(sub_url=None):
     if sub_url:
         setup_url = portal_links.setup_url_for_sub(sub_url)
         _add_portal_link_buttons(builder, setup_url=setup_url)
+        builder.button(text="\U0001f4f7 QR \u0434\u043b\u044f Happ", callback_data="show_sub_qr")
         builder.button(text="\U0001f4cb \u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443 \u043f\u043e\u0434\u043f\u0438\u0441\u043a\u0438", callback_data="copy_sub_url")
     builder.button(text="\U0001f4b0 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u0431\u0430\u043b\u0430\u043d\u0441", callback_data="show_topup")
     builder.button(text="\U0001f465 \u041f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u0442\u044c \u0434\u0440\u0443\u0437\u0430", callback_data="invite_friend")
@@ -172,6 +174,7 @@ def create_wizard_device_keyboard(
             text="\U0001f517 \u041c\u043e\u044f \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430",
             url=setup_url,
         )
+    builder.button(text="\U0001f4f7 QR \u0434\u043b\u044f Happ", callback_data="show_sub_qr")
     store_key = device_id
     from shop_bot.vpn_setup_wizard import DEVICES, HAPP_STORES
 

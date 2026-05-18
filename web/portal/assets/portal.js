@@ -7,6 +7,7 @@
   const SUPPORT_URL = "https://t.me/Bender_KVN_bot";
   const SETUP_PATH = "/setup/";
   const ACK_KEY = "bvpn_vpn_config_ack";
+  const SUB_URL_KEY = "bvpn_subscription_url";
 
   let content = null;
 
@@ -256,11 +257,55 @@
     });
   }
 
+  function readStoredSubscriptionUrl() {
+    try {
+      return (localStorage.getItem(SUB_URL_KEY) || "").trim();
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function renderDeviceSubscriptionQr(subUrl) {
+    var panel = $("device-qr-panel");
+    var canvas = $("device-sub-qr");
+    var missing = $("device-qr-missing");
+    var qrCopy = (content && content.device_qr) || {};
+    if ($("device-qr-title")) {
+      $("device-qr-title").textContent = qrCopy.title || "QR для Happ";
+    }
+    if ($("device-qr-hint")) {
+      $("device-qr-hint").textContent = qrCopy.hint || "";
+    }
+    if (!panel || !canvas) return;
+    panel.classList.remove("hidden");
+    if (!subUrl) {
+      if (canvas) canvas.classList.add("hidden");
+      if (missing) {
+        missing.textContent =
+          qrCopy.missing ||
+          "Сначала получите настройку на странице «Получить бесплатный VPN».";
+        missing.classList.remove("hidden");
+      }
+      return;
+    }
+    if (canvas) canvas.classList.remove("hidden");
+    if (missing) missing.classList.add("hidden");
+    if (window.QRCode) {
+      QRCode.toCanvas(
+        canvas,
+        subUrl,
+        { width: 220, margin: 2, color: { dark: "#e85d04", light: "#ffffff" } },
+        function () {}
+      );
+    }
+  }
+
   function showDeviceDetail(deviceId) {
     var dev = content.devices.find(function (d) {
       return d.id === deviceId;
     });
     if (!dev) return;
+    renderDeviceSubscriptionQr(readStoredSubscriptionUrl());
     var screens = content.screens || {};
     if ($("install-steps-title") && screens.install_steps_title) {
       $("install-steps-title").textContent = screens.install_steps_title;

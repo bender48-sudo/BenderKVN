@@ -17,9 +17,10 @@ $PortalWebTrial = Join-Path $RepoRoot "bot_src\portal_web_trial.py"
 $WebTrialDb = Join-Path $RepoRoot "bot_src\web_trial_db.py"
 $WebTgBind = Join-Path $RepoRoot "bot_src\web_tg_bind.py"
 $VpnWizard = Join-Path $RepoRoot "bot_src\vpn_setup_wizard.py"
+$SubQr = Join-Path $RepoRoot "bot_src\subscription_qr.py"
 $Database = Join-Path $RepoRoot "bot_src\database.py"
 $WebhookApp = Join-Path $RepoRoot "bot_src\webhook_server\app_ams_with_portal_trial.py"
-foreach ($f in @($Handlers, $UserMsgs, $Scheduler, $Keyboards, $MainPy, $ConfigPy, $PortalLinks, $PortalWebTrial, $WebTrialDb, $WebTgBind, $VpnWizard, $Database, $WebhookApp)) {
+foreach ($f in @($Handlers, $UserMsgs, $Scheduler, $Keyboards, $MainPy, $ConfigPy, $PortalLinks, $PortalWebTrial, $WebTrialDb, $WebTgBind, $VpnWizard, $SubQr, $Database, $WebhookApp)) {
     if (-not (Test-Path $f)) { throw "Missing: $f" }
 }
 
@@ -27,7 +28,7 @@ python -c @"
 import ast
 from pathlib import Path
 root = Path(r'$RepoRoot')
-for name in ('handlers.py', 'user_messages.py', 'scheduler.py', 'keyboards.py', 'main.py', 'config.py', 'portal_links.py', 'portal_web_trial.py', 'database.py'):
+for name in ('handlers.py', 'user_messages.py', 'scheduler.py', 'keyboards.py', 'main.py', 'config.py', 'portal_links.py', 'portal_web_trial.py', 'subscription_qr.py', 'database.py'):
     ast.parse((root / 'bot_src' / name).read_text(encoding='utf-8'))
 ast.parse((root / 'bot_src/webhook_server/app_ams_with_portal_trial.py').read_text(encoding='utf-8'))
 "@
@@ -59,6 +60,7 @@ Write-Host "[deploy-bot-handlers-ams] scp..."
 & scp @($Common + @("-P", "$Port", "${WebTrialDb}", "root@${HostAms}:/tmp/web_trial_db.py"))
 & scp @($Common + @("-P", "$Port", "${WebTgBind}", "root@${HostAms}:/tmp/web_tg_bind.py"))
 & scp @($Common + @("-P", "$Port", "${VpnWizard}", "root@${HostAms}:/tmp/vpn_setup_wizard.py"))
+& scp @($Common + @("-P", "$Port", "${SubQr}", "root@${HostAms}:/tmp/subscription_qr.py"))
 & scp @($Common + @("-P", "$Port", "${Database}", "root@${HostAms}:/tmp/database.py"))
 & scp @($Common + @("-P", "$Port", "${WebhookApp}", "root@${HostAms}:/tmp/webhook_app.py"))
 
@@ -69,7 +71,7 @@ BT=/opt/remna-shop/src/shop_bot/bot
 SB=/opt/remna-shop/src/shop_bot
 DM=/opt/remna-shop/src/shop_bot/data_manager
 WH=/opt/remna-shop/src/shop_bot/webhook_server
-sed -i 's/\r$//' /tmp/handlers.py /tmp/user_messages.py /tmp/scheduler.py /tmp/keyboards.py /tmp/main.py /tmp/config.py /tmp/portal_links.py /tmp/portal_web_trial.py /tmp/web_trial_db.py /tmp/web_tg_bind.py /tmp/vpn_setup_wizard.py /tmp/database.py /tmp/webhook_app.py
+sed -i 's/\r$//' /tmp/handlers.py /tmp/user_messages.py /tmp/scheduler.py /tmp/keyboards.py /tmp/main.py /tmp/config.py /tmp/portal_links.py /tmp/portal_web_trial.py /tmp/web_trial_db.py /tmp/web_tg_bind.py /tmp/vpn_setup_wizard.py /tmp/subscription_qr.py /tmp/database.py /tmp/webhook_app.py
 mkdir -p "$BT" "$DM" "$WH"
 CFG=/opt/remna-shop/src/shop_bot/config.py
 for f in handlers.py user_messages.py keyboards.py; do
@@ -88,6 +90,7 @@ install -m 0644 /tmp/portal_web_trial.py "$SB/portal_web_trial.py"
 install -m 0644 /tmp/web_trial_db.py "$SB/web_trial_db.py"
 install -m 0644 /tmp/web_tg_bind.py "$SB/web_tg_bind.py"
 install -m 0644 /tmp/vpn_setup_wizard.py "$SB/vpn_setup_wizard.py"
+install -m 0644 /tmp/subscription_qr.py "$SB/subscription_qr.py"
 install -m 0644 /tmp/database.py "$DM/database.py"
 install -m 0644 /tmp/webhook_app.py "$WH/app.py"
 install -m 0644 /tmp/main.py /opt/remna-shop/src/shop_bot/main.py
@@ -101,6 +104,7 @@ docker cp /tmp/portal_web_trial.py remna-shop-bot:/app/src/shop_bot/portal_web_t
 docker cp /tmp/web_trial_db.py remna-shop-bot:/app/src/shop_bot/web_trial_db.py
 docker cp /tmp/web_tg_bind.py remna-shop-bot:/app/src/shop_bot/web_tg_bind.py
 docker cp /tmp/vpn_setup_wizard.py remna-shop-bot:/app/src/shop_bot/vpn_setup_wizard.py
+docker cp /tmp/subscription_qr.py remna-shop-bot:/app/src/shop_bot/subscription_qr.py
 docker cp /tmp/database.py remna-shop-bot:/app/src/shop_bot/data_manager/database.py
 docker cp /tmp/webhook_app.py remna-shop-bot:/app/src/shop_bot/webhook_server/app.py
 docker cp /tmp/main.py remna-shop-bot:/app/src/shop_bot/main.py

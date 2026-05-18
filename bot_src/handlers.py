@@ -259,20 +259,28 @@ class VpnSetupWizard(StatesGroup):
     on_device = State()
 
 
-async def _wizard_setup_url(user_id: int) -> str | None:
-    from shop_bot.bot import portal_links
-
-    keys = get_user_keys(user_id)
-    if not keys:
-        return None
+async def _fetch_subscription_url(user_id: int) -> str | None:
     try:
         async with aiohttp.ClientSession() as session:
             remote = await remnawave_api.get_user_by_telegram_id(session, str(user_id))
             if remote and remote.get("subscriptionUrl"):
-                return portal_links.setup_url_for_sub(remote["subscriptionUrl"])
+                return str(remote["subscriptionUrl"])
     except Exception as exc:
-        logger.warning("wizard setup_url fetch: %s", exc)
+        logger.warning("fetch_subscription_url: %s", exc)
     return None
+
+
+async def _wizard_setup_url(user_id: int) -> str | None:
+    from shop_bot.bot import portal_links
+
+    sub_url = await _fetch_subscription_url(user_id)
+    if not sub_url:
+        return None
+    try:
+        return portal_links.setup_url_for_sub(sub_url)
+    except Exception as exc:
+        logger.warning("wizard setup_url: %s", exc)
+        return None
 
 async def _apply_web_bind(message: types.Message, bind_token: str) -> bool:
     """Bind web trial to this Telegram chat. Returns True if bind attempted."""
@@ -741,7 +749,7 @@ async def trial_period_handler(callback: types.CallbackQuery):
         message_text += "1\ufe0f\u20e3 Скачай приложение Happ (кнопка ниже)\n\n"
         message_text += "2\ufe0f\u20e3 Открой Happ\n\n"
         message_text += "3\ufe0f\u20e3 Нажми + в правом верхнем углу\n\n"
-        message_text += '4\ufe0f\u20e3 Выбери "Из буфера обмена"\n\n'
+        message_text += '4\ufe0f\u20e3 Выбери "Из буфера обмена" или отсканируй QR (кнопка ниже)\n\n'
         message_text += "5\ufe0f\u20e3 Нажми кнопку питания \u2014 готово! \U0001f389\n"
         message_text += "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
         message_text += user_messages.MSG_TRIAL_PORTAL_HINT
@@ -852,21 +860,45 @@ async def copy_sub_url_handler(callback: types.CallbackQuery):
     await callback.answer()
     user_id = callback.from_user.id
     try:
-        import aiohttp
-        async with aiohttp.ClientSession() as session:
-            user_data = await remnawave_api.get_user_by_telegram_id(session, str(user_id))
-            if user_data and user_data.get("subscriptionUrl"):
-                sub_url = user_data["subscriptionUrl"]
-                await callback.message.answer(
-                    f"\U0001f4cb Твоя ссылка подписки \u2014 нажми чтобы скопировать:\n\n"
-                    f"`{sub_url}`",
-                    parse_mode="Markdown"
-                )
-            else:
-                await callback.message.answer("❌ " + user_messages.ERR_SUBSCRIPTION_URL_MISSING)
+        sub_url = await _fetch_subscription_url(user_id)
+        if sub_url:
+            await callback.message.answer(
+                f"\U0001f4cb Твоя ссылка подписки \u2014 нажми чтобы скопировать:\n\n"
+                f"`{sub_url}`",
+                parse_mode="Markdown",
+            )
+        else:
+            await callback.message.answer("❌ " + user_messages.ERR_SUBSCRIPTION_URL_MISSING)
     except Exception as e:
         logger.error(f"Error in copy_sub_url: {e}")
         await callback.message.answer("❌ " + user_messages.ERR_GENERIC_RETRY)
+
+
+@user_router.callback_query(F.data == "show_sub_qr")
+async def show_sub_qr_handler(callback: types.CallbackQuery):
+    from shop_bot.subscription_qr import subscription_qr_png
+
+    await callback.answer()
+    user_id = callback.from_user.id
+    try:
+        sub_url = await _fetch_subscription_url(user_id)
+        if not sub_url:
+            await callback.message.answer("❌ " + user_messages.ERR_SUBSCRIPTION_URL_MISSING)
+            return
+        png = subscription_qr_png(sub_url)
+        await callback.message.answer_photo(
+            BufferedInputFile(png, filename="happ_sub_qr.png"),
+            caption=(
+                "\U0001f4f7 <b>QR для Happ</b>\n\n"
+                "В приложении: <b>+</b> \u2192 сканировать QR.\n"
+                "Та же ссылка подписки, что при «Скопировать»."
+            ),
+            parse_mode="HTML",
+        )
+        log_action(user_id, "show_sub_qr", "ok")
+    except Exception as e:
+        logger.error("show_sub_qr failed for %s: %s", user_id, e)
+        await callback.message.answer("❌ " + user_messages.ERR_QR)
 
 @user_router.callback_query(F.data == "admin_stats")
 async def admin_stats_handler(callback: types.CallbackQuery):
