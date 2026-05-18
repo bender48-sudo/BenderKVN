@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Последовательный бэклог
 
-Источник очереди: **`docs/BACKLOG-QUEUE.md`** (единственная строка **`NEXT`**).
+Источник очереди: **`docs/BACKLOG-QUEUE.md`** (единственная строка **`NEXT`**). Карта: **`docs/BACKLOG-MAP.md`**.
 
 ## Обязательный цикл
 
@@ -25,5 +25,7 @@ alwaysApply: true
 ## Ссылки
 
 - Детали задач: **`docs/COMMERCIAL-BACKLOG.md`**
+- **Фаза 3 — продукт / ТСПУ (Q051–062, критично):** **`docs/AGENT-PRODUCT-BACKLOG.md`**, правило **`product-backlog.mdc`**
+- **Фаза 3 — флоу (Q044–050, после продукта):** **`docs/AGENT-FLOW-BACKLOG.md`**, правило **`flow-backlog.mdc`**
 - Приоритеты продукта: **`docs/POLICY-BACKLOG-ORDER.md`**
 - Накат AMS: **`docs/RUNBOOK-AMS-SAFE-DEPLOY.md`**

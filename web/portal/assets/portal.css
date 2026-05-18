@@ -603,6 +603,22 @@ ol.steps li::before {
   margin: 0.5rem 0 1rem;
 }
 
+.errors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.error-card h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.35rem;
+}
+
+.error-card--highlight {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(232, 93, 4, 0.35);
+}
+
 .guide-gif,
 .guide-video {
   max-width: min(100%, 360px);

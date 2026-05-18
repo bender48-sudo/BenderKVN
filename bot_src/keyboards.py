@@ -39,6 +39,12 @@ def _add_portal_link_buttons(builder: InlineKeyboardBuilder, setup_url: str | No
             text="\U0001f3ac \u0412\u0438\u0434\u0435\u043e: \u043a\u0430\u043a \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u044c",
             url=guide_url,
         )
+    errors_url = portal_links.public_errors_url()
+    if errors_url:
+        builder.button(
+            text="\u2753 \u0427\u0430\u0441\u0442\u044b\u0435 \u043e\u0448\u0438\u0431\u043a\u0438",
+            url=errors_url,
+        )
     if setup_url:
         builder.button(
             text="\U0001f517 \u041c\u043e\u044f \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430",

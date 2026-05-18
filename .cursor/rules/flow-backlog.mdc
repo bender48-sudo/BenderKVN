@@ -1,0 +1,19 @@
+---
+description: Фаза 3 P3-FLOW — портал, Mini App (Q044–050, после продукта Q051–062)
+alwaysApply: false
+---
+
+# User flow / Mini App (фаза 3)
+
+**Сейчас критичен продукт:** **`docs/AGENT-PRODUCT-BACKLOG.md`** (**Q051–062**, **NEXT=Q051**). Это правило — **только флоу Q044–050 после Q062**.
+
+Очередь: **`docs/BACKLOG-QUEUE.md`**. Карта: **`docs/BACKLOG-MAP.md`**. Инструкции флоу: **`docs/AGENT-FLOW-BACKLOG.md`**.
+
+Контекст: **`docs/USER-FLOW-BACKLOG.md`**, §7.1 **`docs/COMMERCIAL-BACKLOG.md`**.
+
+## Жёсткие правила
+
+1. **Один портал** — `web/portal/` + `content/ru.json` для **сайта и Telegram Mini App**; не плодить второй UI.
+2. Mini App URL = **`site_urls.public_portal_url()`** (тот же bundle, что `/start`).
+3. Один коммит на Q → обновить очередь и §12 → стоп.
+4. Не смешивать с **P4-DNS**; AMS deploy — **`RUNBOOK-AMS-SAFE-DEPLOY`**.

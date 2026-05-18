@@ -69,16 +69,25 @@
 
 ### Фаза 3 — продукт, флоу, GTM (после Q031)
 
-**Старт:** **2026-05-17**. **Инструкции агента:** **`docs/AGENT-FLOW-BACKLOG.md`**.  
-**NEXT:** **Q043** (**P3-FLOW-08**).
+**Старт:** **2026-05-17**.
+
+| Кому | Документ |
+|------|----------|
+| **Агент — продукт (сейчас)** | **`docs/AGENT-PRODUCT-BACKLOG.md`** — Q051–062: **что / зачем / почему** |
+| Агент — флоу (после Q062) | **`docs/AGENT-FLOW-BACKLOG.md`** |
+| Правило Cursor | **`.cursor/rules/product-backlog.mdc`** |
+
+**NEXT:** **Q051** (**P2-RED-EDGE-PORT-01** → edge **:8443**).
+
+**КРИТИЧНО:** сначала **Q051–062** (продукт / маскировка / ТСПУ), **потом** **Q044–050** (флоу). Не менять порядок без владельца.
 
 | Блок | Q | Смысл |
 |------|---|--------|
-| Legal (до GTM) | 032 | Возвраты — **TODO**, пропущен при старте фазы 3; закрыть **до рекламы** |
-| MVP portal | 033–038 | **DONE** — journey, `web/portal/`, `/start`, `/setup`, Mini App, бот |
-| Сейчас | **043** | **NEXT** — страница ошибок на portal |
-| Полировка | 040–047 | FAQ, QR, видео, ошибки, a11y, метрики |
-| Веб-ЛК | 048–050 | Баланс, bind TG, уведомления без TG |
+| Legal (до GTM) | 032 | Возвраты — **TODO** (владелец; не блокирует продукт) |
+| MVP portal | 033–043 | **DONE** |
+| **Продукт / ТСПУ** | **051–062** | **Сейчас** — порт **8443**, v2rayN, VLESS, SNI yandex, тиры sub, … (**`TSPU-OBSERVATIONS.md`**) |
+| **Флоу (после продукта)** | **044–050** | Ветки устройств, a11y, метрики, веб-ЛК |
+| **P4 ТСПУ** | **060** (параллельно P4) | RF egress + whitelist IP |
 
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
@@ -93,8 +102,20 @@
 | 040 | **P3-FLOW-07** | **DONE** | FAQ/онбординг/ru.json — оплата live | **PAYMENT_COPY_SYNC_OK** §12 | **`FAQ.md`** |
 | 041 | **P3-FLOW-05** | **DONE** | QR (бот + portal) | **BOT_SUBSCRIPTION_QR_OK** / **PORTAL_SUBSCRIPTION_QR_OK** §12 | §7.1 |
 | 042 | **P3-FLOW-06** | **DONE** | Видео/GIF на portal | **PORTAL_SETUP_VIDEO_OK** §12 | §7.1 |
-| 043 | **P3-FLOW-08** | **NEXT** | Страница ошибок на portal | 5 кейсов | §7.1 |
-| 044 | **P3-FLOW-09** | **TODO** | Ветки iPhone / Android / Win | ≤ 5 шагов | §7.1 |
+| 043 | **P3-FLOW-08** | **DONE** | Страница ошибок на portal | **PORTAL_HELP_ERRORS_OK** §12 | §7.1 |
+| 051 | **P2-RED-EDGE-PORT-01** | **NEXT** | **P0** Edge **2053→8443**: убрать сигнатуру 3X-UI, меньше сканов ТСПУ к sub/portal | **`SUB_EDGE_PORT_OK`** | **`AGENT-PRODUCT-BACKLOG` §Q051** |
+| 052 | **P1-PRO-CLIENT-V2RAYN-01** | **TODO** | **P1** v2rayN Win: бета не коннектится; второй клиент на ПК | **`V2RAYN_CLIENT_OK`** | **§Q052** |
+| 053 | **P5-PROD-NATIVE-APP-01** | **TODO** | **P2** Brief iOS/Android (замена Happ), без кода | **`NATIVE-APP-BACKLOG.md`** | **§Q053** |
+| 054 | **P2-RED-TSPU-VLESS-01** | **TODO** | **P1** Runbook: палево VLESS, ~15 дн на ТСПУ; не один fingerprint | **`TSPU_VLESS_PLAYBOOK_OK`** | **§Q054** |
+| 055 | **P1-RED-TSPU-BLOCK-01** | **TODO** | **P1** Probe RU: порты >990, обрыв SSL | **`TSPU_BLOCK_PROBE_OK`** | **§Q055** |
+| 056 | **P2-RED-VPN-INBOUND-PORT-01** | **TODO** | **P1** Inbound VPN ≠443 при бане у хостера | **`VPN_INBOUND_PORT_OK`** | **§Q056** |
+| 057 | **P2-RED-SELFSTEAL-REVIEW-01** | **TODO** | **P1** Selfsteal/decoy — go/no-go (п.5 наблюдений) | **`SELFSTEAL_REVIEW_OK`** | **§Q057** |
+| 058 | **P2-RED-SNI-ROTATE-01** | **TODO** | **P0** SNI **yandex.ru** вместо github/bing (WL-маска) | **`SNI_ROTATE_OK`** | **§Q058** |
+| 059 | **P1-RED-TSPU-THREAT-MODEL-01** | **TODO** | **P1** Wiki ТСПУ п.7–9 (массовый бан, малый сервер) | **`TSPU-THREAT-MODEL.md`** | **§Q059** |
+| 060 | **P4-DNS-07/08** | **TODO** | **P4** RF egress + whitelist IP; **не NEXT** без владельца | Wiki/PoC | **§Q060** |
+| 061 | **P1-RED-NODE-DNS-01** | **TODO** | **P1** Свой DNS на нодах (п.11) | **`NODE_DNS_RESOLVER_OK`** | **§Q061** |
+| 062 | **P1-PRO-SUB-TIER-01** | **TODO** | **P0** 3 tier: turbo / wl-direct / wl-routed | **`SUB_TIER_PROFILES_OK`** | **§Q062** |
+| 044 | **P3-FLOW-09** | **TODO** | **ФЛОУ** Ветки iPhone/Android/Win — **только после Q062** | ≤ 5 шагов | **`AGENT-FLOW-BACKLOG` §Q044** |
 | 045 | **P3-FLOW-13** | **TODO** | a11y portal | Lighthouse ≥ 95 | §7.1 |
 | 046 | **P3-FLOW-10** | **TODO** | Метрики воронки | Wiki + §12 | §7.1 |
 | 047 | **P3-FLOW-11** | **TODO** | Запасной домен bootstrap | Tabletop | §7.1 |
@@ -150,6 +171,18 @@
 | 041 | `product: P3-FLOW-05 — subscription QR in bot and portal` |
 | 042 | `product: P3-FLOW-06 — setup video on portal` |
 | 043 | `product: P3-FLOW-08 — human-readable errors on portal` |
+| 051 | `ops: P2-RED-EDGE-PORT-01 — migrate public edge 2053 to 8443 (TSPU)` |
+| 052 | `product: P1-PRO-CLIENT-V2RAYN-01 — Windows v2rayN compatibility` |
+| 053 | `docs: P5-PROD-NATIVE-APP-01 — native app product brief` |
+| 054 | `docs: P2-RED-TSPU-VLESS-01 — TSPU VLESS incident runbook` |
+| 055 | `ops: P1-RED-TSPU-BLOCK-01 — RU block probe ports>990 SSL` |
+| 056 | `ops: P2-RED-VPN-INBOUND-PORT-01 — VPN node inbound port migration` |
+| 057 | `docs: P2-RED-SELFSTEAL-REVIEW-01 — decoy/selfsteal go-no-go` |
+| 058 | `ops: P2-RED-SNI-ROTATE-01 — rotate Reality dest SNI off github cluster` |
+| 059 | `docs: P1-RED-TSPU-THREAT-MODEL-01 — TSPU threat model wiki` |
+| 060 | `docs: P4-DNS-07/08 — RF egress + whitelist IP source` |
+| 061 | `ops: P1-RED-NODE-DNS-01 — node DNS resolver policy` |
+| 062 | `product: P1-PRO-SUB-TIER-01 — turbo/wl-direct/wl-routed subscription tiers` |
 | 044 | `product: P3-FLOW-09 — device-specific portal branches` |
 | 045 | `product: P3-FLOW-13 — portal a11y pass` |
 | 046 | `ops: P3-FLOW-10 — funnel metrics hooks` |
@@ -210,4 +243,8 @@
 | 2026-05-17 | **Q040** P3-FLOW-07 | **Q041** P3-FLOW-05 |
 | 2026-05-17 | **Q041** P3-FLOW-05 | **Q042** P3-FLOW-06 |
 | 2026-05-17 | **Q042** P3-FLOW-06 | **Q043** P3-FLOW-08 |
+| 2026-05-17 | **Q043** P3-FLOW-08 | **Q044** P3-FLOW-09 |
+| 2026-05-18 | — | Очередь **Q051–053**: порт edge, v2rayN, native app brief (фидбек бета) |
+| 2026-05-18 | — | **Q054–061** + **`TSPU-OBSERVATIONS.md`**: 12 пунктов ТСПУ по матрице |
+| 2026-05-18 | **Q044** P3-FLOW-09 | **Q051** P2-RED-EDGE-PORT-01 — продукт вперёд флоу; **8443** |
 | 2026-05-17 | — | Синхронизация бэклога: **`BACKLOG-MAP.md`**, §5.1 ✅, FAQ, Q032 помечен «до GTM» |

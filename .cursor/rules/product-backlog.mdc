@@ -1,0 +1,27 @@
+---
+description: Фаза 3 продукт / ТСПУ / маскировка — Q051–062 (критично, впереди флоу)
+alwaysApply: false
+---
+
+# Продукт / маскировка (Q051–062)
+
+**Очередь:** **`docs/BACKLOG-QUEUE.md`** — только **`NEXT`** (сейчас **Q051**).
+
+**Инструкции агента (что / зачем / почему):** **`docs/AGENT-PRODUCT-BACKLOG.md`**.
+
+**Контекст:** **`docs/TSPU-OBSERVATIONS.md`**, **`docs/EDGE-PORT-RECOMMENDATION.md`**, **`docs/PRODUCT-TIER-PROFILES.md`**.
+
+## Gate
+
+1. **Не брать Q044–050 (флоу)**, пока не закрыт **Q062** или владелец явно не сказал иначе.
+2. **Один Q → один коммит → стоп** (как **`sequential-backlog.mdc`**).
+3. **Q060** — поток P4, не подменять **NEXT** без согласования.
+4. AMS — **`RUNBOOK-AMS-SAFE-DEPLOY`**; LV portal — **`RUNBOOK-USER-BOOTSTRAP-SITE`**.
+
+## P0 в продукте
+
+- **Q051** — edge **8443** (не 2053)
+- **Q058** — SNI **yandex.ru**
+- **Q062** — tier turbo / wl-direct / wl-routed
+
+Флоу: **`docs/AGENT-FLOW-BACKLOG.md`** — только после продукта.

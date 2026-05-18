@@ -126,6 +126,14 @@ def public_portal_url() -> str:
     return f"{_portal_origin()}{path}/"
 
 
+def public_errors_url(code: str | None = None) -> str:
+    """Human-readable errors (P3-FLOW-08)."""
+    base = f"{_portal_origin()}/start/help/errors/"
+    if not code:
+        return base
+    return f"{base}?code={code.strip().lower()}"
+
+
 def public_guide_url(platform: str | None = None) -> str:
     """Setup video/GIF page (P3-FLOW-06)."""
     base = f"{_portal_origin()}/portal/guide.html"

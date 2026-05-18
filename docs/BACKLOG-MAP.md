@@ -11,7 +11,8 @@
 | **1. Исполнение** | **`docs/BACKLOG-QUEUE.md`** | Линейная очередь **Q001…**; единственный **`NEXT`** |
 | **2. Задачи и журнал** | **`docs/COMMERCIAL-BACKLOG.md`** | ID, Done when, §7.1 P3-FLOW, **§12** прогресс на проде |
 | **3. Флоу (продукт)** | **`docs/USER-FLOW-BACKLOG.md`** | Принципы, MVP/Comfort, бабушка-тест |
-| **4. Агент (как делать)** | **`docs/AGENT-FLOW-BACKLOG.md`** | Пошагово по Q, файлы, smoke, commit |
+| **4. Агент — продукт (критично)** | **`docs/AGENT-PRODUCT-BACKLOG.md`** | Q051–062: что / зачем / почему |
+| **4b. Агент — флоу** | **`docs/AGENT-FLOW-BACKLOG.md`** | Q044–050 после продукта |
 | **5. Карта пути** | **`docs/USER-FLOW-JOURNEY.md`** | Персоны, сценарии (закрыт **P3-FLOW-00**) |
 | **6. Владелец (ручное)** | **`docs/MANUAL-OWNER-CHECKLIST.md`** | Bitwarden, BotFather, DNSSEC — не в очереди Q |
 | **7. Политики** | **`POLICY-SEQUENTIAL-WORK.md`**, **`POLICY-BACKLOG-ORDER.md`** | Один Q → коммит; продукт → UX |
@@ -26,9 +27,9 @@
 |------|---|--------|------|
 | **1** | 001–022 | **Закрыта** | Scale, monetize, P6-RED (sub/mux/pg), GTM wiki |
 | **2** | 023–031 | **Закрыта** | Safe-deploy, P1-RED, публичный `/status` |
-| **3** | 032–050 | **В работе** | Флоу, portal, Mini App, GTM-хвосты, веб-ЛК |
+| **3** | 032–062 | **В работе** | Продукт/ТСПУ **Q051–062**, затем флоу **Q044–050** |
 
-**Сейчас:** **`NEXT = Q043`** (**P3-FLOW-08** — ошибки на portal).
+**Сейчас:** **`NEXT = Q051`** (edge **:8443**). **Флоу Q044–050** — после **Q062**.
 
 ---
 
@@ -41,8 +42,16 @@
 [DONE]      Q040  FAQ / оплата live (PAYMENT_COPY_SYNC_OK)
 [DONE]      Q041  QR подписки (бот + portal)
 [DONE]      Q042  видео/GIF guide на portal
-[CURRENT]   Q043  NEXT → ошибки на portal
-[POLISH]    Q044–047  ветки устройств, a11y, метрики, запасной домен
+[DONE]      Q043  ошибки /start/help/errors/
+[CURRENT]   Q051  NEXT → edge :8443 (см. EDGE-PORT-RECOMMENDATION)
+[BETA]      Q052–061  v2rayN, VLESS, SNI, …
+[TIER]      Q062  turbo / wl-direct / wl-routed
+[FLOW]      Q044–050  после продукта
+[NATIVE]    Q053  brief своего iOS/Android app
+[TSPU]      Q054–059  VLESS, probe, VPN port, selfsteal, SNI, threat model
+[P4 TSPU]   Q060  RF egress + whitelist IP (параллельно P4)
+[TSPU]      Q061  DNS на нодах
+[POLISH]    Q045–047  a11y, метрики, запасной домен
 [WEB LK]    Q048–050  баланс в ЛК, bind TG, notify без TG
 ```
 
@@ -69,6 +78,11 @@
 |----|-----|-------------|
 | **P4-DNS-01…06** | §8 | Mobile bootstrap SKU |
 | **P5-ENG-01** | §9 | Общий HTTP-клиент ops |
+| **P5-PROD-NATIVE-APP-01** | §9, **Q053** | Своё iOS/Android (замена Happ) |
+| **TSPU (12 пунктов)** | **`TSPU-OBSERVATIONS.md`**, §5.1 | Матрица наблюдений → **Q051–061** |
+| **P2-RED-EDGE-PORT-01** | §5.1, **Q051** | Уход с **:2053** (ТСПУ) |
+| **P1-PRO-CLIENT-V2RAYN-01** | §5.1, **Q052** | v2rayN на Windows |
+| **P4-DNS-07/08** | §8, **Q060** | RF egress, whitelist IP |
 | **P5-RED-RD-01** | §5.1 | R&D Snowflake PoC |
 | **§1 срез продакшена** | §1 | Переснять users/RAM при SSH |
 
@@ -85,4 +99,4 @@ python ops/smoke_telegram_miniapp.py   # TELEGRAM_MINIAPP_PORTAL_OK
 
 ---
 
-*Обновлять эту карту при смене фазы или добавлении Q051+.*
+*Обновлять эту карту при смене фазы или добавлении Q062+.*

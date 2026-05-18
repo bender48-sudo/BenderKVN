@@ -62,6 +62,15 @@ def public_portal_origin() -> str:
     return _setup_origin()
 
 
+def public_errors_url(code: str | None = None) -> str:
+    """Human-readable errors page (P3-FLOW-08), clearnet without VPN."""
+    base = f"{public_portal_origin()}/start/help/errors/"
+    if not code:
+        return base
+    key = code.strip().lower()
+    return f"{base}?code={key}"
+
+
 def public_guide_url(platform: str | None = None) -> str:
     """Setup video/GIF page (P3-FLOW-06), clearnet without VPN."""
     base = f"{public_portal_origin()}/portal/guide.html"

@@ -68,7 +68,7 @@
 |-----|--------|
 | Portal + Mini App (Q033–038) | ✅ в репо; см. §12 |
 | Видео guide (Q042) | ✅ код на проде; **ручная замена GIF/MP4** — § выше |
-| **NEXT агента** | **Q043** — страница ошибок на portal |
+| **NEXT агента** | **Q044** — ветки устройств на portal |
 | **До GTM** | **Q032** — возвраты в оферте |
 | Tabletop jurisdiction | 1×/год — **`TABLETOP-JURISDICTION-EXERCISE.md`** |
 

@@ -13,7 +13,7 @@ Write-Host "[deploy] portal files ..."
 Push-Location (Join-Path $RepoRoot "web/portal")
 try {
     & scp -r @($Common + @(
-        "content", "assets", "media", "index.html", "setup.html", "guide.html",
+        "content", "assets", "media", "help", "index.html", "setup.html", "guide.html",
         "root@bvpn-lv:/var/www/bvpn-portal/"
     ))
 } finally {
@@ -44,4 +44,5 @@ Write-Host "[deploy] smoke ..."
 python ops/portal_bundle_audit.py
 python ops/smoke_portal_setup_page.py
 python ops/smoke_portal_setup_video.py
+python ops/smoke_portal_help_errors.py
 Write-Host "DEPLOY_PORTAL_SETUP_LV_OK"

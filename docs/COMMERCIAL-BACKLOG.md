@@ -132,6 +132,18 @@
 | ~~**P3-RED-MIN-01**~~ ✅ | **Минимизация данных**: политика + инвентарь; redact webhook. | **2026-05-17** Q029 — **`DATA-MINIMIZATION-POLICY`**, **`DATA_MINIMIZATION_OK`**. |
 | ~~**P3-RED-JURIS-01**~~ ✅ | **Гео‑ и провайнер‑диверсификация**: runbook «нас отключил один VPS/агентство платежей за день» — перенос DNS/IP без зависимости от одной юрисдикции. | **2026-05-17:** **`JURISDICTION-FAILOVER-WIKI`**, **`RUNBOOK-JURISDICTION-FAILOVER`**, **`TABLETOP-JURISDICTION-EXERCISE`**; smoke **`JURIS_FAILOVER_OK`**. Tabletop на проде — **1×/год** (календарь владельца). |
 | **P5-RED-RD-01** | **R&D**: PoC канала bootstrap по модели **эфемерных посредников** (идеология [**Snowflake**](https://github.com/cohosh/snowflake)) — только для получения статуса/нового endpoint’а, не замена нодам. | Внутренний doc go/no-go + оценка стоимости поддержки. |
+| **P2-RED-EDGE-PORT-01** | **Порт публичного edge ≠ 2053:** **`:2053`** = дефолт **3X-UI** (сканы, ТСПУ). Перенести HTTPS край на **`8443`** (основной), запас **`4433`** / **`10443`** — обоснование **`docs/EDGE-PORT-RECOMMENDATION.md`**. Grace **2053→8443** 7–14 дней. **Не путать** с VPN inbound (**Q056**). | **`RUNBOOK-P6-EDGE-PORT-MIGRATION`**; **`EDGE-PORT-RECOMMENDATION.md`**; smoke **`SUB_EDGE_PORT_OK`**. |
+| **P1-PRO-CLIENT-V2RAYN-01** | **Windows v2rayN:** бета — **не коннектится** ни LTE, ни Wi‑Fi (Happ на iOS в том же тесте — отдельная история). Матрица совместимости, разбор выдачи подписки под **v2rayN** (UA/format/routing), правки шаблона при необходимости; ветка **Windows** в portal/боте — **второй** клиент рядом с Happ. | **`docs/CLIENT-V2RAYN.md`** (или § в **`HAPP-MATRIX`**); ручной или **`ops/smoke_v2rayn_sub.py`** smoke на Win; **`V2RAYN_CLIENT_OK`** §12; FAQ/onboarding — явный шаг для ПК без Happ. |
+| **P2-RED-TSPU-VLESS-01** | **Палево VLESS / ~15 дней на ТСПУ:** полевое наблюдение — слабый fingerprint → бан на **конкретной** ТСПУ. Runbook: симптомы, смена транспорта/шаблона, связь с **MUX** и **TLS‑review**; **не** крутить всю базу на один outbound. | **`docs/RUNBOOK-TSPU-VLESS-INCIDENT.md`**; tabletop; **`TSPU_VLESS_PLAYBOOK_OK`** §12. Матрица: **`docs/TSPU-OBSERVATIONS.md`** п.1. |
+| **P1-RED-TSPU-BLOCK-01** | **Блокировка «в ЧС»:** порты **>990** (telnet), обрыв **SSL handshake** с RU‑сети. Probe + алерт (отдельно от `ru-monitor` SNI). | **`ops/tspu_block_probe.py`** (или расширение monitor); cron LV; smoke **`TSPU_BLOCK_PROBE_OK`**. п.3. |
+| **P2-RED-VPN-INBOUND-PORT-01** | **Inbound VPN ≠ дефолт 443** при бане у хостера: политика смены порта **remnanode** (LV/NL), обновление injectHosts/подписки, grace. Связь с **P2-RED-EDGE-PORT-01** (edge sub/panel). | Runbook **`RUNBOOK-VPN-INBOUND-PORT`**; smoke sub после смены; **`VPN_INBOUND_PORT_OK`**. п.4. |
+| **P2-RED-SELFSTEAL-REVIEW-01** | **Selfsteal / decoy:** наблюдение — «заглушка при прямом заходе» **не даёт** выигрыша. Аудит **`selfsteal-monitor`**, Caddy **:9443**, 13 SNI — **выключить**, упростить или оставить только ops‑нужное. | Решение go/no-go в **`docs/TSPU-OBSERVATIONS.md`** п.5; **`SELFSTEAL_REVIEW_OK`** §12. |
+| **P2-RED-SNI-ROTATE-01** | **Ротация Reality dest/SNI:** уйти с **`api.github.com`** / bing / microsoft; приоритет **`www.yandex.ru`** (референс WL + [Xray #2283](https://github.com/XTLS/Xray-core/issues/2283)). | Snapshot + patch; **`SNI_ROTATE_OK`**. **`PRODUCT-TIER-PROFILES.md`**. |
+| **P1-PRO-SUB-TIER-01** | **Три уровня в подписке:** turbo (NL) / **wl-direct** (RF, :80, без routing) / **wl-routed** (RF, :443, vision) — см. референс-разбор. | **`PRODUCT-TIER-PROFILES.md`**; 3 named outbounds; FAQ «не на роутер» для tier-3; **`SUB_TIER_PROFILES_OK`**. |
+| **P1-RED-TSPU-THREAT-MODEL-01** | **Модель угроз ТСПУ (wiki):** п.7–9 — ТСПУ независимы, IP‑бан временный, массовый ручной, малый сервер реже; связка с **NODE-POLICY**, GTM, **не** масштабировать один паттерн. | **`docs/TSPU-THREAT-MODEL.md`** (из **`TSPU-OBSERVATIONS`**); саппорт‑шпаргалка 1 стр. |
+| **P1-RED-NODE-DNS-01** | **Резолвер на нодах:** свой DNS (AdGuard/unbound), upstream **не** провайдерский; ТСПУ/провайдер **удаляет** записи заблокированных. | Док: кто резолвит что; AdGuard upstream для Xray; probe «ломается ли A/AAAA»; **`NODE_DNS_RESOLVER_OK`**. п.11. |
+
+**Контекст бета (2026‑05‑18):** полная матрица 12 пунктов — **`docs/TSPU-OBSERVATIONS.md`**. Высокий ping в Happ; «баннер 1984» → **GeoIP на устройстве** + **P5-PROD-NATIVE-APP-01**; **RU-BYPASS** ✅ на сервере. Happ (РФ‑клиент) — компромисс App Store.
 
 ### 5.2 Смена `REMNA_API_TOKEN` без регресса (после остального бэклога)
 
@@ -204,7 +216,7 @@
 | ~~**P3-FLOW-05**~~ ✅ | QR подписки (бот + web). | **2026-05-17:** **`BOT_SUBSCRIPTION_QR_OK`** / **`PORTAL_SUBSCRIPTION_QR_OK`**; кнопка «QR для Happ» → `subscriptionUrl`. |
 | ~~**P3-FLOW-06**~~ ✅ | Видео/GIF первого коннекта на сайте (не только TG). | **2026-05-17:** **`/portal/guide.html`**, GIF iOS/Android; **`PORTAL_SETUP_VIDEO_OK`**. |
 | ~~**P3-FLOW-07**~~ ✅ | Синхронизация FAQ / онбординг / бот / сайт (в т.ч. **live-оплата**). | **2026-05-17:** **`PAYMENT_COPY_SYNC_OK`**; Stars + 6,67 ₽/день. |
-| **P3-FLOW-08** | Ошибки на сайте (как **`USER-FACING-ERRORS.md`**). | `/help/errors` или блок на bootstrap. |
+| ~~**P3-FLOW-08**~~ ✅ | Ошибки на сайте (как **`USER-FACING-ERRORS.md`**). | **2026-05-17:** **`/start/help/errors/`**, 5 кейсов; **`PORTAL_HELP_ERRORS_OK`**. |
 | **P3-FLOW-09** | Ветки по типу устройства (бот + сайт). | ≤ 5 шагов на ветку. |
 | **P3-FLOW-10** | Метрики воронки (сайт → бот → ключ → sub). | Wiki + еженедельный срез; без PII в git. |
 | **P3-FLOW-11** | Запасной домен bootstrap (блокировки). | Второе имя + probe; связь **P2-RED-SUB-01**. |
@@ -229,6 +241,8 @@
 | **P4-DNS-04** | Мониторинг зоны/authoritative отдельно от RU SNI‑проб. | **`ops/dns_delegation_probe.py`** на LV → **`DNS_DELEGATION_OK`** (P1-RED-DNS-01); TG-алерт — по необходимости. |
 | **P4-DNS-05** | План Б: второй домен/ключ; ToS хостинга; внутренняя юр. оценка. | Wiki + owner. |
 | **P4-DNS-06** | (Опц.) Только статический bootstrap через DNS. | Спека «что разрешено». |
+| **P4-DNS-07** | **RF egress** при **усечённом whitelist** (провод): весь **не‑РФ** режется → **прокси/нода в РФ** для выхода в «разрешённый» интернет. Не путать с основным VPN NL/LV. | PoC + go/no-go; связь **P4-DNS-01**. **`TSPU-OBSERVATIONS`** п.10. |
+| **P4-DNS-08** | **Whitelist IP:** списки **не** с устаревших GitHub seed; свой источник + периодическое обновление; мониторинг «пропали» IP. | Wiki источника; probe или ручной регламент 1×/нед. п.12. |
 
 ---
 
@@ -238,6 +252,7 @@
 |----|--------|-----------|
 | ~~**P5-COM-01**~~ ✅ | Публичный статус инцидентов. | **2026-05-17:** HTML **`/status`** на **k9x2m1**, **`incidents.json`**, smoke **`PUBLIC_STATUS_PAGE_OK`**. |
 | **P5-COM-02** | Правила возвратов при массовом дауне. | Текст в оферте. |
+| **P5-PROD-NATIVE-APP-01** | **Своё iOS/Android‑приложение** (замена зависимости от Happ): Network Extension (**лимит ~15 MB** на iOS), GeoIP split на устройстве, доверие/модерация App Store. Happ остаётся **временным** рекомендованным клиентом до релиза. | Product brief **`docs/NATIVE-APP-BACKLOG.md`** (архитектура, MVP scope, go/no-go store); не блокирует **P2-RED-EDGE-PORT-01** / **P1-PRO-CLIENT-V2RAYN-01**. |
 | **P5-ENG-01** | Общий HTTP‑клиент для Python ops (TLS, таймауты). | Новые скрипты без `CERT_NONE`. |
 | ~~**P5-ENG-02**~~ ✅ | Общий `load_env` для мониторов. | **`ops/load_env_file.py`** + **`ops/site_urls.py`**; тест **`tests/test_load_env_file.py`** (`python -m unittest discover -s tests`). |
 
@@ -294,11 +309,13 @@
 
 **Закрыто:** **P0–P2**, **P6** (фаза 1), **P1/P3-RED** + **P5-COM-01** (фаза 2), **P3-FLOW-00, 14, 01, 02, 12, 03** (Q033–038).
 
-**Сейчас (агент):** **`BACKLOG-QUEUE.md`** → **`NEXT=Q043`** (**P3-FLOW-08**).
+**Сейчас (агент):** **`NEXT=Q051`** (**P2-RED-EDGE-PORT-01** → **`:8443`**). **Флоу (Q044–050)** — **после** продуктового блока **Q051–062**.
 
-**До GTM (владелец/агент):** **Q032** **P5-COM-02** (возвраты) — в очереди **TODO**, не блокирует Q039.
+**До GTM:** **Q032** **P5-COM-02** (можно параллельно владельцу).
 
-**Далее по очереди:** Q040–047 (полировка), Q048–050 (веб-ЛК).
+**Продукт:** **Q051–062** → **`TSPU-OBSERVATIONS.md`**, **`EDGE-PORT-RECOMMENDATION.md`**, **`PRODUCT-TIER-PROFILES.md`**. **Флоу:** **Q044–050**.
+
+**Вне срочной очереди Q:** **P5-PROD-NATIVE-APP-01** (своё приложение; brief **`docs/NATIVE-APP-BACKLOG.md`**).
 
 **Параллельно:** **P4-DNS**; **P5-ENG-01**; **`MANUAL-OWNER-CHECKLIST.md`** (DNSSEC, BotFather, LUKS, **`PORTAL_SETUP_HMAC_SECRET`** на AMS).
 
@@ -310,6 +327,11 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-18 | **Handoff агенту:** **`AGENT-PRODUCT-BACKLOG.md`** (Q051–062: что/зачем/почему), **`.cursor/rules/product-backlog.mdc`**. Продукт **впереди** флоу. **NEXT=Q051**. |
+| 2026-05-18 | **Порт edge:** **`EDGE-PORT-RECOMMENDATION.md`** — **8443**. **Тиры:** **`PRODUCT-TIER-PROFILES.md`**, **Q062**. |
+| 2026-05-18 | **ТСПУ 12 пунктов:** **`docs/TSPU-OBSERVATIONS.md`** — матрица «наблюдение → продукт → бэклог». Новые ID **§5.1**: **P2-RED-TSPU-VLESS-01**, **P1-RED-TSPU-BLOCK-01**, **P2-RED-VPN-INBOUND-PORT-01**, **P2-RED-SELFSTEAL-REVIEW-01**, **P2-RED-SNI-ROTATE-01**, **P1-RED-TSPU-THREAT-MODEL-01**, **P1-RED-NODE-DNS-01**; **P4-DNS-07/08**. Очередь **Q051–061**. |
+| 2026-05-18 | **Бэклог по фидбеку бета:** **P2-RED-EDGE-PORT-01**, **P1-PRO-CLIENT-V2RAYN-01**, **P5-PROD-NATIVE-APP-01**; **Q051–053**. Happ — компромисс App Store до native app. |
+| 2026-05-17 | **P3-FLOW-08 — DONE (Q043):** `/start/help/errors/` — 5 человекочитаемых кейсов; ссылки с setup/portal/бота; **`PORTAL_HELP_ERRORS_OK`**. **NEXT=Q044** P3-FLOW-09. |
 | 2026-05-17 | **P3-FLOW-06 — DONE (Q042):** `/portal/guide.html` + GIF iOS/Android; кнопка в боте и на portal; **`PORTAL_SETUP_VIDEO_OK`**. **NEXT=Q043** P3-FLOW-08. |
 | 2026-05-17 | **P3-FLOW-05 — DONE (Q041):** QR подписки в боте (`show_sub_qr`) и portal (`#device=` + localStorage); **`BOT_SUBSCRIPTION_QR_OK`**, **`PORTAL_SUBSCRIPTION_QR_OK`**. **NEXT=Q042** P3-FLOW-06. |
 | 2026-05-17 | **P3-FLOW-07 — DONE (Q040):** FAQ/ONBOARDING/portal — оплата live (Stars, 6,67 ₽/день); **`PAYMENT_COPY_SYNC_OK`**. **NEXT=Q041** P3-FLOW-05. |

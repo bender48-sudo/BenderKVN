@@ -14,6 +14,8 @@ REQUIRED_FILES = [
     PORTAL / "index.html",
     PORTAL / "setup.html",
     PORTAL / "guide.html",
+    PORTAL / "help" / "errors" / "index.html",
+    PORTAL / "assets" / "errors.js",
     PORTAL / "assets" / "portal.css",
     PORTAL / "assets" / "portal.js",
     PORTAL / "assets" / "setup.js",
@@ -83,6 +85,10 @@ def main() -> int:
         sv = doc2.get("setup_videos") or {}
         if not sv.get("media_ios_gif") or not sv.get("media_android_gif"):
             errors.append("setup_videos media paths missing in ru.json")
+        ue = doc2.get("user_errors") or {}
+        ue_items = ue.get("items") or []
+        if len(ue_items) < 5:
+            errors.append("user_errors.items must have at least 5 entries")
 
     if errors:
         for e in errors:

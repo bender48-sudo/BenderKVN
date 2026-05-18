@@ -23,10 +23,22 @@
     if (el) el.classList.remove("hidden");
   }
 
-  function showError(msg) {
+  function showError(msg, code) {
     hide($("setup-loading"));
     hide($("setup-content"));
     $("setup-error").textContent = msg;
+    var helpWrap = $("setup-error-help");
+    var helpLink = $("setup-error-help-link");
+    if (helpWrap && helpLink) {
+      if (code) {
+        helpLink.href = "/start/help/errors/?code=" + encodeURIComponent(code);
+        var hl = (content && content.user_errors && content.user_errors.help_link) || "";
+        helpLink.textContent = hl || "Подробнее об этой ошибке";
+        showEl(helpWrap);
+      } else {
+        hide(helpWrap);
+      }
+    }
     showEl($("setup-error"));
     showEl($("setup-signup"));
   }
@@ -219,9 +231,15 @@
           }
           if (!res.body.ok || !res.body.sub_url) {
             var err = s.signup_error_generic;
-            if (res.body.error === "rate_limited") err = s.signup_error_rate;
-            else if (res.body.error === "invalid_email") err = s.signup_email_invalid;
-            showError(err);
+            if (res.body.error === "rate_limited") {
+              showError(s.signup_error_rate, "rate_limited");
+              return null;
+            }
+            if (res.body.error === "invalid_email") {
+              showError(s.signup_email_invalid);
+              return null;
+            }
+            showError(err, "service_unavailable");
             return null;
           }
           return res;
@@ -233,14 +251,14 @@
             return;
           }
           if (res.code === 404) {
-            showError(s.signup_error_not_found);
+            showError(s.signup_error_not_found, "trial_used");
             return;
           }
-          showError(s.signup_error_used);
+          showError(s.signup_error_used, "trial_used");
         })
         .catch(function () {
           hide($("setup-loading"));
-          showError(content.errors.generic);
+          showError(content.errors.generic, "service_unavailable");
         });
     });
 
@@ -259,15 +277,15 @@
         .then(function (res) {
           hide($("setup-loading"));
           if (!res.body.ok || !res.body.sub_url) {
-            if (res.body.error === "not_found") showError(s.signup_error_not_found);
-            else showError(s.signup_error_generic);
+            if (res.body.error === "not_found") showError(s.signup_error_not_found, "trial_used");
+            else showError(s.signup_error_generic, "service_unavailable");
             return;
           }
           showSetupResult(res.body.sub_url, res.body);
         })
         .catch(function () {
           hide($("setup-loading"));
-          showError(content.errors.generic);
+          showError(content.errors.generic, "service_unavailable");
         });
     });
   }
@@ -331,17 +349,17 @@
         .then(function (res) {
           hide($("setup-loading"));
           if (!res.body.ok || !res.body.sub_url) {
-            showError(s.invalid_token);
+            showError(s.invalid_token, "link_expired");
             return;
           }
           showSetupResult(res.body.sub_url, null);
         })
         .catch(function () {
           hide($("setup-loading"));
-          showError(content.errors.generic);
+          showError(content.errors.generic, "service_unavailable");
         });
     })
     .catch(function () {
-      showError("Не удалось загрузить тексты страницы.");
+      showError("Не удалось загрузить тексты страницы.", "service_unavailable");
     });
 })();

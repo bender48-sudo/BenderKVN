@@ -8,10 +8,17 @@
 
 | Что нужно | Документ / артефакт |
 |-----------|---------------------|
-| Очередь задач по приоритетам | **`docs/COMMERCIAL-BACKLOG.md`** |
-| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **Q039** (**P3-FLOW-04** мастер «Подключить VPN») |
-| **Бэклог пользовательского флоу (bootstrap без VPN)** | **`docs/USER-FLOW-BACKLOG.md`** — сайт выдачи конфига, «бабушка-тест», §7.1 бэклога |
-| **Инструкции агента (фаза 3, Q032–Q047, Mini App)** | **`docs/AGENT-FLOW-BACKLOG.md`** — один `web/portal/` = сайт + Telegram Mini App |
+| **Карта бэклога (начать здесь)** | **`docs/BACKLOG-MAP.md`** |
+| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **Q051**; агенту: **`docs/AGENT-PRODUCT-BACKLOG.md`** |
+| **Флоу (после Q062)** | **`docs/AGENT-FLOW-BACKLOG.md`** |
+| **ТСПУ — 12 наблюдений → бэклог** | **`docs/TSPU-OBSERVATIONS.md`** |
+| **Порт вместо 2053** | **`docs/EDGE-PORT-RECOMMENDATION.md`** |
+| **Тиры подписки (turbo / WL)** | **`docs/PRODUCT-TIER-PROFILES.md`** |
+| Своё iOS/Android app (долгий горизонт) | **`docs/NATIVE-APP-BACKLOG.md`** (**P5-PROD-NATIVE-APP-01**, **Q053**) |
+| Очередь задач по приоритетам | **`docs/COMMERCIAL-BACKLOG.md`** (§7.1, **§12**) |
+| Бэклог флоу / бабушка-тест | **`docs/USER-FLOW-BACKLOG.md`**, **`docs/USER-FLOW-JOURNEY.md`** |
+| Инструкции агента (Q032–050) | **`docs/AGENT-FLOW-BACKLOG.md`** |
+| Portal (сайт + Mini App) | **`web/portal/`**, **`RUNBOOK-USER-BOOTSTRAP-SITE`**, **`RUNBOOK-TELEGRAM-MINIAPP`** |
 | Правило: одна задача → коммит → стоп | **`docs/POLICY-SEQUENTIAL-WORK.md`** |
 | Журнал «что уже сделали на проде» | тот же файл, **§12** |
 | Очередь capacity (users/nodes vs §10.1) | `python ops/capacity_snapshot.py` (токен в `.secrets/panel-token.txt`) |

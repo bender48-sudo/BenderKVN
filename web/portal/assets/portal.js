@@ -216,6 +216,10 @@
     supportBtn.textContent = content.buttons.support;
     supportBtn.href = SUPPORT_URL;
     $("btn-stuck").textContent = content.buttons.stuck;
+    var errBtn = $("btn-help-errors");
+    if (errBtn && content.buttons.help_errors) {
+      errBtn.textContent = content.buttons.help_errors;
+    }
     var help = content.help || {};
     if ($("help-stuck-title") && help.stuck_title) {
       $("help-stuck-title").textContent = help.stuck_title;

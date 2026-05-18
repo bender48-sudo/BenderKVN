@@ -13,3 +13,5 @@
 Константы для бота импортируются как **`from shop_bot.bot import user_messages`** (файл в репо — **`bot_src/user_messages.py`**; при деплее он лежит рядом с **`handlers`** в **`shop_bot/bot/`**).
 
 Расширять таблицу при новых паттернах логов.
+
+**На сайте (P3-FLOW-08):** пользовательские тексты для 5 типовых кейсов — **`/start/help/errors/`** (и **`/portal/help/errors/`**), контент в **`web/portal/content/ru.json`** → `user_errors`.
