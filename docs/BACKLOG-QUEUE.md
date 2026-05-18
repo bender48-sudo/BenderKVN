@@ -124,8 +124,8 @@
 | 076 | **P5-ENG-03** | **DONE** | Lazy `REMNA_API_TOKEN` + inbound cache TTL | `remnawave_api.py` §12 | `remnawave_api.py` |
 | 077 | **P1-ENG-04** | **DONE** | Hardcoded IP в bot → env / `site_urls` | **`HANDLERS_IP_OK`** §12 | `handlers.py` |
 | 078 | **P2-OPS-REMNA-KEY-01** | **DONE** | Fail fast без `REMNA_PUBLIC_KEY` | **`REMNA_PUBLIC_KEY_OK`** §12 | `remnawave_api.py` |
-| 051 | **P2-RED-EDGE-PORT-01** | **NEXT** | **P0** Edge **2053→8443** | **`SUB_EDGE_PORT_OK`** | **`AGENT-PRODUCT-BACKLOG` §Q051** |
-| 052 | **P1-PRO-CLIENT-V2RAYN-01** | **TODO** | **P1** v2rayN Win | **`V2RAYN_CLIENT_OK`** | **§Q052** |
+| 051 | **P2-RED-EDGE-PORT-01** | **DONE** | **P0** Edge **2053→8443** | **`SUB_EDGE_PORT_OK`** §12 | **`RUNBOOK-P6-EDGE-PORT-MIGRATION.md`** |
+| 052 | **P1-PRO-CLIENT-V2RAYN-01** | **NEXT** | **P1** v2rayN Win | **`V2RAYN_CLIENT_OK`** | **§Q052** |
 | 053 | **P5-PROD-NATIVE-APP-01** | **TODO** | **P2** Brief iOS/Android | **`NATIVE-APP-BACKLOG.md`** | **§Q053** |
 | 054 | **P2-RED-TSPU-VLESS-01** | **TODO** | **P1** Runbook VLESS / ТСПУ | **`TSPU_VLESS_PLAYBOOK_OK`** | **§Q054** |
 | 055 | **P1-RED-TSPU-BLOCK-01** | **TODO** | **P1** Probe RU block | **`TSPU_BLOCK_PROBE_OK`** | **§Q055** |

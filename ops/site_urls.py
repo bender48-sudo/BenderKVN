@@ -39,13 +39,19 @@ _load_site_env_file()
 if "PANEL_URL" not in os.environ and os.environ.get("PANEL_PUBLIC_URL"):
     os.environ["PANEL_URL"] = os.environ["PANEL_PUBLIC_URL"]
 
-PANEL_URL = os.environ.get("PANEL_URL", "https://k9x2m1.conntest.xyz:2053").rstrip("/")
+EDGE_PUBLIC_PORT = os.environ.get("EDGE_PUBLIC_PORT", "8443")
+
+PANEL_URL = os.environ.get(
+    "PANEL_URL", f"https://k9x2m1.conntest.xyz:{EDGE_PUBLIC_PORT}"
+).rstrip("/")
 SUB_PUBLIC_ORIGIN = os.environ.get(
-    "SUB_PUBLIC_ORIGIN", "https://p4n7q.conntest.xyz:2053"
+    "SUB_PUBLIC_ORIGIN", f"https://p4n7q.conntest.xyz:{EDGE_PUBLIC_PORT}"
 ).rstrip("/")
 
 # P2-RED-SUB-01: comma-separated alternate subscription HTTPS origins (different DNS name, same backend).
-_raw_alt = os.environ.get("SUB_ALT_PUBLIC_ORIGINS", "https://k9x2m1.conntest.xyz:2053")
+_raw_alt = os.environ.get(
+    "SUB_ALT_PUBLIC_ORIGINS", f"https://k9x2m1.conntest.xyz:{EDGE_PUBLIC_PORT}"
+)
 SUB_ALT_PUBLIC_ORIGINS = [o.strip().rstrip("/") for o in _raw_alt.split(",") if o.strip()]
 REMNA_TEMPLATE_UUID = os.environ.get(
     "REMNA_TEMPLATE_UUID", "9ebbce97-ae45-4f39-a7e6-d7e675a94a73"

@@ -368,3 +368,138 @@ k9x2m1.conntest.xyz:2053 {
         }
     }
 }
+
+# P2-RED-EDGE-PORT-01 — canonical public HTTPS :8443 (grace: :2053 blocks above stay active)
+p4n7q.conntest.xyz:8443 {
+    header {
+        -Via
+        -Alt-Svc
+    }
+    @sub_path path /api/sub/*
+    log_skip @sub_path
+
+    log {
+        output file /var/log/caddy/sub-access.log {
+            roll_size 10mb
+            roll_keep 3
+        }
+        format json
+    }
+    header {
+        Server "nginx/1.24.0"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "no-referrer"
+        -X-Powered-By
+        -Caddy-Server
+    }
+
+    rate_limit {
+        zone sub_api_per_ip_8443 {
+            match path /api/sub/*
+            key {remote_host}
+            events 120
+            window 1m
+        }
+    }
+
+    @blocked {
+        not path /api/sub/*
+        not path /assets/*
+        not path /locales/*
+    }
+    respond @blocked 404
+
+    reverse_proxy http://168.100.11.140:3010 {
+        header_up X-Forwarded-Proto "https"
+        header_up X-Forwarded-For {remote_host}
+    }
+}
+
+k9x2m1.conntest.xyz:8443 {
+    header {
+        -Via
+        -Alt-Svc
+    }
+
+    @sub_path_k9_8443 path /api/sub/*
+    log_skip @sub_path_k9_8443
+
+    @fingerprint path /swagger* /health /metrics /api-docs* /docs*
+    respond @fingerprint 404
+
+    handle /api/ops/status.json {
+        root * /var/www/bvpn-status
+        rewrite * /status.json
+        file_server
+    }
+
+    handle /status {
+        root * /var/www/bvpn-status
+        rewrite * /index.html
+        file_server
+    }
+
+    handle_path /start/* {
+        root * /var/www/bvpn-portal
+        try_files {path} /index.html
+        file_server
+    }
+    handle /start {
+        redir /start/ 308
+    }
+    handle_path /portal/* {
+        root * /var/www/bvpn-portal
+        try_files {path} /index.html
+        file_server
+    }
+    handle /portal {
+        redir /portal/ 308
+    }
+
+    handle /setup/api/* {
+        rate_limit {
+            zone setup_api_per_ip_8443 {
+                key {remote_host}
+                events 30
+                window 1m
+            }
+        }
+        uri strip_prefix /setup/api
+        reverse_proxy 127.0.0.1:8871 {
+            header_up Host {host}
+        }
+    }
+    @setup_pages path /setup /setup/*
+    handle @setup_pages {
+        root * /var/www/bvpn-portal
+        @not_api not path /setup/api/*
+        handle @not_api {
+            rewrite * /setup.html
+            file_server
+        }
+    }
+
+    @sub_path_alt path /api/sub/*
+    handle @sub_path_alt {
+        rate_limit {
+            zone sub_api_per_ip_alt_8443 {
+                key {remote_host}
+                events 120
+                window 1m
+            }
+        }
+        reverse_proxy http://168.100.11.140:3011 {
+            header_up X-Forwarded-Proto "https"
+            header_up X-Forwarded-For {remote_host}
+        }
+    }
+
+    handle {
+        reverse_proxy http://168.100.11.140:3000 {
+            header_up Host k9x2m1.conntest.xyz
+            header_up X-Forwarded-Proto "https"
+            header_up X-Forwarded-For {remote_host}
+        }
+    }
+}
