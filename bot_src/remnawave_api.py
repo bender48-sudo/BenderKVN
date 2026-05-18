@@ -31,7 +31,7 @@ INBOUND_TAG = os.getenv("REMNA_INBOUND_TAG")
 INBOUND_UUID = os.getenv("REMNA_INBOUND_UUID")
 SQUAD_UUID = os.getenv("REMNA_SQUAD_UUID")
 DEFAULT_DAYS = int(os.getenv("REMNA_DEFAULT_DAYS", "90"))
-SERVER_SNI = os.getenv("REMNA_SERVER_SNI")
+SERVER_SNI = os.getenv("REMNA_SERVER_SNI", "www.yandex.ru")
 UTLS_FP = os.getenv("REMNA_FP") or os.getenv("FP")  # reuse old var if present
 
 def get_api_token() -> str | None:

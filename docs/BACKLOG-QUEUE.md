@@ -125,18 +125,18 @@
 | 077 | **P1-ENG-04** | **DONE** | Hardcoded IP в bot → env / `site_urls` | **`HANDLERS_IP_OK`** §12 | `handlers.py` |
 | 078 | **P2-OPS-REMNA-KEY-01** | **DONE** | Fail fast без `REMNA_PUBLIC_KEY` | **`REMNA_PUBLIC_KEY_OK`** §12 | `remnawave_api.py` |
 | 051 | **P2-RED-EDGE-PORT-01** | **DONE** | **P0** Edge **2053→8443** | **`SUB_EDGE_PORT_OK`** §12 | **`RUNBOOK-P6-EDGE-PORT-MIGRATION.md`** |
-| 052 | **P1-PRO-CLIENT-V2RAYN-01** | **NEXT** | **P1** v2rayN Win | **`V2RAYN_CLIENT_OK`** | **§Q052** |
-| 053 | **P5-PROD-NATIVE-APP-01** | **TODO** | **P2** Brief iOS/Android | **`NATIVE-APP-BACKLOG.md`** | **§Q053** |
-| 054 | **P2-RED-TSPU-VLESS-01** | **TODO** | **P1** Runbook VLESS / ТСПУ | **`TSPU_VLESS_PLAYBOOK_OK`** | **§Q054** |
-| 055 | **P1-RED-TSPU-BLOCK-01** | **TODO** | **P1** Probe RU block | **`TSPU_BLOCK_PROBE_OK`** | **§Q055** |
-| 056 | **P2-RED-VPN-INBOUND-PORT-01** | **TODO** | **P1** Inbound VPN ≠443 | **`VPN_INBOUND_PORT_OK`** | **§Q056** |
-| 057 | **P2-RED-SELFSTEAL-REVIEW-01** | **TODO** | **P1** Selfsteal go/no-go | **`SELFSTEAL_REVIEW_OK`** | **§Q057** |
-| 058 | **P2-RED-SNI-ROTATE-01** | **TODO** | **P0** SNI **yandex.ru** | **`SNI_ROTATE_OK`** | **§Q058** |
-| 059 | **P1-RED-TSPU-THREAT-MODEL-01** | **TODO** | **P1** Wiki ТСПУ | **`TSPU-THREAT-MODEL.md`** | **§Q059** |
-| 060 | **P4-DNS-07/08** | **TODO** | **P4** RF egress; **стоп** — согласовать с владельцем | Wiki/PoC | **§Q060** |
-| 061 | **P1-RED-NODE-DNS-01** | **TODO** | **P1** DNS на нодах | **`NODE_DNS_RESOLVER_OK`** | **§Q061** |
-| 062 | **P1-PRO-SUB-TIER-01** | **TODO** | **P0** 3 tier sub | **`SUB_TIER_PROFILES_OK`** | **§Q062** |
-| 044 | **P3-FLOW-09** | **TODO** | **ФЛОУ** Ветки iPhone/Android/Win | ≤ 5 шагов | **`AGENT-FLOW-BACKLOG` §Q044** |
+| 052 | **P1-PRO-CLIENT-V2RAYN-01** | **DONE** | **P1** v2rayN Win | **`V2RAYN_CLIENT_OK`** §12 | **`CLIENT-V2RAYN.md`** |
+| 053 | **P5-PROD-NATIVE-APP-01** | **DONE** | **P2** Brief iOS/Android | **`NATIVE-APP-BACKLOG.md`** §12 | **§Q053** |
+| 054 | **P2-RED-TSPU-VLESS-01** | **DONE** | **P1** Runbook VLESS / ТСПУ | **`TSPU_VLESS_PLAYBOOK_OK`** §12 | **`RUNBOOK-TSPU-VLESS-INCIDENT.md`** |
+| 055 | **P1-RED-TSPU-BLOCK-01** | **DONE** | **P1** Probe RU block | **`TSPU_BLOCK_PROBE_OK`** §12 | **`tspu_block_probe.py`** |
+| 056 | **P2-RED-VPN-INBOUND-PORT-01** | **DONE** | **P1** Inbound VPN ≠443 | **`VPN_INBOUND_PORT_OK`** §12 | **`RUNBOOK-VPN-INBOUND-PORT.md`** |
+| 057 | **P2-RED-SELFSTEAL-REVIEW-01** | **DONE** | **P1** Selfsteal go/no-go | **`SELFSTEAL_REVIEW_OK`** §12 | **`TSPU-OBSERVATIONS.md`** Q057 |
+| 058 | **P2-RED-SNI-ROTATE-01** | **DONE** | **P0** SNI **yandex.ru** | **`SNI_ROTATE_OK`** §12 | `REMNA_SERVER_SNI` |
+| 059 | **P1-RED-TSPU-THREAT-MODEL-01** | **DONE** | **P1** Wiki ТСПУ | **`TSPU-THREAT-MODEL.md`** §12 | **§Q059** |
+| 060 | **P4-DNS-07/08** | **DONE** | **P4** RF egress PoC wiki | **`P4_RF_EGRESS_POC_OK`** §12 | **`P4-DNS-RF-EGRESS-POC.md`** |
+| 061 | **P1-RED-NODE-DNS-01** | **DONE** | **P1** DNS на нодах | **`NODE_DNS_RESOLVER_OK`** §12 | **`RUNBOOK-NODE-DNS-RESOLVER.md`** |
+| 062 | **P1-PRO-SUB-TIER-01** | **DONE** | **P0** 3 tier sub (portal + docs) | **`SUB_TIER_PROFILES_OK`** §12 | **`PRODUCT-TIER-PROFILES.md`** |
+| 044 | **P3-FLOW-09** | **NEXT** | **ФЛОУ** Ветки iPhone/Android/Win | ≤ 5 шагов | **`AGENT-FLOW-BACKLOG` §Q044** |
 | 045 | **P3-FLOW-13** | **TODO** | a11y portal | Lighthouse ≥ 95 | §7.1 |
 | 046 | **P3-FLOW-10** | **TODO** | Метрики воронки | Wiki + §12 | §7.1 |
 | 047 | **P3-FLOW-11** | **TODO** | Запасной домен bootstrap | Tabletop | §7.1 |

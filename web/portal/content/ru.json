@@ -1,5 +1,14 @@
 {
-  "meta": { "lang": "ru", "version": 11 },
+  "meta": { "lang": "ru", "version": 12 },
+  "tier_profiles": {
+    "title": "Какой профиль выбрать в Happ",
+    "lead": "В подписке несколько узлов — выберите под ситуацию. Чем сложнее обход ограничений, тем ниже скорость.",
+    "rows": [
+      { "id": "turbo", "name": "turbo · NL/LV", "when": "Обычный интернет, Wi‑Fi и LTE", "speed": "Максимум" },
+      { "id": "wl-direct", "name": "wl-direct · RF", "when": "Усечённый whitelist (мобильный интернет)", "speed": "Средняя", "note": "Скоро, если RF-нода ещё не включена" },
+      { "id": "wl-routed", "name": "wl-routed · RF", "when": "WL + нужны все российские приложения", "speed": "Ниже", "note": "Только телефон, не роутер" }
+    ]
+  },
   "home": {
     "title": "BenderVPN",
     "hero_badge": "Модуль Bender · без Telegram",
@@ -198,10 +207,11 @@
       "install_title": "Windows",
       "install_store_key": "windows",
       "install_steps": [
-        "Скачайте и установите Happ для Windows.",
+        "Скачайте и установите Happ для Windows (или v2rayN — см. docs/CLIENT-V2RAYN.md).",
         "На этом ПК откройте страницу настройки.",
-        "Импортируйте ссылку в Happ."
-      ]
+        "Импортируйте ссылку подписки в Happ или v2rayN."
+      ],
+      "alt_client": "Альтернатива: v2rayN — docs/CLIENT-V2RAYN.md"
     },
     {
       "id": "mac",

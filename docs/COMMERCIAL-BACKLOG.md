@@ -325,7 +325,7 @@
 
 **Закрыто:** **P0–P2**, **P6** (фаза 1), **P1/P3-RED** + **P5-COM-01** (фаза 2), **P3-FLOW-00, 14, 01, 02, 12, 03** (Q033–038).
 
-**Сейчас (агент):** **`NEXT=Q051`** (**P2-RED-EDGE-PORT-01**). Security **Q063–078** ✅. Далее **Q051–062** (продукт) → **Q044–050** (флоу).
+**Сейчас (агент):** **`NEXT=Q044`** (**P3-FLOW-09**). Security **Q063–078** ✅ · продукт **Q051–062** ✅. Далее **Q044–050** (флоу).
 
 **До GTM:** **Q032** **P5-COM-02** (только владелец, не NEXT агента).
 
@@ -344,7 +344,9 @@
 | Дата | Что сделано |
 |------|-------------|
 | 2026-05-18 | **P6-RED-PAY-03 — DONE (Q063):** auto-renew списывает баланс до `provision_key`; skip + уведомление при нехватке; **`AUTO_RENEW_BILLING_OK`**. |
-| 2026-05-18 | **Security Q064–078 — DONE:** support staff allowlist, UTC expiry notify, k9 `log_skip`, CryptoBot POST + `compare_digest`, XFF default off, panel `127.0.0.1:3000`, payment amount verify, YooKassa skip CRITICAL log, setup API RL, support flood RL, backup timestamp, support `DB_FILE`, lazy Remna token, handlers IP env, `REMNA_PUBLIC_KEY` fail-fast; smokes §12. **NEXT=Q051**. |
+| 2026-05-18 | **Security Q064–078 — DONE:** support staff allowlist, UTC expiry notify, k9 `log_skip`, CryptoBot POST + `compare_digest`, XFF default off, panel `127.0.0.1:3000`, payment amount verify, YooKassa skip CRITICAL log, setup API RL, support flood RL, backup timestamp, support `DB_FILE`, lazy Remna token, handlers IP env, `REMNA_PUBLIC_KEY` fail-fast; smokes §12. |
+| 2026-05-18 | **Product Q051–062 — DONE:** edge **8443**, v2rayN, native brief, TSPU runbooks/probes, selfsteal review, SNI yandex, threat model, RF egress PoC, node DNS, tier profiles; **`smoke_product_backlog_static.py`**. **NEXT=Q044**. |
+| 2026-05-18 | **Product Q051–062 — DONE:** edge **8443**, v2rayN doc, native brief, TSPU runbooks/probes, selfsteal review, SNI yandex default, threat model, RF egress PoC wiki, node DNS runbook, tier profiles in portal; **`python ops/smoke_product_backlog_static.py`**. **NEXT=Q044** (флоу). |
 | 2026-05-18 | **Очередь:** линейный порядок **Q063–078 → Q051–062 → Q044–050**; **NEXT=Q063**. |
 | 2026-05-18 | **CodeRabbit audit:** **`docs/AUDIT-2026-05-SECURITY.md`**; **Q063–Q078** в очереди. |
 | 2026-05-18 | **Handoff агенту:** **`AGENT-PRODUCT-BACKLOG.md`** (Q051–062: что/зачем/почему), **`.cursor/rules/product-backlog.mdc`**. Продукт **впереди** флоу. **NEXT=Q051**. |
