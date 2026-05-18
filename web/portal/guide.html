@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0c">
+  <title>BenderVPN — видео-инструкция</title>
+  <link rel="stylesheet" href="/portal/assets/portal.css">
+  <script src="/portal/assets/guide.js" defer></script>
+</head>
+<body>
+  <main>
+    <header class="site-header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">🤖</span>
+        <h1 class="brand-name" id="guide-title">BenderVPN</h1>
+      </div>
+      <a class="nav-code" href="/portal/">&lt;/&gt; инструкция</a>
+    </header>
+
+    <p id="guide-lead" class="lead"></p>
+
+    <div class="guide-tabs" role="tablist" aria-label="Платформа">
+      <button type="button" class="guide-tab guide-tab--active" id="tab-ios" role="tab" aria-selected="true" aria-controls="panel-ios" data-device="iphone"></button>
+      <button type="button" class="guide-tab" id="tab-android" role="tab" aria-selected="false" aria-controls="panel-android" data-device="android"></button>
+    </div>
+
+    <section id="panel-ios" class="guide-panel" role="tabpanel" aria-labelledby="tab-ios">
+      <p class="muted" id="guide-ios-caption"></p>
+      <div class="guide-media" id="media-ios"></div>
+    </section>
+
+    <section id="panel-android" class="guide-panel hidden" role="tabpanel" aria-labelledby="tab-android" hidden>
+      <p class="muted" id="guide-android-caption"></p>
+      <div class="guide-media" id="media-android"></div>
+    </section>
+
+    <div class="actions" style="margin-top:1rem">
+      <a class="btn btn-primary" id="btn-guide-setup" href="/setup/">Получить бесплатный VPN</a>
+      <a class="btn btn-secondary" id="btn-guide-portal" href="/portal/">К инструкции</a>
+    </div>
+
+    <nav class="footer-nav">
+      <a class="btn btn-ghost btn-no-code" href="/start/">← Главная</a>
+      <a class="btn btn-ghost btn-no-code" href="/status">Статус</a>
+    </nav>
+  </main>
+</body>
+</html>

@@ -126,6 +126,19 @@ def public_portal_url() -> str:
     return f"{_portal_origin()}{path}/"
 
 
+def public_guide_url(platform: str | None = None) -> str:
+    """Setup video/GIF page (P3-FLOW-06)."""
+    base = f"{_portal_origin()}/portal/guide.html"
+    if not platform:
+        return base
+    key = platform.strip().lower()
+    if key in ("ios", "iphone", "ipad"):
+        return f"{base}?device=iphone"
+    if key == "android":
+        return f"{base}?device=android"
+    return base
+
+
 def telegram_webapp_url() -> str:
     """Telegram Mini App URL (BotFather Menu Button); defaults to public_portal_url()."""
     explicit = os.environ.get("TELEGRAM_WEBAPP_URL", "").strip()

@@ -14,6 +14,8 @@ REQUIRED_FRAGMENTS = (
     "setup_url_for_sub",
     "_add_portal_link_buttons",
     "PUBLIC_BOOTSTRAP_URL",
+    "public_guide_url",
+    "guide.html",
 )
 
 

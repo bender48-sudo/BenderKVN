@@ -574,6 +574,45 @@ ol.steps li::before {
   font-family: var(--mono);
 }
 
+.guide-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0 0.75rem;
+}
+
+.guide-tab {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  background: rgba(10, 10, 12, 0.6);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.guide-tab--active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(232, 93, 4, 0.12);
+}
+
+.guide-media {
+  text-align: center;
+  margin: 0.5rem 0 1rem;
+}
+
+.guide-gif,
+.guide-video {
+  max-width: min(100%, 360px);
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  background: #111;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+}
+
 .footer-nav {
   display: flex;
   flex-direction: column;

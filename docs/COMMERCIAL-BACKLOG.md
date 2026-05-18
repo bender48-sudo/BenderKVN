@@ -202,7 +202,7 @@
 | ~~**P3-FLOW-03**~~ ✅ | Бот: Mini App + браузер + `/setup/?t=`; портал UI в стиле HITVPN. | **2026-05-17:** **`BOT_PORTAL_LINKS_OK`**; **`portal_links.py`**. |
 | ~~**P3-FLOW-04**~~ ✅ | Мастер **«Подключить VPN»**; главный CTA → Mini App. | **2026-05-17:** FSM + 4 устройства; **`VPN_SETUP_WIZARD_OK`**; portal `#device=`. |
 | ~~**P3-FLOW-05**~~ ✅ | QR подписки (бот + web). | **2026-05-17:** **`BOT_SUBSCRIPTION_QR_OK`** / **`PORTAL_SUBSCRIPTION_QR_OK`**; кнопка «QR для Happ» → `subscriptionUrl`. |
-| **P3-FLOW-06** | Видео/GIF первого коннекта на сайте (не только TG). | Просмотр без VPN с телефона. |
+| ~~**P3-FLOW-06**~~ ✅ | Видео/GIF первого коннекта на сайте (не только TG). | **2026-05-17:** **`/portal/guide.html`**, GIF iOS/Android; **`PORTAL_SETUP_VIDEO_OK`**. |
 | ~~**P3-FLOW-07**~~ ✅ | Синхронизация FAQ / онбординг / бот / сайт (в т.ч. **live-оплата**). | **2026-05-17:** **`PAYMENT_COPY_SYNC_OK`**; Stars + 6,67 ₽/день. |
 | **P3-FLOW-08** | Ошибки на сайте (как **`USER-FACING-ERRORS.md`**). | `/help/errors` или блок на bootstrap. |
 | **P3-FLOW-09** | Ветки по типу устройства (бот + сайт). | ≤ 5 шагов на ветку. |
@@ -294,7 +294,7 @@
 
 **Закрыто:** **P0–P2**, **P6** (фаза 1), **P1/P3-RED** + **P5-COM-01** (фаза 2), **P3-FLOW-00, 14, 01, 02, 12, 03** (Q033–038).
 
-**Сейчас (агент):** **`BACKLOG-QUEUE.md`** → **`NEXT=Q042`** (**P3-FLOW-06**).
+**Сейчас (агент):** **`BACKLOG-QUEUE.md`** → **`NEXT=Q043`** (**P3-FLOW-08**).
 
 **До GTM (владелец/агент):** **Q032** **P5-COM-02** (возвраты) — в очереди **TODO**, не блокирует Q039.
 
@@ -310,6 +310,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-17 | **P3-FLOW-06 — DONE (Q042):** `/portal/guide.html` + GIF iOS/Android; кнопка в боте и на portal; **`PORTAL_SETUP_VIDEO_OK`**. **NEXT=Q043** P3-FLOW-08. |
 | 2026-05-17 | **P3-FLOW-05 — DONE (Q041):** QR подписки в боте (`show_sub_qr`) и portal (`#device=` + localStorage); **`BOT_SUBSCRIPTION_QR_OK`**, **`PORTAL_SUBSCRIPTION_QR_OK`**. **NEXT=Q042** P3-FLOW-06. |
 | 2026-05-17 | **P3-FLOW-07 — DONE (Q040):** FAQ/ONBOARDING/portal — оплата live (Stars, 6,67 ₽/день); **`PAYMENT_COPY_SYNC_OK`**. **NEXT=Q041** P3-FLOW-05. |
 | 2026-05-17 | **P3-FLOW-04 — DONE (Q039):** мастер «Подключить VPN» (FSM, 4 устройства, Mini App CTA, chat fallback); portal `#devices`/`#device=`; **`VPN_SETUP_WIZARD_OK`**. **NEXT=Q040** P3-FLOW-07. |

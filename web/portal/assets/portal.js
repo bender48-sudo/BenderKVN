@@ -207,6 +207,11 @@
       setupBtn.textContent = content.buttons.setup_browser;
       setupBtn.href = SETUP_PATH;
     }
+    var guideBtn = $("btn-guide");
+    if (guideBtn && content.buttons.watch_guide) {
+      guideBtn.textContent = content.buttons.watch_guide;
+      guideBtn.href = "/portal/guide.html";
+    }
     var supportBtn = $("btn-support");
     supportBtn.textContent = content.buttons.support;
     supportBtn.href = SUPPORT_URL;

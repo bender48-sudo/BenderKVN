@@ -33,6 +33,12 @@ def _add_portal_link_buttons(builder: InlineKeyboardBuilder, setup_url: str | No
             text="\U0001f310 \u041e\u0442\u043a\u0440\u044b\u0442\u044c \u0432 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0435",
             url=portal_links.PUBLIC_BOOTSTRAP_URL,
         )
+    guide_url = portal_links.public_guide_url()
+    if guide_url:
+        builder.button(
+            text="\U0001f3ac \u0412\u0438\u0434\u0435\u043e: \u043a\u0430\u043a \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u044c",
+            url=guide_url,
+        )
     if setup_url:
         builder.button(
             text="\U0001f517 \u041c\u043e\u044f \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430",
@@ -175,6 +181,11 @@ def create_wizard_device_keyboard(
             url=setup_url,
         )
     builder.button(text="\U0001f4f7 QR \u0434\u043b\u044f Happ", callback_data="show_sub_qr")
+    if device_id in ("iphone", "android"):
+        builder.button(
+            text="\U0001f3ac \u0412\u0438\u0434\u0435\u043e \u0434\u043b\u044f \u044d\u0442\u043e\u0433\u043e \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430",
+            url=portal_links.public_guide_url(device_id),
+        )
     store_key = device_id
     from shop_bot.vpn_setup_wizard import DEVICES, HAPP_STORES
 

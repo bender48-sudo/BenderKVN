@@ -58,6 +58,23 @@ def sign_setup_token(short_id: str, ttl_hours: int = 72) -> str:
     return f"v1.{_b64url_encode(raw)}.{_b64url_encode(sig)}"
 
 
+def public_portal_origin() -> str:
+    return _setup_origin()
+
+
+def public_guide_url(platform: str | None = None) -> str:
+    """Setup video/GIF page (P3-FLOW-06), clearnet without VPN."""
+    base = f"{public_portal_origin()}/portal/guide.html"
+    if not platform:
+        return base
+    key = platform.strip().lower()
+    if key in ("ios", "iphone", "ipad"):
+        return f"{base}?device=iphone"
+    if key == "android":
+        return f"{base}?device=android"
+    return base
+
+
 def public_setup_url(token: str = "") -> str:
     base = f"{_setup_origin()}/{_setup_path()}"
     if token:

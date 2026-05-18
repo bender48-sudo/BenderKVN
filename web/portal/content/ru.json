@@ -1,5 +1,5 @@
 {
-  "meta": { "lang": "ru", "version": 9 },
+  "meta": { "lang": "ru", "version": 10 },
   "home": {
     "title": "BenderVPN",
     "hero_badge": "Модуль Bender · без Telegram",
@@ -16,7 +16,25 @@
     "status": "Подробный статус",
     "support": "Помощь в Telegram",
     "stuck": "Не получается — подсказки",
-    "back": "Назад"
+    "back": "Назад",
+    "watch_guide": "Видео: как подключить"
+  },
+  "setup_videos": {
+    "title": "Как подключить VPN",
+    "lead": "Короткая инструкция для iPhone и Android. Страница открывается без VPN.",
+    "ios_tab": "iPhone",
+    "android_tab": "Android",
+    "ios_caption": "Happ на iPhone: установка, ссылка или QR, включение VPN.",
+    "android_caption": "Happ на Android: установка, вставка ссылки, включение VPN.",
+    "ios_alt": "Анимация: первый запуск Happ на iPhone",
+    "android_alt": "Анимация: первый запуск Happ на Android",
+    "media_ios_gif": "/portal/media/ios-first-connect.gif",
+    "media_android_gif": "/portal/media/android-first-connect.gif",
+    "media_ios_mp4": "",
+    "media_android_mp4": "",
+    "setup_button": "Получить бесплатный VPN",
+    "portal_button": "К инструкции",
+    "guide_link": "Видео: как подключить (iPhone / Android)"
   },
   "happ_install": {
     "ios": {
@@ -198,6 +216,7 @@
     "stuck_title": "Что проверить",
     "stuck_steps": [
       "Нажмите «Получить бесплатный VPN» и дождитесь QR.",
+      "Откройте «Видео: как подключить» — инструкция для iPhone и Android без VPN.",
       "Проверьте блок «Обновления VPN» на главной.",
       "Сохраните ID и напишите в поддержку, если email уже использовали."
     ]

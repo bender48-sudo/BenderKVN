@@ -13,9 +13,13 @@ RU = PORTAL / "content" / "ru.json"
 REQUIRED_FILES = [
     PORTAL / "index.html",
     PORTAL / "setup.html",
+    PORTAL / "guide.html",
     PORTAL / "assets" / "portal.css",
     PORTAL / "assets" / "portal.js",
     PORTAL / "assets" / "setup.js",
+    PORTAL / "assets" / "guide.js",
+    PORTAL / "media" / "ios-first-connect.gif",
+    PORTAL / "media" / "android-first-connect.gif",
     RU,
 ]
 
@@ -76,6 +80,9 @@ def main() -> int:
             errors.append("home.features must have 3 hero lines (HIT-style)")
         if not (doc2.get("events") or {}).get("ok_pill"):
             errors.append("events.ok_pill missing in ru.json")
+        sv = doc2.get("setup_videos") or {}
+        if not sv.get("media_ios_gif") or not sv.get("media_android_gif"):
+            errors.append("setup_videos media paths missing in ru.json")
 
     if errors:
         for e in errors:

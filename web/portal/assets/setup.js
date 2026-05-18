@@ -293,6 +293,11 @@
     $("btn-copy").textContent = s.copy;
     $("btn-copy-id").textContent = s.copy_id;
     $("btn-open-happ").textContent = s.open_happ;
+    var guideBtn = $("btn-setup-guide");
+    if (guideBtn) {
+      var gv = (content.setup_videos || {}).guide_link || content.buttons.watch_guide;
+      guideBtn.textContent = gv || "Видео: как подключить";
+    }
     var recoverLabel = $("recover-email").previousElementSibling;
     if (recoverLabel) recoverLabel.textContent = s.signup_email_label;
   }
