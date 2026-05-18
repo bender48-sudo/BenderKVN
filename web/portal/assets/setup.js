@@ -105,6 +105,33 @@
     };
   }
 
+  function renderBindTelegram(extra) {
+    var panel = $("bind-tg-panel");
+    var s = content.setup;
+    if (!panel || !s) return;
+    if (!extra || !extra.bind_url || extra.telegram_bound) {
+      hide(panel);
+      return;
+    }
+    $("bind-tg-title").textContent = s.bind_tg_title || "Подтвердите в Telegram";
+    $("bind-tg-lead").textContent = s.bind_tg_lead || "";
+    var btn = $("btn-bind-tg");
+    btn.href = extra.bind_url;
+    btn.textContent = s.bind_tg_button || "Открыть бота";
+    $("bind-tg-note").textContent = s.bind_tg_note || "";
+    var copyBind = $("btn-copy-bind");
+    if (copyBind) {
+      copyBind.textContent = s.bind_tg_copy || "Скопировать ссылку на бота";
+      bindCopy(copyBind, extra.bind_url, s.bind_tg_copied || "Скопировано");
+    }
+    showEl(panel);
+    try {
+      localStorage.setItem("bvpn_bind_url", extra.bind_url);
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
   function showSetupResult(url, extra) {
     var s = content.setup;
     hide($("setup-loading"));
@@ -114,6 +141,13 @@
       $("setup-success-msg").textContent =
         (s.success_trial || "Готово! Бесплатный доступ до") + " " + extra.expire_at;
     }
+    var step1Lead = $("setup-step1-lead");
+    if (step1Lead && s.step1_lead) {
+      step1Lead.textContent = s.step1_lead;
+      showEl(step1Lead);
+    }
+    var happTitle = $("happ-steps-title");
+    if (happTitle) happTitle.textContent = s.step1_title || "Шаг 1 — Happ";
     if (extra && extra.customer_id) {
       $("customer-id-value").textContent = extra.customer_id;
       showEl($("customer-id-panel"));
@@ -136,6 +170,7 @@
     }
     renderStepList($("happ-steps"), s.happ_steps, lastStoreKey);
     renderHappStoreLink(lastStoreKey);
+    renderBindTelegram(extra);
     showEl($("setup-content"));
   }
 

@@ -52,6 +52,7 @@
 
     <section id="setup-content" class="hidden">
       <p id="setup-success-msg" class="note note-accent"></p>
+      <p id="setup-step1-lead" class="lead hidden"></p>
       <div class="panel hidden" id="customer-id-panel">
         <p class="field-label" id="customer-id-label"></p>
         <p class="customer-id-box" id="customer-id-value"></p>
@@ -67,12 +68,21 @@
         <a class="btn btn-secondary" id="btn-open-happ" href="#" rel="noopener"></a>
       </div>
       <div class="panel">
-        <h2>Дальше в Happ</h2>
+        <h2 id="happ-steps-title"></h2>
         <ol class="steps" id="happ-steps"></ol>
         <p style="margin-top:0.75rem">
           <a class="store-link" id="happ-store-link" href="#" target="_blank" rel="noopener"></a>
         </p>
       </div>
+      <section id="bind-tg-panel" class="panel panel-step2 hidden">
+        <h2 id="bind-tg-title"></h2>
+        <p class="muted" id="bind-tg-lead"></p>
+        <div class="actions">
+          <a class="btn btn-secondary" id="btn-bind-tg" href="#" target="_blank" rel="noopener"></a>
+          <button type="button" class="btn btn-ghost btn-no-code" id="btn-copy-bind"></button>
+        </div>
+        <p class="muted" id="bind-tg-note"></p>
+      </section>
     </section>
 
     <nav class="footer-nav">

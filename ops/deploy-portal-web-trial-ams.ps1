@@ -7,6 +7,7 @@ Set-Location $RepoRoot
 $Files = @(
     @{ Local = "bot_src\portal_web_trial.py"; Remote = "/tmp/portal_web_trial.py" },
     @{ Local = "bot_src\web_trial_db.py"; Remote = "/tmp/web_trial_db.py" },
+    @{ Local = "bot_src\web_tg_bind.py"; Remote = "/tmp/web_tg_bind.py" },
     @{ Local = "bot_src\webhook_server\app_ams_with_portal_trial.py"; Remote = "/tmp/webhook_app.py" }
 )
 foreach ($f in $Files) {
@@ -40,13 +41,15 @@ ts=$(date +%Y%m%d-%H%M%S)
 SB=/opt/remna-shop/src/shop_bot
 DM=/opt/remna-shop/src/shop_bot/data_manager
 WH=/opt/remna-shop/src/shop_bot/webhook_server
-sed -i 's/\r$//' /tmp/portal_web_trial.py /tmp/web_trial_db.py /tmp/webhook_app.py
+sed -i 's/\r$//' /tmp/portal_web_trial.py /tmp/web_trial_db.py /tmp/web_tg_bind.py /tmp/webhook_app.py
 test -f "$WH/app.py" && cp "$WH/app.py" "$WH/app.py.before-web-trial-$ts"
 install -m 0644 /tmp/portal_web_trial.py "$SB/portal_web_trial.py"
 install -m 0644 /tmp/web_trial_db.py "$SB/web_trial_db.py"
+install -m 0644 /tmp/web_tg_bind.py "$SB/web_tg_bind.py"
 install -m 0644 /tmp/webhook_app.py "$WH/app.py"
 docker cp /tmp/portal_web_trial.py remna-shop-bot:/app/src/shop_bot/portal_web_trial.py
 docker cp /tmp/web_trial_db.py remna-shop-bot:/app/src/shop_bot/web_trial_db.py
+docker cp /tmp/web_tg_bind.py remna-shop-bot:/app/src/shop_bot/web_tg_bind.py
 docker cp /tmp/webhook_app.py remna-shop-bot:/app/src/shop_bot/webhook_server/app.py
 docker restart remna-shop-bot
 sleep 10

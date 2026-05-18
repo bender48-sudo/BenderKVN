@@ -436,6 +436,12 @@ h2 {
   word-break: break-all;
 }
 
+.panel-step2 {
+  margin-top: 1.25rem;
+  border-color: rgba(34, 211, 238, 0.35);
+  background: rgba(34, 211, 238, 0.04);
+}
+
 .cabinet-balance {
   font-size: 2rem;
   font-weight: 800;

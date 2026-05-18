@@ -159,18 +159,19 @@ class Handler(BaseHTTPRequestHandler):
             return
         token = sign_setup_token(sid)
         setup_url = site_urls.public_setup_url(token)
-        self._json(
-            200,
-            {
-                "ok": True,
-                "sub_url": sub_url,
-                "setup_url": setup_url,
-                "token": token,
-                "expire_at": ams.get("expire_at"),
-                "days": ams.get("days"),
-                "customer_id": ams.get("customer_id"),
-            },
-        )
+        out = {
+            "ok": True,
+            "sub_url": sub_url,
+            "setup_url": setup_url,
+            "token": token,
+            "expire_at": ams.get("expire_at"),
+            "days": ams.get("days"),
+            "customer_id": ams.get("customer_id"),
+        }
+        for key in ("bind_url", "bind_token", "telegram_bound", "recovered"):
+            if key in ams:
+                out[key] = ams[key]
+        self._json(200, out)
 
     def _json(self, code: int, doc: dict) -> None:
         body = json.dumps(doc, ensure_ascii=False).encode("utf-8")

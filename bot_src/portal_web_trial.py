@@ -23,7 +23,9 @@ from shop_bot.data_manager.database import (
     set_terms_agreed,
     set_trial_used,
 )
+from shop_bot.config import telegram_bind_url
 from shop_bot.web_trial_db import (
+    ensure_bind_token,
     format_customer_id,
     get_web_trial_claim,
     is_valid_contact_email,
@@ -82,6 +84,7 @@ async def issue_web_trial(
     expiry_ms = int(expiry_dt.timestamp() * 1000)
     add_new_key(web_uid, vless_uuid, panel_email, expiry_ms)
     record_web_trial_claim(em, web_uid, panel_email, contact_phone)
+    bind_token = ensure_bind_token(web_uid)
 
     return {
         "ok": True,
@@ -90,6 +93,9 @@ async def issue_web_trial(
         "days": REMNA_TRIAL_DAYS,
         "customer_id": format_customer_id(web_uid),
         "web_user_id": web_uid,
+        "bind_token": bind_token,
+        "bind_url": telegram_bind_url(bind_token),
+        "telegram_bound": False,
     }
 
 
@@ -104,6 +110,12 @@ async def recover_web_trial(contact_email: str) -> dict:
         return {"ok": False, "error": "not_found"}
 
     web_uid = int(claim["web_user_id"])
+    bind_token = ensure_bind_token(web_uid)
+    bind_extra = {
+        "bind_token": bind_token,
+        "bind_url": telegram_bind_url(bind_token),
+        "telegram_bound": bool(claim.get("telegram_id")),
+    }
     panel_email = claim["panel_email"]
     if not panel_email:
         return {"ok": False, "error": "not_found"}
@@ -129,6 +141,7 @@ async def recover_web_trial(contact_email: str) -> dict:
                         "expire_at": expiry_dt.strftime("%d.%m.%Y"),
                         "customer_id": format_customer_id(web_uid),
                         "recovered": True,
+                        **bind_extra,
                     }
 
             uri, expire_iso, vless_uuid, sub_url = await remnawave_api.provision_key(
@@ -151,6 +164,7 @@ async def recover_web_trial(contact_email: str) -> dict:
         "customer_id": format_customer_id(web_uid),
         "recovered": True,
         "reprovisioned": True,
+        **bind_extra,
     }
 
 

@@ -10,7 +10,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import MenuButtonWebApp, WebAppInfo
 
-from shop_bot.config import TELEGRAM_WEBAPP_URL
+from shop_bot.config import TELEGRAM_WEBAPP_URL, telegram_cabinet_webapp_url
 
 from shop_bot.bot import handlers
 from shop_bot.bot import admin_handlers
@@ -127,13 +127,13 @@ def main():
             try:
                 await bot.set_chat_menu_button(
                     menu_button=MenuButtonWebApp(
-                        text="\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u044c VPN",
-                        web_app=WebAppInfo(url=TELEGRAM_WEBAPP_URL),
+                        text="\U0001f3e0 \u041b\u0438\u0447\u043d\u044b\u0439 \u043a\u0430\u0431\u0438\u043d\u0435\u0442",
+                        web_app=WebAppInfo(url=telegram_cabinet_webapp_url()),
                     )
                 )
                 bot_logger.system(
                     "TELEGRAM",
-                    f"Menu WebApp -> {TELEGRAM_WEBAPP_URL}",
+                    f"Menu WebApp -> {telegram_cabinet_webapp_url()}",
                     "OK",
                 )
             except Exception as e:
