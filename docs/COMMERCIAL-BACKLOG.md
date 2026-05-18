@@ -120,7 +120,18 @@
 | ~~**P1-RED-SEC-01**~~ ✅ | **Machine credentials**: короткоживущие секреты (пилот broker → панель). | **2026-05-17** Q028 — **`RUNBOOK-SHORT-LIVED-CREDS`**, **`SHORT_LIVED_TOKEN_OK`**. |
 | ~~**P1-RED-SSH-01**~~ ✅ | **Blast radius SSH**: per-host ключи; без одного root-ключа на все VPS. | **2026-05-17** Q025 — **`SSH-KEY-INVENTORY`**, **`SSH_AUDIT_OK`**. |
 | ~~**P1-RED-DNS-01**~~ ✅ | **DNS**: ≥2 регистратора; probe делегирования; DNSSEC — runbook (включить у владельца). | **2026-05-17** Q026 — **`DNS_DELEGATION_OK`**, **`RUNBOOK-DNS-RED-TEAM`**. |
-| **P1-RED-LOG-01** | **Логи edge подписки / Caddy**: **`log_skip`** для **`/api/sub/*`** на сайтах публичной подписки; **retention** + доступ к access-log. Репозиторий: **`Caddyfile-latvia-full.txt`**, **`docs/RUNBOOK-CADDY-SUBSCRIPTION-LOGS.md`**, **`ops/patch-caddy-logskip-inplace.sh`** / **`ops/fix-caddy-security.sh`**. | **DONE (репо):** эталон + runbook + скрипты. После каждого наката LV: smoke **grep**/`tail` **`sub-access.log`** — без свежего сырого **`/api/sub/`** после refresh подписки; новые публичные домены патчить так же. |
+| **P1-RED-LOG-01** | **Логи edge подписки / Caddy**: **`log_skip`** для **`/api/sub/*`** на сайтах публичной подписки; **retention** + доступ к access-log. Репозиторий: **`Caddyfile-latvia-full.txt`**, **`docs/RUNBOOK-CADDY-SUBSCRIPTION-LOGS.md`**, **`ops/patch-caddy-logskip-inplace.sh`** / **`ops/fix-caddy-security.sh`**. | **DONE (репо):** эталон **p4n7q** + runbook. Хвост **k9x2m1** → **P1-RED-LOG-02** (**Q066**). |
+| **P1-RED-LOG-02** | **`log_skip`** на **k9x2m1** для **`/api/sub/*`** (второй origin **P2-RED-SUB-01**). | **`SUB_LOG_SKIP_K9_OK`**; grep access-log после refresh. **Q066**. |
+| **P6-RED-PAY-03** | **Auto-renew:** списание баланса перед `provision_key`; при недостатке — skip + уведомление. | **`AUTO_RENEW_BILLING_OK`**. **Q063**. |
+| **P3-RED-SUP-01** | **Support:** ответы из группы только **SUPPORT_STAFF_IDS** / admin. | **`SUPPORT_REPLY_AUTHZ_OK`**. **Q064**. |
+| **P2-OPS-SCHED-01** | **Expiry notify:** UTC-aware сравнение `expireAt`. | **`EXPIRY_TZ_OK`**. **Q065**. |
+| **P6-RED-PAY-04** | **CryptoBot:** webhook **POST**; `compare_digest` для secret. | **`CRYPTOBOT_WEBHOOK_POST_OK`**. **Q067**. |
+| **P6-RED-PAY-05** | **Webhook XFF:** `WEBHOOK_TRUST_PROXY_HEADERS` default **false**; smoke spoof. | **`WEBHOOK_XFF_HARDEN_OK`**. **Q068**. |
+| **P1-RED-NET-01** | **Panel bind:** `127.0.0.1:3000` в compose (не `0.0.0.0`). | external :3000 fail. **Q069**. |
+| **P6-RED-PAY-06** | **Сумма платежа:** cross-check metadata vs invoice. | **`PAYMENT_AMOUNT_VERIFY_OK`**. **Q070**. |
+| **P6-RED-PAY-07** | **YooKassa:** CRITICAL log / smoke если `SKIP_API_VERIFY` на проде. | smoke unset. **Q071**. |
+| **P3-RED-SETUP-01** | **Setup API:** Caddy rate_limit на `/setup/api/*`. | burst → 429. **Q072**. |
+| **P3-RED-SUP-02** | **Support flood:** rate limit user→support. | ручной test. **Q073**. |
 | ~~**P2-RED-BOOT-01**~~ ✅ | **Не только Telegram**: резервный канал (**HTTPS JSON mirror** на **k9x2m1**). | **`RUNBOOK-P2-STATUS-BOOT-CHANNEL`**, **`build_status_mirror.py`**, cron LV; smoke **`STATUS_CHANNELS_OK`** §12 |
 | ~~**P2-RED-SUB-01**~~ ✅ | **Подписка — несколько origin**: ≥2 независимых имени/CDN‑края на синхронизированную версию конфига; сценарий «один домен в реестре блокировок» не режет всю базу. | **2026-05-16:** **p4n7q** + **k9x2m1** `/api/sub/*` → AMS **:3010**; **`RUNBOOK-P6-SUBSCRIPTION-MULTI-ORIGIN`**, **`subscription_origin_drift_probe.py`**, smoke **`SUB_MULTI_ORIGIN_OK`** на LV. |
 | ~~**P2-RED-MUX-01**~~ ✅ | **Не один транспорт для всех**: продуктовая матрица **≥2 независимых транспортных профиля** (разные инбаунды/порты/узлы), чтобы DPI не кластеризовал всю аудиторию по одному JA3/Reality‑шаблону. | **2026-05-16:** **`TRANSPORT-MUX-MATRIX`**, **`transport_mux_audit.py`** — sample 25: **100%** users both primary+alt, **alt_ob_share≈56%**. |
@@ -253,8 +264,13 @@
 | ~~**P5-COM-01**~~ ✅ | Публичный статус инцидентов. | **2026-05-17:** HTML **`/status`** на **k9x2m1**, **`incidents.json`**, smoke **`PUBLIC_STATUS_PAGE_OK`**. |
 | **P5-COM-02** | Правила возвратов при массовом дауне. | Текст в оферте. |
 | **P5-PROD-NATIVE-APP-01** | **Своё iOS/Android‑приложение** (замена зависимости от Happ): Network Extension (**лимит ~15 MB** на iOS), GeoIP split на устройстве, доверие/модерация App Store. Happ остаётся **временным** рекомендованным клиентом до релиза. | Product brief **`docs/NATIVE-APP-BACKLOG.md`** (архитектура, MVP scope, go/no-go store); не блокирует **P2-RED-EDGE-PORT-01** / **P1-PRO-CLIENT-V2RAYN-01**. |
-| **P5-ENG-01** | Общий HTTP‑клиент для Python ops (TLS, таймауты). | Новые скрипты без `CERT_NONE`. |
+| **P5-ENG-01** | Общий HTTP‑клиент для Python **ops** (TLS, таймауты). | Новые скрипты без `CERT_NONE`. |
 | ~~**P5-ENG-02**~~ ✅ | Общий `load_env` для мониторов. | **`ops/load_env_file.py`** + **`ops/site_urls.py`**; тест **`tests/test_load_env_file.py`** (`python -m unittest discover -s tests`). |
+| **P5-ENG-03** | **Бот:** lazy `REMNA_API_TOKEN` + TTL inbound cache. | ротация без restart. **Q076**. |
+| **P1-ENG-04** | Hardcoded IP/domains в **bot** → env / `site_urls`. | grep clean. **Q077**. |
+| **P2-OPS-BACKUP-01** | Backup DB: timestamp в имени файла. | `backup_YYYYMMDD_*`. **Q074**. |
+| **P2-CHORE-SUP-01** | `support_handler` → `DB_FILE` из `database.py`. | один SoT path. **Q075**. |
+| **P2-OPS-REMNA-KEY-01** | VLESS: fail если нет `REMNA_PUBLIC_KEY`. | smoke URI. **Q078**. |
 
 ---
 
@@ -311,13 +327,13 @@
 
 **Сейчас (агент):** **`NEXT=Q051`** (**P2-RED-EDGE-PORT-01** → **`:8443`**). **Флоу (Q044–050)** — **после** продуктового блока **Q051–062**.
 
-**До GTM:** **Q032** **P5-COM-02** (можно параллельно владельцу).
+**До GTM:** **Q032** **P5-COM-02** (владелец); **Q063–Q068** security — **`docs/AUDIT-2026-05-SECURITY.md`**.
 
-**Продукт:** **Q051–062** → **`TSPU-OBSERVATIONS.md`**, **`EDGE-PORT-RECOMMENDATION.md`**, **`PRODUCT-TIER-PROFILES.md`**. **Флоу:** **Q044–050**.
+**Продукт:** **Q051–062** → **`TSPU-OBSERVATIONS.md`**, **`EDGE-PORT-RECOMMENDATION.md`**, **`PRODUCT-TIER-PROFILES.md`**. **Флоу:** **Q044–050**. **Security:** **Q069–Q078**.
 
 **Вне срочной очереди Q:** **P5-PROD-NATIVE-APP-01** (своё приложение; brief **`docs/NATIVE-APP-BACKLOG.md`**).
 
-**Параллельно:** **P4-DNS**; **P5-ENG-01**; **`MANUAL-OWNER-CHECKLIST.md`** (DNSSEC, BotFather, LUKS, **`PORTAL_SETUP_HMAC_SECRET`** на AMS).
+**Параллельно:** **P4-DNS**; **P5-ENG-01** (ops HTTP); **`MANUAL-OWNER-CHECKLIST.md`** (DNSSEC, BotFather, LUKS, **`PORTAL_SETUP_HMAC_SECRET`** на AMS).
 
 **Операционная память:** **`KNOWLEDGE-BASE.md`**, **`POLICY-REPO-WORKFLOW.md`**, **`NODE-POLICY-LV-NL.md`**.
 
@@ -327,6 +343,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-18 | **CodeRabbit audit:** валидация по коду → **`docs/AUDIT-2026-05-SECURITY.md`**; очередь **Q063–Q078** (pre-GTM security). **NEXT=Q051** без смены; **Q063–Q068** рекомендованы до GTM. |
 | 2026-05-18 | **Handoff агенту:** **`AGENT-PRODUCT-BACKLOG.md`** (Q051–062: что/зачем/почему), **`.cursor/rules/product-backlog.mdc`**. Продукт **впереди** флоу. **NEXT=Q051**. |
 | 2026-05-18 | **Порт edge:** **`EDGE-PORT-RECOMMENDATION.md`** — **8443**. **Тиры:** **`PRODUCT-TIER-PROFILES.md`**, **Q062**. |
 | 2026-05-18 | **ТСПУ 12 пунктов:** **`docs/TSPU-OBSERVATIONS.md`** — матрица «наблюдение → продукт → бэклог». Новые ID **§5.1**: **P2-RED-TSPU-VLESS-01**, **P1-RED-TSPU-BLOCK-01**, **P2-RED-VPN-INBOUND-PORT-01**, **P2-RED-SELFSTEAL-REVIEW-01**, **P2-RED-SNI-ROTATE-01**, **P1-RED-TSPU-THREAT-MODEL-01**, **P1-RED-NODE-DNS-01**; **P4-DNS-07/08**. Очередь **Q051–061**. |

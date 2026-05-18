@@ -115,6 +115,30 @@
 | 060 | **P4-DNS-07/08** | **TODO** | **P4** RF egress + whitelist IP; **не NEXT** без владельца | Wiki/PoC | **§Q060** |
 | 061 | **P1-RED-NODE-DNS-01** | **TODO** | **P1** Свой DNS на нодах (п.11) | **`NODE_DNS_RESOLVER_OK`** | **§Q061** |
 | 062 | **P1-PRO-SUB-TIER-01** | **TODO** | **P0** 3 tier: turbo / wl-direct / wl-routed | **`SUB_TIER_PROFILES_OK`** | **§Q062** |
+
+### Pre-GTM security (CodeRabbit audit 2026-05-18)
+
+**Не меняет `NEXT=Q051` без решения владельца.** **Q063–Q068** — рекомендованы **до массового GTM** (деньги, поддержка, логи sub). Сводка: **`docs/AUDIT-2026-05-SECURITY.md`**.
+
+| Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
+|---|-----|--------|-------------------|--------|-------------|
+| 063 | **P6-RED-PAY-03** | **TODO** | Auto-renew: списание баланса / отказ + уведомление | **`AUTO_RENEW_BILLING_OK`** | **`AUDIT-2026-05-SECURITY`**, `scheduler.py` |
+| 064 | **P3-RED-SUP-01** | **TODO** | Ответы из support group только **SUPPORT_STAFF_IDS** / admin | **`SUPPORT_REPLY_AUTHZ_OK`** | `support_handler.py` |
+| 065 | **P2-OPS-SCHED-01** | **TODO** | Expiry notify: сравнение в **UTC** (aware datetime) | unit / ручной **`EXPIRY_TZ_OK`** | `scheduler.py` |
+| 066 | **P1-RED-LOG-02** | **TODO** | **`log_skip`** `/api/sub/*` на **k9x2m1** (хвост P1-RED-LOG-01) | grep access-log без token path | **`RUNBOOK-CADDY-SUBSCRIPTION-LOGS`** |
+| 067 | **P6-RED-PAY-04** | **TODO** | **CryptoBot POST** + `hmac.compare_digest` для secret | **`CRYPTOBOT_WEBHOOK_POST_OK`** | `app.py`, dashboard CryptoBot |
+| 068 | **P6-RED-PAY-05** | **TODO** | **`WEBHOOK_TRUST_PROXY_HEADERS` default false**; smoke XFF spoof | **`WEBHOOK_XFF_HARDEN_OK`** | `auth.py`, `smoke_webhook_auth_ams.py` |
+| 069 | **P1-RED-NET-01** | **TODO** | Panel **127.0.0.1:3000** в compose tmpl | external curl :3000 **fail** | `docker-compose.yml.tmpl` |
+| 070 | **P6-RED-PAY-06** | **TODO** | Cross-check `metadata.a` vs ожидаемая сумма invoice | **`PAYMENT_AMOUNT_VERIFY_OK`** | `payment_queue.py` |
+| 071 | **P6-RED-PAY-07** | **TODO** | **CRITICAL** log если `YOOKASSA_WEBHOOK_SKIP_API_VERIFY=1` на проде | smoke flag unset | `app.py` |
+| 072 | **P3-RED-SETUP-01** | **TODO** | Caddy **rate_limit** на `/setup/api/*` (k9x2m1) | burst → **429** | Caddy + `setup_verify_service.py` |
+| 073 | **P3-RED-SUP-02** | **TODO** | Rate limit user→support (напр. 5/min) | ручной flood test | `support_handler.py` |
+| 074 | **P2-OPS-BACKUP-01** | **TODO** | Имя backup с **timestamp** (не перезапись `backup_part_aa`) | файл `backup_YYYYMMDD_*` | `handlers.py` |
+| 075 | **P2-CHORE-SUP-01** | **TODO** | `support_handler`: `DB_FILE` из `database.py` | один путь в коде | `support_handler.py` |
+| 076 | **P5-ENG-03** | **TODO** | Lazy `REMNA_API_TOKEN` + TTL inbound cache (~300s) | ротация токена без restart | `remnawave_api.py` |
+| 077 | **P1-ENG-04** | **TODO** | Убрать hardcoded IP из `handlers.py` → env / `site_urls` | grep без `168.100.11.140` в bot | `handlers.py` |
+| 078 | **P2-OPS-REMNA-KEY-01** | **TODO** | Нет VLESS с `PUBLIC_KEY_PLACEHOLDER`; fail fast при старте | smoke URI valid pbk | `remnawave_api.py` |
+
 | 044 | **P3-FLOW-09** | **TODO** | **ФЛОУ** Ветки iPhone/Android/Win — **только после Q062** | ≤ 5 шагов | **`AGENT-FLOW-BACKLOG` §Q044** |
 | 045 | **P3-FLOW-13** | **TODO** | a11y portal | Lighthouse ≥ 95 | §7.1 |
 | 046 | **P3-FLOW-10** | **TODO** | Метрики воронки | Wiki + §12 | §7.1 |
@@ -183,6 +207,22 @@
 | 060 | `docs: P4-DNS-07/08 — RF egress + whitelist IP source` |
 | 061 | `ops: P1-RED-NODE-DNS-01 — node DNS resolver policy` |
 | 062 | `product: P1-PRO-SUB-TIER-01 — turbo/wl-direct/wl-routed subscription tiers` |
+| 063 | `security: P6-RED-PAY-03 — auto-renew balance deduction` |
+| 064 | `security: P3-RED-SUP-01 — support reply staff allowlist` |
+| 065 | `fix: P2-OPS-SCHED-01 — UTC-aware expiry notifications` |
+| 066 | `ops: P1-RED-LOG-02 — log_skip on k9x2m1 sub origin` |
+| 067 | `security: P6-RED-PAY-04 — cryptobot POST webhook + compare_digest` |
+| 068 | `security: P6-RED-PAY-05 — webhook XFF trust default false` |
+| 069 | `ops: P1-RED-NET-01 — bind panel port to loopback` |
+| 070 | `security: P6-RED-PAY-06 — payment amount cross-validation` |
+| 071 | `security: P6-RED-PAY-07 — alarm on YOOKASSA skip verify flag` |
+| 072 | `ops: P3-RED-SETUP-01 — Caddy rate limit setup API` |
+| 073 | `product: P3-RED-SUP-02 — support user message rate limit` |
+| 074 | `ops: P2-OPS-BACKUP-01 — timestamped backup filenames` |
+| 075 | `chore: P2-CHORE-SUP-01 — support handler DB path from database module` |
+| 076 | `bot: P5-ENG-03 — lazy Remna token + inbound cache TTL` |
+| 077 | `ops: P1-ENG-04 — externalize hardcoded infra IPs in bot` |
+| 078 | `ops: P2-OPS-REMNA-KEY-01 — fail on missing REMNA public key` |
 | 044 | `product: P3-FLOW-09 — device-specific portal branches` |
 | 045 | `product: P3-FLOW-13 — portal a11y pass` |
 | 046 | `ops: P3-FLOW-10 — funnel metrics hooks` |
@@ -247,4 +287,5 @@
 | 2026-05-18 | — | Очередь **Q051–053**: порт edge, v2rayN, native app brief (фидбек бета) |
 | 2026-05-18 | — | **Q054–061** + **`TSPU-OBSERVATIONS.md`**: 12 пунктов ТСПУ по матрице |
 | 2026-05-18 | **Q044** P3-FLOW-09 | **Q051** P2-RED-EDGE-PORT-01 — продукт вперёд флоу; **8443** |
+| 2026-05-18 | — | CodeRabbit audit → **Q063–Q078** pre-GTM security; **`AUDIT-2026-05-SECURITY.md`** |
 | 2026-05-17 | — | Синхронизация бэклога: **`BACKLOG-MAP.md`**, §5.1 ✅, FAQ, Q032 помечен «до GTM» |
