@@ -1,22 +1,23 @@
 ---
-description: Фаза 3 продукт / ТСПУ / маскировка — Q051–062 (критично, впереди флоу)
+description: Фаза 3 продукт / ТСПУ — Q051–062 (только после Q078 security)
 alwaysApply: false
 ---
 
 # Продукт / маскировка (Q051–062)
 
-**Очередь:** **`docs/BACKLOG-QUEUE.md`** — только **`NEXT`** (сейчас **Q051**).
+**Очередь:** **`docs/BACKLOG-QUEUE.md`** — только **`NEXT`**.
 
-**Инструкции агента (что / зачем / почему):** **`docs/AGENT-PRODUCT-BACKLOG.md`**.
+**Применять это правило**, когда **`NEXT`** в диапазоне **Q051–Q062** (после закрытия **Q078**).
 
-**Контекст:** **`docs/TSPU-OBSERVATIONS.md`**, **`docs/EDGE-PORT-RECOMMENDATION.md`**, **`docs/PRODUCT-TIER-PROFILES.md`**.
+**Инструкции:** **`docs/AGENT-PRODUCT-BACKLOG.md`**. **Контекст:** **`TSPU-OBSERVATIONS.md`**, **`EDGE-PORT-RECOMMENDATION.md`**.
 
 ## Gate
 
-1. **Не брать Q044–050 (флоу)**, пока не закрыт **Q062** или владелец явно не сказал иначе.
-2. **Один Q → один коммит → стоп** (как **`sequential-backlog.mdc`**).
-3. **Q060** — поток P4, не подменять **NEXT** без согласования.
-4. AMS — **`RUNBOOK-AMS-SAFE-DEPLOY`**; LV portal — **`RUNBOOK-USER-BOOTSTRAP-SITE`**.
+1. **Не брать Q051–062**, пока не закрыт **Q078** (security), если владелец не сказал иначе.
+2. **Не брать Q044–050 (флоу)**, пока не закрыт **Q062**.
+3. **Один Q → один коммит → стоп** (`sequential-backlog.mdc`).
+4. **Q060** — P4; стоп и согласовать с владельцем.
+5. AMS — **`RUNBOOK-AMS-SAFE-DEPLOY`**.
 
 ## P0 в продукте
 

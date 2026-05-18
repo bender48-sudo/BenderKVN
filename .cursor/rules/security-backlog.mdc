@@ -1,0 +1,23 @@
+---
+description: Фаза 3 security — Q063–Q078 (сейчас, до продукта)
+alwaysApply: false
+---
+
+# Security (Q063–Q078)
+
+**Очередь:** **`docs/BACKLOG-QUEUE.md`** — только **`NEXT`**.
+
+**Применять**, когда **`NEXT`** в диапазоне **Q063–Q078**.
+
+**Инструкции:** **`docs/AUDIT-2026-05-SECURITY.md`** (матрица, verify, файлы).
+
+## Gate
+
+1. **Не брать Q051–062 (продукт)** и **Q044–050 (флоу)** в этой сессии.
+2. **Один Q → один коммит → стоп** (`sequential-backlog.mdc`).
+3. Деплой бота AMS — **`RUNBOOK-AMS-SAFE-DEPLOY`**; Caddy LV — runbook bootstrap/sub logs.
+4. **Q032** (возвраты) — только владелец, не подменять NEXT.
+
+## Порядок
+
+Строго по номерам **Q063 → … → Q078**, затем агент переходит на **`product-backlog.mdc`**.

@@ -325,11 +325,11 @@
 
 **Закрыто:** **P0–P2**, **P6** (фаза 1), **P1/P3-RED** + **P5-COM-01** (фаза 2), **P3-FLOW-00, 14, 01, 02, 12, 03** (Q033–038).
 
-**Сейчас (агент):** **`NEXT=Q051`** (**P2-RED-EDGE-PORT-01** → **`:8443`**). **Флоу (Q044–050)** — **после** продуктового блока **Q051–062**.
+**Сейчас (агент):** **`NEXT=Q063`** (**P6-RED-PAY-03**). Порядок: **Q063–078** (security) → **Q051–062** (продукт) → **Q044–050** (флоу).
 
-**До GTM:** **Q032** **P5-COM-02** (владелец); **Q063–Q068** security — **`docs/AUDIT-2026-05-SECURITY.md`**.
+**До GTM:** **Q032** **P5-COM-02** (только владелец, не NEXT агента).
 
-**Продукт:** **Q051–062** → **`TSPU-OBSERVATIONS.md`**, **`EDGE-PORT-RECOMMENDATION.md`**, **`PRODUCT-TIER-PROFILES.md`**. **Флоу:** **Q044–050**. **Security:** **Q069–Q078**.
+**Security:** **`docs/AUDIT-2026-05-SECURITY.md`**. **Продукт:** **`AGENT-PRODUCT-BACKLOG.md`**, **`TSPU-OBSERVATIONS.md`**. **Флоу:** **`AGENT-FLOW-BACKLOG.md`** после **Q062**.
 
 **Вне срочной очереди Q:** **P5-PROD-NATIVE-APP-01** (своё приложение; brief **`docs/NATIVE-APP-BACKLOG.md`**).
 
@@ -343,7 +343,8 @@
 
 | Дата | Что сделано |
 |------|-------------|
-| 2026-05-18 | **CodeRabbit audit:** валидация по коду → **`docs/AUDIT-2026-05-SECURITY.md`**; очередь **Q063–Q078** (pre-GTM security). **NEXT=Q051** без смены; **Q063–Q068** рекомендованы до GTM. |
+| 2026-05-18 | **Очередь:** линейный порядок **Q063–078 → Q051–062 → Q044–050**; **NEXT=Q063**. |
+| 2026-05-18 | **CodeRabbit audit:** **`docs/AUDIT-2026-05-SECURITY.md`**; **Q063–Q078** в очереди. |
 | 2026-05-18 | **Handoff агенту:** **`AGENT-PRODUCT-BACKLOG.md`** (Q051–062: что/зачем/почему), **`.cursor/rules/product-backlog.mdc`**. Продукт **впереди** флоу. **NEXT=Q051**. |
 | 2026-05-18 | **Порт edge:** **`EDGE-PORT-RECOMMENDATION.md`** — **8443**. **Тиры:** **`PRODUCT-TIER-PROFILES.md`**, **Q062**. |
 | 2026-05-18 | **ТСПУ 12 пунктов:** **`docs/TSPU-OBSERVATIONS.md`** — матрица «наблюдение → продукт → бэклог». Новые ID **§5.1**: **P2-RED-TSPU-VLESS-01**, **P1-RED-TSPU-BLOCK-01**, **P2-RED-VPN-INBOUND-PORT-01**, **P2-RED-SELFSTEAL-REVIEW-01**, **P2-RED-SNI-ROTATE-01**, **P1-RED-TSPU-THREAT-MODEL-01**, **P1-RED-NODE-DNS-01**; **P4-DNS-07/08**. Очередь **Q051–061**. |

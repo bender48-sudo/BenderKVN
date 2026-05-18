@@ -67,31 +67,36 @@
 
 **Параллельно (другой человек, не трогать NEXT):** **P4-DNS-01…06** (mobile bootstrap / whitelist SKU).
 
-### Фаза 3 — продукт, флоу, GTM (после Q031)
+### Фаза 3 — критичное → продукт → флоу (после Q031)
 
 **Старт:** **2026-05-17**.
 
+**Порядок агента (строго, без исключений):**
+
+1. **Security** **Q063–Q078** (CodeRabbit; сначала критичное)
+2. **Продукт / ТСПУ** **Q051–062**
+3. **Флоу** **Q044–050**
+
+**NEXT:** **Q063** (**P6-RED-PAY-03** — auto-renew billing).
+
 | Кому | Документ |
 |------|----------|
-| **Агент — продукт (сейчас)** | **`docs/AGENT-PRODUCT-BACKLOG.md`** — Q051–062: **что / зачем / почему** |
-| Агент — флоу (после Q062) | **`docs/AGENT-FLOW-BACKLOG.md`** |
-| Правило Cursor | **`.cursor/rules/product-backlog.mdc`** |
-
-**NEXT:** **Q051** (**P2-RED-EDGE-PORT-01** → edge **:8443**).
-
-**КРИТИЧНО:** сначала **Q051–062** (продукт / маскировка / ТСПУ), **потом** **Q044–050** (флоу). Не менять порядок без владельца.
+| **Агент — security (сейчас)** | **`docs/AUDIT-2026-05-SECURITY.md`** — Q063–Q078 |
+| Агент — продукт (после **Q078**) | **`docs/AGENT-PRODUCT-BACKLOG.md`** — Q051–062 |
+| Агент — флоу (после **Q062**) | **`docs/AGENT-FLOW-BACKLOG.md`** |
+| Правила Cursor | **`sequential-backlog.mdc`**; после Q078 — **`product-backlog.mdc`**; после Q062 — **`flow-backlog.mdc`** |
 
 | Блок | Q | Смысл |
 |------|---|--------|
-| Legal (до GTM) | 032 | Возвраты — **TODO** (владелец; не блокирует продукт) |
+| Legal (владелец, не NEXT) | 032 | Возвраты — **TODO**; только владелец или по явной просьбе |
 | MVP portal | 033–043 | **DONE** |
-| **Продукт / ТСПУ** | **051–062** | **Сейчас** — порт **8443**, v2rayN, VLESS, SNI yandex, тиры sub, … (**`TSPU-OBSERVATIONS.md`**) |
-| **Флоу (после продукта)** | **044–050** | Ветки устройств, a11y, метрики, веб-ЛК |
-| **P4 ТСПУ** | **060** (параллельно P4) | RF egress + whitelist IP |
+| **Security** | **063–078** | **Сейчас** — billing, support, webhooks, logs, … |
+| **Продукт / ТСПУ** | **051–062** | Порт **8443**, v2rayN, VLESS, SNI, тиры (**`TSPU-OBSERVATIONS.md`**) |
+| **Флоу** | **044–050** | Только после **Q062** |
 
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
-| 032 | **P5-COM-02** | **TODO** | Возвраты при массовом дауне в оферте (**до GTM**, не блокирует Q039) | Текст согласован владельцем | **`AGENT-FLOW-BACKLOG` §Q032**, §9 |
+| 032 | **P5-COM-02** | **TODO** | Возвраты в оферте (**владелец**; не в очереди агента) | Текст согласован владельцем | §9, **`AGENT-FLOW-BACKLOG` §Q032** |
 | 033 | **P3-FLOW-00** | **DONE** | Карта флоу: сайт = Mini App = бот | **USER_FLOW_JOURNEY_OK** §12 | **`USER-FLOW-JOURNEY.md`** |
 | 034 | **P3-FLOW-14** | **DONE** | `web/portal/` + ru.json (iPhone/Android/Win/Mac, Happ) | **PORTAL_BUNDLE_OK** §12 | §Q034 |
 | 035 | **P3-FLOW-01** | **DONE** | `/start` + `/portal` на LV; as-is бот в journey | **`PUBLIC_BOOTSTRAP_OK`** §12 | **`RUNBOOK-USER-BOOTSTRAP-SITE`** |
@@ -103,43 +108,35 @@
 | 041 | **P3-FLOW-05** | **DONE** | QR (бот + portal) | **BOT_SUBSCRIPTION_QR_OK** / **PORTAL_SUBSCRIPTION_QR_OK** §12 | §7.1 |
 | 042 | **P3-FLOW-06** | **DONE** | Видео/GIF на portal | **PORTAL_SETUP_VIDEO_OK** §12 | §7.1 |
 | 043 | **P3-FLOW-08** | **DONE** | Страница ошибок на portal | **PORTAL_HELP_ERRORS_OK** §12 | §7.1 |
-| 051 | **P2-RED-EDGE-PORT-01** | **NEXT** | **P0** Edge **2053→8443**: убрать сигнатуру 3X-UI, меньше сканов ТСПУ к sub/portal | **`SUB_EDGE_PORT_OK`** | **`AGENT-PRODUCT-BACKLOG` §Q051** |
-| 052 | **P1-PRO-CLIENT-V2RAYN-01** | **TODO** | **P1** v2rayN Win: бета не коннектится; второй клиент на ПК | **`V2RAYN_CLIENT_OK`** | **§Q052** |
-| 053 | **P5-PROD-NATIVE-APP-01** | **TODO** | **P2** Brief iOS/Android (замена Happ), без кода | **`NATIVE-APP-BACKLOG.md`** | **§Q053** |
-| 054 | **P2-RED-TSPU-VLESS-01** | **TODO** | **P1** Runbook: палево VLESS, ~15 дн на ТСПУ; не один fingerprint | **`TSPU_VLESS_PLAYBOOK_OK`** | **§Q054** |
-| 055 | **P1-RED-TSPU-BLOCK-01** | **TODO** | **P1** Probe RU: порты >990, обрыв SSL | **`TSPU_BLOCK_PROBE_OK`** | **§Q055** |
-| 056 | **P2-RED-VPN-INBOUND-PORT-01** | **TODO** | **P1** Inbound VPN ≠443 при бане у хостера | **`VPN_INBOUND_PORT_OK`** | **§Q056** |
-| 057 | **P2-RED-SELFSTEAL-REVIEW-01** | **TODO** | **P1** Selfsteal/decoy — go/no-go (п.5 наблюдений) | **`SELFSTEAL_REVIEW_OK`** | **§Q057** |
-| 058 | **P2-RED-SNI-ROTATE-01** | **TODO** | **P0** SNI **yandex.ru** вместо github/bing (WL-маска) | **`SNI_ROTATE_OK`** | **§Q058** |
-| 059 | **P1-RED-TSPU-THREAT-MODEL-01** | **TODO** | **P1** Wiki ТСПУ п.7–9 (массовый бан, малый сервер) | **`TSPU-THREAT-MODEL.md`** | **§Q059** |
-| 060 | **P4-DNS-07/08** | **TODO** | **P4** RF egress + whitelist IP; **не NEXT** без владельца | Wiki/PoC | **§Q060** |
-| 061 | **P1-RED-NODE-DNS-01** | **TODO** | **P1** Свой DNS на нодах (п.11) | **`NODE_DNS_RESOLVER_OK`** | **§Q061** |
-| 062 | **P1-PRO-SUB-TIER-01** | **TODO** | **P0** 3 tier: turbo / wl-direct / wl-routed | **`SUB_TIER_PROFILES_OK`** | **§Q062** |
-
-### Pre-GTM security (CodeRabbit audit 2026-05-18)
-
-**Не меняет `NEXT=Q051` без решения владельца.** **Q063–Q068** — рекомендованы **до массового GTM** (деньги, поддержка, логи sub). Сводка: **`docs/AUDIT-2026-05-SECURITY.md`**.
-
-| Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
-|---|-----|--------|-------------------|--------|-------------|
-| 063 | **P6-RED-PAY-03** | **TODO** | Auto-renew: списание баланса / отказ + уведомление | **`AUTO_RENEW_BILLING_OK`** | **`AUDIT-2026-05-SECURITY`**, `scheduler.py` |
+| 063 | **P6-RED-PAY-03** | **NEXT** | Auto-renew: списание баланса / отказ + уведомление | **`AUTO_RENEW_BILLING_OK`** | **`AUDIT-2026-05-SECURITY`**, `scheduler.py` |
 | 064 | **P3-RED-SUP-01** | **TODO** | Ответы из support group только **SUPPORT_STAFF_IDS** / admin | **`SUPPORT_REPLY_AUTHZ_OK`** | `support_handler.py` |
-| 065 | **P2-OPS-SCHED-01** | **TODO** | Expiry notify: сравнение в **UTC** (aware datetime) | unit / ручной **`EXPIRY_TZ_OK`** | `scheduler.py` |
-| 066 | **P1-RED-LOG-02** | **TODO** | **`log_skip`** `/api/sub/*` на **k9x2m1** (хвост P1-RED-LOG-01) | grep access-log без token path | **`RUNBOOK-CADDY-SUBSCRIPTION-LOGS`** |
-| 067 | **P6-RED-PAY-04** | **TODO** | **CryptoBot POST** + `hmac.compare_digest` для secret | **`CRYPTOBOT_WEBHOOK_POST_OK`** | `app.py`, dashboard CryptoBot |
-| 068 | **P6-RED-PAY-05** | **TODO** | **`WEBHOOK_TRUST_PROXY_HEADERS` default false**; smoke XFF spoof | **`WEBHOOK_XFF_HARDEN_OK`** | `auth.py`, `smoke_webhook_auth_ams.py` |
-| 069 | **P1-RED-NET-01** | **TODO** | Panel **127.0.0.1:3000** в compose tmpl | external curl :3000 **fail** | `docker-compose.yml.tmpl` |
-| 070 | **P6-RED-PAY-06** | **TODO** | Cross-check `metadata.a` vs ожидаемая сумма invoice | **`PAYMENT_AMOUNT_VERIFY_OK`** | `payment_queue.py` |
-| 071 | **P6-RED-PAY-07** | **TODO** | **CRITICAL** log если `YOOKASSA_WEBHOOK_SKIP_API_VERIFY=1` на проде | smoke flag unset | `app.py` |
-| 072 | **P3-RED-SETUP-01** | **TODO** | Caddy **rate_limit** на `/setup/api/*` (k9x2m1) | burst → **429** | Caddy + `setup_verify_service.py` |
-| 073 | **P3-RED-SUP-02** | **TODO** | Rate limit user→support (напр. 5/min) | ручной flood test | `support_handler.py` |
-| 074 | **P2-OPS-BACKUP-01** | **TODO** | Имя backup с **timestamp** (не перезапись `backup_part_aa`) | файл `backup_YYYYMMDD_*` | `handlers.py` |
-| 075 | **P2-CHORE-SUP-01** | **TODO** | `support_handler`: `DB_FILE` из `database.py` | один путь в коде | `support_handler.py` |
-| 076 | **P5-ENG-03** | **TODO** | Lazy `REMNA_API_TOKEN` + TTL inbound cache (~300s) | ротация токена без restart | `remnawave_api.py` |
-| 077 | **P1-ENG-04** | **TODO** | Убрать hardcoded IP из `handlers.py` → env / `site_urls` | grep без `168.100.11.140` в bot | `handlers.py` |
-| 078 | **P2-OPS-REMNA-KEY-01** | **TODO** | Нет VLESS с `PUBLIC_KEY_PLACEHOLDER`; fail fast при старте | smoke URI valid pbk | `remnawave_api.py` |
-
-| 044 | **P3-FLOW-09** | **TODO** | **ФЛОУ** Ветки iPhone/Android/Win — **только после Q062** | ≤ 5 шагов | **`AGENT-FLOW-BACKLOG` §Q044** |
+| 065 | **P2-OPS-SCHED-01** | **TODO** | Expiry notify: сравнение в **UTC** (aware datetime) | **`EXPIRY_TZ_OK`** | `scheduler.py` |
+| 066 | **P1-RED-LOG-02** | **TODO** | **`log_skip`** `/api/sub/*` на **k9x2m1** | grep access-log без token path | **`RUNBOOK-CADDY-SUBSCRIPTION-LOGS`** |
+| 067 | **P6-RED-PAY-04** | **TODO** | **CryptoBot POST** + `hmac.compare_digest` | **`CRYPTOBOT_WEBHOOK_POST_OK`** | `app.py` |
+| 068 | **P6-RED-PAY-05** | **TODO** | **`WEBHOOK_TRUST_PROXY_HEADERS` default false** | **`WEBHOOK_XFF_HARDEN_OK`** | `auth.py` |
+| 069 | **P1-RED-NET-01** | **TODO** | Panel **127.0.0.1:3000** в compose tmpl | external :3000 fail | `docker-compose.yml.tmpl` |
+| 070 | **P6-RED-PAY-06** | **TODO** | Cross-check суммы платежа vs invoice | **`PAYMENT_AMOUNT_VERIFY_OK`** | `payment_queue.py` |
+| 071 | **P6-RED-PAY-07** | **TODO** | CRITICAL log если `SKIP_API_VERIFY` на проде | smoke flag unset | `app.py` |
+| 072 | **P3-RED-SETUP-01** | **TODO** | Caddy **rate_limit** `/setup/api/*` | burst → **429** | Caddy k9x2m1 |
+| 073 | **P3-RED-SUP-02** | **TODO** | Rate limit user→support | flood test | `support_handler.py` |
+| 074 | **P2-OPS-BACKUP-01** | **TODO** | Backup filename с **timestamp** | `backup_YYYYMMDD_*` | `handlers.py` |
+| 075 | **P2-CHORE-SUP-01** | **TODO** | `support_handler` → `DB_FILE` из `database.py` | один путь | `support_handler.py` |
+| 076 | **P5-ENG-03** | **TODO** | Lazy `REMNA_API_TOKEN` + inbound cache TTL | ротация без restart | `remnawave_api.py` |
+| 077 | **P1-ENG-04** | **TODO** | Hardcoded IP в bot → env / `site_urls` | grep clean | `handlers.py` |
+| 078 | **P2-OPS-REMNA-KEY-01** | **TODO** | Fail fast без `REMNA_PUBLIC_KEY` | smoke URI | `remnawave_api.py` |
+| 051 | **P2-RED-EDGE-PORT-01** | **TODO** | **P0** Edge **2053→8443** | **`SUB_EDGE_PORT_OK`** | **`AGENT-PRODUCT-BACKLOG` §Q051** |
+| 052 | **P1-PRO-CLIENT-V2RAYN-01** | **TODO** | **P1** v2rayN Win | **`V2RAYN_CLIENT_OK`** | **§Q052** |
+| 053 | **P5-PROD-NATIVE-APP-01** | **TODO** | **P2** Brief iOS/Android | **`NATIVE-APP-BACKLOG.md`** | **§Q053** |
+| 054 | **P2-RED-TSPU-VLESS-01** | **TODO** | **P1** Runbook VLESS / ТСПУ | **`TSPU_VLESS_PLAYBOOK_OK`** | **§Q054** |
+| 055 | **P1-RED-TSPU-BLOCK-01** | **TODO** | **P1** Probe RU block | **`TSPU_BLOCK_PROBE_OK`** | **§Q055** |
+| 056 | **P2-RED-VPN-INBOUND-PORT-01** | **TODO** | **P1** Inbound VPN ≠443 | **`VPN_INBOUND_PORT_OK`** | **§Q056** |
+| 057 | **P2-RED-SELFSTEAL-REVIEW-01** | **TODO** | **P1** Selfsteal go/no-go | **`SELFSTEAL_REVIEW_OK`** | **§Q057** |
+| 058 | **P2-RED-SNI-ROTATE-01** | **TODO** | **P0** SNI **yandex.ru** | **`SNI_ROTATE_OK`** | **§Q058** |
+| 059 | **P1-RED-TSPU-THREAT-MODEL-01** | **TODO** | **P1** Wiki ТСПУ | **`TSPU-THREAT-MODEL.md`** | **§Q059** |
+| 060 | **P4-DNS-07/08** | **TODO** | **P4** RF egress; **стоп** — согласовать с владельцем | Wiki/PoC | **§Q060** |
+| 061 | **P1-RED-NODE-DNS-01** | **TODO** | **P1** DNS на нодах | **`NODE_DNS_RESOLVER_OK`** | **§Q061** |
+| 062 | **P1-PRO-SUB-TIER-01** | **TODO** | **P0** 3 tier sub | **`SUB_TIER_PROFILES_OK`** | **§Q062** |
+| 044 | **P3-FLOW-09** | **TODO** | **ФЛОУ** Ветки iPhone/Android/Win | ≤ 5 шагов | **`AGENT-FLOW-BACKLOG` §Q044** |
 | 045 | **P3-FLOW-13** | **TODO** | a11y portal | Lighthouse ≥ 95 | §7.1 |
 | 046 | **P3-FLOW-10** | **TODO** | Метрики воронки | Wiki + §12 | §7.1 |
 | 047 | **P3-FLOW-11** | **TODO** | Запасной домен bootstrap | Tabletop | §7.1 |
@@ -288,4 +285,5 @@
 | 2026-05-18 | — | **Q054–061** + **`TSPU-OBSERVATIONS.md`**: 12 пунктов ТСПУ по матрице |
 | 2026-05-18 | **Q044** P3-FLOW-09 | **Q051** P2-RED-EDGE-PORT-01 — продукт вперёд флоу; **8443** |
 | 2026-05-18 | — | CodeRabbit audit → **Q063–Q078** pre-GTM security; **`AUDIT-2026-05-SECURITY.md`** |
+| 2026-05-18 | **Q051** P2-RED-EDGE-PORT-01 | **Q063** P6-RED-PAY-03 — порядок: **security → продукт → флоу** |
 | 2026-05-17 | — | Синхронизация бэклога: **`BACKLOG-MAP.md`**, §5.1 ✅, FAQ, Q032 помечен «до GTM» |

@@ -5,7 +5,7 @@ alwaysApply: false
 
 # User flow / Mini App (фаза 3)
 
-**Сейчас критичен продукт:** **`docs/AGENT-PRODUCT-BACKLOG.md`** (**Q051–062**, **NEXT=Q051**). Это правило — **только флоу Q044–050 после Q062**.
+**Сейчас:** security **Q063–078** (`AUDIT-2026-05-SECURITY.md`), затем продукт **Q051–062**, затем флоу. Это правило — **только Q044–050 после Q062**.
 
 Очередь: **`docs/BACKLOG-QUEUE.md`**. Карта: **`docs/BACKLOG-MAP.md`**. Инструкции флоу: **`docs/AGENT-FLOW-BACKLOG.md`**.
 

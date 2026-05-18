@@ -11,8 +11,9 @@
 | **1. Исполнение** | **`docs/BACKLOG-QUEUE.md`** | Линейная очередь **Q001…**; единственный **`NEXT`** |
 | **2. Задачи и журнал** | **`docs/COMMERCIAL-BACKLOG.md`** | ID, Done when, §7.1 P3-FLOW, **§12** прогресс на проде |
 | **3. Флоу (продукт)** | **`docs/USER-FLOW-BACKLOG.md`** | Принципы, MVP/Comfort, бабушка-тест |
-| **4. Агент — продукт (критично)** | **`docs/AGENT-PRODUCT-BACKLOG.md`** | Q051–062: что / зачем / почему |
-| **4b. Агент — флоу** | **`docs/AGENT-FLOW-BACKLOG.md`** | Q044–050 после продукта |
+| **4. Агент — security (сейчас)** | **`docs/AUDIT-2026-05-SECURITY.md`** | Q063–Q078 |
+| **4b. Агент — продукт** | **`docs/AGENT-PRODUCT-BACKLOG.md`** | Q051–062 после Q078 |
+| **4c. Агент — флоу** | **`docs/AGENT-FLOW-BACKLOG.md`** | Q044–050 после Q062 |
 | **5. Карта пути** | **`docs/USER-FLOW-JOURNEY.md`** | Персоны, сценарии (закрыт **P3-FLOW-00**) |
 | **6. Владелец (ручное)** | **`docs/MANUAL-OWNER-CHECKLIST.md`** | Bitwarden, BotFather, DNSSEC — не в очереди Q |
 | **7. Политики** | **`POLICY-SEQUENTIAL-WORK.md`**, **`POLICY-BACKLOG-ORDER.md`** | Один Q → коммит; продукт → UX |
@@ -27,33 +28,20 @@
 |------|---|--------|------|
 | **1** | 001–022 | **Закрыта** | Scale, monetize, P6-RED (sub/mux/pg), GTM wiki |
 | **2** | 023–031 | **Закрыта** | Safe-deploy, P1-RED, публичный `/status` |
-| **3** | 032–078 | **В работе** | Продукт **Q051–062**, security **Q063–078**, флоу **Q044–050** |
+| **3** | 032–078 | **В работе** | **Security Q063–078** → **продукт Q051–062** → **флоу Q044–050** |
 
-**Сейчас:** **`NEXT = Q051`** (edge **:8443**). **Pre-GTM security Q063–Q068** — до массового GTM (см. **`AUDIT-2026-05-SECURITY.md`**). **Флоу Q044–050** — после **Q062**.
+**Сейчас:** **`NEXT = Q063`** (auto-renew billing). Далее по очереди до **Q078**, затем **Q051–062**, затем **Q044–050**. См. **`AUDIT-2026-05-SECURITY.md`**.
 
 ---
 
 ## Фаза 3 — блоки (логика, не менять Q-номера)
 
 ```
-[LEGAL]     Q032  P5-COM-02 возвраты — TODO, до GTM (пропущен при старте фазы 3)
-[MVP DONE]  Q033–038  journey, portal, /start, /setup, Mini App, bot links
-[DONE]      Q039  мастер «Подключить VPN» в боте
-[DONE]      Q040  FAQ / оплата live (PAYMENT_COPY_SYNC_OK)
-[DONE]      Q041  QR подписки (бот + portal)
-[DONE]      Q042  видео/GIF guide на portal
-[DONE]      Q043  ошибки /start/help/errors/
-[CURRENT]   Q051  NEXT → edge :8443 (см. EDGE-PORT-RECOMMENDATION)
-[BETA]      Q052–061  v2rayN, VLESS, SNI, …
-[TIER]      Q062  turbo / wl-direct / wl-routed
-[FLOW]      Q044–050  после продукта
-[NATIVE]    Q053  brief своего iOS/Android app
-[TSPU]      Q054–059  VLESS, probe, VPN port, selfsteal, SNI, threat model
-[P4 TSPU]   Q060  RF egress + whitelist IP (параллельно P4)
-[TSPU]      Q061  DNS на нодах
-[POLISH]    Q045–047  a11y, метрики, запасной домен
-[WEB LK]    Q048–050  баланс в ЛК, bind TG, notify без TG
-[SECURITY]  Q063–078  CodeRabbit pre-GTM (Q063–068 до GTM)
+[MVP DONE]  Q033–043  portal, Mini App, wizard, FAQ, QR, errors
+[LEGAL]     Q032  возвраты — владелец, не NEXT агента
+[CURRENT]   Q063–078  security (NEXT=Q063)
+[PRODUCT]   Q051–062  edge 8443, v2rayN, SNI, tiers, …
+[FLOW]      Q044–050  только после Q062
 ```
 
 **Gate:** накат AMS — **`RUNBOOK-AMS-SAFE-DEPLOY`** (не Q).
