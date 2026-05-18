@@ -1,6 +1,6 @@
 # BenderVPN — коммерческий бэклог
 
-**Версия документа:** 2026-05-17 — **фаза 3 (P3-FLOW)** пользовательский флоу + bootstrap-сайт; фаза 2 очереди (**Q023–Q031**) закрыта; **P4-DNS** — параллельный поток. Прежнее: **2026-05-17** (Red team), **2026-05-16** (коммерция, P6).
+**Версия документа:** 2026-05-17 — фаза 3: portal + Mini App (**Q033–039** ✅), **NEXT=Q040**; карта **`docs/BACKLOG-MAP.md`**. Фазы 1–2 и **P4-DNS** (параллель) — без изменений статуса.
 **Цель:** стабильный **8–9/10** (нишевый коммерческий VPN в РФ); измеримый рост к максимально достижимому качеству.  
 **Определение «готово»:** по каждой задаче выполнен критерий в колонке **Done when** + при необходимости запись в трекере (статусы `TODO` / `DOING` / `DONE`).
 
@@ -10,7 +10,7 @@
 
 Используйте как **baseline** для порогов ниже; обновляйте строку даты после каждого замера.
 
-| Объект | Факт (снимок после P1-close **2026-05-15**; счётчики БД/TRaffic переснять при SSH-ревизии) |
+| Объект | Факт (снимок **2026-05-15**; **переснять** `users`/RAM при SSH — `python ops/capacity_snapshot.py`) |
 |--------|----------------|
 | **Роль AMS** | Панель + подписка (`remnawave`, postgres, redis, subscription-page, бот, AdGuard, Caddy-selfsteal). **`remnanode` AMS** — **stopped (drain, P1-ARCH-AMS-DECOM 4a)**; не running в `docker ps`. |
 | **Роль LV** | Production-нода (`remnanode` + AdGuard); `/opt/scripts/*`. |
@@ -22,7 +22,8 @@
 | **RAM хоста AMS** | **~2 GiB** — панель + edge без prod VPN после drain |
 | **Цели роста (продукт)** | **~10k** учёток к **концу лета 2026**; **~30k** в **2027**; GTM wiki — [**`docs/templates/GTM-WIKI-PAGE.md`**](https://github.com/VaDi-ai/BenderKVN/blob/main/docs/templates/GTM-WIKI-PAGE.md) (реестр **`docs/GTM-WIKI.md`**) |
 | **Инфра-триггеры при росте** | **2k** users → апгрейд AMS; **8k** → load test sub + отдельный edge; soft-cap нод → 3-я prod (**§10.1**) |
-| **Вывод** | Модель роста: **2 prod-ноды (LV+NL) + панель AMS**. Контроль «кто всё ещё видит AMS IP в Happ-sub»: **`daily-report.sh`** вызывает **`count_users_with_ams_sub.py`**. Узкие места: RAM/API панели, публичная подписка (**P6**). **§5.3 монетизация** — go-live **2026-05-16** (§12). |
+| **Публичный portal** | **`/start`**, **`/portal/`** (Mini App), **`/setup/?t=`** на **k9x2m1** — репо **`web/portal/`**; см. **`BACKLOG-MAP.md`** |
+| **Вывод** | Модель роста: **2 prod-ноды (LV+NL) + панель AMS**. Узкие места: RAM/API панели, подписка (**P6**). Монетизация go-live **2026-05-16**. Онбординг: portal + бот (**фаза 3**). |
 
 ---
 
@@ -115,10 +116,10 @@
 
 | ID | Задача | Done when |
 |----|--------|-----------|
-| **P1-RED-DATA-01** | **AMS Postgres**: шифрование данных на диске (TDE/шифрование тома); **ключи шифрования не хранить на том же VPS**, что БД (KMS / **Vault** / провайдерский CMK). | Документированная схема + включено на проде + процедура rotate ключа без простоя пользователей VPN. |
-| **P1-RED-SEC-01** | **Machine credentials**: короткоживущие секреты для скриптов/контейнеров (**SPIFFE + Vault** или аналог): TTL, аудит каждого чтения, нет «одного JWT на год» для всего автопарка. | Пилот на одном классе workload (напр. мониторинг → панель); runbook в **`docs/`**; референсы: HashiCorp SPIFFE auth, [`philips-labs/spiffe-vault`](https://github.com/philips-labs/spiffe-vault). |
-| **P1-RED-SSH-01** | **Blast radius LV**: убрать сценарий «один root‑ключ ко всем хостам»; отдельные ключи per‑host/per‑роль; **jump‑host** с MFA где возможно; расширить практику **`command=`** restricted keys для узких задач. | Таблица ключей + wiki; **`ssh_audit`** / проверка что нет дубликата одного приватного ключа на все три машины. |
-| **P1-RED-DNS-01** | **DNS / домены**: несколько регистраторов и DNS‑операторов для критичных имён (панель, подписка, bootstrap); **DNSSEC**; офлайн‑хранение **recovery‑кодов** регистратора (аппаратный секрет, не только облако VPS‑провайдера). | Запись в wiki + мониторинг делегирования (**P4-DNS-04** пересекается — не дублировать проверки). |
+| ~~**P1-RED-DATA-01**~~ ✅ | **AMS Postgres**: шифрование тома LUKS; ключ вне VPS. | **2026-05-17** Q027 — **`POSTGRES-ENCRYPTION-AMS`**, **`POSTGRES_CRYPT_OK`**. |
+| ~~**P1-RED-SEC-01**~~ ✅ | **Machine credentials**: короткоживущие секреты (пилот broker → панель). | **2026-05-17** Q028 — **`RUNBOOK-SHORT-LIVED-CREDS`**, **`SHORT_LIVED_TOKEN_OK`**. |
+| ~~**P1-RED-SSH-01**~~ ✅ | **Blast radius SSH**: per-host ключи; без одного root-ключа на все VPS. | **2026-05-17** Q025 — **`SSH-KEY-INVENTORY`**, **`SSH_AUDIT_OK`**. |
+| ~~**P1-RED-DNS-01**~~ ✅ | **DNS**: ≥2 регистратора; probe делегирования; DNSSEC — runbook (включить у владельца). | **2026-05-17** Q026 — **`DNS_DELEGATION_OK`**, **`RUNBOOK-DNS-RED-TEAM`**. |
 | **P1-RED-LOG-01** | **Логи edge подписки / Caddy**: **`log_skip`** для **`/api/sub/*`** на сайтах публичной подписки; **retention** + доступ к access-log. Репозиторий: **`Caddyfile-latvia-full.txt`**, **`docs/RUNBOOK-CADDY-SUBSCRIPTION-LOGS.md`**, **`ops/patch-caddy-logskip-inplace.sh`** / **`ops/fix-caddy-security.sh`**. | **DONE (репо):** эталон + runbook + скрипты. После каждого наката LV: smoke **grep**/`tail` **`sub-access.log`** — без свежего сырого **`/api/sub/`** после refresh подписки; новые публичные домены патчить так же. |
 | ~~**P2-RED-BOOT-01**~~ ✅ | **Не только Telegram**: резервный канал (**HTTPS JSON mirror** на **k9x2m1**). | **`RUNBOOK-P2-STATUS-BOOT-CHANNEL`**, **`build_status_mirror.py`**, cron LV; smoke **`STATUS_CHANNELS_OK`** §12 |
 | ~~**P2-RED-SUB-01**~~ ✅ | **Подписка — несколько origin**: ≥2 независимых имени/CDN‑края на синхронизированную версию конфига; сценарий «один домен в реестре блокировок» не режет всю базу. | **2026-05-16:** **p4n7q** + **k9x2m1** `/api/sub/*` → AMS **:3010**; **`RUNBOOK-P6-SUBSCRIPTION-MULTI-ORIGIN`**, **`subscription_origin_drift_probe.py`**, smoke **`SUB_MULTI_ORIGIN_OK`** на LV. |
@@ -127,8 +128,8 @@
 | ~~**P6-RED-SUBHA-01**~~ ✅ | **Горизонталь subscription-page**: несколько инстансов за LB + кэш на edge для «утреннего stampede» обновления подписок (дополняет **P6-SCALE-04**). | **2026-05-16:** split-host **p4n7q→:3010**, **k9x2m1→:3011**; **`RUNBOOK-P6-SUBSCRIPTION-HA`**; HA load **60×200** p95≈**1.48s** / **1.51s**. |
 | ~~**P6-RED-PG-01**~~ ✅ | **Postgres**: read‑реплики (или managed Postgres при переносе), явный **pool limit** приложений, нагрузочный тест «массовое обновление клиентов за 1 ч». | **`RUNBOOK-P6-POSTGRES-RED`**, Prisma **`connection_limit=15`**, stampede probe §12 |
 | ~~**P6-RED-PAY-01**~~ ✅ | **Очередь платежей бота**: webhook **idempotency**, DLQ, чтобы TG‑бот не был узким горлышком при всплеске продаж. | **2026-05-16:** **`PaymentWebhookQueue`**, таблица **`webhook_deliveries`**, деплой **`deploy-bot-payment-webhook-ams.ps1`**, smoke **`WEBHOOK_PAY_IDEMPOTENCY_OK`**. |
-| **P6-RED-PAY-02** | **Auth webhook (доп. к PAY-01)**: проверка подписи **YooKassa** (и иных включённых PSP); **IP allowlist** / только reverse proxy на **`/yookassa-webhook`**, **`/crypto-webhook`**, **`/cryptobot-webhook`**; Flask **:1488** не слушает публично; отклонение подделанного payload без начисления баланса. | Код в **`bot_src/webhook_server/`**; **`ops/smoke_webhook_auth_ams.py`** → **`WEBHOOK_AUTH_OK`**; runbook в **`RUNBOOK-COMMERCE-GO-LIVE`** или **`docs/SECRETS.md`** § webhook. |
-| **P3-RED-MIN-01** | **Минимизация данных пользователя**: где юридически возможно — развязать платёжный след и тех‑UUID; явная политика «что не собираем». | Страница политики + внутренний чеклист полей БД. |
+| ~~**P6-RED-PAY-02**~~ ✅ | **Auth webhook**: YooKassa verify, loopback Flask **:1488**, crypto secret. | **2026-05-17** Q024 — **`WEBHOOK_AUTH_OK`**, **`RUNBOOK-COMMERCE-GO-LIVE` §2**. |
+| ~~**P3-RED-MIN-01**~~ ✅ | **Минимизация данных**: политика + инвентарь; redact webhook. | **2026-05-17** Q029 — **`DATA-MINIMIZATION-POLICY`**, **`DATA_MINIMIZATION_OK`**. |
 | ~~**P3-RED-JURIS-01**~~ ✅ | **Гео‑ и провайнер‑диверсификация**: runbook «нас отключил один VPS/агентство платежей за день» — перенос DNS/IP без зависимости от одной юрисдикции. | **2026-05-17:** **`JURISDICTION-FAILOVER-WIKI`**, **`RUNBOOK-JURISDICTION-FAILOVER`**, **`TABLETOP-JURISDICTION-EXERCISE`**; smoke **`JURIS_FAILOVER_OK`**. Tabletop на проде — **1×/год** (календарь владельца). |
 | **P5-RED-RD-01** | **R&D**: PoC канала bootstrap по модели **эфемерных посредников** (идеология [**Snowflake**](https://github.com/cohosh/snowflake)) — только для получения статуса/нового endpoint’а, не замена нодам. | Внутренний doc go/no-go + оценка стоимости поддержки. |
 
@@ -199,7 +200,7 @@
 | ~~**P3-FLOW-02**~~ ✅ | **Веб-выдача конфига**: `/setup/?t=`, QR, copy; HMAC + verify API на LV. | **2026-05-17:** **`PORTAL_SETUP_PAGE_OK`**; бот → ссылка в **Q038**. |
 | ~~**P3-FLOW-12**~~ ✅ | **Telegram Mini App** — тот же `web/portal/`; Menu Button + inline WebApp. | **2026-05-17:** **`TELEGRAM_MINIAPP_PORTAL_OK`**; **`RUNBOOK-TELEGRAM-MINIAPP`**. |
 | ~~**P3-FLOW-03**~~ ✅ | Бот: Mini App + браузер + `/setup/?t=`; портал UI в стиле HITVPN. | **2026-05-17:** **`BOT_PORTAL_LINKS_OK`**; **`portal_links.py`**. |
-| **P3-FLOW-04** | Мастер **«Подключить VPN»**; главный CTA → Mini App. | FSM; journey OK. |
+| ~~**P3-FLOW-04**~~ ✅ | Мастер **«Подключить VPN»**; главный CTA → Mini App. | **2026-05-17:** FSM + 4 устройства; **`VPN_SETUP_WIZARD_OK`**; portal `#device=`. |
 | **P3-FLOW-05** | QR подписки (бот + web). | Скан → профиль в Happ. |
 | **P3-FLOW-06** | Видео/GIF первого коннекта на сайте (не только TG). | Просмотр без VPN с телефона. |
 | **P3-FLOW-07** | Синхронизация FAQ / онбординг / бот / сайт (в т.ч. **live-оплата**). | Нет противоречий с **`P2-COM-MONETIZE-02`**. |
@@ -208,6 +209,9 @@
 | **P3-FLOW-10** | Метрики воронки (сайт → бот → ключ → sub). | Wiki + еженедельный срез; без PII в git. |
 | **P3-FLOW-11** | Запасной домен bootstrap (блокировки). | Второе имя + probe; связь **P2-RED-SUB-01**. |
 | **P3-FLOW-13** | A11y portal (контраст, шрифт 18px+, `lang=ru`). | Lighthouse a11y ≥ 95. |
+| **P3-FLOW-15** | **Баланс в веб-ЛК:** read-only API `GET /portal/api/cabinet` (JWT/HMAC по `BVPN-ID` + email recover); UI в `#cabinet`. **Оплата в браузере** — после подключения эквайринга (сейчас Stars/карта только в боте). | Smoke **`PORTAL_CABINET_BALANCE_OK`**; без live acquiring в scope. |
+| **P3-FLOW-16** | **Привязка Telegram ↔ web-клиент:** deep link `/start bind_<BVPN-ID>` или код в ЛК; перенос `telegram_id` с отрицательного surrogate на реальный chat id; один баланс/ключи. | Smoke **`WEB_TG_BIND_OK`**; web-only не теряются в scheduler. |
+| **P3-FLOW-17** | **Канал уведомлений без TG:** карточка «Обновления VPN» (есть) + опционально Web Push / transactional email при смене `sub_config_generation` и низком балансе. | Smoke **`WEB_NOTIFY_CHANNEL_OK`**; не дублировать TG после bind. |
 
 **Продуктовые хвосты (не FLOW):** ~~**P3-UX-01…03**~~ ✅; открыто **P5-COM-02** (возвраты).
 
@@ -286,15 +290,19 @@
 
 ## 11. Связь с аудитом репозитория
 
-**Закрыто (фаза 1):** **P0**, **P1**, большинство **P2/P6**, **§5.3** коммерция, **P2/P6-RED** из Q001–Q022. **`docs/P1-POST-AUDIT.md`** — **2026-05-16**.
+**Карта:** **`docs/BACKLOG-MAP.md`** — иерархия документов и фазы.
 
-**Что делать сейчас:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT=Q039`** (**P3-FLOW-04** мастер в боте). Ручные хвосты: **`docs/MANUAL-OWNER-CHECKLIST.md`**, BotFather, **`PORTAL_SETUP_HMAC_SECRET`** на AMS для бота.
+**Закрыто:** **P0–P2**, **P6** (фаза 1), **P1/P3-RED** + **P5-COM-01** (фаза 2), **P3-FLOW-00, 14, 01, 02, 12, 03** (Q033–038).
 
-**Открыто (продукт):** **P5-COM-02**, **P3-FLOW-04…13** (кроме закрытых FLOW-00…03,12,14). **P5-ENG-01**.
+**Сейчас (агент):** **`BACKLOG-QUEUE.md`** → **`NEXT=Q040`** (**P3-FLOW-07**).
 
-**Параллельно:** **P4-DNS-01…06** (mobile SKU), отдельный владелец.
+**До GTM (владелец/агент):** **Q032** **P5-COM-02** (возвраты) — в очереди **TODO**, не блокирует Q039.
 
-**Операционная память:** **`docs/KNOWLEDGE-BASE.md`**, **`docs/POLICY-REPO-WORKFLOW.md`**, **`docs/NODE-POLICY-LV-NL.md`**.
+**Далее по очереди:** Q040–047 (полировка), Q048–050 (веб-ЛК).
+
+**Параллельно:** **P4-DNS**; **P5-ENG-01**; **`MANUAL-OWNER-CHECKLIST.md`** (DNSSEC, BotFather, LUKS, **`PORTAL_SETUP_HMAC_SECRET`** на AMS).
+
+**Операционная память:** **`KNOWLEDGE-BASE.md`**, **`POLICY-REPO-WORKFLOW.md`**, **`NODE-POLICY-LV-NL.md`**.
 
 ---
 
@@ -302,6 +310,8 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-17 | **P3-FLOW-04 — DONE (Q039):** мастер «Подключить VPN» (FSM, 4 устройства, Mini App CTA, chat fallback); portal `#devices`/`#device=`; **`VPN_SETUP_WIZARD_OK`**. **NEXT=Q040** P3-FLOW-07. |
+| 2026-05-17 | **Синхронизация бэклога:** **`BACKLOG-MAP.md`**; §5.1 Red team ✅; §11/§1; FAQ оплата; **`MANUAL-OWNER-CHECKLIST`** фаза 3. |
 | 2026-05-17 | **P3-FLOW-03 — DONE (Q038):** кнопки Mini App / браузер / «Моя настройка»; HIT-style portal CSS; **`BOT_PORTAL_LINKS_OK`**. **NEXT=Q039** P3-FLOW-04. |
 | 2026-05-17 | **P3-FLOW-12 — DONE (Q037):** Mini App = **`/portal/`**; **`portal.js`** + WebApp в боте; **`TELEGRAM_MINIAPP_PORTAL_OK`**. **NEXT=Q038** P3-FLOW-03. |
 | 2026-05-17 | **P3-FLOW-02 — DONE (Q036):** **`portal_setup_token.py`**, **`/setup/?t=`** + QR, **`bvpn-setup-verify`**, **`PORTAL_SETUP_PAGE_OK`**. **NEXT=Q037** P3-FLOW-12. |

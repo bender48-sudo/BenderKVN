@@ -14,6 +14,8 @@
 
 **Не начинать** следующую строку в том же чате без явной просьбы владельца.
 
+**Карта документов:** **`docs/BACKLOG-MAP.md`** (иерархия, фазы, URL portal).
+
 ---
 
 ## Текущая очередь
@@ -47,7 +49,7 @@
 
 ### Фаза 2 — Red team (P1-RED) + платежи + путь к 30k
 
-**Старт:** после закрытия Q022 (**2026-05-17**). **Фаза 2 закрыта** (**2026-05-17**, Q031). Следующий **NEXT** — из §3/§9 бэклога или новая строка в этой таблице.
+**Старт:** после закрытия Q022 (**2026-05-17**). **Фаза 2 закрыта** (**2026-05-17**, Q031). Дальше — **фаза 3** (таблица ниже).
 
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
@@ -67,21 +69,28 @@
 
 ### Фаза 3 — продукт, флоу, GTM (после Q031)
 
-**Старт:** после закрытия фазы 2 (**2026-05-17**).  
-**Инструкции для агента:** **`docs/AGENT-FLOW-BACKLOG.md`** (портал = сайт + Mini App).  
-**NEXT:** **Q039** (**P3-FLOW-04**).
+**Старт:** **2026-05-17**. **Инструкции агента:** **`docs/AGENT-FLOW-BACKLOG.md`**.  
+**NEXT:** **Q040** (**P3-FLOW-07**).
+
+| Блок | Q | Смысл |
+|------|---|--------|
+| Legal (до GTM) | 032 | Возвраты — **TODO**, пропущен при старте фазы 3; закрыть **до рекламы** |
+| MVP portal | 033–038 | **DONE** — journey, `web/portal/`, `/start`, `/setup`, Mini App, бот |
+| Сейчас | **040** | **NEXT** — FAQ/онбординг, оплата live |
+| Полировка | 040–047 | FAQ, QR, видео, ошибки, a11y, метрики |
+| Веб-ЛК | 048–050 | Баланс, bind TG, уведомления без TG |
 
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
-| 032 | **P5-COM-02** | **TODO** | Возвраты при массовом дауне в оферте | Текст согласован владельцем | **`AGENT-FLOW-BACKLOG` §Q032** |
+| 032 | **P5-COM-02** | **TODO** | Возвраты при массовом дауне в оферте (**до GTM**, не блокирует Q039) | Текст согласован владельцем | **`AGENT-FLOW-BACKLOG` §Q032**, §9 |
 | 033 | **P3-FLOW-00** | **DONE** | Карта флоу: сайт = Mini App = бот | **USER_FLOW_JOURNEY_OK** §12 | **`USER-FLOW-JOURNEY.md`** |
 | 034 | **P3-FLOW-14** | **DONE** | `web/portal/` + ru.json (iPhone/Android/Win/Mac, Happ) | **PORTAL_BUNDLE_OK** §12 | §Q034 |
 | 035 | **P3-FLOW-01** | **DONE** | `/start` + `/portal` на LV; as-is бот в journey | **`PUBLIC_BOOTSTRAP_OK`** §12 | **`RUNBOOK-USER-BOOTSTRAP-SITE`** |
 | 036 | **P3-FLOW-02** | **DONE** | `/setup/?t=` HMAC + QR + verify API | **`PORTAL_SETUP_PAGE_OK`** §12 | **`RUNBOOK-USER-BOOTSTRAP-SITE`** |
 | 037 | **P3-FLOW-12** | **DONE** | Mini App = portal; Menu Button + WebApp | **`TELEGRAM_MINIAPP_PORTAL_OK`** §12 | **`RUNBOOK-TELEGRAM-MINIAPP`** |
 | 038 | **P3-FLOW-03** | **DONE** | Бот: WebApp + браузер + setup; UI ≈ HITVPN | **`BOT_PORTAL_LINKS_OK`** §12 | §Q038 |
-| 039 | **P3-FLOW-04** | **NEXT** | Мастер «Подключить VPN»; CTA → Mini App | Сценарий journey | §Q039 |
-| 040 | **P3-FLOW-07** | **TODO** | FAQ/онбординг/ru.json — оплата live | Diff OK | **`FAQ.md`** |
+| 039 | **P3-FLOW-04** | **DONE** | Мастер «Подключить VPN»; CTA → Mini App | **VPN_SETUP_WIZARD_OK** §12 | §Q039 |
+| 040 | **P3-FLOW-07** | **NEXT** | FAQ/онбординг/ru.json — оплата live | Diff OK | **`FAQ.md`** |
 | 041 | **P3-FLOW-05** | **TODO** | QR (бот + portal) | Скан → Happ | §7.1 |
 | 042 | **P3-FLOW-06** | **TODO** | Видео/GIF на portal | Без VPN с телефона | §7.1 |
 | 043 | **P3-FLOW-08** | **TODO** | Страница ошибок на portal | 5 кейсов | §7.1 |
@@ -89,6 +98,9 @@
 | 045 | **P3-FLOW-13** | **TODO** | a11y portal | Lighthouse ≥ 95 | §7.1 |
 | 046 | **P3-FLOW-10** | **TODO** | Метрики воронки | Wiki + §12 | §7.1 |
 | 047 | **P3-FLOW-11** | **TODO** | Запасной домен bootstrap | Tabletop | §7.1 |
+| 048 | **P3-FLOW-15** | **TODO** | Баланс в веб-ЛК (read API; оплата после эквайринга) | **`PORTAL_CABINET_BALANCE_OK`** | §7.1, **`AGENT-FLOW-BACKLOG` §Q048** |
+| 049 | **P3-FLOW-16** | **TODO** | Привязка TG ↔ web (`BVPN-ID` / email) | **`WEB_TG_BIND_OK`** | §7.1, **`USER-FLOW-JOURNEY`** §Web |
+| 050 | **P3-FLOW-17** | **TODO** | Уведомления web-only (portal + опц. email) | **`WEB_NOTIFY_CHANNEL_OK`** | §7.1, **P2-RED-BOOT-01** |
 
 ---
 
@@ -142,6 +154,9 @@
 | 045 | `product: P3-FLOW-13 — portal a11y pass` |
 | 046 | `ops: P3-FLOW-10 — funnel metrics hooks` |
 | 047 | `docs: P3-FLOW-11 — backup bootstrap domain runbook` |
+| 048 | `product: P3-FLOW-15 — portal cabinet balance read API` |
+| 049 | `product: P3-FLOW-16 — web TG bind BVPN-ID` |
+| 050 | `product: P3-FLOW-17 — web-only notifications channel` |
 
 После коммита с закрытием задачи — в **`BACKLOG-QUEUE.md`**: сменить статусы и при необходимости добавить подстроку в §12 бэклога (в том же коммите).
 
@@ -191,3 +206,5 @@
 | 2026-05-17 | **Q036** P3-FLOW-02 | **Q037** P3-FLOW-12 |
 | 2026-05-17 | **Q037** P3-FLOW-12 | **Q038** P3-FLOW-03 |
 | 2026-05-17 | **Q038** P3-FLOW-03 | **Q039** P3-FLOW-04 |
+| 2026-05-17 | **Q039** P3-FLOW-04 | **Q040** P3-FLOW-07 |
+| 2026-05-17 | — | Синхронизация бэклога: **`BACKLOG-MAP.md`**, §5.1 ✅, FAQ, Q032 помечен «до GTM» |

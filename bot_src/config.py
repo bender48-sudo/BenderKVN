@@ -64,6 +64,35 @@ TELEGRAM_WEBAPP_URL = (
     + "/"
 )
 
+
+def telegram_cabinet_webapp_url() -> str:
+    """Mini App deep-link to portal #cabinet (balance + setup links)."""
+    return TELEGRAM_WEBAPP_URL.rstrip("/") + "#cabinet"
+
+
+_PORTAL_DEVICE_IDS = frozenset({"iphone", "android", "windows", "mac"})
+
+
+def telegram_portal_webapp_url(device_id: str | None = None) -> str:
+    """Mini App URL; optional #devices or #device=<id> (P3-FLOW-04)."""
+    base = TELEGRAM_WEBAPP_URL.rstrip("/")
+    if device_id == "devices":
+        return f"{base}#devices"
+    if device_id in _PORTAL_DEVICE_IDS:
+        return f"{base}#device={device_id}"
+    return TELEGRAM_WEBAPP_URL
+
+
+TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "Bender_KVN_bot").strip().lstrip("@")
+
+
+def telegram_bind_url(bind_token: str) -> str:
+    """Deep link: open bot and attach web trial to this Telegram account."""
+    token = (bind_token or "").strip()
+    if not token:
+        return f"https://t.me/{TELEGRAM_BOT_USERNAME}"
+    return f"https://t.me/{TELEGRAM_BOT_USERNAME}?start=bind_{token}"
+
 ABOUT_TEXT = "Настройки не установлены. Установите их в админ-панели."
 TERMS_URL = "Ссылка на условия использования не установлена. Установите её в админ-панели."
 PRIVACY_URL = "Ссылка на политику конфиденциальности не установлена. Установите её в админ-панели."

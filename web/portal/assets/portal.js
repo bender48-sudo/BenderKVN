@@ -313,6 +313,29 @@
     bindExternalLink($("btn-cabinet-setup"));
   }
 
+  function applyRouteFromHash() {
+    var raw = (window.location.hash || "").replace(/^#/, "").trim();
+    if (raw === "cabinet") {
+      renderCabinet();
+      show("cabinet");
+      return;
+    }
+    if (raw === "devices" || raw === "connect") {
+      show("devices");
+      return;
+    }
+    var dm = raw.match(/^device=(iphone|android|windows|mac)$/);
+    if (dm) {
+      showDeviceDetail(dm[1]);
+      return;
+    }
+    if (/^(iphone|android|windows|mac)$/.test(raw)) {
+      showDeviceDetail(raw);
+      return;
+    }
+    show("home");
+  }
+
   function bindActions() {
     var cabBtn = $("btn-cabinet");
     if (cabBtn) {
@@ -382,11 +405,7 @@
       renderDevices();
       renderCabinet();
       bindActions();
-      if (window.location.hash === "#cabinet") {
-        show("cabinet");
-      } else {
-        show("home");
-      }
+      applyRouteFromHash();
     })
     .catch(function () {
       showError(

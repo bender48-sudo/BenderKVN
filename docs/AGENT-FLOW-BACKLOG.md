@@ -61,8 +61,13 @@ web/portal/
 | **045** | P3-FLOW-13 | Q035 | a11y ≥ 95 |
 | **046** | P3-FLOW-10 | Q038 | Метрики воронки (логи + бот events) |
 | **047** | P3-FLOW-11 | Q035 | Запасной домен bootstrap |
+| **048** | P3-FLOW-15 | Q038, web trial | Баланс в `#cabinet` (API read-only; acquiring позже) |
+| **049** | P3-FLOW-16 | Q048, web trial | Bind TG ↔ `BVPN-ID` / email |
+| **050** | P3-FLOW-17 | Q049, P2-RED-BOOT-01 | Web/email notify без TG |
 
-**Текущий NEXT:** см. **`BACKLOG-QUEUE.md`** (по умолчанию **Q033**).
+**Текущий NEXT:** **`BACKLOG-QUEUE.md`** → **Q040** (**P3-FLOW-07**). Карта: **`BACKLOG-MAP.md`**.
+
+**Уже закрыто в фазе 3:** Q033–038 (journey, portal, deploy, setup, Mini App, bot links) — не переделывать без регрессии.
 
 ---
 

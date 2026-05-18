@@ -253,26 +253,96 @@ class PromoCreate(StatesGroup):
     waiting_for_days = State()
     waiting_for_limit = State()
 
+
+class VpnSetupWizard(StatesGroup):
+    picking_device = State()
+    on_device = State()
+
+
+async def _wizard_setup_url(user_id: int) -> str | None:
+    from shop_bot.bot import portal_links
+
+    keys = get_user_keys(user_id)
+    if not keys:
+        return None
+    try:
+        async with aiohttp.ClientSession() as session:
+            remote = await remnawave_api.get_user_by_telegram_id(session, str(user_id))
+            if remote and remote.get("subscriptionUrl"):
+                return portal_links.setup_url_for_sub(remote["subscriptionUrl"])
+    except Exception as exc:
+        logger.warning("wizard setup_url fetch: %s", exc)
+    return None
+
+async def _apply_web_bind(message: types.Message, bind_token: str) -> bool:
+    """Bind web trial to this Telegram chat. Returns True if bind attempted."""
+    from shop_bot.web_tg_bind import bind_web_account_by_token
+
+    token = (bind_token or "").strip()
+    if not token:
+        return False
+    user_id = message.from_user.id
+    username = message.from_user.username or message.from_user.full_name or ""
+    result = await bind_web_account_by_token(token, user_id, username)
+    cid = html.quote(result.get("customer_id") or "")
+    if result.get("ok"):
+        if result.get("already_bound"):
+            await message.answer(
+                user_messages.MSG_WEB_BIND_ALREADY.format(customer_id=cid),
+                parse_mode="HTML",
+            )
+        else:
+            await message.answer(
+                user_messages.MSG_WEB_BIND_OK.format(customer_id=cid),
+                parse_mode="HTML",
+            )
+        log_action(user_id, "web_tg_bind", cid)
+        return True
+    err = result.get("error")
+    if err == "invalid_token":
+        await message.answer(user_messages.MSG_WEB_BIND_INVALID, parse_mode="HTML")
+    elif err == "both_have_keys":
+        await message.answer(
+            user_messages.MSG_WEB_BIND_CONFLICT.format(customer_id=cid or "—"),
+            parse_mode="HTML",
+        )
+    elif err == "already_bound_other":
+        await message.answer(
+            user_messages.MSG_WEB_BIND_OTHER_TG.format(customer_id=cid or "—"),
+            parse_mode="HTML",
+        )
+    else:
+        await message.answer(user_messages.MSG_WEB_BIND_INVALID, parse_mode="HTML")
+    return True
+
+
 @user_router.message(Command("start"))
 async def start_handler(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     username = message.from_user.username or message.from_user.full_name
-    # Referral parsing /start ref_<code>
     ref_code = None
-    if message.text and ' ' in message.text:
-        arg = message.text.split(' ',1)[1]
-        if arg.startswith('ref_'):
+    bind_token = None
+    if message.text and " " in message.text:
+        arg = message.text.split(" ", 1)[1].strip()
+        if arg.startswith("ref_"):
             ref_code = arg[4:]
+        elif arg.startswith("bind_"):
+            bind_token = arg[5:]
     register_user_if_not_exists(user_id, username)
     user_data = get_user(user_id)
-    if ref_code and user_data and not user_data.get('referred_by'):
+    if ref_code and user_data and not user_data.get("referred_by"):
         if link_referral(ref_code, user_id):
-            log_action(user_id, 'referral_linked', ref_code)
+            log_action(user_id, "referral_linked", ref_code)
+    if bind_token:
+        await state.update_data(pending_web_bind=bind_token)
 
-    if user_data and user_data.get('agreed_to_terms'):
+    if user_data and user_data.get("agreed_to_terms"):
+        if bind_token:
+            await _apply_web_bind(message, bind_token)
+            await state.update_data(pending_web_bind=None)
         await message.answer(
             f"👋 Снова здравствуйте, {html.bold(message.from_user.full_name)}!",
-            reply_markup=keyboards.main_reply_keyboard
+            reply_markup=keyboards.main_reply_keyboard,
         )
         await show_main_menu(message)
     else:
@@ -295,17 +365,21 @@ async def start_handler(message: types.Message, state: FSMContext):
 async def agree_to_terms_handler(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     user_id = callback.from_user.id
-    
+    data = await state.get_data()
+    pending_bind = data.get("pending_web_bind")
+
     set_terms_agreed(user_id)
-    
+
     await state.clear()
-    
+
     await callback.message.delete()
-    
+
     await callback.message.answer(
-        f"✅ Спасибо! Приятного использования.",
-        reply_markup=keyboards.main_reply_keyboard
+        "✅ Спасибо! Приятного использования.",
+        reply_markup=keyboards.main_reply_keyboard,
     )
+    if pending_bind:
+        await _apply_web_bind(callback.message, pending_bind)
     await show_main_menu(callback.message)
 
 @user_router.message(UserAgreement.waiting_for_agreement)
@@ -317,9 +391,86 @@ async def main_menu_handler(message: types.Message):
     await show_main_menu(message)
 
 @user_router.callback_query(F.data == "back_to_main_menu")
-async def back_to_main_menu_handler(callback: types.CallbackQuery):
+async def back_to_main_menu_handler(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
+    await state.clear()
     await show_main_menu(callback.message, edit_message=True)
+
+
+@user_router.callback_query(F.data == "connect_vpn")
+async def connect_vpn_wizard_start(callback: types.CallbackQuery, state: FSMContext):
+    from shop_bot.vpn_setup_wizard import WIZARD_INTRO
+
+    await callback.answer()
+    await state.set_state(VpnSetupWizard.picking_device)
+    log_action(callback.from_user.id, "wizard_start", "")
+    await callback.message.edit_text(
+        WIZARD_INTRO,
+        reply_markup=keyboards.create_wizard_device_picker_keyboard(),
+        parse_mode="HTML",
+        disable_web_page_preview=True,
+    )
+
+
+@user_router.callback_query(F.data.startswith("wizard_pick_"))
+async def connect_vpn_wizard_device(callback: types.CallbackQuery, state: FSMContext):
+    from shop_bot.vpn_setup_wizard import format_device_lead, get_device
+
+    device_id = callback.data.replace("wizard_pick_", "", 1)
+    if not get_device(device_id):
+        await callback.answer("Неизвестное устройство", show_alert=True)
+        return
+    await callback.answer()
+    await state.set_state(VpnSetupWizard.on_device)
+    await state.update_data(wizard_device=device_id)
+    user_id = callback.from_user.id
+    user_db = get_user(user_id)
+    trial_available = not (user_db and user_db.get("trial_used"))
+    setup_url = await _wizard_setup_url(user_id)
+    log_action(user_id, "wizard_device", device_id)
+    await callback.message.edit_text(
+        format_device_lead(device_id),
+        reply_markup=keyboards.create_wizard_device_keyboard(
+            device_id,
+            trial_available=trial_available,
+            setup_url=setup_url,
+        ),
+        parse_mode="HTML",
+        disable_web_page_preview=True,
+    )
+
+
+@user_router.callback_query(F.data.startswith("wizard_chat_"))
+async def connect_vpn_wizard_chat(callback: types.CallbackQuery, state: FSMContext):
+    from shop_bot.vpn_setup_wizard import format_chat_steps, get_device
+
+    device_id = callback.data.replace("wizard_chat_", "", 1)
+    if not get_device(device_id):
+        await callback.answer("Неизвестное устройство", show_alert=True)
+        return
+    await callback.answer()
+    user_id = callback.from_user.id
+    has_key = bool(get_user_keys(user_id))
+    log_action(user_id, "wizard_chat", device_id)
+    await callback.message.edit_text(
+        format_chat_steps(device_id, has_active_key=has_key),
+        reply_markup=keyboards.create_wizard_chat_keyboard(device_id),
+        parse_mode="HTML",
+        disable_web_page_preview=True,
+    )
+
+
+@user_router.callback_query(F.data == "wizard_stuck")
+async def connect_vpn_wizard_stuck(callback: types.CallbackQuery):
+    from shop_bot.vpn_setup_wizard import WIZARD_STUCK
+
+    await callback.answer()
+    await callback.message.edit_text(
+        WIZARD_STUCK,
+        reply_markup=keyboards.create_support_keyboard(get_setting("support_user")),
+        parse_mode="HTML",
+        disable_web_page_preview=True,
+    )
 
 @user_router.callback_query(F.data == "show_profile")
 async def profile_handler_callback(callback: types.CallbackQuery):

@@ -21,6 +21,8 @@ REQUIRED = [
     "Mac",
     "Happ",
     "As-is",
+    "Подключить VPN",
+    "P3-FLOW-04",
     "App Store",
     "Google Play",
     "бабушка-тест",

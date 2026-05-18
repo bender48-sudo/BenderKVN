@@ -1,7 +1,12 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from shop_bot.config import TELEGRAM_WEBAPP_URL
+from shop_bot.config import (
+    TELEGRAM_WEBAPP_URL,
+    telegram_cabinet_webapp_url,
+    telegram_portal_webapp_url,
+)
+from shop_bot.vpn_setup_wizard import device_ids
 from shop_bot.bot import portal_links
 
 from shop_bot.config import DAILY_RATE, TOPUP_PRESETS, topup_button_label
@@ -15,6 +20,10 @@ main_reply_keyboard = ReplyKeyboardMarkup(
 
 def _add_portal_link_buttons(builder: InlineKeyboardBuilder, setup_url: str | None = None) -> None:
     if TELEGRAM_WEBAPP_URL:
+        builder.button(
+            text="\U0001f3e0 \u041b\u0438\u0447\u043d\u044b\u0439 \u043a\u0430\u0431\u0438\u043d\u0435\u0442",
+            web_app=WebAppInfo(url=telegram_cabinet_webapp_url()),
+        )
         builder.button(
             text="\U0001f4f1 \u0418\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0438\u044f (Mini App)",
             web_app=WebAppInfo(url=TELEGRAM_WEBAPP_URL),
@@ -33,6 +42,10 @@ def _add_portal_link_buttons(builder: InlineKeyboardBuilder, setup_url: str | No
 
 def create_main_menu_keyboard(has_active_sub=False, trial_available=True, is_admin=False, **kwargs):
     builder = InlineKeyboardBuilder()
+    builder.button(
+        text="\U0001f50c \u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u044c VPN",
+        callback_data="connect_vpn",
+    )
     _add_portal_link_buttons(builder)
     if not has_active_sub and trial_available:
         builder.button(
@@ -118,6 +131,74 @@ def create_invite_keyboard(ref_url):
 def create_back_to_menu_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(text="\U0001f519 \u041d\u0430\u0437\u0430\u0434", callback_data="back_to_main_menu")
+    return builder.as_markup()
+
+
+def create_wizard_device_picker_keyboard():
+    builder = InlineKeyboardBuilder()
+    from shop_bot.vpn_setup_wizard import DEVICES
+
+    for dev_id in device_ids():
+        dev = DEVICES[dev_id]
+        builder.button(
+            text=f"{dev['icon']} {dev['label']}",
+            callback_data=f"wizard_pick_{dev_id}",
+        )
+    builder.button(text="\U0001f519 \u041d\u0430\u0437\u0430\u0434", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_wizard_device_keyboard(
+    device_id: str,
+    *,
+    trial_available: bool = True,
+    setup_url: str | None = None,
+):
+    builder = InlineKeyboardBuilder()
+    if TELEGRAM_WEBAPP_URL:
+        builder.button(
+            text="\U0001f4f1 \u0418\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0438\u044f \u0432 Mini App",
+            web_app=WebAppInfo(url=telegram_portal_webapp_url(device_id)),
+        )
+    builder.button(
+        text="\U0001f4dd \u041f\u043e\u0434\u0441\u043a\u0430\u0437\u043a\u0438 \u0432 \u0447\u0430\u0442\u0435",
+        callback_data=f"wizard_chat_{device_id}",
+    )
+    if trial_available:
+        builder.button(text="\U0001f381 \u0411\u0435\u0441\u043f\u043b\u0430\u0442\u043d\u043e 3 \u043c\u0435\u0441\u044f\u0446\u0430", callback_data="get_trial")
+    if setup_url:
+        builder.button(
+            text="\U0001f517 \u041c\u043e\u044f \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430",
+            url=setup_url,
+        )
+    store_key = device_id
+    from shop_bot.vpn_setup_wizard import DEVICES, HAPP_STORES
+
+    sk = DEVICES.get(device_id, {}).get("store_key", device_id)
+    if sk in HAPP_STORES:
+        label, url = HAPP_STORES[sk]
+        builder.button(text=f"\u2193 {label[:40]}", url=url)
+    builder.button(text="\u2753 \u041d\u0435 \u043f\u043e\u043b\u0443\u0447\u0430\u0435\u0442\u0441\u044f", callback_data="wizard_stuck")
+    builder.button(text="\U0001f519 \u041a \u0432\u044b\u0431\u043e\u0440\u0443 \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430", callback_data="connect_vpn")
+    builder.button(text="\U0001f3e0 \u0413\u043b\u0430\u0432\u043d\u043e\u0435 \u043c\u0435\u043d\u044e", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_wizard_chat_keyboard(device_id: str):
+    builder = InlineKeyboardBuilder()
+    if TELEGRAM_WEBAPP_URL:
+        builder.button(
+            text="\U0001f4f1 \u041e\u0442\u043a\u0440\u044b\u0442\u044c Mini App",
+            web_app=WebAppInfo(url=telegram_portal_webapp_url(device_id)),
+        )
+    builder.button(
+        text="\U0001f519 \u041a \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0443",
+        callback_data=f"wizard_pick_{device_id}",
+    )
+    builder.button(text="\U0001f519 \u0413\u043b\u0430\u0432\u043d\u043e\u0435 \u043c\u0435\u043d\u044e", callback_data="back_to_main_menu")
+    builder.adjust(1)
     return builder.as_markup()
 
 
