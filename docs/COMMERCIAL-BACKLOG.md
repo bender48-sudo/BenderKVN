@@ -122,7 +122,7 @@
 | ~~**P1-RED-DNS-01**~~ ✅ | **DNS**: ≥2 регистратора; probe делегирования; DNSSEC — runbook (включить у владельца). | **2026-05-17** Q026 — **`DNS_DELEGATION_OK`**, **`RUNBOOK-DNS-RED-TEAM`**. |
 | **P1-RED-LOG-01** | **Логи edge подписки / Caddy**: **`log_skip`** для **`/api/sub/*`** на сайтах публичной подписки; **retention** + доступ к access-log. Репозиторий: **`Caddyfile-latvia-full.txt`**, **`docs/RUNBOOK-CADDY-SUBSCRIPTION-LOGS.md`**, **`ops/patch-caddy-logskip-inplace.sh`** / **`ops/fix-caddy-security.sh`**. | **DONE (репо):** эталон **p4n7q** + runbook. Хвост **k9x2m1** → **P1-RED-LOG-02** (**Q066**). |
 | **P1-RED-LOG-02** | **`log_skip`** на **k9x2m1** для **`/api/sub/*`** (второй origin **P2-RED-SUB-01**). | **`SUB_LOG_SKIP_K9_OK`**; grep access-log после refresh. **Q066**. |
-| **P6-RED-PAY-03** | **Auto-renew:** списание баланса перед `provision_key`; при недостатке — skip + уведомление. | **`AUTO_RENEW_BILLING_OK`**. **Q063**. |
+| ~~**P6-RED-PAY-03**~~ ✅ | **Auto-renew:** списание баланса перед `provision_key`; при недостатке — skip + уведомление. | **2026-05-18:** **`AUTO_RENEW_BILLING_OK`**; `try_deduct_balance`. **Q063**. |
 | **P3-RED-SUP-01** | **Support:** ответы из группы только **SUPPORT_STAFF_IDS** / admin. | **`SUPPORT_REPLY_AUTHZ_OK`**. **Q064**. |
 | **P2-OPS-SCHED-01** | **Expiry notify:** UTC-aware сравнение `expireAt`. | **`EXPIRY_TZ_OK`**. **Q065**. |
 | **P6-RED-PAY-04** | **CryptoBot:** webhook **POST**; `compare_digest` для secret. | **`CRYPTOBOT_WEBHOOK_POST_OK`**. **Q067**. |
@@ -325,7 +325,7 @@
 
 **Закрыто:** **P0–P2**, **P6** (фаза 1), **P1/P3-RED** + **P5-COM-01** (фаза 2), **P3-FLOW-00, 14, 01, 02, 12, 03** (Q033–038).
 
-**Сейчас (агент):** **`NEXT=Q063`** (**P6-RED-PAY-03**). Порядок: **Q063–078** (security) → **Q051–062** (продукт) → **Q044–050** (флоу).
+**Сейчас (агент):** **`NEXT=Q064`** (**P3-RED-SUP-01**). Порядок: **Q063–078** (security) → **Q051–062** (продукт) → **Q044–050** (флоу).
 
 **До GTM:** **Q032** **P5-COM-02** (только владелец, не NEXT агента).
 
@@ -343,6 +343,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-18 | **P6-RED-PAY-03 — DONE (Q063):** auto-renew списывает баланс до `provision_key`; skip + уведомление при нехватке; **`AUTO_RENEW_BILLING_OK`**. **NEXT=Q064**. |
 | 2026-05-18 | **Очередь:** линейный порядок **Q063–078 → Q051–062 → Q044–050**; **NEXT=Q063**. |
 | 2026-05-18 | **CodeRabbit audit:** **`docs/AUDIT-2026-05-SECURITY.md`**; **Q063–Q078** в очереди. |
 | 2026-05-18 | **Handoff агенту:** **`AGENT-PRODUCT-BACKLOG.md`** (Q051–062: что/зачем/почему), **`.cursor/rules/product-backlog.mdc`**. Продукт **впереди** флоу. **NEXT=Q051**. |

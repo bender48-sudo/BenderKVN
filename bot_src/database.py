@@ -781,3 +781,22 @@ def add_balance(telegram_id: int, amount: float):
             conn.commit()
     except sqlite3.Error as e:
         logging.error(f"Failed to add balance {amount} for {telegram_id}: {e}")
+
+
+def try_deduct_balance(telegram_id: int, amount: float) -> bool:
+    """Atomically deduct if balance sufficient (P6-RED-PAY-03)."""
+    if amount <= 0:
+        return True
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE users SET balance = COALESCE(balance, 0) - ? "
+                "WHERE telegram_id = ? AND COALESCE(balance, 0) >= ?",
+                (amount, telegram_id, amount),
+            )
+            conn.commit()
+            return cur.rowcount > 0
+    except sqlite3.Error as e:
+        logging.error(f"Failed to deduct balance {amount} for {telegram_id}: {e}")
+        return False

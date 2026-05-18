@@ -6,7 +6,8 @@ from pathlib import Path
 from aiogram import Bot
 from shop_bot.data_manager import database
 from shop_bot.modules import remnawave_api
-from shop_bot.config import PLANS, BOT_PAYMENTS_LIVE, DAILY_RATE
+from shop_bot.config import BOT_PAYMENTS_LIVE, DAILY_RATE
+from shop_bot.auto_renew_billing import balance_covers_renew, plan_renew_cost
 from shop_bot.utils.logger import bot_logger
 from shop_bot.bot.subscription_refresh import run_sub_refresh_notify_batch
 import aiohttp
@@ -127,38 +128,122 @@ async def start_subscription_monitor(bot: Bot):
                                 database.update_last_expiry_notified_days(user_id, mark)
                                 break
                         
-                        # Auto renew placeholder (применяем к первому ключу)
+                        # Auto renew: charge balance before provision (P6-RED-PAY-03)
                         if auto_renew and BOT_PAYMENTS_LIVE and days_left == 0 and user_keys:
-                            key = user_keys[0]  # Берем первый ключ для автопродления
+                            key = user_keys[0]
+                            from shop_bot.data_manager.database import (
+                                add_balance,
+                                get_balance,
+                                log_action,
+                                try_deduct_balance,
+                                update_key_info,
+                                update_user_stats,
+                            )
+
                             try:
-                                plan = key.get('subscription_plan') or 'buy_1_month'
-                                name, price_rub, months = PLANS.get(plan, (None, None, 1))
-                                extend_days = months * 30
-                                key_email = key['key_email']
-                                uri, new_expire_iso, new_uuid = await remnawave_api.provision_key(key_email, days=extend_days, telegram_id=str(user_id))
-                                if uri and new_expire_iso and new_uuid:
-                                    new_dt = datetime.fromisoformat(new_expire_iso.replace('Z', '+00:00'))
-                                    # обновим локально для всех ключей пользователя
-                                    from shop_bot.data_manager.database import update_key_info, log_action, update_user_stats
-                                    for user_key in user_keys:
-                                        update_key_info(user_key['key_id'], new_uuid, int(new_dt.timestamp()*1000))
-                                    update_user_stats(user_id, float(price_rub) if price_rub else 0.0, months)
-                                    log_action(user_id, 'auto_renew_success', f"{key['key_id']}:{months}")
+                                plan = key.get("subscription_plan") or "buy_1_month"
+                                cost_rub, months, extend_days = plan_renew_cost(plan)
+                                bal = get_balance(user_id)
+                                if not balance_covers_renew(bal, cost_rub):
+                                    log_action(
+                                        user_id,
+                                        "auto_renew_skip",
+                                        f"insufficient:{bal:.2f}:{cost_rub:.2f}",
+                                    )
                                     try:
-                                        await bot.send_message(user_id, f"🔁 Подписка автоматически продлена на {months} мес. до {new_dt.strftime('%d.%m.%Y %H:%M')}")
-                                        bot_logger.vpn_action(user_id, "AUTO_RENEW", f"{months} months")
+                                        from aiogram.types import (
+                                            InlineKeyboardButton,
+                                            InlineKeyboardMarkup,
+                                        )
+
+                                        kb = InlineKeyboardMarkup(
+                                            inline_keyboard=[
+                                                [
+                                                    InlineKeyboardButton(
+                                                        text="💰 Пополнить баланс",
+                                                        callback_data="show_topup",
+                                                    )
+                                                ]
+                                            ]
+                                        )
+                                        await bot.send_message(
+                                            user_id,
+                                            (
+                                                "⚠️ <b>Автопродление не выполнено</b>\n\n"
+                                                f"На балансе: {bal:.0f} ₽\n"
+                                                f"Нужно: {cost_rub:.0f} ₽ ({months} мес.)\n\n"
+                                                "Пополните баланс — продление включится при следующей проверке."
+                                            ),
+                                            parse_mode="HTML",
+                                            reply_markup=kb,
+                                        )
+                                        bot_logger.vpn_action(
+                                            user_id,
+                                            "AUTO_RENEW_SKIP",
+                                            f"balance {bal:.0f} < {cost_rub:.0f}",
+                                        )
                                     except Exception:
                                         pass
+                                elif try_deduct_balance(user_id, cost_rub):
+                                    key_email = key["key_email"]
+                                    uri, new_expire_iso, new_uuid = await remnawave_api.provision_key(
+                                        key_email,
+                                        days=extend_days,
+                                        telegram_id=str(user_id),
+                                    )
+                                    if uri and new_expire_iso and new_uuid:
+                                        new_dt = datetime.fromisoformat(
+                                            new_expire_iso.replace("Z", "+00:00")
+                                        )
+                                        for user_key in user_keys:
+                                            update_key_info(
+                                                user_key["key_id"],
+                                                new_uuid,
+                                                int(new_dt.timestamp() * 1000),
+                                            )
+                                        update_user_stats(user_id, cost_rub, months)
+                                        log_action(
+                                            user_id,
+                                            "auto_renew_success",
+                                            f"{key['key_id']}:{months}:{cost_rub:.2f}",
+                                        )
+                                        try:
+                                            await bot.send_message(
+                                                user_id,
+                                                (
+                                                    f"🔁 Подписка автоматически продлена на {months} мес. "
+                                                    f"до {new_dt.strftime('%d.%m.%Y %H:%M')}\n\n"
+                                                    f"Списано с баланса: {cost_rub:.0f} ₽"
+                                                ),
+                                            )
+                                            bot_logger.vpn_action(
+                                                user_id, "AUTO_RENEW", f"{months} months"
+                                            )
+                                        except Exception:
+                                            pass
+                                    else:
+                                        add_balance(user_id, cost_rub)
+                                        log_action(user_id, "auto_renew_fail", str(key["key_id"]))
+                                        try:
+                                            await bot.send_message(
+                                                user_id,
+                                                "⚠️ Автопродление: оплата списана, но сервер не ответил. "
+                                                "Баланс возвращён — напишите в поддержку.",
+                                            )
+                                            bot_logger.vpn_action(
+                                                user_id,
+                                                "AUTO_RENEW_FAILED",
+                                                "provision failed, refunded",
+                                            )
+                                        except Exception:
+                                            pass
                                 else:
-                                    from shop_bot.data_manager.database import log_action
-                                    log_action(user_id, 'auto_renew_fail', str(key['key_id']))
-                                    try:
-                                        await bot.send_message(user_id, f"⚠️ Автопродление не удалось. Продлите вручную.")
-                                        bot_logger.vpn_action(user_id, "AUTO_RENEW_FAILED", "Payment failed")
-                                    except Exception:
-                                        pass
+                                    log_action(user_id, "auto_renew_skip", "deduct_race")
                             except Exception as e:
-                                bot_logger.error(f"💥 Auto renew error for user {user_id}: {e}", exc_info=True)
+                                bot_logger.error(
+                                    f"💥 Auto renew error for user {user_id}: {e}",
+                                    exc_info=True,
+                                )
                     
                     except Exception as e:
                         bot_logger.error(f"Error processing user {user_id}: {e}", exc_info=True)

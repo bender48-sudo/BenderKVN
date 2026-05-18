@@ -30,7 +30,7 @@
 | **2** | 023–031 | **Закрыта** | Safe-deploy, P1-RED, публичный `/status` |
 | **3** | 032–078 | **В работе** | **Security Q063–078** → **продукт Q051–062** → **флоу Q044–050** |
 
-**Сейчас:** **`NEXT = Q063`** (auto-renew billing). Далее по очереди до **Q078**, затем **Q051–062**, затем **Q044–050**. См. **`AUDIT-2026-05-SECURITY.md`**.
+**Сейчас:** **`NEXT = Q064`** (support reply authz). Далее **Q063–078**, затем **Q051–062**, затем **Q044–050**. См. **`AUDIT-2026-05-SECURITY.md`**.
 
 ---
 
@@ -39,7 +39,8 @@
 ```
 [MVP DONE]  Q033–043  portal, Mini App, wizard, FAQ, QR, errors
 [LEGAL]     Q032  возвраты — владелец, не NEXT агента
-[CURRENT]   Q063–078  security (NEXT=Q063)
+[DONE]      Q063  auto-renew billing
+[CURRENT]   Q064–078  security (NEXT=Q064)
 [PRODUCT]   Q051–062  edge 8443, v2rayN, SNI, tiers, …
 [FLOW]      Q044–050  только после Q062
 ```

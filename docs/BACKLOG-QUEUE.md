@@ -77,7 +77,7 @@
 2. **Продукт / ТСПУ** **Q051–062**
 3. **Флоу** **Q044–050**
 
-**NEXT:** **Q063** (**P6-RED-PAY-03** — auto-renew billing).
+**NEXT:** **Q064** (**P3-RED-SUP-01** — support reply authz).
 
 | Кому | Документ |
 |------|----------|
@@ -108,8 +108,8 @@
 | 041 | **P3-FLOW-05** | **DONE** | QR (бот + portal) | **BOT_SUBSCRIPTION_QR_OK** / **PORTAL_SUBSCRIPTION_QR_OK** §12 | §7.1 |
 | 042 | **P3-FLOW-06** | **DONE** | Видео/GIF на portal | **PORTAL_SETUP_VIDEO_OK** §12 | §7.1 |
 | 043 | **P3-FLOW-08** | **DONE** | Страница ошибок на portal | **PORTAL_HELP_ERRORS_OK** §12 | §7.1 |
-| 063 | **P6-RED-PAY-03** | **NEXT** | Auto-renew: списание баланса / отказ + уведомление | **`AUTO_RENEW_BILLING_OK`** | **`AUDIT-2026-05-SECURITY`**, `scheduler.py` |
-| 064 | **P3-RED-SUP-01** | **TODO** | Ответы из support group только **SUPPORT_STAFF_IDS** / admin | **`SUPPORT_REPLY_AUTHZ_OK`** | `support_handler.py` |
+| 063 | **P6-RED-PAY-03** | **DONE** | Auto-renew: списание баланса / отказ + уведомление | **`AUTO_RENEW_BILLING_OK`** §12 | **`AUDIT-2026-05-SECURITY`**, `scheduler.py` |
+| 064 | **P3-RED-SUP-01** | **NEXT** | Ответы из support group только **SUPPORT_STAFF_IDS** / admin | **`SUPPORT_REPLY_AUTHZ_OK`** | `support_handler.py` |
 | 065 | **P2-OPS-SCHED-01** | **TODO** | Expiry notify: сравнение в **UTC** (aware datetime) | **`EXPIRY_TZ_OK`** | `scheduler.py` |
 | 066 | **P1-RED-LOG-02** | **TODO** | **`log_skip`** `/api/sub/*` на **k9x2m1** | grep access-log без token path | **`RUNBOOK-CADDY-SUBSCRIPTION-LOGS`** |
 | 067 | **P6-RED-PAY-04** | **TODO** | **CryptoBot POST** + `hmac.compare_digest` | **`CRYPTOBOT_WEBHOOK_POST_OK`** | `app.py` |
@@ -286,4 +286,5 @@
 | 2026-05-18 | **Q044** P3-FLOW-09 | **Q051** P2-RED-EDGE-PORT-01 — продукт вперёд флоу; **8443** |
 | 2026-05-18 | — | CodeRabbit audit → **Q063–Q078** pre-GTM security; **`AUDIT-2026-05-SECURITY.md`** |
 | 2026-05-18 | **Q051** P2-RED-EDGE-PORT-01 | **Q063** P6-RED-PAY-03 — порядок: **security → продукт → флоу** |
+| 2026-05-18 | **Q063** P6-RED-PAY-03 | **Q064** P3-RED-SUP-01 |
 | 2026-05-17 | — | Синхронизация бэклога: **`BACKLOG-MAP.md`**, §5.1 ✅, FAQ, Q032 помечен «до GTM» |
