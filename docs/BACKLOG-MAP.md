@@ -28,7 +28,7 @@
 | **2** | 023–031 | **Закрыта** | Safe-deploy, P1-RED, публичный `/status` |
 | **3** | 032–050 | **В работе** | Флоу, portal, Mini App, GTM-хвосты, веб-ЛК |
 
-**Сейчас:** **`NEXT = Q040`** (**P3-FLOW-07** — FAQ/онбординг, оплата live).
+**Сейчас:** **`NEXT = Q041`** (**P3-FLOW-05** — QR бот + portal).
 
 ---
 
@@ -38,8 +38,9 @@
 [LEGAL]     Q032  P5-COM-02 возвраты — TODO, до GTM (пропущен при старте фазы 3)
 [MVP DONE]  Q033–038  journey, portal, /start, /setup, Mini App, bot links
 [DONE]      Q039  мастер «Подключить VPN» в боте
-[CURRENT]   Q040  NEXT → FAQ / оплата live
-[POLISH]    Q041–047  QR, видео, ошибки, a11y, метрики, запасной домен
+[DONE]      Q040  FAQ / оплата live (PAYMENT_COPY_SYNC_OK)
+[CURRENT]   Q041  NEXT → QR бот + portal
+[POLISH]    Q042–047  видео, ошибки, a11y, метрики, запасной домен
 [WEB LK]    Q048–050  баланс в ЛК, bind TG, notify без TG
 ```
 

@@ -70,13 +70,13 @@
 ### Фаза 3 — продукт, флоу, GTM (после Q031)
 
 **Старт:** **2026-05-17**. **Инструкции агента:** **`docs/AGENT-FLOW-BACKLOG.md`**.  
-**NEXT:** **Q040** (**P3-FLOW-07**).
+**NEXT:** **Q041** (**P3-FLOW-05**).
 
 | Блок | Q | Смысл |
 |------|---|--------|
 | Legal (до GTM) | 032 | Возвраты — **TODO**, пропущен при старте фазы 3; закрыть **до рекламы** |
 | MVP portal | 033–038 | **DONE** — journey, `web/portal/`, `/start`, `/setup`, Mini App, бот |
-| Сейчас | **040** | **NEXT** — FAQ/онбординг, оплата live |
+| Сейчас | **041** | **NEXT** — QR (бот + portal) |
 | Полировка | 040–047 | FAQ, QR, видео, ошибки, a11y, метрики |
 | Веб-ЛК | 048–050 | Баланс, bind TG, уведомления без TG |
 
@@ -90,8 +90,8 @@
 | 037 | **P3-FLOW-12** | **DONE** | Mini App = portal; Menu Button + WebApp | **`TELEGRAM_MINIAPP_PORTAL_OK`** §12 | **`RUNBOOK-TELEGRAM-MINIAPP`** |
 | 038 | **P3-FLOW-03** | **DONE** | Бот: WebApp + браузер + setup; UI ≈ HITVPN | **`BOT_PORTAL_LINKS_OK`** §12 | §Q038 |
 | 039 | **P3-FLOW-04** | **DONE** | Мастер «Подключить VPN»; CTA → Mini App | **VPN_SETUP_WIZARD_OK** §12 | §Q039 |
-| 040 | **P3-FLOW-07** | **NEXT** | FAQ/онбординг/ru.json — оплата live | Diff OK | **`FAQ.md`** |
-| 041 | **P3-FLOW-05** | **TODO** | QR (бот + portal) | Скан → Happ | §7.1 |
+| 040 | **P3-FLOW-07** | **DONE** | FAQ/онбординг/ru.json — оплата live | **PAYMENT_COPY_SYNC_OK** §12 | **`FAQ.md`** |
+| 041 | **P3-FLOW-05** | **NEXT** | QR (бот + portal) | Скан → Happ | §7.1 |
 | 042 | **P3-FLOW-06** | **TODO** | Видео/GIF на portal | Без VPN с телефона | §7.1 |
 | 043 | **P3-FLOW-08** | **TODO** | Страница ошибок на portal | 5 кейсов | §7.1 |
 | 044 | **P3-FLOW-09** | **TODO** | Ветки iPhone / Android / Win | ≤ 5 шагов | §7.1 |
@@ -207,4 +207,5 @@
 | 2026-05-17 | **Q037** P3-FLOW-12 | **Q038** P3-FLOW-03 |
 | 2026-05-17 | **Q038** P3-FLOW-03 | **Q039** P3-FLOW-04 |
 | 2026-05-17 | **Q039** P3-FLOW-04 | **Q040** P3-FLOW-07 |
+| 2026-05-17 | **Q040** P3-FLOW-07 | **Q041** P3-FLOW-05 |
 | 2026-05-17 | — | Синхронизация бэклога: **`BACKLOG-MAP.md`**, §5.1 ✅, FAQ, Q032 помечен «до GTM» |
