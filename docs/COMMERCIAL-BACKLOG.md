@@ -325,9 +325,9 @@
 
 **Закрыто:** **P0–P2**, **P6** (фаза 1), **P1/P3-RED** + **P5-COM-01** (фаза 2), **P3-FLOW-00, 14, 01, 02, 12, 03** (Q033–038).
 
-**Сейчас (агент):** **NEXT=Q080** — Caddy LV **:8443** + portal (**`docs/AGENT-PROD-DEPLOY-BACKLOG.md` §Q080**). **Q079** ✅.
+**Сейчас (агент):** фаза 4 **Q079–Q084** ✅. **NEXT** нет — повторный аудит / GTM после **Q032**.
 
-**Владелец (параллельно):** **Q032** оферта; **BotFather :8443** (после Q080); **CryptoBot webhook POST** в кабинете; DNSSEC — **`docs/MANUAL-OWNER-CHECKLIST.md`**.
+**Владелец:** **Q032** оферта; **BotFather :8443**; **CryptoBot POST**; DNSSEC — **`docs/MANUAL-OWNER-CHECKLIST.md`**.
 
 **После Q084:** повторный аудит; GTM при закрытых Q032 + owner checklist.
 
@@ -343,7 +343,8 @@
 
 | Дата | Что сделано |
 |------|-------------|
-| 2026-05-18 | **P2-OPS-DEPLOY-BOT-SEC-01 — DONE (Q079):** AMS `/opt/remna-shop/.env` — `SUPPORT_STAFF_IDS`, `PORTAL_SETUP_HMAC_SECRET` (LV); security hot-patch (`deploy-bot-handlers-ams`, `deploy-bot-payment-webhook-ams` + `payload_redact`); forged webhook **403**; smokes **`WEBHOOK_AUTH_OK`**, **`SUPPORT_REPLY_AUTHZ_OK`**, **`AUTO_RENEW_BILLING_OK`**, **`PAYMENT_AMOUNT_VERIFY_OK`**, **`YOOKASSA_SKIP_VERIFY_OK`**. **Владелец:** CryptoBot → POST. **NEXT=Q080**. |
+| 2026-05-18 | **Фаза 4 Q080–Q084 — DONE:** **Q080** Caddy LV **:8443** (`patch-caddy-edge-port-8443-lv.sh`), LV **VLESS_XHTTP** **8443→18443** (panel API); live **`SUB_EDGE_PORT_OK`**, **`PUBLIC_BOOTSTRAP_OK`**, portal **:8443** **200**. **Q081** panel :3000 с интернета **000** (UFW + bind); panel API **:8443** **200** (compose loopback — waive **`DRIFT-POST-P0`**). **Q082** AMS `authorized_keys` dedup → **2** строки. **Q083** **`PROD_SMOKE_BATTERY_OK`**: product/flow static, **`AMS_SAFE_DEPLOY_OK`**, **`PORTAL_*`**, **`DNS_DELEGATION_OK`**, **`POSTGRES_CRYPT_OK`**. **Q084** drift waive (panel bind, SSH timeout с агента). **Владелец:** BotFather **:8443**. |
+| 2026-05-18 | **P2-OPS-DEPLOY-BOT-SEC-01 — DONE (Q079):** AMS `/opt/remna-shop/.env` — `SUPPORT_STAFF_IDS`, `PORTAL_SETUP_HMAC_SECRET` (LV); security hot-patch (`deploy-bot-handlers-ams`, `deploy-bot-payment-webhook-ams` + `payload_redact`); forged webhook **403**; smokes **`WEBHOOK_AUTH_OK`**, **`SUPPORT_REPLY_AUTHZ_OK`**, **`AUTO_RENEW_BILLING_OK`**, **`PAYMENT_AMOUNT_VERIFY_OK`**, **`YOOKASSA_SKIP_VERIFY_OK`**. **Владелец:** CryptoBot → POST. |
 | 2026-05-18 | **P6-RED-PAY-03 — DONE (Q063):** auto-renew списывает баланс до `provision_key`; skip + уведомление при нехватке; **`AUTO_RENEW_BILLING_OK`**. |
 | 2026-05-18 | **Security Q064–078 — DONE:** support staff allowlist, UTC expiry notify, k9 `log_skip`, CryptoBot POST + `compare_digest`, XFF default off, panel `127.0.0.1:3000`, payment amount verify, YooKassa skip CRITICAL log, setup API RL, support flood RL, backup timestamp, support `DB_FILE`, lazy Remna token, handlers IP env, `REMNA_PUBLIC_KEY` fail-fast; smokes §12. |
 | 2026-05-18 | **Product Q051–062 — DONE:** edge **8443**, v2rayN, native brief, TSPU runbooks/probes, selfsteal review, SNI yandex, threat model, RF egress PoC, node DNS, tier profiles; **`smoke_product_backlog_static.py`**. **NEXT=Q044**. |

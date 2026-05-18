@@ -31,7 +31,7 @@
 | **3** | 033–050, 063–078, 051–062 | **Репо закрыто** | Код/docs: security → продукт → флоу |
 | **4** | 079–084 | **В работе** | Накат LV/AMS (агент + SSH) |
 
-**Сейчас:** **`NEXT = Q080`**. **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`**. Владелец: **`MANUAL-OWNER-CHECKLIST.md`**.
+**Сейчас:** фаза 4 **Q079–Q084** ✅. **NEXT** агента нет — GTM после **Q032** + owner checklist. Владелец: **`MANUAL-OWNER-CHECKLIST.md`**.
 
 ---
 
@@ -39,7 +39,7 @@
 
 ```
 [DONE репо] Q033–050, Q063–078, Q051–062
-[CURRENT]   Q079–084  prod deploy (агент+SSH)
+[DONE]      Q079–084  prod deploy (агент+SSH)
 [OWNER]     Q032 + MANUAL-OWNER-CHECKLIST
 ```
 

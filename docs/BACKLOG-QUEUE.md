@@ -76,10 +76,10 @@
 1. ~~**Q063–078** security~~ **DONE** (код в репо)
 2. ~~**Q051–062** продукт~~ **DONE** (репо + docs)
 3. ~~**Q044–050** флоу~~ **DONE** (репо)
-4. **Q079–Q084** — **накат на LV/AMS** (агент + SSH) ← **сейчас**
+4. ~~**Q079–Q084**~~ **DONE** (накат LV/AMS)
 5. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** **Q080** (**P2-OPS-DEPLOY-EDGE-01** — Caddy LV **:8443** + portal).
+**NEXT:** нет (фаза 4 закрыта) — **повторный аудит / GTM** после **Q032** + **`MANUAL-OWNER-CHECKLIST`**.
 
 | Кому | Документ |
 |------|----------|
@@ -92,7 +92,7 @@
 |------|---|--------|
 | Legal (владелец) | 032 | Возвраты — **TODO**; не NEXT агента |
 | MVP + security + продукт + флоу (репо) | 033–050, 063–078, 051–062 | **DONE** |
-| **Прод-деплой** | **079–084** | **Сейчас** — SSH, Caddy, бот, smokes |
+| **Прод-деплой** | **079–084** | **DONE** |
 
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
@@ -151,11 +151,11 @@
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
 | 079 | **P2-OPS-DEPLOY-BOT-SEC-01** | **DONE** | Бот AMS: security-код + env; webhook/support smokes | **`WEBHOOK_AUTH_OK`** + **`AUTO_RENEW_BILLING_OK`** | **`AGENT-PROD-DEPLOY-BACKLOG` §Q079** |
-| 080 | **P2-OPS-DEPLOY-EDGE-01** | **NEXT** | Caddy LV **:8443** + portal; live sub/bootstrap smoke | **`SUB_EDGE_PORT_OK`** live | **`RUNBOOK-P6-EDGE-PORT-MIGRATION`** |
-| 081 | **P2-OPS-DEPLOY-PANEL-01** | **TODO** | Panel **127.0.0.1:3000** на AMS (safe-deploy) | external :3000 fail | **`RUNBOOK-AMS-SAFE-DEPLOY`** |
-| 082 | **P2-OPS-SSH-HYGIENE-01** | **TODO** | Убрать дубликат SSH key на AMS | **`SSH_AUDIT_OK`** | **`SSH-KEY-INVENTORY`** |
-| 083 | **P2-OPS-PROD-SMOKE-01** | **TODO** | Батарея prod smokes + LUKS/DNS probes | **`PROD_SMOKE_BATTERY_OK`** | §Q083 в prod-deploy doc |
-| 084 | **P2-OPS-DRIFT-SYNC-01** | **TODO** | **`drift-check.py`** exit 0 или waive | drift OK в §12 | **`DRIFT-POST-P0.md`** |
+| 080 | **P2-OPS-DEPLOY-EDGE-01** | **DONE** | Caddy LV **:8443** + portal; live sub/bootstrap smoke | **`SUB_EDGE_PORT_OK`** live | **`RUNBOOK-P6-EDGE-PORT-MIGRATION`** |
+| 081 | **P2-OPS-DEPLOY-PANEL-01** | **DONE** | Panel :3000 снаружи закрыт (UFW); API **:8443** OK | external :3000 fail | **`RUNBOOK-AMS-SAFE-DEPLOY`** |
+| 082 | **P2-OPS-SSH-HYGIENE-01** | **DONE** | `authorized_keys` dedup (2 строки) | dedup OK | **`SSH-KEY-INVENTORY`** |
+| 083 | **P2-OPS-PROD-SMOKE-01** | **DONE** | Батарея prod smokes + LUKS/DNS probes | **`PROD_SMOKE_BATTERY_OK`** §12 | §Q083 в prod-deploy doc |
+| 084 | **P2-OPS-DRIFT-SYNC-01** | **DONE** | waive **`DRIFT-POST-P0.md`** (panel bind, SSH timeout) | §12 | **`DRIFT-POST-P0.md`** |
 
 ---
 
@@ -306,6 +306,7 @@
 | 2026-05-18 | — | CodeRabbit audit → **Q063–Q078** pre-GTM security; **`AUDIT-2026-05-SECURITY.md`** |
 | 2026-05-18 | **Q051** P2-RED-EDGE-PORT-01 | **Q063** P6-RED-PAY-03 — порядок: **security → продукт → флоу** |
 | 2026-05-18 | **Q063** P6-RED-PAY-03 | **Q064** P3-RED-SUP-01 |
+| 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |
 | 2026-05-18 | **Q079** P2-OPS-DEPLOY-BOT-SEC-01 | **Q080** P2-OPS-DEPLOY-EDGE-01 |
 | 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy |
 | 2026-05-17 | — | Синхронизация бэклога: **`BACKLOG-MAP.md`**, §5.1 ✅, FAQ, Q032 помечен «до GTM» |

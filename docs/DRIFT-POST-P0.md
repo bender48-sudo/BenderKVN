@@ -62,7 +62,8 @@
 
 | Дата | Файл (repo / prod) | Причина | Когда снять waive |
 |------|---------------------|---------|-------------------|
-| | | | |
+| 2026-05-18 | `compose/ams/remnawave/docker-compose.yml.tmpl` → prod `0.0.0.0:3000` vs tmpl `127.0.0.1:3000` | **Q081:** loopback-only recreate ломает LV Caddy→`168.100.11.140:3000`; сейчас **UFW** `3000/tcp` только с LV + API **:8443** OK | AMS front-proxy на :3000 или смена LV upstream |
+| 2026-05-18 | `ops/drift-check.py` (агент → **bvpn-lv** SSH) | Таймауты md5-chunk с рабочей станции (2026-05-18); smokes/probes с хостов **OK** | Стабильный SSH с агента или прогон drift с LV jump |
 
 ## Связанные документы
 

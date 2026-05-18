@@ -58,7 +58,7 @@ def main() -> int:
         "hero-stack",
         "events-card",
         "btn-setup",
-        "bendervpn",
+        "BenderVPN",
     ]
 
     ok = True
