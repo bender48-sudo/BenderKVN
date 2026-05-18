@@ -325,11 +325,11 @@
 
 **Закрыто:** **P0–P2**, **P6** (фаза 1), **P1/P3-RED** + **P5-COM-01** (фаза 2), **P3-FLOW-00, 14, 01, 02, 12, 03** (Q033–038).
 
-**Сейчас (агент):** линейная очередь **Q044–050** ✅ (флоу). Security **Q063–078** ✅ · продукт **Q051–062** ✅. **NEXT** — только **Q032** (владелец, оферта) или внеочередные задачи по согласованию.
+**Сейчас (агент):** **NEXT=Q079** — накат на прод (**`docs/AGENT-PROD-DEPLOY-BACKLOG.md`**, **Q079–Q084**). Репо: **Q063–078**, **Q051–062**, **Q044–050** ✅.
 
-**До GTM:** **Q032** **P5-COM-02** (только владелец, не NEXT агента).
+**Владелец (параллельно, не блокирует Q079):** **Q032** оферта; **BotFather :8443**; CryptoBot POST; DNSSEC — **`docs/MANUAL-OWNER-CHECKLIST.md`**.
 
-**Security:** **`docs/AUDIT-2026-05-SECURITY.md`**. **Продукт:** **`AGENT-PRODUCT-BACKLOG.md`**, **`TSPU-OBSERVATIONS.md`**. **Флоу:** **`AGENT-FLOW-BACKLOG.md`** после **Q062**.
+**После Q084:** повторный аудит; GTM при закрытых Q032 + owner checklist.
 
 **Вне срочной очереди Q:** **P5-PROD-NATIVE-APP-01** (своё приложение; brief **`docs/NATIVE-APP-BACKLOG.md`**).
 
@@ -348,7 +348,8 @@
 | 2026-05-18 | **Product Q051–062 — DONE:** edge **8443**, v2rayN, native brief, TSPU runbooks/probes, selfsteal review, SNI yandex, threat model, RF egress PoC, node DNS, tier profiles; **`smoke_product_backlog_static.py`**. **NEXT=Q044**. |
 | 2026-05-18 | **Product Q051–062 — DONE:** edge **8443**, v2rayN doc, native brief, TSPU runbooks/probes, selfsteal review, SNI yandex default, threat model, RF egress PoC wiki, node DNS runbook, tier profiles in portal; **`smoke_product_backlog_static.py`**. |
 | 2026-05-18 | **Flow Q044–050 — DONE:** device branches, a11y, funnel metrics, backup bootstrap runbook, cabinet balance API, web↔TG bind, web notify; **`smoke_flow_backlog_static.py`**. |
-| 2026-05-18 | **Очередь:** линейный порядок **Q063–078 → Q051–062 → Q044–050**; **NEXT=Q063**. |
+| 2026-05-18 | **Фаза 4:** **Q079–Q084** prod deploy (агент+SSH); **MANUAL-OWNER-CHECKLIST** — только владелец; **NEXT=Q079**. |
+| 2026-05-18 | **Очередь:** репо **Q063–078 → Q051–062 → Q044–050** ✅. |
 | 2026-05-18 | **CodeRabbit audit:** **`docs/AUDIT-2026-05-SECURITY.md`**; **Q063–Q078** в очереди. |
 | 2026-05-18 | **Handoff агенту:** **`AGENT-PRODUCT-BACKLOG.md`** (Q051–062: что/зачем/почему), **`.cursor/rules/product-backlog.mdc`**. Продукт **впереди** флоу. **NEXT=Q051**. |
 | 2026-05-18 | **Порт edge:** **`EDGE-PORT-RECOMMENDATION.md`** — **8443**. **Тиры:** **`PRODUCT-TIER-PROFILES.md`**, **Q062**. |

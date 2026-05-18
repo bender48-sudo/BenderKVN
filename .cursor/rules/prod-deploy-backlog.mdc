@@ -1,0 +1,17 @@
+---
+description: Фаза 4 — накат на прод Q079–Q084 (после закрытия репо Q063–050)
+alwaysApply: false
+---
+
+# Prod deploy (Q079–Q084)
+
+**Очередь:** **`docs/BACKLOG-QUEUE.md`** — **`NEXT`** в диапазоне **Q079–Q084**.
+
+**Инструкции:** **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`**.
+
+## Gate
+
+1. **Не брать Q032** (оферта) — только владелец.
+2. AMS — **`RUNBOOK-AMS-SAFE-DEPLOY`**; один Q → коммит → стоп.
+3. Нужны **SSH** (`bvpn-lv`, `bvpn-ams`) и **`.secrets/`** — без них: зафиксировать блокер в §12, не помечать Q DONE.
+4. BotFather / DNSSEC / съёмка видео — **`MANUAL-OWNER-CHECKLIST`**, не Q079–084.

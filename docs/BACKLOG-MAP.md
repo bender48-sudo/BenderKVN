@@ -11,9 +11,9 @@
 | **1. Исполнение** | **`docs/BACKLOG-QUEUE.md`** | Линейная очередь **Q001…**; единственный **`NEXT`** |
 | **2. Задачи и журнал** | **`docs/COMMERCIAL-BACKLOG.md`** | ID, Done when, §7.1 P3-FLOW, **§12** прогресс на проде |
 | **3. Флоу (продукт)** | **`docs/USER-FLOW-BACKLOG.md`** | Принципы, MVP/Comfort, бабушка-тест |
-| **4. Агент — security (сейчас)** | **`docs/AUDIT-2026-05-SECURITY.md`** | Q063–Q078 |
-| **4b. Агент — продукт** | **`docs/AGENT-PRODUCT-BACKLOG.md`** | Q051–062 после Q078 |
-| **4c. Агент — флоу** | **`docs/AGENT-FLOW-BACKLOG.md`** | Q044–050 после Q062 |
+| **4. Агент — прод (сейчас)** | **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`** | Q079–Q084 |
+| **4b. Владелец** | **`docs/MANUAL-OWNER-CHECKLIST.md`** | Q032, BotFather, DNSSEC, видео |
+| Закрыто (репо) | AUDIT / PRODUCT / FLOW backlogs | Q063–050 |
 | **5. Карта пути** | **`docs/USER-FLOW-JOURNEY.md`** | Персоны, сценарии (закрыт **P3-FLOW-00**) |
 | **6. Владелец (ручное)** | **`docs/MANUAL-OWNER-CHECKLIST.md`** | Bitwarden, BotFather, DNSSEC — не в очереди Q |
 | **7. Политики** | **`POLICY-SEQUENTIAL-WORK.md`**, **`POLICY-BACKLOG-ORDER.md`** | Один Q → коммит; продукт → UX |
@@ -28,21 +28,19 @@
 |------|---|--------|------|
 | **1** | 001–022 | **Закрыта** | Scale, monetize, P6-RED (sub/mux/pg), GTM wiki |
 | **2** | 023–031 | **Закрыта** | Safe-deploy, P1-RED, публичный `/status` |
-| **3** | 032–078 | **В работе** | **Security Q063–078** → **продукт Q051–062** → **флоу Q044–050** |
+| **3** | 033–050, 063–078, 051–062 | **Репо закрыто** | Код/docs: security → продукт → флоу |
+| **4** | 079–084 | **В работе** | Накат LV/AMS (агент + SSH) |
 
-**Сейчас:** **`NEXT = Q064`** (support reply authz). Далее **Q063–078**, затем **Q051–062**, затем **Q044–050**. См. **`AUDIT-2026-05-SECURITY.md`**.
+**Сейчас:** **`NEXT = Q079`**. **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`**. Владелец: **`MANUAL-OWNER-CHECKLIST.md`**.
 
 ---
 
-## Фаза 3 — блоки (логика, не менять Q-номера)
+## Фазы 3–4 (логика)
 
 ```
-[MVP DONE]  Q033–043  portal, Mini App, wizard, FAQ, QR, errors
-[LEGAL]     Q032  возвраты — владелец, не NEXT агента
-[DONE]      Q063  auto-renew billing
-[CURRENT]   Q064–078  security (NEXT=Q064)
-[PRODUCT]   Q051–062  edge 8443, v2rayN, SNI, tiers, …
-[FLOW]      Q044–050  только после Q062
+[DONE репо] Q033–050, Q063–078, Q051–062
+[CURRENT]   Q079–084  prod deploy (агент+SSH)
+[OWNER]     Q032 + MANUAL-OWNER-CHECKLIST
 ```
 
 **Gate:** накат AMS — **`RUNBOOK-AMS-SAFE-DEPLOY`** (не Q).
@@ -53,10 +51,11 @@
 
 | URL | Назначение |
 |-----|------------|
-| `https://k9x2m1.conntest.xyz:2053/start/` | Bootstrap (браузер, без VPN) |
-| `https://k9x2m1.conntest.xyz:2053/portal/` | Тот же портал; **URL Mini App** в BotFather |
-| `https://k9x2m1.conntest.xyz:2053/setup/?t=…` | Персональная выдача конфига |
-| `https://k9x2m1.conntest.xyz:2053/status` | Публичный статус |
+| `https://k9x2m1.conntest.xyz:8443/start/` | Bootstrap (целевой порт после **Q080**) |
+| `https://k9x2m1.conntest.xyz:8443/portal/` | Portal + **Mini App** (BotFather после Q080) |
+| `https://k9x2m1.conntest.xyz:8443/setup/?t=…` | Персональная выдача |
+| `https://k9x2m1.conntest.xyz:8443/status` | Публичный статус |
+| `:2053` | Grace period (снять после миграции пользователей) |
 
 Код: **`web/portal/`**, **`ops/site_urls.py`**.
 

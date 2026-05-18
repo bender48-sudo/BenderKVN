@@ -25,8 +25,8 @@ alwaysApply: true
 ## Ссылки
 
 - Детали задач: **`docs/COMMERCIAL-BACKLOG.md`**
-- **Фаза 3 — security (Q063–078, сейчас):** **`docs/AUDIT-2026-05-SECURITY.md`**, правило **`security-backlog.mdc`**
-- **Фаза 3 — продукт (Q051–062, после Q078):** **`docs/AGENT-PRODUCT-BACKLOG.md`**, **`product-backlog.mdc`**
-- **Фаза 3 — флоу (Q044–050, после Q062):** **`docs/AGENT-FLOW-BACKLOG.md`**, **`flow-backlog.mdc`**
+- **Фаза 4 — прод (Q079–084, сейчас):** **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`**, **`prod-deploy-backlog.mdc`**
+- **Владелец:** **`docs/MANUAL-OWNER-CHECKLIST.md`** (Q032, BotFather, …)
+- Репо закрыто: security / product / flow backlogs (Q063–050)
 - Приоритеты продукта: **`docs/POLICY-BACKLOG-ORDER.md`**
 - Накат AMS: **`docs/RUNBOOK-AMS-SAFE-DEPLOY.md`**

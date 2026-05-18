@@ -71,28 +71,28 @@
 
 **Старт:** **2026-05-17**.
 
-**Порядок агента (строго, без исключений):**
+**Порядок (репо закрыто → прод):**
 
-1. **Security** **Q063–Q078** (CodeRabbit; сначала критичное)
-2. **Продукт / ТСПУ** **Q051–062**
-3. **Флоу** **Q044–050**
+1. ~~**Q063–078** security~~ **DONE** (код в репо)
+2. ~~**Q051–062** продукт~~ **DONE** (репо + docs)
+3. ~~**Q044–050** флоу~~ **DONE** (репо)
+4. **Q079–Q084** — **накат на LV/AMS** (агент + SSH) ← **сейчас**
+5. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** **Q064** (**P3-RED-SUP-01** — support reply authz).
+**NEXT:** **Q079** (**P2-OPS-DEPLOY-BOT-SEC-01** — бот AMS + security smokes).
 
 | Кому | Документ |
 |------|----------|
-| **Агент — security (сейчас)** | **`docs/AUDIT-2026-05-SECURITY.md`** — Q063–Q078 |
-| Агент — продукт (после **Q078**) | **`docs/AGENT-PRODUCT-BACKLOG.md`** — Q051–062 |
-| Агент — флоу (после **Q062**) | **`docs/AGENT-FLOW-BACKLOG.md`** |
-| Правила Cursor | **`sequential-backlog.mdc`**; после Q078 — **`product-backlog.mdc`**; после Q062 — **`flow-backlog.mdc`** |
+| **Агент — прод (сейчас)** | **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`** — **Q079–Q084** |
+| Владелец (параллельно) | **`docs/MANUAL-OWNER-CHECKLIST.md`** — BotFather, Q032, DNSSEC, видео |
+| Закрыто (репо) | **`AUDIT-2026-05-SECURITY`**, **`AGENT-PRODUCT-BACKLOG`**, **`AGENT-FLOW-BACKLOG`** |
+| Правило Cursor | **`prod-deploy-backlog.mdc`** + **`sequential-backlog.mdc`** |
 
 | Блок | Q | Смысл |
 |------|---|--------|
-| Legal (владелец, не NEXT) | 032 | Возвраты — **TODO**; только владелец или по явной просьбе |
-| MVP portal | 033–043 | **DONE** |
-| **Security** | **063–078** | **Сейчас** — billing, support, webhooks, logs, … |
-| **Продукт / ТСПУ** | **051–062** | Порт **8443**, v2rayN, VLESS, SNI, тиры (**`TSPU-OBSERVATIONS.md`**) |
-| **Флоу** | **044–050** | Только после **Q062** |
+| Legal (владелец) | 032 | Возвраты — **TODO**; не NEXT агента |
+| MVP + security + продукт + флоу (репо) | 033–050, 063–078, 051–062 | **DONE** |
+| **Прод-деплой** | **079–084** | **Сейчас** — SSH, Caddy, бот, smokes |
 
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
@@ -143,6 +143,19 @@
 | 048 | **P3-FLOW-15** | **DONE** | Баланс в веб-ЛК (read API) | **`PORTAL_CABINET_BALANCE_OK`** §12 | `portal_cabinet.py` |
 | 049 | **P3-FLOW-16** | **DONE** | Привязка TG ↔ web (`BVPN-ID` / email) | **`WEB_TG_BIND_OK`** §12 | `web_tg_bind.py` |
 | 050 | **P3-FLOW-17** | **DONE** | Уведомления web-only (portal) | **`WEB_NOTIFY_CHANNEL_OK`** §12 | events card + cabinet |
+
+### Фаза 4 — накат на прод (агент + SSH)
+
+**Старт:** после **Q050** (репо). Инструкции: **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`**.
+
+| Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
+|---|-----|--------|-------------------|--------|-------------|
+| 079 | **P2-OPS-DEPLOY-BOT-SEC-01** | **NEXT** | Бот AMS: security-код + env; webhook/support smokes | **`WEBHOOK_AUTH_OK`** + **`AUTO_RENEW_BILLING_OK`** | **`AGENT-PROD-DEPLOY-BACKLOG` §Q079** |
+| 080 | **P2-OPS-DEPLOY-EDGE-01** | **TODO** | Caddy LV **:8443** + portal; live sub/bootstrap smoke | **`SUB_EDGE_PORT_OK`** live | **`RUNBOOK-P6-EDGE-PORT-MIGRATION`** |
+| 081 | **P2-OPS-DEPLOY-PANEL-01** | **TODO** | Panel **127.0.0.1:3000** на AMS (safe-deploy) | external :3000 fail | **`RUNBOOK-AMS-SAFE-DEPLOY`** |
+| 082 | **P2-OPS-SSH-HYGIENE-01** | **TODO** | Убрать дубликат SSH key на AMS | **`SSH_AUDIT_OK`** | **`SSH-KEY-INVENTORY`** |
+| 083 | **P2-OPS-PROD-SMOKE-01** | **TODO** | Батарея prod smokes + LUKS/DNS probes | **`PROD_SMOKE_BATTERY_OK`** | §Q083 в prod-deploy doc |
+| 084 | **P2-OPS-DRIFT-SYNC-01** | **TODO** | **`drift-check.py`** exit 0 или waive | drift OK в §12 | **`DRIFT-POST-P0.md`** |
 
 ---
 
@@ -227,6 +240,12 @@
 | 048 | `product: P3-FLOW-15 — portal cabinet balance read API` |
 | 049 | `product: P3-FLOW-16 — web TG bind BVPN-ID` |
 | 050 | `product: P3-FLOW-17 — web-only notifications channel` |
+| 079 | `ops: P2-OPS-DEPLOY-BOT-SEC-01 — deploy AMS bot security + smokes` |
+| 080 | `ops: P2-OPS-DEPLOY-EDGE-01 — Caddy LV :8443 + portal live smoke` |
+| 081 | `ops: P2-OPS-DEPLOY-PANEL-01 — panel loopback AMS safe-deploy` |
+| 082 | `ops: P2-OPS-SSH-HYGIENE-01 — AMS authorized_keys dedup` |
+| 083 | `ops: P2-OPS-PROD-SMOKE-01 — prod smoke battery` |
+| 084 | `ops: P2-OPS-DRIFT-SYNC-01 — drift-check green post-deploy` |
 
 После коммита с закрытием задачи — в **`BACKLOG-QUEUE.md`**: сменить статусы и при необходимости добавить подстроку в §12 бэклога (в том же коммите).
 
@@ -287,4 +306,5 @@
 | 2026-05-18 | — | CodeRabbit audit → **Q063–Q078** pre-GTM security; **`AUDIT-2026-05-SECURITY.md`** |
 | 2026-05-18 | **Q051** P2-RED-EDGE-PORT-01 | **Q063** P6-RED-PAY-03 — порядок: **security → продукт → флоу** |
 | 2026-05-18 | **Q063** P6-RED-PAY-03 | **Q064** P3-RED-SUP-01 |
+| 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy; **NEXT=Q079** |
 | 2026-05-17 | — | Синхронизация бэклога: **`BACKLOG-MAP.md`**, §5.1 ✅, FAQ, Q032 помечен «до GTM» |

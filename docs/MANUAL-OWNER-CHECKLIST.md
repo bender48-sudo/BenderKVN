@@ -1,92 +1,87 @@
-# Чеклист владельца (ручные доработки)
+# Чеклист владельца (только то, что агент не может)
 
-Задачи **вне** линейной очереди Q (или согласование после агента). Очередь агента: **`docs/BACKLOG-QUEUE.md`** (**`NEXT`**).
-
----
-
-## Критично (безопасность / доступ)
-
-- [ ] **LUKS Postgres AMS** — passphrase в Bitwarden **`BenderVPN/ams/postgres-luks-key`** + офлайн-копия.
-- [ ] После **перезагрузки AMS** — `pwsh -File ops/deploy-postgres-luks-ams.ps1 -ProbeOnly` (FAIL → unlock по runbook).
-- [ ] **`%USERPROFILE%\.ssh\config`** — `bvpn_lv_ed25519` / `bvpn_ams_ed25519`; `.\scripts\ssh-smoke-test.ps1`.
-- [ ] **AMS `authorized_keys`** — убрать дубликат **`root@vinni204329`** (оставить **`bender-bvpn_ams_ed25519`**).
-- [ ] **Crypto webhook** (если включён) — `CRYPTO_WEBHOOK_SECRET` в `/opt/remna-shop/.env`.
-- [ ] **`PORTAL_SETUP_HMAC_SECRET`** на AMS в `/opt/remna-shop/.env` (для ссылок `/setup/?t=` из бота) — см. **`RUNBOOK-USER-BOOTSTRAP-SITE`**.
+Задачи, требующие **вашего** аккаунта, юридического решения или физического устройства.  
+**Агент + терминал:** **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`** (**Q079–Q084** в **`BACKLOG-QUEUE.md`**).
 
 ---
 
-## Portal / Mini App (после Q037)
+## Очередь
 
-- [ ] **BotFather** — Menu Button / Web App URL = **`https://k9x2m1.conntest.xyz:2053/portal/`** (как в **`ops/site.env.example`**).
-- [ ] Ручной тест: Mini App на телефоне = тот же экран, что **`/start`** в браузере.
-- [ ] Деплой portal после правок: `pwsh -File ops/deploy-user-portal-lv.ps1` (если скрипт есть).
-
----
-
-## Видео «первый коннект» (Q042 — плейсхолдеры → прод)
-
-Сейчас на **`/portal/guide.html`** стоят **схематичные GIF** из репо. Код и кнопки в боте уже на проде; нужны **настоящие** записи экрана.
-
-- [ ] **Снять iPhone** (≤ 90 с): установка Happ → вставка ссылки / QR → включение VPN. Без жаргона (TLS, Reality, shortUuid).
-- [ ] **Снять Android** (≤ 90 с): то же для Google Play + Happ.
-- [ ] **Положить файлы** в репо (заменить плейсхолдеры):
-  - `web/portal/media/ios-first-connect.gif` — или `.mp4`
-  - `web/portal/media/android-first-connect.gif` — или `.mp4`
-- [ ] **Если MP4** (предпочтительно для качества): в **`web/portal/content/ru.json`** → `setup_videos` указать пути:
-  - `media_ios_mp4`: `/portal/media/ios-first-connect.mp4`
-  - `media_android_mp4`: `/portal/media/android-first-connect.mp4`
-  - (GIF оставить как `poster` / запасной вариант — см. `guide.js`)
-- [ ] **Деплой на LV:** `pwsh -File ops/deploy-portal-setup-lv.ps1` (каталог `media/` + `ru.json` + `guide.html`).
-- [ ] **Проверка без VPN** с телефона (мобильная сеть, не Wi‑Fi офиса с VPN):
-  - [guide.html](https://k9x2m1.conntest.xyz:2053/portal/guide.html) — оба таба открываются, ролик/GIF проигрывается;
-  - кнопка в боте **«🎬 Видео: как подключить»** ведёт на ту же страницу;
-  - с главной portal и после `/setup/` — ссылка «Видео: как подключить».
-- [ ] **Smoke:** `python ops/smoke_portal_setup_video.py` → **`PORTAL_SETUP_VIDEO_OK`**.
-- [ ] (Опционально) перегенерировать плейсхолдеры локально: `python ops/generate_setup_guide_media.py` — только для черновика, не для прода.
+| Кто | Q | Что |
+|-----|---|-----|
+| **Агент** | **Q079–Q084** | Деплой бота, Caddy :8443, panel bind, SSH, smokes, drift |
+| **Владелец** | **Q032** | Текст возвратов в оферте (telegra.ph) |
+| **Владелец** | ниже § | BotFather, DNSSEC, видео, 2FA регистраторов |
 
 ---
 
-## DNS (P1-RED-DNS-01)
+## Q032 — возвраты (до GTM)
+
+- [ ] Дописать блок возвратов при массовом дауне в оферте (**P5-COM-02**).
+- [ ] Опубликовать / обновить ссылку в боте.
+
+*Черновик может подготовить агент по запросу; финальное «да» — только вы.*
+
+---
+
+## BotFather / Telegram (~5 мин)
+
+*После **Q080** (агент поднял :8443 на LV).*
+
+- [ ] **BotFather** → Menu Button / Web App URL = **`https://k9x2m1.conntest.xyz:8443/portal/`** (см. **`ops/site.env.example`**).
+- [ ] Ручной тест: Mini App на телефоне = тот же экран, что **`/start/`** в браузере (**без VPN**, мобильная сеть).
+
+---
+
+## CryptoBot (~2 мин)
+
+*После **Q079**.*
+
+- [ ] Личный кабинет CryptoBot: webhook **POST** (не GET), URL как в **`docs/SECRETS.md`**.
+
+---
+
+## DNS / регистраторы (не блокер первого GTM, желательно)
 
 - [ ] Recovery-коды **Dynadot** в Bitwarden + офлайн.
-- [ ] **Второй регистратор** (reserve) заведён.
+- [ ] **Второй регистратор** (reserve).
 - [ ] **DNSSEC** для `conntest.xyz` → `dnssec_enabled: true` в inventory.
-- [ ] Backup apex на втором регистраторе до GTM.
+- [ ] Backup apex на втором регистраторе.
+
+*Probe делегирования агент гоняет на LV (**Q083**).*
 
 ---
 
-## Postgres / AMS ops
+## Видео «первый коннект» (качество UX, не security)
 
-- [ ] Legacy docker volume Postgres (после 7 дней стабильности) — backup → `docker volume rm`.
-- [ ] Следующий накат compose — только **`RUNBOOK-AMS-SAFE-DEPLOY`**.
+Код и плейсхолдеры на проде (**Q042**); для «бабушки» нужны **живые** записи экрана.
 
----
-
-## Продукт / очередь
-
-| Что | Статус |
-|-----|--------|
-| Portal + Mini App (Q033–038) | ✅ в репо; см. §12 |
-| Видео guide (Q042) | ✅ код на проде; **ручная замена GIF/MP4** — § выше |
-| **NEXT агента** | **Q044** — ветки устройств на portal |
-| **До GTM** | **Q032** — возвраты в оферте |
-| Tabletop jurisdiction | 1×/год — **`TABLETOP-JURISDICTION-EXERCISE.md`** |
-
-**Параллельно (не NEXT):** **P4-DNS-01…06**.
+- [ ] Снять iPhone / Android (≤ 90 с): Happ → ссылка/QR → VPN on.
+- [ ] Положить в `web/portal/media/` → попросить агента **Q085** (опц.) или самому: `pwsh -File ops/deploy-portal-setup-lv.ps1`.
+- [ ] `python ops/smoke_portal_setup_video.py` → **`PORTAL_SETUP_VIDEO_OK`**.
 
 ---
 
-## Smoke (здоровье)
+## Секреты (один раз; агент не создаёт офлайн-копии)
 
-```powershell
-cd d:\Va\projects\VPN
-python ops/portal_bundle_audit.py
-python ops/smoke_public_bootstrap.py
-python ops/smoke_telegram_miniapp.py
-python ops/smoke_portal_setup_video.py
-python ops/smoke_ams_safe_deploy.py
-ssh bvpn-lv 'python3 /opt/scripts/dns_delegation_probe.py'
-ssh bvpn-ams 'python3 /opt/scripts/ams_postgres_crypt_probe.py'
-```
+- [ ] Passphrase **LUKS Postgres AMS** в Bitwarden + **ваша** офлайн-копия (агент: `deploy-postgres-luks-ams.ps1 -ProbeOnly` в **Q083**).
+- [ ] Подтвердить, что **`SUPPORT_STAFF_IDS`** в Bitwarden совпадает с тем, что агент залил в **Q079**.
 
-Ожидаемые маркеры: **`PORTAL_BUNDLE_OK`**, **`PUBLIC_BOOTSTRAP_OK`**, **`TELEGRAM_MINIAPP_PORTAL_OK`**, **`PORTAL_SETUP_VIDEO_OK`**, **`AMS_SAFE_DEPLOY_OK`**, **`DNS_DELEGATION_OK`**, **`POSTGRES_CRYPT_OK`**.
+---
+
+## Раз в год
+
+- [ ] Tabletop jurisdiction — **`TABLETOP-JURISDICTION-EXERCISE.md`**.
+
+---
+
+## Не ваш ручной труд (делает агент)
+
+| Было в старом чеклисте | Теперь |
+|------------------------|--------|
+| Деплой бота / webhook smokes | **Q079** |
+| Caddy :8443 + portal deploy | **Q080** |
+| Panel 127.0.0.1:3000 | **Q081** |
+| SSH duplicate key | **Q082** |
+| Все smokes / drift | **Q083–Q084** |
+| Обновить URL в docs на :8443 | агент в **Q080** / docs sync |

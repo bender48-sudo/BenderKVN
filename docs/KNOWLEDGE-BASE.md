@@ -9,7 +9,7 @@
 | Что нужно | Документ / артефакт |
 |-----------|---------------------|
 | **Карта бэклога (начать здесь)** | **`docs/BACKLOG-MAP.md`** |
-| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **Q063**; security: **`docs/AUDIT-2026-05-SECURITY.md`**; продукт после Q078: **`AGENT-PRODUCT-BACKLOG.md`** |
+| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **Q079**; прод: **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`**; владелец: **`MANUAL-OWNER-CHECKLIST.md`** |
 | **Флоу (после Q062)** | **`docs/AGENT-FLOW-BACKLOG.md`** |
 | **ТСПУ — 12 наблюдений → бэклог** | **`docs/TSPU-OBSERVATIONS.md`** |
 | **Порт вместо 2053** | **`docs/EDGE-PORT-RECOMMENDATION.md`** |
