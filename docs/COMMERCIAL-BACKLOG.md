@@ -153,6 +153,7 @@
 | **P1-PRO-SUB-TIER-01** | **Три уровня в подписке:** turbo (NL) / **wl-direct** (RF, :80, без routing) / **wl-routed** (RF, :443, vision) — см. референс-разбор. | **`PRODUCT-TIER-PROFILES.md`**; 3 named outbounds; FAQ «не на роутер» для tier-3; **`SUB_TIER_PROFILES_OK`**. |
 | **P1-RED-TSPU-THREAT-MODEL-01** | **Модель угроз ТСПУ (wiki):** п.7–9 — ТСПУ независимы, IP‑бан временный, массовый ручной, малый сервер реже; связка с **NODE-POLICY**, GTM, **не** масштабировать один паттерн. | **`docs/TSPU-THREAT-MODEL.md`** (из **`TSPU-OBSERVATIONS`**); саппорт‑шпаргалка 1 стр. |
 | **P1-RED-NODE-DNS-01** | **Резолвер на нодах:** свой DNS (AdGuard/unbound), upstream **не** провайдерский; ТСПУ/провайдер **удаляет** записи заблокированных. | Док: кто резолвит что; AdGuard upstream для Xray; probe «ломается ли A/AAAA»; **`NODE_DNS_RESOLVER_OK`**. п.11. |
+| ~~**P2-RED-TSPU-AUDIT-02**~~ ✅ | **ТСПУ red-team (Q085):** отчёт «как DPI» — fingerprint, discovery, UX под блоком, ops-палево, tabletop VLESS; предложения **Q086+**. | **`docs/AUDIT-2026-05-TSPU-REDTEAM.md`**; **`ops/smoke_tspu_redteam.py`** → **`TSPU_REDTEAM_OK`** §12 **2026-05-19**. |
 
 **Контекст бета (2026‑05‑18):** полная матрица 12 пунктов — **`docs/TSPU-OBSERVATIONS.md`**. Высокий ping в Happ; «баннер 1984» → **GeoIP на устройстве** + **P5-PROD-NATIVE-APP-01**; **RU-BYPASS** ✅ на сервере. Happ (РФ‑клиент) — компромисс App Store.
 
@@ -329,7 +330,7 @@
 
 **Владелец:** **Q032** оферта; **BotFather :8443**; **CryptoBot POST**; DNSSEC — **`docs/MANUAL-OWNER-CHECKLIST.md`**.
 
-**После Q084:** повторный аудит; GTM при закрытых Q032 + owner checklist.
+**После Q085:** исправления **Q086+** из **`AUDIT-2026-05-TSPU-REDTEAM.md`**; GTM при закрытых Q032 + owner checklist.
 
 **Вне срочной очереди Q:** **P5-PROD-NATIVE-APP-01** (своё приложение; brief **`docs/NATIVE-APP-BACKLOG.md`**).
 
@@ -343,6 +344,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-19 | **P2-RED-TSPU-AUDIT-02 — DONE (Q085):** red-team отчёт **`docs/AUDIT-2026-05-TSPU-REDTEAM.md`** (5 векторов, P0–P3, Q086+); smokes **`TRANSPORT_MUX_OK`**, **`TSPU_BLOCK_PROBE_OK`**, **`SUB_EDGE_PORT_OK`**, **`PORTAL_BUNDLE_OK`**, **`TSPU_REDTEAM_OK`**. P1: grace **:2053** на LV, утечки **:2053** в боте/FAQ, нет live alt apex. **NEXT:** нет. |
 | 2026-05-18 | **Фаза 4 Q080–Q084 — DONE:** **Q080** Caddy LV **:8443** (`patch-caddy-edge-port-8443-lv.sh`), LV **VLESS_XHTTP** **8443→18443** (panel API); live **`SUB_EDGE_PORT_OK`**, **`PUBLIC_BOOTSTRAP_OK`**, portal **:8443** **200**. **Q081** panel :3000 с интернета **000** (UFW + bind); panel API **:8443** **200** (compose loopback — waive **`DRIFT-POST-P0`**). **Q082** AMS `authorized_keys` dedup → **2** строки. **Q083** **`PROD_SMOKE_BATTERY_OK`**: product/flow static, **`AMS_SAFE_DEPLOY_OK`**, **`PORTAL_*`**, **`DNS_DELEGATION_OK`**, **`POSTGRES_CRYPT_OK`**. **Q084** drift waive (panel bind, SSH timeout с агента). **Владелец:** BotFather **:8443**. |
 | 2026-05-18 | **P2-OPS-DEPLOY-BOT-SEC-01 — DONE (Q079):** AMS `/opt/remna-shop/.env` — `SUPPORT_STAFF_IDS`, `PORTAL_SETUP_HMAC_SECRET` (LV); security hot-patch (`deploy-bot-handlers-ams`, `deploy-bot-payment-webhook-ams` + `payload_redact`); forged webhook **403**; smokes **`WEBHOOK_AUTH_OK`**, **`SUPPORT_REPLY_AUTHZ_OK`**, **`AUTO_RENEW_BILLING_OK`**, **`PAYMENT_AMOUNT_VERIFY_OK`**, **`YOOKASSA_SKIP_VERIFY_OK`**. **Владелец:** CryptoBot → POST. |
 | 2026-05-18 | **P6-RED-PAY-03 — DONE (Q063):** auto-renew списывает баланс до `provision_key`; skip + уведомление при нехватке; **`AUTO_RENEW_BILLING_OK`**. |

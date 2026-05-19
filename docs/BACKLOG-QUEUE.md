@@ -77,9 +77,10 @@
 2. ~~**Q051–062** продукт~~ **DONE** (репо + docs)
 3. ~~**Q044–050** флоу~~ **DONE** (репо)
 4. ~~**Q079–Q084**~~ **DONE** (накат LV/AMS)
-5. **Q032** — возвраты в оферте (**только владелец**, параллельно)
+5. ~~**Q085**~~ **DONE** (ТСПУ red-team отчёт)
+6. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** нет (фаза 4 закрыта) — **повторный аудит / GTM** после **Q032** + **`MANUAL-OWNER-CHECKLIST`**.
+**NEXT:** нет — **GTM** после **Q032** + **`MANUAL-OWNER-CHECKLIST`**; исправления из отчёта — **Q086+** по одному Q.
 
 | Кому | Документ |
 |------|----------|
@@ -93,6 +94,7 @@
 | Legal (владелец) | 032 | Возвраты — **TODO**; не NEXT агента |
 | MVP + security + продукт + флоу (репо) | 033–050, 063–078, 051–062 | **DONE** |
 | **Прод-деплой** | **079–084** | **DONE** |
+| **ТСПУ аудит** | **085** | **DONE** | Отчёт red-team | **`TSPU_REDTEAM_OK`** | **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
 
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
@@ -156,6 +158,12 @@
 | 082 | **P2-OPS-SSH-HYGIENE-01** | **DONE** | `authorized_keys` dedup (2 строки) | dedup OK | **`SSH-KEY-INVENTORY`** |
 | 083 | **P2-OPS-PROD-SMOKE-01** | **DONE** | Батарея prod smokes + LUKS/DNS probes | **`PROD_SMOKE_BATTERY_OK`** §12 | §Q083 в prod-deploy doc |
 | 084 | **P2-OPS-DRIFT-SYNC-01** | **DONE** | waive **`DRIFT-POST-P0.md`** (panel bind, SSH timeout) | §12 | **`DRIFT-POST-P0.md`** |
+
+### Фаза 5 — ТСПУ red-team (после Q084)
+
+| Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
+|---|-----|--------|-------------------|--------|-------------|
+| 085 | **P2-RED-TSPU-AUDIT-02** | **DONE** | Отчёт red-team «как ТСПУ»; таблица P0–P3; Q086+ | **`TSPU_REDTEAM_OK`** + **`docs/AUDIT-2026-05-TSPU-REDTEAM.md`** | ТСПУ-бриф; **`TSPU-OBSERVATIONS.md`** |
 
 ---
 
@@ -306,6 +314,7 @@
 | 2026-05-18 | — | CodeRabbit audit → **Q063–Q078** pre-GTM security; **`AUDIT-2026-05-SECURITY.md`** |
 | 2026-05-18 | **Q051** P2-RED-EDGE-PORT-01 | **Q063** P6-RED-PAY-03 — порядок: **security → продукт → флоу** |
 | 2026-05-18 | **Q063** P6-RED-PAY-03 | **Q064** P3-RED-SUP-01 |
+| 2026-05-19 | **Q085** P2-RED-TSPU-AUDIT-02 | — (отчёт **`AUDIT-2026-05-TSPU-REDTEAM.md`**, NEXT пусто) |
 | 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |
 | 2026-05-18 | **Q079** P2-OPS-DEPLOY-BOT-SEC-01 | **Q080** P2-OPS-DEPLOY-EDGE-01 |
 | 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy |

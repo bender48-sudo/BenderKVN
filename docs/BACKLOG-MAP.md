@@ -29,9 +29,10 @@
 | **1** | 001–022 | **Закрыта** | Scale, monetize, P6-RED (sub/mux/pg), GTM wiki |
 | **2** | 023–031 | **Закрыта** | Safe-deploy, P1-RED, публичный `/status` |
 | **3** | 033–050, 063–078, 051–062 | **Репо закрыто** | Код/docs: security → продукт → флоу |
-| **4** | 079–084 | **В работе** | Накат LV/AMS (агент + SSH) |
+| **4** | 079–084 | **Закрыта** | Накат LV/AMS (агент + SSH) |
+| **5** | 085 | **Закрыта** | ТСПУ red-team отчёт |
 
-**Сейчас:** фаза 4 **Q079–Q084** ✅. **NEXT** агента нет — GTM после **Q032** + owner checklist. Владелец: **`MANUAL-OWNER-CHECKLIST.md`**.
+**Сейчас:** **Q085** ✅. **NEXT** агента нет — GTM после **Q032** + owner checklist; фиксы из отчёта — **Q086+**. Владелец: **`MANUAL-OWNER-CHECKLIST.md`**.
 
 ---
 
@@ -40,7 +41,9 @@
 ```
 [DONE репо] Q033–050, Q063–078, Q051–062
 [DONE]      Q079–084  prod deploy (агент+SSH)
+[DONE]      Q085      TSPU red-team audit
 [OWNER]     Q032 + MANUAL-OWNER-CHECKLIST
+[PENDING]   Q086+     из AUDIT-2026-05-TSPU-REDTEAM.md
 ```
 
 **Gate:** накат AMS — **`RUNBOOK-AMS-SAFE-DEPLOY`** (не Q).
