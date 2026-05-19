@@ -61,7 +61,7 @@ def main() -> int:
             f"LIVE_SUB_SNI_FAIL: forbidden SNI in live sub: {', '.join(uniq)}",
             file=sys.stderr,
         )
-        print("fix: panel Reality template -> www.yandex.ru (Q102)", file=sys.stderr)
+        print("fix: panel Reality template -> www.yandex.ru (Q105)", file=sys.stderr)
         return 1
     if good == 0:
         print(

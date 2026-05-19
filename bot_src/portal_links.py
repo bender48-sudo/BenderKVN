@@ -9,21 +9,15 @@ import os
 import re
 import time
 
+from shop_bot.public_urls import public_bootstrap_url, setup_origin as _portal_setup_origin
+
 _SHORT_ID_RE = re.compile(r"^[A-Za-z0-9_-]{8,128}$")
 
-PUBLIC_BOOTSTRAP_URL = (
-    os.getenv("PUBLIC_BOOTSTRAP_URL", "https://k9x2m1.conntest.xyz:8443/start/")
-    .strip()
-    .rstrip("/")
-    + "/"
-)
+PUBLIC_BOOTSTRAP_URL = public_bootstrap_url()
 
 
 def _setup_origin() -> str:
-    return os.environ.get(
-        "PUBLIC_SETUP_ORIGIN",
-        os.environ.get("PUBLIC_PORTAL_ORIGIN", "https://k9x2m1.conntest.xyz:8443"),
-    ).rstrip("/")
+    return _portal_setup_origin()
 
 
 def _setup_path() -> str:

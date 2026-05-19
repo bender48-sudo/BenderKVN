@@ -79,6 +79,19 @@ def verify_crypto_shared_secret(req: Request) -> bool:
     return hmac.compare_digest(got, expected)
 
 
+def assert_prod_webhook_hardening() -> None:
+    """P6-RED-PAY-07b: refuse to start webhook with dangerous flags on live bot."""
+    live = os.getenv("BOT_PAYMENTS_LIVE", "").strip().lower() in ("1", "true", "yes")
+    if live and _env_bool("YOOKASSA_WEBHOOK_SKIP_API_VERIFY", False):
+        raise RuntimeError(
+            "YOOKASSA_WEBHOOK_SKIP_API_VERIFY must be unset when BOT_PAYMENTS_LIVE=1"
+        )
+    if live and _env_bool("WEBHOOK_ALLOW_OPEN_CRYPTO", False):
+        raise RuntimeError(
+            "WEBHOOK_ALLOW_OPEN_CRYPTO must be unset when BOT_PAYMENTS_LIVE=1"
+        )
+
+
 def verify_yookassa_notification(event_json: dict[str, Any]) -> bool:
     """Optional API round-trip: confirm payment.succeeded with YooKassa API."""
     if event_json.get("event") != "payment.succeeded":

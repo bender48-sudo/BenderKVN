@@ -74,8 +74,12 @@ def initialize_db():
                 CREATE TABLE IF NOT EXISTS web_trial_claims (
                     contact_email TEXT PRIMARY KEY,
                     web_user_id INTEGER NOT NULL UNIQUE,
-                    panel_email TEXT NOT NULL,
+                    panel_email TEXT,
                     contact_phone TEXT,
+                    claimed_at TEXT,
+                    bind_token TEXT,
+                    telegram_id INTEGER,
+                    bound_at TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
                 CREATE TABLE IF NOT EXISTS webhook_deliveries (
@@ -118,6 +122,25 @@ def initialize_db():
                     cursor.execute(f"ALTER TABLE users ADD COLUMN {col} {typedef}")
                 except sqlite3.OperationalError:
                     pass
+            for col, typedef in (
+                ("claimed_at", "TEXT"),
+                ("bind_token", "TEXT"),
+                ("telegram_id", "INTEGER"),
+                ("bound_at", "TEXT"),
+            ):
+                try:
+                    cursor.execute(
+                        f"ALTER TABLE web_trial_claims ADD COLUMN {col} {typedef}"
+                    )
+                except sqlite3.OperationalError:
+                    pass
+            try:
+                cursor.execute(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS idx_web_trial_bind_token "
+                    "ON web_trial_claims(bind_token) WHERE bind_token IS NOT NULL"
+                )
+            except sqlite3.OperationalError:
+                pass
             conn.commit()
             logging.info("Database with 'created_date' column initialized successfully.")
     except sqlite3.Error as e:

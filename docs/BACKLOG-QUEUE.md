@@ -81,11 +81,11 @@
 6. **Фаза 6** — GTM hardening (**Q086–097**, см. **`AGENT-PHASE6-BACKLOG.md`**)
 7. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** **Q102** (verify **3010/3011** firewall после SUBHA; **не** `127.0.0.1` — сломает LV→AMS).
+**NEXT:** **Q120** (2-й RU relay — **только владелец**, нужен 2-й VPS).
 
 | Кому | Документ |
 |------|----------|
-| **Агент — сейчас** | **Q102–121** (security P0 + ТСПУ); отчёты **SECURITY-02**, **TSPU-REDTEAM-04** |
+| **Агент — сейчас** | — (очередь агента до **Q120**); **Q120** / **Q032** — владелец |
 | Владелец (параллельно) | **`docs/MANUAL-OWNER-CHECKLIST.md`**, LTE § **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
 | Аудиты | **`POST-DEPLOY-REVIEW-2026-05.md`**, **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
 | Правило Cursor | **`sequential-backlog.mdc`** |
@@ -194,29 +194,29 @@
 | 099 | **P2-OPS-RU-RELAY-01** | **DONE** | SSH LV→`72.56.0.145:3344`; `tspu_block_probe_ru.py` через forced `check.py` | **TSPU_BLOCK_PROBE_RU_OK** live LV | `ops: P2-OPS-RU-RELAY-01 — RU relay SSH` |
 | 100 | **P2-DOC-PORT-8443-01** | **DONE** | KB/ONBOARDING/JOURNEY/runbooks → **:8443** | grep journey/runbooks | `docs: P2-DOC-PORT-8443-01` |
 | 101 | **P2-RED-CODERABBIT-02** | **DONE** | CodeRabbit + валидация; merged backlog | **`AUDIT-2026-05-SECURITY-02.md`** | `docs: P2-RED-CODERABBIT-02 — security audit 2` |
-| 102 | **P1-RED-SUB-VERIFY-3010-01** | **NEXT** | **P0-SEC-03** жив: DOCKER-USER **3010+3011** LV-only; smoke внешний fail | `p0-audit.sh` / curl AMS:3010 | `ops: verify sub ports firewall SUBHA` |
-| 103 | **P3-RED-BIND-TOKEN-INVALIDATE-01** | **TODO** | `bind_token=NULL` после bind | replay bind fail | `security: bind token invalidate` |
-| 104 | **P3-RED-BIND-TOKEN-LOG-01** | **TODO** | Не логировать сырой bind token | grep bot.db | `security: redact bind token logs` |
-| 105 | **P2-RED-SNI-LIVE-01** | **TODO** | Panel SNI yandex; нет github в live sub | **`LIVE_SUB_SNI_OK`** | `ops: P2-RED-SNI-LIVE-01` |
-| 106 | **P1-RED-CADDY-K9-BLOCKED-01** | **TODO** | `@blocked` на k9x2m1:8443 | panel paths 404 | `ops: P1-RED-CADDY-K9-BLOCKED-01` |
-| 107 | **P6-RED-PAY-06b** | **TODO** | Webhook reject без amount metadata | smoke | `security: payment amount required` |
-| 108 | **P6-RED-PAY-07b** | **TODO** | Prod gate `SKIP_API_VERIFY` | smoke flag | `security: yookassa skip verify gate` |
-| 109 | **P3-RED-PORTAL-RESOLVE-01** | **TODO** | setup-resolve без `sub_url` + PromoCreate ADMIN guard | API JSON | `security: portal resolve leak` |
-| 110 | **P3-RED-SUP-GROUP-01** | **TODO** | `SUPPORT_GROUP_ID` fail-fast prod | startup log | `ops: support group id check` |
-| 111 | **P3-RED-TRIAL-ATOMIC-01** | **TODO** | Атомарный web trial claim | concurrent test | `security: trial claim atomic` |
-| 112 | **P2-RED-EDGE-HEADERS-02** | **TODO** | HSTS lv:9443 + AMS Caddy | curl -I | `ops: edge headers 9443 ams` |
-| 113 | **P2-OPS-SCHED-01b** | **TODO** | naive local_dt → UTC | scheduler smoke | `fix: scheduler key expiry TZ` |
-| 114 | **P1-ENG-CONFIG-01** | **TODO** | Убрать hardcoded fallback hosts | env unset error | `chore: config explicit hosts` |
-| 115 | **P2-CHORE-DB-SCHEMA-01** | **TODO** | bind columns в `initialize_db` | fresh DB | `chore: unify web trial schema` |
-| 116 | **P2-OPS-ENV-8443-01** | **TODO** | env tmpl без :2053 | grep compose | `ops: env templates 8443` |
-| 117 | **P2-RED-MUX-XHTTP-01** | **TODO** | MUX + XHTTP-first incident/FAQ | transport audit | `product: P2-RED-MUX-XHTTP-01` |
-| 118 | **P2-RED-SELFSTEAL-SNI-01** | **TODO** | Убрать github :9443 selfsteal | Caddy | `ops: selfsteal SNI` |
-| 119 | **P2-RED-WHITELIST-L3-01** | **TODO** | Runbook whitelist (черновик есть) | doc | `docs: whitelist L3` |
+| 102 | **P1-RED-SUB-VERIFY-3010-01** | **DONE** | **P0-SEC-03** жив: DOCKER-USER **3010+3011** LV-only; smoke внешний fail | `p0-audit.sh` / curl AMS:3010 | `ops: verify sub ports firewall SUBHA` |
+| 103 | **P3-RED-BIND-TOKEN-INVALIDATE-01** | **DONE** | `bind_token=NULL` после bind | replay bind fail | `security: bind token invalidate` |
+| 104 | **P3-RED-BIND-TOKEN-LOG-01** | **DONE** | Не логировать сырой bind token | grep bot.db | `security: redact bind token logs` |
+| 105 | **P2-RED-SNI-LIVE-01** | **DONE** | Panel SNI yandex; нет github в live sub | **`LIVE_SUB_SNI_OK`** | `ops: P2-RED-SNI-LIVE-01` |
+| 106 | **P1-RED-CADDY-K9-BLOCKED-01** | **DONE** | `@blocked` на k9x2m1:8443 | panel paths 404 | `ops: P1-RED-CADDY-K9-BLOCKED-01` |
+| 107 | **P6-RED-PAY-06b** | **DONE** | Webhook reject без amount metadata | smoke | `security: payment amount required` |
+| 108 | **P6-RED-PAY-07b** | **DONE** | Prod gate `SKIP_API_VERIFY` | smoke flag | `security: yookassa skip verify gate` |
+| 109 | **P3-RED-PORTAL-RESOLVE-01** | **DONE** | setup-resolve без `sub_url` + PromoCreate ADMIN guard | API JSON | `security: portal resolve leak` |
+| 110 | **P3-RED-SUP-GROUP-01** | **DONE** | `SUPPORT_GROUP_ID` fail-fast prod | startup log | `ops: support group id check` |
+| 111 | **P3-RED-TRIAL-ATOMIC-01** | **DONE** | Атомарный web trial claim | concurrent test | `security: trial claim atomic` |
+| 112 | **P2-RED-EDGE-HEADERS-02** | **DONE** | HSTS **lv:9443** на **bvpn-lv**; AMS shop без Caddy (шаблон AMS для decoy) | `patch-caddy-hsts-9443-lv.sh` OK | `ops: edge headers 9443 lv` |
+| 113 | **P2-OPS-SCHED-01b** | **DONE** | naive local_dt → UTC | scheduler smoke | `fix: scheduler key expiry TZ` |
+| 114 | **P1-ENG-CONFIG-01** | **DONE** | `public_urls.py`; без k9 fallback при `BOT_PAYMENTS_LIVE=1` | py_compile | `chore: config explicit hosts` |
+| 115 | **P2-CHORE-DB-SCHEMA-01** | **DONE** | bind columns + index в `initialize_db` | py_compile | `chore: unify web trial schema` |
+| 116 | **P2-OPS-ENV-8443-01** | **DONE** | env tmpl без :2053 | grep compose | `ops: env templates 8443` |
+| 117 | **P2-RED-MUX-XHTTP-01** | **DONE** | MUX + XHTTP-first incident/FAQ | transport audit | `product: P2-RED-MUX-XHTTP-01` |
+| 118 | **P2-RED-SELFSTEAL-SNI-01** | **DONE** | Убрать github :9443 selfsteal | Caddy | `ops: selfsteal SNI` |
+| 119 | **P2-RED-WHITELIST-L3-01** | **DONE** | Runbook whitelist (черновик есть) | doc | `docs: whitelist L3` |
 | 120 | **P2-RED-TSPU-PROBE-MULTI-01** | **TODO** | 2-й RU relay | 2× probe | `ops: multi RU probe` |
-| 121 | **P2-RED-TLS-JA3-01** | **TODO** | JA3 inbound audit | tls audit | `ops: JA3 audit` |
+| 121 | **P2-RED-TLS-JA3-01** | **DONE** | TLS client stack audit | **TLS_CLIENT_STACK_AUDIT_OK** | `ops: JA3 audit` |
 
 **Аудиты:** [`AUDIT-2026-05-SECURITY-02.md`](AUDIT-2026-05-SECURITY-02.md) (Q101), [`AUDIT-2026-05-TSPU-REDTEAM-04.md`](AUDIT-2026-05-TSPU-REDTEAM-04.md) (ТСПУ **5/10**).  
-**Открыто:** **20** задач (Q102–121) + **Q032** (владелец). **NEXT=Q102.**
+**Открыто:** **Q120** (2-й RU relay) + **Q032** (оферта). **NEXT=Q120** — **владелец**.
 
 ---
 
@@ -371,6 +371,7 @@
 | 2026-05-19 | — | Фаза 6 **Q086–097** в очереди; **NEXT=Q086** |
 | 2026-05-19 | **Q086** P3-RED-ADMIN-FSM-01 | **NEXT=Q087** |
 | 2026-05-19 | **Q087–097** (непрерывный режим) | **NEXT** пусто, фаза 6 закрыта |
+| 2026-05-20 | **Q102–121** (агент) | **NEXT=Q120** (владелец: 2-й RU VPS) |
 | 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |
 | 2026-05-18 | **Q079** P2-OPS-DEPLOY-BOT-SEC-01 | **Q080** P2-OPS-DEPLOY-EDGE-01 |
 | 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy |

@@ -52,7 +52,9 @@ def _node_port_label(addr: str, port: int) -> str:
     return "OTHER", port
 
 
-def classify_profile(node: str, port: int) -> str | None:
+def classify_profile(node: str, port: int, network: str | None = None) -> str | None:
+    if (network or "").lower() == "xhttp":
+        return "xhttp"
     if node in ("LV", "RELAY") and port == 443:
         return "primary"
     if node == "NL" or (node == "LV" and port == 8443) or (node == "RELAY" and port in (9443, 8443)):
@@ -77,6 +79,8 @@ def profiles_in_sub(raw: bytes) -> tuple[set[str], Counter[str]]:
     profiles: set[str] = set()
     ob_by_profile: Counter[str] = Counter()
     for o in parse_outbounds(raw):
+        rs = o.get("streamSettings") or {}
+        net = (rs.get("network") or "tcp").lower()
         s = o.get("settings") or {}
         vnext = s.get("vnext")
         if not isinstance(vnext, list) or not vnext:
@@ -86,7 +90,7 @@ def profiles_in_sub(raw: bytes) -> tuple[set[str], Counter[str]]:
         if not addr or port is None:
             continue
         node, p = _node_port_label(str(addr), int(port))
-        prof = classify_profile(node, p)
+        prof = classify_profile(node, p, net)
         if prof:
             profiles.add(prof)
             ob_by_profile[prof] += 1
@@ -129,8 +133,10 @@ def main() -> int:
     both = 0
     has_primary_n = 0
     has_alt_n = 0
+    has_xhttp_n = 0
     total_ob_primary = 0
     total_ob_alt = 0
+    total_ob_xhttp = 0
     errors = 0
 
     for u in sample:
@@ -146,10 +152,13 @@ def main() -> int:
             has_primary_n += 1
         if "alt" in profs:
             has_alt_n += 1
+        if "xhttp" in profs:
+            has_xhttp_n += 1
         if "primary" in profs and "alt" in profs:
             both += 1
         total_ob_primary += ob_cnt.get("primary", 0)
         total_ob_alt += ob_cnt.get("alt", 0)
+        total_ob_xhttp += ob_cnt.get("xhttp", 0)
 
     n = len(sample) - errors
     if n == 0:
@@ -173,6 +182,8 @@ def main() -> int:
         "alt_outbound_share_pct": round(alt_ob_share, 1),
         "outbounds_primary": total_ob_primary,
         "outbounds_alt": total_ob_alt,
+        "has_xhttp_pct": round(100.0 * has_xhttp_n / n, 1),
+        "outbounds_xhttp": total_ob_xhttp,
     }
 
     ok = (
@@ -190,7 +201,10 @@ def main() -> int:
             f"sample={n} has_primary={has_primary_n} has_alt={has_alt_n} "
             f"both={both} ({both_pct:.1f}%) alt_ob_share={alt_ob_share:.1f}%"
         )
-        print(f"outbounds: primary={total_ob_primary} alt={total_ob_alt}")
+        print(
+            f"outbounds: primary={total_ob_primary} alt={total_ob_alt} "
+            f"xhttp={total_ob_xhttp} has_xhttp={has_xhttp_n}/{n}"
+        )
 
     if not ok:
         print("FAIL: transport mux criteria not met", file=sys.stderr)

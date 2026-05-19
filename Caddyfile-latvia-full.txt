@@ -6,6 +6,10 @@ p4n7q.conntest.xyz:2053 {
 # P1-RED-NET-2054-01: panel only via k9x2m1:8443 reverse_proxy (no public :2054)
 
 lv.conntest.xyz:9443 {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+    }
     root * /opt/caddy/html
     file_server
 }
@@ -44,17 +48,17 @@ www.apple.com:9443 {
     }
 }
 
-api.github.com:9443 {
+www.yandex.ru:9443 {
     tls internal
-    reverse_proxy https://api.github.com {
-        header_up Host api.github.com
+    reverse_proxy https://www.yandex.ru {
+        header_up Host www.yandex.ru
         header_up -X-Forwarded-For
         header_up -X-Forwarded-Proto
         header_up -X-Real-IP
         header_up -X-Forwarded-Host
         transport http {
             tls
-            tls_server_name api.github.com
+            tls_server_name www.yandex.ru
             dial_timeout 5s
             versions 1.1 2
         }
@@ -421,6 +425,20 @@ k9x2m1.conntest.xyz:8443 {
             header_up X-Forwarded-For {remote_host}
         }
     }
+
+    @blocked_k9 {
+        not path /api/sub/*
+        not path /api/ops/status.json
+        not path /status
+        not path /status/*
+        not path /start
+        not path /start/*
+        not path /portal
+        not path /portal/*
+        not path /setup
+        not path /setup/*
+    }
+    respond @blocked_k9 404
 
     handle {
         reverse_proxy http://168.100.11.140:3000 {

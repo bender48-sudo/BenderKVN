@@ -53,6 +53,17 @@ def main() -> int:
     if not verify_crypto_amount(ok_crypto):
         print("PAYMENT_AMOUNT_VERIFY_FAIL: valid crypto rejected", file=sys.stderr)
         return 1
+    no_meta_yk = {
+        "event": "payment.succeeded",
+        "object": {
+            "id": "test3",
+            "amount": {"value": "100.00", "currency": "RUB"},
+            "metadata": {"user_id": 1},
+        },
+    }
+    if verify_yookassa_amount(no_meta_yk):
+        print("PAYMENT_AMOUNT_VERIFY_FAIL: yookassa without amount accepted", file=sys.stderr)
+        return 1
     pq = (ROOT / "bot_src" / "webhook_server" / "payment_queue.py").read_text(encoding="utf-8")
     if "verify_yookassa_amount" not in pq or "verify_crypto_amount" not in pq:
         print("PAYMENT_AMOUNT_VERIFY_FAIL: payment_queue not wired", file=sys.stderr)

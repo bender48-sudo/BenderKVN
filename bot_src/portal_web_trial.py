@@ -31,7 +31,8 @@ from shop_bot.web_trial_db import (
     is_valid_contact_email,
     normalize_contact_email,
     record_web_trial_claim,
-    web_trial_contact_claimed,
+    release_web_trial_email,
+    reserve_web_trial_email,
     web_user_id_from_email,
 )
 from shop_bot.modules import remnawave_api
@@ -49,10 +50,10 @@ async def issue_web_trial(
     if not is_valid_contact_email(em):
         return {"ok": False, "error": "invalid_email"}
 
-    if web_trial_contact_claimed(em):
+    web_uid = web_user_id_from_email(em)
+    if not reserve_web_trial_email(em, web_uid):
         return {"ok": False, "error": "trial_already_claimed"}
 
-    web_uid = web_user_id_from_email(em)
     register_user_if_not_exists(web_uid, em.split("@")[0][:32])
     set_terms_agreed(web_uid)
 
@@ -74,10 +75,12 @@ async def issue_web_trial(
     except Exception as exc:
         logger.exception("provision_key failed for web trial %s", em)
         reset_trial_used(web_uid)
+        release_web_trial_email(em)
         return {"ok": False, "error": "provision_failed", "detail": str(exc)[:200]}
 
     if not uri or not expire_iso or not vless_uuid or not sub_url:
         reset_trial_used(web_uid)
+        release_web_trial_email(em)
         return {"ok": False, "error": "provision_failed"}
 
     expiry_dt = datetime.fromisoformat(expire_iso.replace("Z", "+00:00"))

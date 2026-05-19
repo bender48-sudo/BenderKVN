@@ -33,7 +33,11 @@ def verify_yookassa_amount(event_json: dict[str, Any]) -> bool:
     meta = obj.get("metadata") or {}
     expected = _metadata_amount(meta)
     if expected is None:
-        return True
+        logger.warning(
+            "YooKassa webhook missing amount in metadata payment_id=%s",
+            obj.get("id"),
+        )
+        return False
     paid = _to_float((obj.get("amount") or {}).get("value"))
     if paid is None:
         logger.warning("YooKassa webhook missing amount.value")
@@ -55,7 +59,11 @@ def verify_crypto_amount(data: dict[str, Any]) -> bool:
         return True
     expected = _metadata_amount(meta)
     if expected is None:
-        return True
+        logger.warning(
+            "Crypto webhook missing amount in metadata order=%s",
+            data.get("order_id") or data.get("invoice_id"),
+        )
+        return False
     paid = _to_float(data.get("amount") or data.get("fiat_amount") or data.get("sum"))
     if paid is None:
         return True

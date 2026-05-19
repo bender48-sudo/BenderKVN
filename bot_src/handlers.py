@@ -361,7 +361,8 @@ async def start_handler(message: types.Message, state: FSMContext):
         elif arg.startswith("bind_"):
             bind_token = arg[5:]
     register_user_if_not_exists(user_id, username)
-    log_action(user_id, "funnel_bot_start", bind_token or ref_code or "")
+    funnel_detail = "bind:***" if bind_token else (ref_code or "")
+    log_action(user_id, "funnel_bot_start", funnel_detail)
     user_data = get_user(user_id)
     if ref_code and user_data and not user_data.get("referred_by"):
         if link_referral(ref_code, user_id):
@@ -1039,6 +1040,9 @@ async def admin_promo_create_start(callback: types.CallbackQuery, state: FSMCont
 
 @user_router.message(PromoCreate.waiting_for_code)
 async def admin_promo_code(message: types.Message, state: FSMContext):
+    if str(message.from_user.id) != ADMIN_ID:
+        await state.clear()
+        return
     code = (message.text or '').strip()
     if not code or len(code) > 32:
         await message.answer("Некорректный код, попробуйте снова.")
@@ -1049,6 +1053,9 @@ async def admin_promo_code(message: types.Message, state: FSMContext):
 
 @user_router.message(PromoCreate.waiting_for_discount)
 async def admin_promo_discount(message: types.Message, state: FSMContext):
+    if str(message.from_user.id) != ADMIN_ID:
+        await state.clear()
+        return
     try:
         disc = int(message.text)
         if disc < 0 or disc > 90:
@@ -1062,6 +1069,9 @@ async def admin_promo_discount(message: types.Message, state: FSMContext):
 
 @user_router.message(PromoCreate.waiting_for_days)
 async def admin_promo_days(message: types.Message, state: FSMContext):
+    if str(message.from_user.id) != ADMIN_ID:
+        await state.clear()
+        return
     try:
         days = int(message.text)
         if days < 0 or days > 365:
@@ -1075,6 +1085,9 @@ async def admin_promo_days(message: types.Message, state: FSMContext):
 
 @user_router.message(PromoCreate.waiting_for_limit)
 async def admin_promo_limit(message: types.Message, state: FSMContext):
+    if str(message.from_user.id) != ADMIN_ID:
+        await state.clear()
+        return
     try:
         limit = int(message.text)
         if limit < 0 or limit > 10000:

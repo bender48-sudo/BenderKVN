@@ -83,7 +83,7 @@ async def resolve_browser_setup(
         "ok": True,
         "telegram_id": tid,
         "username": display_name,
-        "sub_url": sub_url,
+        # sub_url intentionally omitted (P3-RED-PORTAL-RESOLVE-01); use /setup or bot.
     }
 
 

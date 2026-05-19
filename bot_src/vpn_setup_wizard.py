@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import os
 
+from shop_bot.public_urls import public_status_url
+
 HAPP_STORES = {
     "ios": (
         "App Store (iPhone / iPad)",
@@ -78,7 +80,7 @@ CONFIG_STEP_HAS_KEY = (
 
 WIZARD_STUCK = (
     "<b>Не получается?</b>\n\n"
-    f"• Проверьте <a href=\"{os.getenv('PUBLIC_STATUS_URL', 'https://k9x2m1.conntest.xyz:8443/status')}\">статус сервиса</a>\n"
+    f"• Проверьте <a href=\"{public_status_url()}\">статус сервиса</a>\n"
     "• Напишите в поддержку — кнопка ниже\n"
     "• Для настройки без Telegram: страница «Получить VPN» на сайте"
 )

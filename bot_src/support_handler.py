@@ -13,6 +13,10 @@ from shop_bot.support_auth import is_authorized_support_staff
 logger = logging.getLogger(__name__)
 
 SUPPORT_GROUP_ID = int(os.getenv("SUPPORT_GROUP_ID", "0"))
+if os.getenv("BOT_PAYMENTS_LIVE", "").strip() in ("1", "true", "yes") and SUPPORT_GROUP_ID == 0:
+    logger.critical(
+        "SUPPORT_GROUP_ID is 0 on live bot — support replies from group will not work"
+    )
 ADMIN_ID = os.getenv("ADMIN_TELEGRAM_ID")
 SUPPORT_USER_RL_WINDOW = int(os.getenv("SUPPORT_USER_RL_WINDOW", "60"))
 SUPPORT_USER_RL_MAX = int(os.getenv("SUPPORT_USER_RL_MAX", "8"))

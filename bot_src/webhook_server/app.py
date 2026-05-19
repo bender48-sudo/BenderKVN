@@ -5,6 +5,7 @@ import os
 from flask import Flask, jsonify, request
 
 from shop_bot.webhook_server.auth import (
+    assert_prod_webhook_hardening,
     is_client_allowed,
     verify_crypto_shared_secret,
     verify_yookassa_notification,
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_webhook_app(bot, payment_processor):
+    assert_prod_webhook_hardening()
     flask_app = Flask(__name__)
     pay_queue: PaymentWebhookQueue | None = None
 

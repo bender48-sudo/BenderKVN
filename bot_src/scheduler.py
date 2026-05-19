@@ -70,6 +70,8 @@ async def start_subscription_monitor(bot: Bot):
                         for key in user_keys:
                             key_email = key['key_email']
                             local_dt = datetime.fromisoformat(key['expiry_date'])
+                            if local_dt.tzinfo is None:
+                                local_dt = local_dt.replace(tzinfo=timezone.utc)
                             local_ms = int(local_dt.timestamp() * 1000)
                             
                             if abs(remote_ms - local_ms) > 1000:

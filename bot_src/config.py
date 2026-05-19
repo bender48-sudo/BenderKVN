@@ -1,5 +1,7 @@
 import os
 
+from shop_bot.public_urls import telegram_webapp_url
+
 server_name = os.getenv("SERVER_NAME")
 
 # Новый пробный период (дней с момента первой выдачи ключа через бота).
@@ -58,12 +60,7 @@ CUSTOM_AMOUNT_UNAVAILABLE = (
 KEY_EMAIL_DOMAIN = os.getenv("KEY_EMAIL_DOMAIN", "kitsura.fun")
 
 # P3-FLOW-12: same URL as site portal (BotFather Menu Button + inline WebApp)
-TELEGRAM_WEBAPP_URL = (
-    os.getenv("TELEGRAM_WEBAPP_URL", "https://k9x2m1.conntest.xyz:8443/portal/")
-    .strip()
-    .rstrip("/")
-    + "/"
-)
+TELEGRAM_WEBAPP_URL = telegram_webapp_url()
 
 
 def telegram_cabinet_webapp_url(telegram_id: int | None = None) -> str:

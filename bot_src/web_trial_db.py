@@ -200,12 +200,49 @@ def mark_web_claim_bound(web_user_id: int, telegram_id: int) -> None:
         with _conn() as conn:
             conn.execute(
                 """UPDATE web_trial_claims
-                   SET telegram_id = ?, bound_at = ?
+                   SET telegram_id = ?, bound_at = ?, bind_token = NULL
                    WHERE web_user_id = ?""",
                 (int(telegram_id), now, int(web_user_id)),
             )
     except Exception as exc:
         logger.error("mark_web_claim_bound failed: %s", exc)
+
+
+def release_web_trial_email(contact_email: str) -> None:
+    """Rollback reservation if provision failed."""
+    ensure_web_trial_schema()
+    em = normalize_contact_email(contact_email)
+    try:
+        with _conn() as conn:
+            conn.execute(
+                "DELETE FROM web_trial_claims WHERE contact_email = ? AND panel_email = ''",
+                (em,),
+            )
+            conn.commit()
+    except Exception as exc:
+        logger.error("release_web_trial_email failed: %s", exc)
+
+
+def reserve_web_trial_email(contact_email: str, web_user_id: int) -> bool:
+    """Atomically reserve email before provision (P3-RED-TRIAL-ATOMIC-01)."""
+    ensure_web_trial_schema()
+    em = normalize_contact_email(contact_email)
+    now = datetime.now(timezone.utc).isoformat()
+    try:
+        with _conn() as conn:
+            conn.execute(
+                """INSERT INTO web_trial_claims
+                   (contact_email, web_user_id, panel_email, contact_phone, claimed_at)
+                   VALUES (?, ?, '', '', ?)""",
+                (em, int(web_user_id), now),
+            )
+            conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+    except Exception as exc:
+        logger.error("reserve_web_trial_email failed: %s", exc)
+        return False
 
 
 def web_trial_contact_claimed(contact_email: str) -> bool:
@@ -234,12 +271,20 @@ def record_web_trial_claim(
     now = datetime.now(timezone.utc).isoformat()
     try:
         with _conn() as conn:
-            conn.execute(
-                """INSERT INTO web_trial_claims
-                   (contact_email, web_user_id, panel_email, contact_phone, claimed_at)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (em, web_user_id, panel_email, contact_phone or "", now),
+            cur = conn.execute(
+                """UPDATE web_trial_claims
+                   SET panel_email = ?, contact_phone = ?, claimed_at = ?
+                   WHERE contact_email = ?""",
+                (panel_email, contact_phone or "", now, em),
             )
+            if cur.rowcount == 0:
+                conn.execute(
+                    """INSERT INTO web_trial_claims
+                       (contact_email, web_user_id, panel_email, contact_phone, claimed_at)
+                       VALUES (?, ?, ?, ?, ?)""",
+                    (em, web_user_id, panel_email, contact_phone or "", now),
+                )
+            conn.commit()
         ensure_bind_token(web_user_id)
     except Exception as exc:
         logger.error("record_web_trial_claim failed: %s", exc)

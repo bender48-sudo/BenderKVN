@@ -344,6 +344,8 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-20 | **Q102–121 (агент) — DONE** кроме **Q120** (2-й RU relay — владелец): security batch, HSTS **lv:9443**, `public_urls`, web_trial schema, **TLS_CLIENT_STACK_AUDIT_OK**. **Открыто:** **Q120**, **Q032**. |
+| 2026-05-20 | **Q102–111, Q113, Q116–119 — DONE:** firewall 3010/3011, bind token, **LIVE_SUB_SNI_OK**, k9 `@blocked_k9`, payments, portal resolve, trial atomic, MUX xhttp, selfsteal yandex :9443. |
 | 2026-05-19 | **P2-RED-CODERABBIT-02 — DONE (Q101):** **`docs/AUDIT-2026-05-SECURITY-02.md`** + merge с **TSPU-REDTEAM-04**; очередь **Q102–121** (15 security + 5 ТСПУ). GTM **conditional**; P0: **3010 bind**, bind token, **live github SNI**. **NEXT=Q102.** |
 | 2026-05-19 | **P2-RED-TSPU-AUDIT-02 — DONE (Q085):** red-team отчёт **`docs/AUDIT-2026-05-TSPU-REDTEAM.md`** (5 векторов, P0–P3, Q086+); smokes **`TRANSPORT_MUX_OK`**, **`TSPU_BLOCK_PROBE_OK`**, **`SUB_EDGE_PORT_OK`**, **`PORTAL_BUNDLE_OK`**, **`TSPU_REDTEAM_OK`**. P1: grace **:2053** на LV, утечки **:2053** в боте/FAQ, нет live alt apex. **NEXT:** нет. |
 | 2026-05-18 | **Фаза 4 Q080–Q084 — DONE:** **Q080** Caddy LV **:8443** (`patch-caddy-edge-port-8443-lv.sh`), LV **VLESS_XHTTP** **8443→18443** (panel API); live **`SUB_EDGE_PORT_OK`**, **`PUBLIC_BOOTSTRAP_OK`**, portal **:8443** **200**. **Q081** panel :3000 с интернета **000** (UFW + bind); panel API **:8443** **200** (compose loopback — waive **`DRIFT-POST-P0`**). **Q082** AMS `authorized_keys` dedup → **2** строки. **Q083** **`PROD_SMOKE_BATTERY_OK`**: product/flow static, **`AMS_SAFE_DEPLOY_OK`**, **`PORTAL_*`**, **`DNS_DELEGATION_OK`**, **`POSTGRES_CRYPT_OK`**. **Q084** drift waive (panel bind, SSH timeout с агента). **Владелец:** BotFather **:8443**. |
