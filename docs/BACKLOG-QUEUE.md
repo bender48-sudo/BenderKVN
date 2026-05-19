@@ -81,7 +81,7 @@
 6. **Фаза 6** — GTM hardening (**Q086–097**, см. **`AGENT-PHASE6-BACKLOG.md`**)
 7. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** **Q102** (`P1-RED-SUB-BIND-LOOPBACK-01` — sub-page **3010/3011** только loopback).
+**NEXT:** **Q102** (verify **3010/3011** firewall после SUBHA; **не** `127.0.0.1` — сломает LV→AMS).
 
 | Кому | Документ |
 |------|----------|
@@ -194,7 +194,7 @@
 | 099 | **P2-OPS-RU-RELAY-01** | **DONE** | SSH LV→`72.56.0.145:3344`; `tspu_block_probe_ru.py` через forced `check.py` | **TSPU_BLOCK_PROBE_RU_OK** live LV | `ops: P2-OPS-RU-RELAY-01 — RU relay SSH` |
 | 100 | **P2-DOC-PORT-8443-01** | **DONE** | KB/ONBOARDING/JOURNEY/runbooks → **:8443** | grep journey/runbooks | `docs: P2-DOC-PORT-8443-01` |
 | 101 | **P2-RED-CODERABBIT-02** | **DONE** | CodeRabbit + валидация; merged backlog | **`AUDIT-2026-05-SECURITY-02.md`** | `docs: P2-RED-CODERABBIT-02 — security audit 2` |
-| 102 | **P1-RED-SUB-BIND-LOOPBACK-01** | **NEXT** | **3010/3011** → `127.0.0.1` + firewall AMS | external :3010 fail | `ops: P1-RED-SUB-BIND-LOOPBACK-01` |
+| 102 | **P1-RED-SUB-VERIFY-3010-01** | **NEXT** | **P0-SEC-03** жив: DOCKER-USER **3010+3011** LV-only; smoke внешний fail | `p0-audit.sh` / curl AMS:3010 | `ops: verify sub ports firewall SUBHA` |
 | 103 | **P3-RED-BIND-TOKEN-INVALIDATE-01** | **TODO** | `bind_token=NULL` после bind | replay bind fail | `security: bind token invalidate` |
 | 104 | **P3-RED-BIND-TOKEN-LOG-01** | **TODO** | Не логировать сырой bind token | grep bot.db | `security: redact bind token logs` |
 | 105 | **P2-RED-SNI-LIVE-01** | **TODO** | Panel SNI yandex; нет github в live sub | **`LIVE_SUB_SNI_OK`** | `ops: P2-RED-SNI-LIVE-01` |
