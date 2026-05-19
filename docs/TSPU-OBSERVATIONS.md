@@ -24,6 +24,9 @@
 | **10** | **Усечённый whitelist** (провод): блок **всего не‑РФ** → нужны **прокси в РФ** | **Частично:** серверный **RU‑bypass** (**P1-PRO-RU-BYPASS-01** ✅); **P4-DNS** — отдельный SKU | **RF egress** (прокси/нода в РФ) для сценария «только РФ наружу» | **P4-DNS-07** · **Q060** (поток P4) |
 | **11** | На серверах **свой DNS‑резолвер**; у провайдера **удаляют** записи заблокированных | **AdGuard** на AMS/LV в compose; **не** задокументирован как **обязательный upstream** для Xray/нод | Unbound/AdGuard upstream для нод; мониторинг «ломается ли резолв» | **P1-RED-NODE-DNS-01** · **Q061** |
 | **12** | **IP whitelist** чистят; **сид‑листы на GitHub** устаревают | **P4-DNS-04** — делегирование зоны; не списки IP whitelist | Источник IP/RU‑списков **не github**; процесс обновления | **P4-DNS-08** · **Q060** (вместе с P4 или отдельно) |
+| **13** | **2026:** VLESS+Reality режут **JA3 + поведение**, не только SNI | XHTTP inbound на LV; MUX Reality | XHTTP-first в инциденте; audit sub SNI | **Q103** · [`AUDIT-2026-05-TSPU-REDTEAM-04.md`](AUDIT-2026-05-TSPU-REDTEAM-04.md) |
+| **14** | **Апр 2026:** реестр **~75k** «корпоративных» VPN IP (L3 whitelist) | Нет | Runbook WL-режима; RF egress | **Q105** |
+| **15** | **Q058 в репо ≠ на панели:** в live sub всё ещё **github/microsoft SNI** | `REMNA_SERVER_SNI` example | Panel template + `smoke_live_sub_sni.py` | **Q102** |
 
 ---
 

@@ -81,7 +81,7 @@
 6. **Фаза 6** — GTM hardening (**Q086–097**, см. **`AGENT-PHASE6-BACKLOG.md`**)
 7. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** **Q101** (`P2-RED-CODERABBIT-02` — CodeRabbit раунд 2; промпт в репо).
+**NEXT:** **Q102** (`P2-RED-SNI-LIVE-01` — live sub SNI yandex, убрать github cluster на панели).
 
 | Кому | Документ |
 |------|----------|
@@ -193,8 +193,15 @@
 | 098 | **P2-RED-TSPU-AUDIT-03** | **DONE** | Red-team ТСПУ после фазы 6 | **TSPU_REDTEAM_OK** live | `docs: P2-RED-TSPU-AUDIT-03 — TSPU round 2` |
 | 099 | **P2-OPS-RU-RELAY-01** | **DONE** | SSH LV→`72.56.0.145:3344`; `tspu_block_probe_ru.py` через forced `check.py` | **TSPU_BLOCK_PROBE_RU_OK** live LV | `ops: P2-OPS-RU-RELAY-01 — RU relay SSH` |
 | 100 | **P2-DOC-PORT-8443-01** | **DONE** | KB/ONBOARDING/JOURNEY/runbooks → **:8443** | grep journey/runbooks | `docs: P2-DOC-PORT-8443-01` |
-| 101 | **P2-RED-CODERABBIT-02** | **NEXT** | CodeRabbit раунд 2 + валидация | промпт § | `docs: P2-RED-CODERABBIT-02 — security audit 2` |
+| 101 | **P2-RED-CODERABBIT-02** | **TODO** | CodeRabbit раунд 2 + валидация | промпт § | `docs: P2-RED-CODERABBIT-02 — security audit 2` |
+| 102 | **P2-RED-SNI-LIVE-01** | **NEXT** | Panel Reality → **www.yandex.ru**; live sub без github SNI | **`LIVE_SUB_SNI_OK`** | `ops: P2-RED-SNI-LIVE-01 — live sub SNI` |
+| 103 | **P2-RED-MUX-XHTTP-01** | **TODO** | MUX audit + FAQ/incident XHTTP-first | transport + docs | `product: P2-RED-MUX-XHTTP-01` |
+| 104 | **P2-RED-SELFSTEAL-SNI-01** | **TODO** | Убрать **api.github.com:9443** с LV Caddy | Caddy grep | `ops: P2-RED-SELFSTEAL-SNI-01` |
+| 105 | **P2-RED-WHITELIST-L3-01** | **TODO** | Runbook whitelist L3 | **`RUNBOOK-TSPU-WHITELIST-L3.md`** | `docs: P2-RED-WHITELIST-L3-01` |
+| 106 | **P2-RED-TSPU-PROBE-MULTI-01** | **TODO** | 2-й RU relay регион | 2× probe OK | `ops: P2-RED-TSPU-PROBE-MULTI-01` |
+| 107 | **P2-RED-TLS-JA3-01** | **TODO** | JA3 audit inbound NL/LV | tls audit | `ops: P2-RED-TLS-JA3-01` |
 
+**Q102 отчёт (аудит):** **`docs/AUDIT-2026-05-TSPU-REDTEAM-04.md`** — раунд 3, оценка **5/10**.  
 **Q093/Q099:** RU probe live на LV (**cron** + **`TSPU_BLOCK_PROBE_RU_OK`**).
 
 ---

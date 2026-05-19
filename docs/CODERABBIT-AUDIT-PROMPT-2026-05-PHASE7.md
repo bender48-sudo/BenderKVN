@@ -10,6 +10,10 @@
 ```
 Repo: BenderVPN commercial VPN (~60 users, target 200 GTM).
 
+TSPU round 3 (MUST read before review — harsh findings):
+- docs/AUDIT-2026-05-TSPU-REDTEAM-04.md — live sub still has api.github.com/microsoft/bing SNI (Q058 repo-only); XHTTP marginal; whitelist L3 Apr 2026; score 5/10 GTM.
+- Do NOT inflate TSPU score if smoke_live_sub_sni.py fails.
+
 Context (already fixed — do NOT re-report as open unless regression):
 - Q063–078: payments webhooks, support authz, scheduler TZ, log_skip, panel bind, setup RL, etc.
 - Q086–097 phase 6: admin FSM authz, removed crypto debug print, closed public :2054 in Caddy template, cabinet no bind_url leak, canonical :8443 in bot/FAQ, 2053→8443 redirect on LV, p4n7q backup portal on :8443, HSTS/CSP on edge, Mini App/cabinet flow.

@@ -15,6 +15,8 @@
 
 Оба профиля присутствуют в **одной** Happ‑подписке (пользователь выбирает узел в клиенте). Это **mux на уровне продукта**, не отдельный URL подписки.
 
+**XHTTP (2026):** inbound **VLESS_XHTTP_LV** (`network=xhttp`, порт **8443** на wire) — **третий** транспорт при блоке vision+Reality ([`AUDIT-2026-05-TSPU-REDTEAM-04.md`](AUDIT-2026-05-TSPU-REDTEAM-04.md)). Скрипт **`transport_mux_audit.py`** пока **не** считает XHTTP — см. **Q103**.
+
 **Не в матрице:** **AMS** prod‑VPN (**drain**, P1-ARCH-AMS-DECOM) — outbounds AMS в подписке не целевые.
 
 ---
