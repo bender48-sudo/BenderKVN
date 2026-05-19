@@ -7,7 +7,7 @@
 | Канал | Как | Когда использовать |
 |-------|-----|----------------------|
 | **Telegram** | `/status` в админ-боте, алерты `monitor.sh` / `ru-monitor` | Основной, если API TG доступен |
-| **HTTPS mirror** | `GET` **`https://k9x2m1.conntest.xyz:2053/api/ops/status.json`** | Резерв: браузер/curl с любой сети без TG |
+| **HTTPS mirror** | `GET` **`https://k9x2m1.conntest.xyz:8443/api/ops/status.json`** | Резерв: браузер/curl с любой сети без TG |
 
 URL настраивается через **`ops/site_urls.py`** (`STATUS_MIRROR_ORIGIN`, `STATUS_MIRROR_PATH`).
 

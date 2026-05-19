@@ -51,7 +51,7 @@
 | **P2** | T-AUD-05 | Один TLD | **OPEN** | P4-DNS / владелец |
 | **P3** | T-AUD-06 | Selfsteal :9443 | **KEEP** | Q057 |
 | **P3** | T-AUD-07 | `balancer.env` PANEL_URL :2053 | **FIXED** | sed на LV → **8443** |
-| **P3** | T-AUD-08 | Docs drift KB/ONBOARDING :2053 | **OPEN** | Q100 docs sweep |
+| **P3** | T-AUD-08 | Docs drift KB/ONBOARDING :2053 | **FIXED** | Q100 docs → **:8443** |
 
 ---
 

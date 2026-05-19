@@ -81,7 +81,7 @@
 6. **Фаза 6** — GTM hardening (**Q086–097**, см. **`AGENT-PHASE6-BACKLOG.md`**)
 7. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** **Q099** (`P2-OPS-RU-RELAY-01` — SSH LV→RU relay для TSPU probe).
+**NEXT:** **Q101** (`P2-RED-CODERABBIT-02` — CodeRabbit раунд 2; промпт в репо).
 
 | Кому | Документ |
 |------|----------|
@@ -191,11 +191,11 @@
 | Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
 |---|-----|--------|-------------------|--------|-----------------|
 | 098 | **P2-RED-TSPU-AUDIT-03** | **DONE** | Red-team ТСПУ после фазы 6 | **TSPU_REDTEAM_OK** live | `docs: P2-RED-TSPU-AUDIT-03 — TSPU round 2` |
-| 099 | **P2-OPS-RU-RELAY-01** | **NEXT** | SSH LV→`72.56.0.145:3344`; `run_tspu_block_probe_ru.sh` OK | **TSPU_BLOCK_PROBE_RU_OK** live | `ops: P2-OPS-RU-RELAY-01 — RU relay SSH` |
-| 100 | **P2-DOC-PORT-8443-01** | **TODO** | KB/ONBOARDING/JOURNEY без `:2053` | grep docs | `docs: P2-DOC-PORT-8443-01` |
-| 101 | **P2-RED-CODERABBIT-02** | **TODO** | CodeRabbit раунд 2 + валидация | промпт § | `docs: P2-RED-CODERABBIT-02 — security audit 2` |
+| 099 | **P2-OPS-RU-RELAY-01** | **DONE** | SSH LV→`72.56.0.145:3344`; `tspu_block_probe_ru.py` через forced `check.py` | **TSPU_BLOCK_PROBE_RU_OK** live LV | `ops: P2-OPS-RU-RELAY-01 — RU relay SSH` |
+| 100 | **P2-DOC-PORT-8443-01** | **DONE** | KB/ONBOARDING/JOURNEY/runbooks → **:8443** | grep journey/runbooks | `docs: P2-DOC-PORT-8443-01` |
+| 101 | **P2-RED-CODERABBIT-02** | **NEXT** | CodeRabbit раунд 2 + валидация | промпт § | `docs: P2-RED-CODERABBIT-02 — security audit 2` |
 
-**Q093 уточнение:** код/cron в репо **DONE**; live probe **ждёт Q099** (relay timeout с LV).
+**Q093/Q099:** RU probe live на LV (**cron** + **`TSPU_BLOCK_PROBE_RU_OK`**).
 
 ---
 

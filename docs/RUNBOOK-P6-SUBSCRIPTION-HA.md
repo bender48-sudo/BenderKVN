@@ -6,8 +6,8 @@
 
 | Публичный origin | Caddy (bvpn-lv) | AMS backend |
 |------------------|-----------------|-------------|
-| **p4n7q.conntest.xyz:2053** `/api/sub/*` | rate limit **120/min/IP** | **:3010** `remnawave-subscription-page` |
-| **k9x2m1.conntest.xyz:2053** `/api/sub/*` | rate limit **120/min/IP** | **:3011** `remnawave-subscription-page-b` |
+| **p4n7q.conntest.xyz:8443** `/api/sub/*` | rate limit **120/min/IP** | **:3010** `remnawave-subscription-page` |
+| **k9x2m1.conntest.xyz:8443** `/api/sub/*` | rate limit **120/min/IP** | **:3011** `remnawave-subscription-page-b` |
 
 Оба инстанса читают одну панель (`http://remnawave:3000`). Happ/клиенты с двумя URL в подписке распределяют refresh между origin’ами.
 

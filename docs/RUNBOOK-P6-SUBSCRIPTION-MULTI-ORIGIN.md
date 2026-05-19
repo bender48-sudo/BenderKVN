@@ -6,9 +6,9 @@
 
 | Роль | Host | Путь | Upstream |
 |------|------|------|----------|
-| **Primary** | **`p4n7q.conntest.xyz:2053`** | `/api/sub/*` | AMS **`168.100.11.140:3010`** (LV Caddy) |
-| **Alternate** | **`k9x2m1.conntest.xyz:2053`** | `/api/sub/*` | тот же AMS **:3010** (отдельное DNS-имя) |
-| Панель | **`k9x2m1.conntest.xyz:2053`** | остальное | AMS **:3000** |
+| **Primary** | **`p4n7q.conntest.xyz:8443`** | `/api/sub/*` | AMS **`168.100.11.140:3010`** (LV Caddy) |
+| **Alternate** | **`k9x2m1.conntest.xyz:8443`** | `/api/sub/*` | тот же AMS **:3010** (отдельное DNS-имя) |
+| Панель | **`k9x2m1.conntest.xyz:8443`** | остальное | AMS **:3000** |
 
 Оба имени — edge **bvpn-lv**; разнесение **DNS/SNI**. С **P6-RED-SUBHA-01** alt origin (**k9x2m1**) идёт на второй инстанс sub-page (**AMS :3011**), primary (**p4n7q**) — **:3010**; см. **`docs/RUNBOOK-P6-SUBSCRIPTION-HA.md`**.
 
@@ -27,8 +27,8 @@ ssh bvpn-lv 'bash /tmp/patch-caddy-sub-alt-origin-lv.sh'
 **`ops/site.env`** (по образцу **`ops/site.env.example`**):
 
 ```bash
-export SUB_PUBLIC_ORIGIN=https://p4n7q.conntest.xyz:2053
-export SUB_ALT_PUBLIC_ORIGINS=https://k9x2m1.conntest.xyz:2053
+export SUB_PUBLIC_ORIGIN=https://p4n7q.conntest.xyz:8443
+export SUB_ALT_PUBLIC_ORIGINS=https://k9x2m1.conntest.xyz:8443
 ```
 
 ## 4. Мониторинг расхождения
@@ -46,7 +46,7 @@ python ops/subscription_origin_drift_probe.py --json
 
 ## 5. Инцидент «один домен в реестре»
 
-1. Проверить alternate: `curl -fsSI "https://k9x2m1.conntest.xyz:2053/api/sub/<shortId>"`.
+1. Проверить alternate: `curl -fsSI "https://k9x2m1.conntest.xyz:8443/api/sub/<shortId>"`.
 2. Если primary мёртв, а alternate жив — обновить ссылки в боте/FAQ на alternate (временно).
 3. Завести новое имя + DNS при долгой блокировке обоих **`*.conntest.xyz`**.
 

@@ -167,10 +167,10 @@ flowchart LR
 
 | URL | Назначение |
 |-----|------------|
-| `https://k9x2m1.conntest.xyz:2053/start` | Bootstrap без VPN |
-| `https://k9x2m1.conntest.xyz:2053/portal/` | Mini App = тот же контент |
-| `https://k9x2m1.conntest.xyz:2053/setup?...` | Персональная выдача (QR) |
-| `https://k9x2m1.conntest.xyz:2053/status` | Статус сервиса (**P5-COM-01** ✅) |
+| `https://k9x2m1.conntest.xyz:8443/start` | Bootstrap без VPN |
+| `https://k9x2m1.conntest.xyz:8443/portal/` | Mini App = тот же контент |
+| `https://k9x2m1.conntest.xyz:8443/setup?...` | Персональная выдача (QR) |
+| `https://k9x2m1.conntest.xyz:8443/status` | Статус сервиса (**P5-COM-01** ✅) |
 
 ---
 

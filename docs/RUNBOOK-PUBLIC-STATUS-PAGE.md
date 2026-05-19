@@ -1,6 +1,6 @@
 # Runbook: публичный статус инцидентов (P5-COM-01)
 
-**URL (прод):** **`https://k9x2m1.conntest.xyz:2053/status`** — HTML для пользователей, **без** доступа к админ-Telegram.
+**URL (прод):** **`https://k9x2m1.conntest.xyz:8443/status`** — HTML для пользователей, **без** доступа к админ-Telegram.
 
 **Технический JSON (ops):** **`/api/ops/status.json`** — **`RUNBOOK-P2-STATUS-BOOT-CHANNEL`**.
 

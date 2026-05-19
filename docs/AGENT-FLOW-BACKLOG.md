@@ -138,7 +138,7 @@ web/portal/
 
 **Цель:** Mini App **визуально и по шагам = сайт** (тот же `public_portal_url()`).
 
-1. **URL в BotFather** (владелец): Menu Button → Web App URL = `https://k9x2m1.conntest.xyz:2053/portal/` (или `/start/` — один canonical в `site_urls.py`).
+1. **URL в BotFather** (владелец): Menu Button → Web App URL = `https://k9x2m1.conntest.xyz:8443/portal/` (или `/start/` — один canonical в `site_urls.py`).
 2. **Бот** (`bot_src/handlers.py` / keyboards):
    - `MenuButton(web_app=WebAppInfo(url=portal_url))` при старте или в `/start`.
    - Inline-кнопка «📱 Открыть инструкцию» → тот же URL.

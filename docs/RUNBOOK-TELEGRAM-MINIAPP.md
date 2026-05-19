@@ -1,6 +1,6 @@
 # Telegram Mini App (P3-FLOW-12)
 
-Один и тот же bundle, что на сайте: **`web/portal/`** → **`https://k9x2m1.conntest.xyz:2053/portal/`**.
+Один и тот же bundle, что на сайте: **`web/portal/`** → **`https://k9x2m1.conntest.xyz:8443/portal/`**.
 
 UI ориентирован на **HITVPN**: тёмный градиент, pills «Быстро / Стабильно / Безопасно», крупные CTA, нумерованные шаги.
 
@@ -9,7 +9,7 @@ UI ориентирован на **HITVPN**: тёмный градиент, pill
 1. [@BotFather](https://t.me/BotFather) → ваш бот → **Bot Settings** → **Menu Button** → **Configure menu button**.
 2. Тип **Web App**, URL:
 
-   `https://k9x2m1.conntest.xyz:2053/portal/`
+   `https://k9x2m1.conntest.xyz:8443/portal/`
 
    Должен совпадать с **`TELEGRAM_WEBAPP_URL`** в env бота и **`site_urls.telegram_webapp_url()`**.
 
@@ -21,7 +21,7 @@ UI ориентирован на **HITVPN**: тёмный градиент, pill
 - При старте бот выставляет Menu Button — `bot_src/main.py` (`set_chat_menu_button`).
 - Env (опционально, иначе дефолт prod URL):
 
-  `TELEGRAM_WEBAPP_URL=https://k9x2m1.conntest.xyz:2053/portal/`
+  `TELEGRAM_WEBAPP_URL=https://k9x2m1.conntest.xyz:8443/portal/`
 
 Деплой:
 

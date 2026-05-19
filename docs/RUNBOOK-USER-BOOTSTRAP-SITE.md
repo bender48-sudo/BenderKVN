@@ -4,9 +4,9 @@
 
 | Путь | Назначение |
 |------|------------|
-| `https://k9x2m1.conntest.xyz:2053/start/` | Bootstrap без VPN (главная) |
-| `https://k9x2m1.conntest.xyz:2053/portal/` | То же для Telegram Mini App |
-| `https://k9x2m1.conntest.xyz:2053/setup?t=…` | Персональная выдача: QR + копирование ссылки (P3-FLOW-02) |
+| `https://k9x2m1.conntest.xyz:8443/start/` | Bootstrap без VPN (главная) |
+| `https://k9x2m1.conntest.xyz:8443/portal/` | То же для Telegram Mini App |
+| `https://k9x2m1.conntest.xyz:8443/setup?t=…` | Персональная выдача: QR + копирование ссылки (P3-FLOW-02) |
 
 Контент: **`web/portal/`** → **`/var/www/bvpn-portal/`** на **bvpn-lv**.
 
@@ -33,7 +33,7 @@ pwsh -File ops/deploy-user-portal-lv.ps1
 # на LV:
 set -a; . /etc/bvpn/portal-setup.env
 PYTHONPATH=/opt/scripts python3 /opt/scripts/portal_setup_token.py sign --short-id SHORTID
-# → URL: https://k9x2m1.conntest.xyz:2053/setup?t=TOKEN
+# → URL: https://k9x2m1.conntest.xyz:8443/setup?t=TOKEN
 ```
 
 Сервис verify: **`bvpn-setup-verify.service`** (`127.0.0.1:8871`), Caddy **`/setup/api/*`**.

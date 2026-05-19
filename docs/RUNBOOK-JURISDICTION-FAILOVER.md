@@ -50,7 +50,7 @@ ssh -o IdentitiesOnly=yes -i $env:USERPROFILE\.ssh\bvpn_ams_ed25519 -p 3344 root
 
 | Фаза | Действие |
 |------|----------|
-| **T+0** | Подтвердить: `curl -fsS -o NUL -w "%{http_code}" https://k9x2m1.conntest.xyz:2053/` с внешней сети → не 200. NL-ноды: **`python ops/panel_api.py nodes`**. |
+| **T+0** | Подтвердить: `curl -fsS -o NUL -w "%{http_code}" https://k9x2m1.conntest.xyz:8443/` с внешней сети → не 200. NL-ноды: **`python ops/panel_api.py nodes`**. |
 | **T+1 ч** | Заказать **новый VPS** в **другой** стране/ASN (не тот же дата-центр, что старый LV). Минимум: Ubuntu, 2 vCPU, Caddy, открыты **2053/tcp**. |
 | **T+2–4 ч** | Восстановить Caddy из **`Caddyfile-latvia-full.txt`** / последний бэкап с LV (если доступен snapshot). Секреты TLS — из Bitwarden, не из git. |
 | **T+4–6 ч** | **DNS:** в Dynadot обновить A **`k9x2m1`** и **`p4n7q`** → новый IP (TTL учесть до 1 ч). Альтернатива: переключение на **backup apex** — **`RUNBOOK-DNS-RED-TEAM` §3**, **`dns_critical_inventory.json`**. |

@@ -15,7 +15,7 @@
 
 | Компонент | Где | Заметка |
 |-----------|-----|---------|
-| Публичный HTTPS подписки | `SUB_PUBLIC_ORIGIN` (пример: **`p4n7q…:2053`**) | За Caddy / тем же краём, что отдаёт панель по другому host/SNI. |
+| Публичный HTTPS подписки | `SUB_PUBLIC_ORIGIN` (пример: **`p4n7q…:8443`**) | За Caddy / тем же краём, что отдаёт панель по другому host/SNI. |
 | Контейнер **`remnawave-subscription-page`** | AMS, порт **`3010`** в compose | См. **`compose/ams/remnawave-sub/docker-compose.yml.tmpl`**. |
 | Ограничение доступа к **3010** с интернета | **`ops/bvpn-docker-firewall.sh`** / systemd на AMS | Закрытие «широкого» **0.0.0.0:3010** — см. **P0-SEC-03**, журнал бэклога. |
 
@@ -36,7 +36,7 @@
 **Накат на bvpn-lv (прод):**
 
 1. **`ops/lv-install-caddy-ratelimit.sh`** — сборка **v2.11.2** + модуль (нужен **`/usr/local/go/bin`**, не системный Go 1.18), бэкап **`/usr/bin/caddy`**, установка.
-2. **`ops/patch-caddy-sub-ratelimit.sh`** — блок **`rate_limit`** в **`p4n7q.conntest.xyz:2053`**, **`caddy validate`**, **`systemctl restart caddy`**.
+2. **`ops/patch-caddy-sub-ratelimit.sh`** — блок **`rate_limit`** в **`p4n7q.conntest.xyz:8443`**, **`caddy validate`**, **`systemctl restart caddy`**.
 3. Smoke: **`curl -fsSI`** probe URL → **200** или **304**; при душении — **429** (не **502**).
 
 Эталон Caddyfile: **`Caddyfile-latvia-full.txt`** (зона **`sub_api_per_ip`**: **120** req / **1m** / IP). После наката (**§12 2026-05-16**): probe **120** req **c=30** → **120×200**, **p95≈1.83s** — порог оставлен **120/min**; при росте базы переснять профиль.
@@ -62,7 +62,7 @@ python ops/subscription_load_probe.py --json   # машиночитаемый о
 # опционально: упасть, если доля ответов не 200/304 слишком высокая (сверяйте с базой до внедрения RL):
 python ops/subscription_load_probe.py --max-bad-http-rate 0.15
 # свой URL без правки site.env:
-python ops/subscription_load_probe.py --url 'https://хост:2053/api/sub/SHORTID' --total 80
+python ops/subscription_load_probe.py --url 'https://хост:8443/api/sub/SHORTID' --total 80
 ```
 
 Смотреть **p50/p95/p99**, **status_histogram** (в т.ч. доля **5xx** и **429** после edge RL), **hard_errors** (только TLS/DNS/таймаут — не HTTP-коды).

@@ -10,7 +10,7 @@
 
 ## Где живёт прод
 
-Основной edge для **`SUB_PUBLIC_ORIGIN`** (см. **`ops/site.env.example`**) сейчас на **LV** — блок типа **`p4n7q….:2053`** в **`/etc/caddy/Caddyfile`**. Эталон в репо: **`Caddyfile-latvia-full.txt`**.
+Основной edge для **`SUB_PUBLIC_ORIGIN`** (см. **`ops/site.env.example`**) сейчас на **LV** — блок типа **`p4n7q….:8443`** в **`/etc/caddy/Caddyfile`**. Эталон в репо: **`Caddyfile-latvia-full.txt`**.
 
 При добавлении **второго** публичного имени того же профиля — для каждого server-блока повторить фрагмент перед **`log {`**:
 
