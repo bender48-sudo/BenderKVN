@@ -1,13 +1,7 @@
 """P3-FLOW-04: in-bot VPN setup wizard (device pick → Mini App or chat fallback)."""
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
-_ROOT = Path(__file__).resolve().parents[1]
-if str(_ROOT / "ops") not in sys.path:
-    sys.path.insert(0, str(_ROOT / "ops"))
-import site_urls  # noqa: E402
+import os
 
 HAPP_STORES = {
     "ios": (
@@ -84,7 +78,7 @@ CONFIG_STEP_HAS_KEY = (
 
 WIZARD_STUCK = (
     "<b>Не получается?</b>\n\n"
-    f"• Проверьте <a href=\"{site_urls.public_status_url()}\">статус сервиса</a>\n"
+    f"• Проверьте <a href=\"{os.getenv('PUBLIC_STATUS_URL', 'https://k9x2m1.conntest.xyz:8443/status')}\">статус сервиса</a>\n"
     "• Напишите в поддержку — кнопка ниже\n"
     "• Для настройки без Telegram: страница «Получить VPN» на сайте"
 )

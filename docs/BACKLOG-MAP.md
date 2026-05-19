@@ -33,8 +33,9 @@
 | **4** | 079–084 | **Закрыта** | Накат LV/AMS (агент + SSH) |
 | **5** | 085 | **Закрыта** | ТСПУ red-team отчёт |
 | **6** | 086–097 | **Закрыта** | GTM security + discovery + polish |
+| **7** | 098–101 | **В работе** | TSPU раунд 2, RU relay, docs, CodeRabbit |
 
-**Сейчас:** фаза 6 **DONE**; **NEXT** агента нет. Владелец: **Q032**, LTE (**AUDIT-2026-05-TSPU-REDTEAM.md**). Прод: накат Caddy LV + bot/portal deploy.
+**Сейчас:** **NEXT=Q099** (RU relay SSH). **Q098** отчёт **`AUDIT-2026-05-TSPU-REDTEAM-03.md`**. CodeRabbit: **`CODERABBIT-AUDIT-PROMPT-2026-05-PHASE7.md`**. Владелец: **Q032** (позже).
 
 ---
 

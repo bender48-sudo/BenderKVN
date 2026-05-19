@@ -81,11 +81,11 @@
 6. **Фаза 6** — GTM hardening (**Q086–097**, см. **`AGENT-PHASE6-BACKLOG.md`**)
 7. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** нет (фаза 6 **Q087–097** закрыта агентом 2026-05-19, непрерывный режим).
+**NEXT:** **Q099** (`P2-OPS-RU-RELAY-01` — SSH LV→RU relay для TSPU probe).
 
 | Кому | Документ |
 |------|----------|
-| **Агент — сейчас** | **`docs/AGENT-PHASE6-BACKLOG.md`** — **Q086–097** |
+| **Агент — сейчас** | **Q098–101** (аудиты раунд 2); **`CODERABBIT-AUDIT-PROMPT-2026-05-PHASE7.md`** |
 | Владелец (параллельно) | **`docs/MANUAL-OWNER-CHECKLIST.md`**, LTE § **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
 | Аудиты | **`POST-DEPLOY-REVIEW-2026-05.md`**, **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
 | Правило Cursor | **`sequential-backlog.mdc`** |
@@ -180,11 +180,22 @@
 | 090 | **P2-RED-DISCOVERY-PORT-01** | **DONE** | User-facing только **:8443** (`site_urls`) | **DISCOVERY_PORT_OK** | `fix: P2-RED-DISCOVERY-PORT-01 — canonical :8443` |
 | 091 | **P2-RED-EDGE-SUNSET-2053-01** | **DONE** | LV **2053** → 301 **8443** | Caddy tmpl | `ops: P2-RED-EDGE-SUNSET-2053-01 — grace 2053` |
 | 092 | **P3-FLOW-11-LIVE-01** | **DONE** | Live alt apex + FAQ/бот | Caddy p4n7q :8443 portal | `ops: P3-FLOW-11-LIVE-01 — backup domain live` |
-| 093 | **P1-RED-TSPU-BLOCK-RU-01** | **DONE** | Block probe с RU egress | **TSPU_BLOCK_PROBE_RU_OK** | `ops: P1-RED-TSPU-BLOCK-RU-01 — RU probe cron` |
+| 093 | **P1-RED-TSPU-BLOCK-RU-01** | **DONE** | Скрипты + cron в репо; live RU → **Q099** | smoke static OK | `ops: P1-RED-TSPU-BLOCK-RU-01 — RU probe scripts` |
 | 094 | **P5-COM-STATUS-TRIM-01** | **DONE** | `/status` без лишних ops-деталей | `to_public_status` | `product: P5-COM-STATUS-TRIM-01` |
 | 095 | **P1-PRO-TIER-SWITCH-01** | **DONE** | Tier hint бот/portal | wizard + guide | `product: P1-PRO-TIER-SWITCH-01` |
 | 096 | **P2-RED-EDGE-HEADERS-01** | **DONE** | HSTS + CSP Caddy | Caddy tmpl | `ops: P2-RED-EDGE-HEADERS-01 — HSTS CSP` |
 | 097 | **P3-FLOW-LK-DEPLOY-01** | **DONE** | Commit ЛК/меню (cabinet.html, flow) | deploy LV/AMS | `product: P3-FLOW-LK-DEPLOY-01` |
+
+### Фаза 7 — аудиты раунд 2 (после Q097)
+
+| Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
+|---|-----|--------|-------------------|--------|-----------------|
+| 098 | **P2-RED-TSPU-AUDIT-03** | **DONE** | Red-team ТСПУ после фазы 6 | **TSPU_REDTEAM_OK** live | `docs: P2-RED-TSPU-AUDIT-03 — TSPU round 2` |
+| 099 | **P2-OPS-RU-RELAY-01** | **NEXT** | SSH LV→`72.56.0.145:3344`; `run_tspu_block_probe_ru.sh` OK | **TSPU_BLOCK_PROBE_RU_OK** live | `ops: P2-OPS-RU-RELAY-01 — RU relay SSH` |
+| 100 | **P2-DOC-PORT-8443-01** | **TODO** | KB/ONBOARDING/JOURNEY без `:2053` | grep docs | `docs: P2-DOC-PORT-8443-01` |
+| 101 | **P2-RED-CODERABBIT-02** | **TODO** | CodeRabbit раунд 2 + валидация | промпт § | `docs: P2-RED-CODERABBIT-02 — security audit 2` |
+
+**Q093 уточнение:** код/cron в репо **DONE**; live probe **ждёт Q099** (relay timeout с LV).
 
 ---
 
