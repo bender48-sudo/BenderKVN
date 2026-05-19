@@ -11,7 +11,8 @@
 | **1. Исполнение** | **`docs/BACKLOG-QUEUE.md`** | Линейная очередь **Q001…**; единственный **`NEXT`** |
 | **2. Задачи и журнал** | **`docs/COMMERCIAL-BACKLOG.md`** | ID, Done when, §7.1 P3-FLOW, **§12** прогресс на проде |
 | **3. Флоу (продукт)** | **`docs/USER-FLOW-BACKLOG.md`** | Принципы, MVP/Comfort, бабушка-тест |
-| **4. Агент — прод (сейчас)** | **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`** | Q079–Q084 |
+| **4. Агент — сейчас** | **`docs/AGENT-PHASE6-BACKLOG.md`** | Q086–097 GTM hardening |
+| **4a. Прод (закрыто)** | **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`** | Q079–084 |
 | **4b. Владелец** | **`docs/MANUAL-OWNER-CHECKLIST.md`** | Q032, BotFather, DNSSEC, видео |
 | Закрыто (репо) | AUDIT / PRODUCT / FLOW backlogs | Q063–050 |
 | **5. Карта пути** | **`docs/USER-FLOW-JOURNEY.md`** | Персоны, сценарии (закрыт **P3-FLOW-00**) |
@@ -31,8 +32,9 @@
 | **3** | 033–050, 063–078, 051–062 | **Репо закрыто** | Код/docs: security → продукт → флоу |
 | **4** | 079–084 | **Закрыта** | Накат LV/AMS (агент + SSH) |
 | **5** | 085 | **Закрыта** | ТСПУ red-team отчёт |
+| **6** | 086–097 | **В работе** | GTM security + discovery + polish |
 
-**Сейчас:** **Q085** ✅. **NEXT** агента нет — GTM после **Q032** + owner checklist; фиксы из отчёта — **Q086+**. Владелец: **`MANUAL-OWNER-CHECKLIST.md`**.
+**Сейчас:** **NEXT=Q087**. Карта: **`AGENT-PHASE6-BACKLOG.md`**. Владелец: **Q032**, LTE (**AUDIT-2026-05-TSPU-REDTEAM.md**).
 
 ---
 

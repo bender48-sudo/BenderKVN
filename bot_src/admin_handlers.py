@@ -14,6 +14,12 @@ ADMIN_ID = os.getenv("ADMIN_TELEGRAM_ID")
 logger = logging.getLogger(__name__)
 admin_router = Router()
 
+
+def _is_admin(user_id: int | None) -> bool:
+    if user_id is None or not ADMIN_ID:
+        return False
+    return str(user_id) == str(ADMIN_ID)
+
 class AdminEdit(StatesGroup):
     waiting_for_about_text = State()
     waiting_for_terms_url = State()
@@ -36,6 +42,9 @@ async def admin_panel_handler(message: types.Message):
 
 @admin_router.callback_query(F.data.startswith("admin_edit_"))
 async def start_editing_handler(callback: types.CallbackQuery, state: FSMContext):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
     action = callback.data.removeprefix("admin_edit_") 
     
     logger.info(f"Received callback to edit '{action}'")
@@ -59,11 +68,17 @@ async def start_editing_handler(callback: types.CallbackQuery, state: FSMContext
 
 @admin_router.callback_query(F.data == "admin_cancel_edit")
 async def cancel_editing_handler(callback: types.CallbackQuery, state: FSMContext):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
     await state.clear()
     await callback.message.edit_text("Действие отменено. Вы в админ-панели.", reply_markup=keyboards.create_admin_keyboard())
     await callback.answer()
 
 async def process_new_content(message: types.Message, state: FSMContext, db_key: str):
+    if not _is_admin(message.from_user.id):
+        await state.clear()
+        return
     logger.info(f"Updating setting: {db_key} with value: {message.text}")
     try:
         update_setting(db_key, message.text)

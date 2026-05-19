@@ -78,23 +78,25 @@
 3. ~~**Q044–050** флоу~~ **DONE** (репо)
 4. ~~**Q079–Q084**~~ **DONE** (накат LV/AMS)
 5. ~~**Q085**~~ **DONE** (ТСПУ red-team отчёт)
-6. **Q032** — возвраты в оферте (**только владелец**, параллельно)
+6. **Фаза 6** — GTM hardening (**Q086–097**, см. **`AGENT-PHASE6-BACKLOG.md`**)
+7. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** нет — **GTM** после **Q032** + **`MANUAL-OWNER-CHECKLIST`**; исправления из отчёта — **Q086+** по одному Q.
+**NEXT:** **Q087** (`P6-RED-PAY-08` — убрать DEBUG print crypto).
 
 | Кому | Документ |
 |------|----------|
-| **Агент — прод (сейчас)** | **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`** — **Q079–Q084** |
-| Владелец (параллельно) | **`docs/MANUAL-OWNER-CHECKLIST.md`** — BotFather, Q032, DNSSEC, видео |
-| Закрыто (репо) | **`AUDIT-2026-05-SECURITY`**, **`AGENT-PRODUCT-BACKLOG`**, **`AGENT-FLOW-BACKLOG`** |
-| Правило Cursor | **`prod-deploy-backlog.mdc`** + **`sequential-backlog.mdc`** |
+| **Агент — сейчас** | **`docs/AGENT-PHASE6-BACKLOG.md`** — **Q086–097** |
+| Владелец (параллельно) | **`docs/MANUAL-OWNER-CHECKLIST.md`**, LTE § **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
+| Аудиты | **`POST-DEPLOY-REVIEW-2026-05.md`**, **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
+| Правило Cursor | **`sequential-backlog.mdc`** |
 
 | Блок | Q | Смысл |
 |------|---|--------|
-| Legal (владелец) | 032 | Возвраты — **TODO**; не NEXT агента |
-| MVP + security + продукт + флоу (репо) | 033–050, 063–078, 051–062 | **DONE** |
-| **Прод-деплой** | **079–084** | **DONE** |
-| **ТСПУ аудит** | **085** | **DONE** | Отчёт red-team | **`TSPU_REDTEAM_OK`** | **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
+| Legal (владелец) | 032 | Возвраты — **TODO** |
+| Репо + прод Q001–085 | … | **DONE** |
+| **GTM security** | **086–089** | Admin, print, :2054, cabinet |
+| **ТСПУ / discovery** | **090–095** | :8443 UX, sunset 2053, alt apex, RU probe |
+| **Polish** | **096–097** | HSTS/CSP, flow/LK deploy |
 
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
@@ -164,6 +166,25 @@
 | Q | ID | Статус | Done when (кратко) | Verify | Runbook / § |
 |---|-----|--------|-------------------|--------|-------------|
 | 085 | **P2-RED-TSPU-AUDIT-02** | **DONE** | Отчёт red-team «как ТСПУ»; таблица P0–P3; Q086+ | **`TSPU_REDTEAM_OK`** + **`docs/AUDIT-2026-05-TSPU-REDTEAM.md`** | ТСПУ-бриф; **`TSPU-OBSERVATIONS.md`** |
+
+### Фаза 6 — GTM hardening (после Q085)
+
+Детали: **`docs/AGENT-PHASE6-BACKLOG.md`**. Источники: **`POST-DEPLOY-REVIEW-2026-05.md`**, **`AUDIT-2026-05-TSPU-REDTEAM.md`**.
+
+| Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
+|---|-----|--------|-------------------|--------|-----------------|
+| 086 | **P3-RED-ADMIN-FSM-01** | **DONE** | Admin FSM только для `ADMIN_TELEGRAM_ID` | **`ADMIN_FSM_AUTHZ_OK`** | `security: P3-RED-ADMIN-FSM-01 — admin FSM authz` |
+| 087 | **P6-RED-PAY-08** | **NEXT** | Убрать DEBUG print с api_key в crypto hash | grep `handlers.py` | `security: P6-RED-PAY-08 — remove crypto debug print` |
+| 088 | **P1-RED-NET-2054-01** | **TODO** | Закрыть публичный `:2054` → panel (Caddy LV) | external curl | `ops: P1-RED-NET-2054-01 — close panel :2054` |
+| 089 | **P3-RED-CABINET-02** | **TODO** | Cabinet: не отдавать `bind_url` без auth | POST smoke | `security: P3-RED-CABINET-02 — cabinet bind auth` |
+| 090 | **P2-RED-DISCOVERY-PORT-01** | **TODO** | User-facing только **:8443** (`site_urls`) | grep no `:2053` | `fix: P2-RED-DISCOVERY-PORT-01 — canonical :8443` |
+| 091 | **P2-RED-EDGE-SUNSET-2053-01** | **TODO** | LV **2053** → 301 **8443** или off | curl :2053 | `ops: P2-RED-EDGE-SUNSET-2053-01 — grace 2053` |
+| 092 | **P3-FLOW-11-LIVE-01** | **TODO** | Live alt apex + FAQ/бот | curl alt :8443 | `ops: P3-FLOW-11-LIVE-01 — backup domain live` |
+| 093 | **P1-RED-TSPU-BLOCK-RU-01** | **TODO** | Block probe с RU egress | **TSPU_BLOCK_PROBE_RU_OK** | `ops: P1-RED-TSPU-BLOCK-RU-01 — RU probe cron` |
+| 094 | **P5-COM-STATUS-TRIM-01** | **TODO** | `/status` без лишних ops-деталей | review | `product: P5-COM-STATUS-TRIM-01` |
+| 095 | **P1-PRO-TIER-SWITCH-01** | **TODO** | Tier hint бот/portal | manual | `product: P1-PRO-TIER-SWITCH-01` |
+| 096 | **P2-RED-EDGE-HEADERS-01** | **TODO** | HSTS + CSP Caddy | curl -I | `ops: P2-RED-EDGE-HEADERS-01 — HSTS CSP` |
+| 097 | **P3-FLOW-LK-DEPLOY-01** | **TODO** | Commit+deploy ЛК/меню (cabinet.html, flow) | Mini App smoke | `product: P3-FLOW-LK-DEPLOY-01` |
 
 ---
 
@@ -315,6 +336,8 @@
 | 2026-05-18 | **Q051** P2-RED-EDGE-PORT-01 | **Q063** P6-RED-PAY-03 — порядок: **security → продукт → флоу** |
 | 2026-05-18 | **Q063** P6-RED-PAY-03 | **Q064** P3-RED-SUP-01 |
 | 2026-05-19 | **Q085** P2-RED-TSPU-AUDIT-02 | — (отчёт **`AUDIT-2026-05-TSPU-REDTEAM.md`**, NEXT пусто) |
+| 2026-05-19 | — | Фаза 6 **Q086–097** в очереди; **NEXT=Q086** |
+| 2026-05-19 | **Q086** P3-RED-ADMIN-FSM-01 | **NEXT=Q087** |
 | 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |
 | 2026-05-18 | **Q079** P2-OPS-DEPLOY-BOT-SEC-01 | **Q080** P2-OPS-DEPLOY-EDGE-01 |
 | 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy |
