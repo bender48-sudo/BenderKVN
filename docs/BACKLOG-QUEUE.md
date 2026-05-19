@@ -81,11 +81,11 @@
 6. **Фаза 6** — GTM hardening (**Q086–097**, см. **`AGENT-PHASE6-BACKLOG.md`**)
 7. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** **Q102** (`P2-RED-SNI-LIVE-01` — live sub SNI yandex, убрать github cluster на панели).
+**NEXT:** **Q102** (`P1-RED-SUB-BIND-LOOPBACK-01` — sub-page **3010/3011** только loopback).
 
 | Кому | Документ |
 |------|----------|
-| **Агент — сейчас** | **Q098–101** (аудиты раунд 2); **`CODERABBIT-AUDIT-PROMPT-2026-05-PHASE7.md`** |
+| **Агент — сейчас** | **Q102–121** (security P0 + ТСПУ); отчёты **SECURITY-02**, **TSPU-REDTEAM-04** |
 | Владелец (параллельно) | **`docs/MANUAL-OWNER-CHECKLIST.md`**, LTE § **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
 | Аудиты | **`POST-DEPLOY-REVIEW-2026-05.md`**, **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
 | Правило Cursor | **`sequential-backlog.mdc`** |
@@ -193,16 +193,30 @@
 | 098 | **P2-RED-TSPU-AUDIT-03** | **DONE** | Red-team ТСПУ после фазы 6 | **TSPU_REDTEAM_OK** live | `docs: P2-RED-TSPU-AUDIT-03 — TSPU round 2` |
 | 099 | **P2-OPS-RU-RELAY-01** | **DONE** | SSH LV→`72.56.0.145:3344`; `tspu_block_probe_ru.py` через forced `check.py` | **TSPU_BLOCK_PROBE_RU_OK** live LV | `ops: P2-OPS-RU-RELAY-01 — RU relay SSH` |
 | 100 | **P2-DOC-PORT-8443-01** | **DONE** | KB/ONBOARDING/JOURNEY/runbooks → **:8443** | grep journey/runbooks | `docs: P2-DOC-PORT-8443-01` |
-| 101 | **P2-RED-CODERABBIT-02** | **TODO** | CodeRabbit раунд 2 + валидация | промпт § | `docs: P2-RED-CODERABBIT-02 — security audit 2` |
-| 102 | **P2-RED-SNI-LIVE-01** | **NEXT** | Panel Reality → **www.yandex.ru**; live sub без github SNI | **`LIVE_SUB_SNI_OK`** | `ops: P2-RED-SNI-LIVE-01 — live sub SNI` |
-| 103 | **P2-RED-MUX-XHTTP-01** | **TODO** | MUX audit + FAQ/incident XHTTP-first | transport + docs | `product: P2-RED-MUX-XHTTP-01` |
-| 104 | **P2-RED-SELFSTEAL-SNI-01** | **TODO** | Убрать **api.github.com:9443** с LV Caddy | Caddy grep | `ops: P2-RED-SELFSTEAL-SNI-01` |
-| 105 | **P2-RED-WHITELIST-L3-01** | **TODO** | Runbook whitelist L3 | **`RUNBOOK-TSPU-WHITELIST-L3.md`** | `docs: P2-RED-WHITELIST-L3-01` |
-| 106 | **P2-RED-TSPU-PROBE-MULTI-01** | **TODO** | 2-й RU relay регион | 2× probe OK | `ops: P2-RED-TSPU-PROBE-MULTI-01` |
-| 107 | **P2-RED-TLS-JA3-01** | **TODO** | JA3 audit inbound NL/LV | tls audit | `ops: P2-RED-TLS-JA3-01` |
+| 101 | **P2-RED-CODERABBIT-02** | **DONE** | CodeRabbit + валидация; merged backlog | **`AUDIT-2026-05-SECURITY-02.md`** | `docs: P2-RED-CODERABBIT-02 — security audit 2` |
+| 102 | **P1-RED-SUB-BIND-LOOPBACK-01** | **NEXT** | **3010/3011** → `127.0.0.1` + firewall AMS | external :3010 fail | `ops: P1-RED-SUB-BIND-LOOPBACK-01` |
+| 103 | **P3-RED-BIND-TOKEN-INVALIDATE-01** | **TODO** | `bind_token=NULL` после bind | replay bind fail | `security: bind token invalidate` |
+| 104 | **P3-RED-BIND-TOKEN-LOG-01** | **TODO** | Не логировать сырой bind token | grep bot.db | `security: redact bind token logs` |
+| 105 | **P2-RED-SNI-LIVE-01** | **TODO** | Panel SNI yandex; нет github в live sub | **`LIVE_SUB_SNI_OK`** | `ops: P2-RED-SNI-LIVE-01` |
+| 106 | **P1-RED-CADDY-K9-BLOCKED-01** | **TODO** | `@blocked` на k9x2m1:8443 | panel paths 404 | `ops: P1-RED-CADDY-K9-BLOCKED-01` |
+| 107 | **P6-RED-PAY-06b** | **TODO** | Webhook reject без amount metadata | smoke | `security: payment amount required` |
+| 108 | **P6-RED-PAY-07b** | **TODO** | Prod gate `SKIP_API_VERIFY` | smoke flag | `security: yookassa skip verify gate` |
+| 109 | **P3-RED-PORTAL-RESOLVE-01** | **TODO** | setup-resolve без `sub_url` + PromoCreate ADMIN guard | API JSON | `security: portal resolve leak` |
+| 110 | **P3-RED-SUP-GROUP-01** | **TODO** | `SUPPORT_GROUP_ID` fail-fast prod | startup log | `ops: support group id check` |
+| 111 | **P3-RED-TRIAL-ATOMIC-01** | **TODO** | Атомарный web trial claim | concurrent test | `security: trial claim atomic` |
+| 112 | **P2-RED-EDGE-HEADERS-02** | **TODO** | HSTS lv:9443 + AMS Caddy | curl -I | `ops: edge headers 9443 ams` |
+| 113 | **P2-OPS-SCHED-01b** | **TODO** | naive local_dt → UTC | scheduler smoke | `fix: scheduler key expiry TZ` |
+| 114 | **P1-ENG-CONFIG-01** | **TODO** | Убрать hardcoded fallback hosts | env unset error | `chore: config explicit hosts` |
+| 115 | **P2-CHORE-DB-SCHEMA-01** | **TODO** | bind columns в `initialize_db` | fresh DB | `chore: unify web trial schema` |
+| 116 | **P2-OPS-ENV-8443-01** | **TODO** | env tmpl без :2053 | grep compose | `ops: env templates 8443` |
+| 117 | **P2-RED-MUX-XHTTP-01** | **TODO** | MUX + XHTTP-first incident/FAQ | transport audit | `product: P2-RED-MUX-XHTTP-01` |
+| 118 | **P2-RED-SELFSTEAL-SNI-01** | **TODO** | Убрать github :9443 selfsteal | Caddy | `ops: selfsteal SNI` |
+| 119 | **P2-RED-WHITELIST-L3-01** | **TODO** | Runbook whitelist (черновик есть) | doc | `docs: whitelist L3` |
+| 120 | **P2-RED-TSPU-PROBE-MULTI-01** | **TODO** | 2-й RU relay | 2× probe | `ops: multi RU probe` |
+| 121 | **P2-RED-TLS-JA3-01** | **TODO** | JA3 inbound audit | tls audit | `ops: JA3 audit` |
 
-**Q102 отчёт (аудит):** **`docs/AUDIT-2026-05-TSPU-REDTEAM-04.md`** — раунд 3, оценка **5/10**.  
-**Q093/Q099:** RU probe live на LV (**cron** + **`TSPU_BLOCK_PROBE_RU_OK`**).
+**Аудиты:** [`AUDIT-2026-05-SECURITY-02.md`](AUDIT-2026-05-SECURITY-02.md) (Q101), [`AUDIT-2026-05-TSPU-REDTEAM-04.md`](AUDIT-2026-05-TSPU-REDTEAM-04.md) (ТСПУ **5/10**).  
+**Открыто:** **20** задач (Q102–121) + **Q032** (владелец). **NEXT=Q102.**
 
 ---
 
