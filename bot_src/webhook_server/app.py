@@ -147,9 +147,15 @@ def create_webhook_app(bot, payment_processor):
             data = request.get_json(silent=True) or {}
             from shop_bot.portal_cabinet import cabinet_snapshot
 
+            raw_tid = data.get("telegram_id")
+            try:
+                tid = int(raw_tid) if raw_tid is not None else 0
+            except (TypeError, ValueError):
+                tid = 0
             doc = cabinet_snapshot(
                 customer_id=(data.get("customer_id") or "").strip(),
                 email=(data.get("email") or "").strip(),
+                telegram_id=tid if tid > 0 else None,
             )
             code = 200 if doc.get("ok") else 404
             return jsonify(doc), code

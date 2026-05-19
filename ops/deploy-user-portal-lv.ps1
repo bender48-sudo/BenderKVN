@@ -14,7 +14,7 @@ Write-Host "[deploy] scp portal ..."
 Push-Location (Join-Path $RepoRoot "web/portal")
 try {
     & scp -r @($Common + @(
-        "content", "assets", "media", "help", "index.html", "setup.html", "guide.html",
+        "content", "assets", "media", "help", "index.html", "cabinet.html", "setup.html", "guide.html",
         "root@bvpn-lv:/var/www/bvpn-portal/"
     ))
 } finally {

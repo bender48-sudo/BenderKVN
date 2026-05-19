@@ -1,55 +1,9 @@
+# P2-RED-EDGE-SUNSET-2053-01 — grace port → canonical :8443
 p4n7q.conntest.xyz:2053 {
-    header {
-        -Via
-        -Alt-Svc
-    }
-    @sub_path path /api/sub/*
-    log_skip @sub_path
-
-    log {
-        output file /var/log/caddy/sub-access.log {
-            roll_size 10mb
-            roll_keep 3
-        }
-        format json
-    }
-    header {
-        Server "nginx/1.24.0"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "SAMEORIGIN"
-        Referrer-Policy "no-referrer"
-        -X-Powered-By
-        -Caddy-Server
-    }
-
-    rate_limit {
-        zone sub_api_per_ip {
-            match path /api/sub/*
-            key {remote_host}
-            events 120
-            window 1m
-        }
-    }
-
-    @blocked {
-        not path /api/sub/*
-        not path /assets/*
-        not path /locales/*
-    }
-    respond @blocked 404
-
-    reverse_proxy http://168.100.11.140:3010 {
-        header_up X-Forwarded-Proto "https"
-        header_up X-Forwarded-For {remote_host}
-    }
+    redir https://p4n7q.conntest.xyz:8443{uri} permanent
 }
 
-:2054 {
-    reverse_proxy http://127.0.0.1:3000 {
-        header_up X-Forwarded-Proto "https"
-        header_up X-Forwarded-For {remote_host}
-    }
-}
+# P1-RED-NET-2054-01: panel only via k9x2m1:8443 reverse_proxy (no public :2054)
 
 lv.conntest.xyz:9443 {
     root * /opt/caddy/html
@@ -277,99 +231,12 @@ id.x5.ru:9443 {
     }
 }
 
+# P2-RED-EDGE-SUNSET-2053-01 — grace port → canonical :8443
 k9x2m1.conntest.xyz:2053 {
-    header {
-        -Via
-        -Alt-Svc
-    }
-
-    @sub_path_k9 path /api/sub/*
-    log_skip @sub_path_k9
-
-    @fingerprint path /swagger* /health /metrics /api-docs* /docs*
-    respond @fingerprint 404
-
-    # STATUS_MIRROR_BOOT_01 — HTTPS JSON ops status (P2-RED-BOOT-01)
-    handle /api/ops/status.json {
-        root * /var/www/bvpn-status
-        rewrite * /status.json
-        file_server
-    }
-
-    # PUBLIC_STATUS_PAGE_01 — user-facing incident status (P5-COM-01)
-    handle /status {
-        root * /var/www/bvpn-status
-        rewrite * /index.html
-        file_server
-    }
-
-    # USER_PORTAL_BOOT_01 — bootstrap + Mini App static portal (P3-FLOW-01)
-    handle_path /start/* {
-        root * /var/www/bvpn-portal
-        try_files {path} /index.html
-        file_server
-    }
-    handle /start {
-        redir /start/ 308
-    }
-    handle_path /portal/* {
-        root * /var/www/bvpn-portal
-        try_files {path} /index.html
-        file_server
-    }
-    handle /portal {
-        redir /portal/ 308
-    }
-    # SETUP_API_BOOT_02 — verify setup token (P3-FLOW-02); P3-RED-SETUP-01 rate limit
-    handle /setup/api/* {
-        rate_limit {
-            zone setup_api_per_ip {
-                key {remote_host}
-                events 30
-                window 1m
-            }
-        }
-        uri strip_prefix /setup/api
-        reverse_proxy 127.0.0.1:8871 {
-            header_up Host {host}
-        }
-    }
-    @setup_pages path /setup /setup/*
-    handle @setup_pages {
-        root * /var/www/bvpn-portal
-        @not_api not path /setup/api/*
-        handle @not_api {
-            rewrite * /setup.html
-            file_server
-        }
-    }
-
-    # P2-RED-SUB-01 + P6-RED-SUBHA-01: alt origin -> AMS :3011 (primary p4n7q -> :3010)
-    @sub_path_alt path /api/sub/*
-    handle @sub_path_alt {
-        rate_limit {
-            zone sub_api_per_ip_alt {
-                key {remote_host}
-                events 120
-                window 1m
-            }
-        }
-        reverse_proxy http://168.100.11.140:3011 {
-            header_up X-Forwarded-Proto "https"
-            header_up X-Forwarded-For {remote_host}
-        }
-    }
-
-    handle {
-        reverse_proxy http://168.100.11.140:3000 {
-            header_up Host k9x2m1.conntest.xyz
-            header_up X-Forwarded-Proto "https"
-            header_up X-Forwarded-For {remote_host}
-        }
-    }
+    redir https://k9x2m1.conntest.xyz:8443{uri} permanent
 }
 
-# P2-RED-EDGE-PORT-01 — canonical public HTTPS :8443 (grace: :2053 blocks above stay active)
+# P2-RED-EDGE-PORT-01 — canonical public HTTPS :8443
 p4n7q.conntest.xyz:8443 {
     header {
         -Via
@@ -390,6 +257,8 @@ p4n7q.conntest.xyz:8443 {
         X-Content-Type-Options "nosniff"
         X-Frame-Options "SAMEORIGIN"
         Referrer-Policy "no-referrer"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'self' https://web.telegram.org"
         -X-Powered-By
         -Caddy-Server
     }
@@ -403,10 +272,63 @@ p4n7q.conntest.xyz:8443 {
         }
     }
 
+    # P3-FLOW-11-LIVE-01 — backup apex: portal + bootstrap (not only /api/sub)
+    handle /status {
+        root * /var/www/bvpn-status
+        rewrite * /index.html
+        file_server
+    }
+    handle_path /start/* {
+        root * /var/www/bvpn-portal
+        try_files {path} /index.html
+        file_server
+    }
+    handle /start {
+        redir /start/ 308
+    }
+    handle_path /portal/* {
+        root * /var/www/bvpn-portal
+        try_files {path} /index.html
+        file_server
+    }
+    handle /portal {
+        redir /portal/ 308
+    }
+    handle /setup/api/* {
+        rate_limit {
+            zone setup_api_per_ip_p4 {
+                key {remote_host}
+                events 30
+                window 1m
+            }
+        }
+        uri strip_prefix /setup/api
+        reverse_proxy 127.0.0.1:8871 {
+            header_up Host {host}
+        }
+    }
+    @setup_pages path /setup /setup/*
+    handle @setup_pages {
+        root * /var/www/bvpn-portal
+        @not_api not path /setup/api/*
+        handle @not_api {
+            rewrite * /setup.html
+            file_server
+        }
+    }
+
     @blocked {
         not path /api/sub/*
         not path /assets/*
         not path /locales/*
+        not path /status
+        not path /status/*
+        not path /start
+        not path /start/*
+        not path /portal
+        not path /portal/*
+        not path /setup
+        not path /setup/*
     }
     respond @blocked 404
 
@@ -420,6 +342,11 @@ k9x2m1.conntest.xyz:8443 {
     header {
         -Via
         -Alt-Svc
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "no-referrer"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'self' https://web.telegram.org"
     }
 
     @sub_path_k9_8443 path /api/sub/*

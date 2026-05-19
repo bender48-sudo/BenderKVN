@@ -1,6 +1,14 @@
 """P3-FLOW-04: in-bot VPN setup wizard (device pick → Mini App or chat fallback)."""
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT / "ops") not in sys.path:
+    sys.path.insert(0, str(_ROOT / "ops"))
+import site_urls  # noqa: E402
+
 HAPP_STORES = {
     "ios": (
         "App Store (iPhone / iPad)",
@@ -69,11 +77,14 @@ CONFIG_STEP_TRIAL = (
     "Получите настройку: «Бесплатно 3 месяца» в меню "
     "или «Моя настройка», если ключ уже есть."
 )
-CONFIG_STEP_HAS_KEY = "Откройте «Моя настройка» — QR и ссылка для Happ."
+CONFIG_STEP_HAS_KEY = (
+    "Откройте «Моя настройка» — QR и ссылка для Happ.\n"
+    "В Happ несколько узлов: <b>turbo</b> (быстрее) и <b>wl-*</b> (обход WL, медленнее)."
+)
 
 WIZARD_STUCK = (
     "<b>Не получается?</b>\n\n"
-    "• Проверьте <a href=\"https://k9x2m1.conntest.xyz:2053/status\">статус сервиса</a>\n"
+    f"• Проверьте <a href=\"{site_urls.public_status_url()}\">статус сервиса</a>\n"
     "• Напишите в поддержку — кнопка ниже\n"
     "• Для настройки без Telegram: страница «Получить VPN» на сайте"
 )

@@ -148,13 +148,19 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(400, {"ok": False, "error": "invalid_json"})
                 return
             try:
-                ams = _ams_portal_post(
-                    "/portal-cabinet",
-                    {
-                        "customer_id": (data.get("customer_id") or "").strip(),
-                        "email": (data.get("email") or "").strip(),
-                    },
-                )
+                body = {
+                    "customer_id": (data.get("customer_id") or "").strip(),
+                    "email": (data.get("email") or "").strip(),
+                }
+                raw_tid = data.get("telegram_id")
+                if raw_tid is not None:
+                    try:
+                        tid = int(raw_tid)
+                        if tid > 0:
+                            body["telegram_id"] = tid
+                    except (TypeError, ValueError):
+                        pass
+                ams = _ams_portal_post("/portal-cabinet", body)
             except Exception as e:
                 self._json(502, {"ok": False, "error": str(e)[:120]})
                 return

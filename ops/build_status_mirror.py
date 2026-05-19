@@ -175,6 +175,40 @@ def build_status() -> dict:
     }
 
 
+def to_public_status(doc: dict) -> dict:
+    """P5-COM-STATUS-TRIM-01: user-facing JSON without ops internals."""
+    nodes = doc.get("nodes") or []
+    up = sum(1 for n in nodes if n.get("connected") or n.get("expected_down"))
+    total = len(nodes)
+    sub = doc.get("subscription") or {}
+    prim = int(sub.get("primary_http") or 0)
+    vpn_state = "ok" if total and up >= total else ("degraded" if total else "unknown")
+    sub_state = "ok" if prim in (200, 304) else ("unknown" if prim == 0 else "degraded")
+    return {
+        "service": doc.get("service", "bender-vpn"),
+        "schema": "status-public/v1",
+        "updated_at": doc.get("updated_at", ""),
+        "overall": doc.get("overall", "degraded"),
+        "message": doc.get("message", ""),
+        "components": {
+            "vpn": {
+                "state": vpn_state,
+                "summary": f"Серверы VPN: {up}/{total} в норме" if total else "Нет данных о нодах",
+            },
+            "subscription": {
+                "state": sub_state,
+                "summary": "Выдача подписки: работает"
+                if sub_state == "ok"
+                else (
+                    "Выдача подписки: нет данных"
+                    if sub_state == "unknown"
+                    else f"Выдача подписки: HTTP {prim}"
+                ),
+            },
+        },
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument(
@@ -187,7 +221,8 @@ def main() -> int:
     args = ap.parse_args()
 
     doc = build_status()
-    text = json.dumps(doc, indent=2, ensure_ascii=False) + "\n"
+    public_doc = to_public_status(doc)
+    text = json.dumps(public_doc, indent=2, ensure_ascii=False) + "\n"
 
     if args.stdout:
         print(text, end="")
@@ -204,9 +239,8 @@ def main() -> int:
     html_tmp = html_path.with_suffix(".html.tmp")
     html_tmp.write_text(
         render_public_html(
-            doc,
+            public_doc,
             incidents if incidents.is_file() else None,
-            json_url=site_urls.status_mirror_url(),
         ),
         encoding="utf-8",
     )

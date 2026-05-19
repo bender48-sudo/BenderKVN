@@ -66,9 +66,12 @@ TELEGRAM_WEBAPP_URL = (
 )
 
 
-def telegram_cabinet_webapp_url() -> str:
-    """Mini App deep-link to portal #cabinet (balance + setup links)."""
-    return TELEGRAM_WEBAPP_URL.rstrip("/") + "#cabinet"
+def telegram_cabinet_webapp_url(telegram_id: int | None = None) -> str:
+    """Mini App deep-link to portal cabinet (path + query; TG often strips #hash)."""
+    base = TELEGRAM_WEBAPP_URL.rstrip("/") + "/cabinet.html"
+    if telegram_id and int(telegram_id) > 0:
+        return f"{base}?tid={int(telegram_id)}"
+    return base
 
 
 _PORTAL_DEVICE_IDS = frozenset({"iphone", "android", "windows", "mac"})

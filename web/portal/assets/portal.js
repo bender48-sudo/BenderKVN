@@ -29,6 +29,27 @@
     return window.Telegram && window.Telegram.WebApp;
   }
 
+  function getTelegramUserId() {
+    var params = new URLSearchParams(window.location.search || "");
+    var tid = parseInt(params.get("tid") || "0", 10);
+    if (tid > 0) return tid;
+    var tg = getTelegramWebApp();
+    if (!tg) return 0;
+    var u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if (u && u.id) return u.id;
+    try {
+      var idp = new URLSearchParams(tg.initData || "");
+      var uj = idp.get("user");
+      if (uj) {
+        var parsed = JSON.parse(uj);
+        if (parsed && parsed.id) return parsed.id;
+      }
+    } catch (e) {
+      /* ignore */
+    }
+    return 0;
+  }
+
   function copyToClipboard(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       return navigator.clipboard.writeText(text);
@@ -59,10 +80,9 @@
         document.documentElement.style.setProperty(cssMap[key], tp[key]);
       }
     });
-    var headerColor = tp.bg_color || "#000000";
-    if (typeof tg.setHeaderColor === "function") {
+    if (typeof tg.setHeaderColor === "function" && tp.bg_color) {
       try {
-        tg.setHeaderColor(headerColor);
+        tg.setHeaderColor(tp.bg_color);
       } catch (e) {
         /* ignore */
       }
@@ -428,6 +448,20 @@
     }
   }
 
+  function showCabinetError(msg) {
+    var err = $("cabinet-load-error");
+    var lead = $("cabinet-lead");
+    if (err) {
+      err.textContent = msg;
+      err.classList.remove("hidden");
+    }
+    if (lead && getTelegramWebApp()) {
+      lead.textContent = msg;
+    }
+    var panel = $("cabinet-balance-panel");
+    if (panel) panel.classList.add("hidden");
+  }
+
   function applyCabinetData(doc) {
     var cab = content.cabinet || {};
     var balEl = $("cabinet-balance");
@@ -435,10 +469,11 @@
     var err = $("cabinet-load-error");
     if (err) err.classList.add("hidden");
     if (!doc || !doc.ok) {
-      if (err) {
-        err.textContent = "Не найдено. Проверьте email или BVPN-ID.";
-        err.classList.remove("hidden");
-      }
+      showCabinetError(
+        getTelegramWebApp()
+          ? "Аккаунт не найден. Нажмите /start в боте и попробуйте снова."
+          : "Не найдено. Проверьте email или BVPN-ID."
+      );
       return;
     }
     var fmt = cab.balance_format || "{balance} ₽ · ~{days} дн.";
@@ -451,9 +486,17 @@
     if (panel) panel.classList.remove("hidden");
     var bindBtn = $("btn-cabinet-bind");
     if (bindBtn) {
-      if (doc.bind_url && !doc.telegram_bound) {
-        bindBtn.href = doc.bind_url;
+      var bindHref = "";
+      try {
+        bindHref = localStorage.getItem("bvpn_bind_url") || "";
+      } catch (e) {
+        bindHref = "";
+      }
+      if (bindHref && !doc.telegram_bound) {
+        bindBtn.href = bindHref;
         bindBtn.classList.remove("hidden");
+      } else if (doc.needs_telegram_bind && !doc.telegram_bound) {
+        bindBtn.classList.add("hidden");
       } else {
         bindBtn.classList.add("hidden");
       }
@@ -465,7 +508,45 @@
     }
   }
 
-  function loadCabinetBalance() {
+  function showCabinetLoading() {
+    var panel = $("cabinet-balance-panel");
+    var balEl = $("cabinet-balance");
+    var err = $("cabinet-load-error");
+    if (err) err.classList.add("hidden");
+    if (panel) panel.classList.remove("hidden");
+    if (balEl) balEl.textContent = "…";
+  }
+
+  function loadCabinetBalanceAttempt(retry) {
+    var tg = getTelegramWebApp();
+    if (tg) {
+      var uid = getTelegramUserId();
+      if (!uid && retry < 8) {
+        setTimeout(function () {
+          loadCabinetBalanceAttempt(retry + 1);
+        }, 120);
+        return;
+      }
+      if (!uid) {
+        showCabinetError("Не удалось определить пользователя. Закройте Mini App и откройте снова из бота.");
+        return;
+      }
+      showCabinetLoading();
+      trackFunnel("portal_cabinet_load_tg");
+      fetch(API_CABINET, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ telegram_id: uid }),
+      })
+        .then(function (r) {
+          return r.json();
+        })
+        .then(applyCabinetData)
+        .catch(function () {
+          applyCabinetData({ ok: false });
+        });
+      return;
+    }
     var cid = ($("cabinet-customer-id") && $("cabinet-customer-id").value) || "";
     var email = ($("cabinet-email") && $("cabinet-email").value) || "";
     try {
@@ -491,15 +572,39 @@
       });
   }
 
-  function applyRouteFromHash() {
+  function loadCabinetBalance() {
+    loadCabinetBalanceAttempt(0);
+  }
+
+  function resolveRouteView() {
+    if (window.BVPN_INITIAL_VIEW) {
+      return String(window.BVPN_INITIAL_VIEW).trim();
+    }
+    var path = (window.location.pathname || "").toLowerCase();
+    if (path.indexOf("cabinet.html") >= 0) return "cabinet";
+    var params = new URLSearchParams(window.location.search || "");
+    var view = (params.get("view") || "").trim();
+    if (view) return view;
     var raw = (window.location.hash || "").replace(/^#/, "").trim();
+    if (raw) return raw;
+    var tg = getTelegramWebApp();
+    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
+      return String(tg.initDataUnsafe.start_param).trim();
+    }
+    return "";
+  }
+
+  function openCabinetView() {
+    renderCabinet();
+    show("cabinet");
+    trackFunnel("portal_view_cabinet");
+    loadCabinetBalance();
+  }
+
+  function applyRouteFromHash() {
+    var raw = resolveRouteView();
     if (raw === "cabinet") {
-      renderCabinet();
-      show("cabinet");
-      trackFunnel("portal_view_cabinet");
-      if (!getTelegramWebApp()) {
-        loadCabinetBalance();
-      }
+      openCabinetView();
       return;
     }
     if (raw === "devices" || raw === "connect") {
@@ -524,13 +629,11 @@
     if (cabBtn) {
       cabBtn.addEventListener("click", function () {
         try {
-          history.replaceState(null, "", "#cabinet");
+          history.replaceState(null, "", "?view=cabinet");
         } catch (e) {
-          window.location.hash = "cabinet";
+          window.location.search = "?view=cabinet";
         }
-        renderCabinet();
-        show("cabinet");
-        trackFunnel("portal_view_cabinet");
+        openCabinetView();
       });
     }
     var loadBal = $("btn-cabinet-load");
@@ -538,8 +641,13 @@
       loadBal.addEventListener("click", loadCabinetBalance);
     }
     var backCab = $("btn-back-home-cabinet");
-    if (backCab) backCab.addEventListener("click", function () { show("home"); });
-    $("btn-connect").addEventListener("click", function () {
+    if (backCab) {
+      backCab.addEventListener("click", function () {
+        window.location.href = "/portal/";
+      });
+    }
+    var btnConnect = $("btn-connect");
+    if (btnConnect) btnConnect.addEventListener("click", function () {
       try {
         history.replaceState(null, "", "#devices");
       } catch (e) {
@@ -548,13 +656,20 @@
       show("devices");
       trackFunnel("portal_view_devices");
     });
-    $("btn-back-home").addEventListener("click", function () {
-      show("home");
-    });
-    $("btn-back-devices").addEventListener("click", function () {
-      show("devices");
-    });
-    $("btn-stuck").addEventListener("click", function () {
+    var btnBackHome = $("btn-back-home");
+    if (btnBackHome) {
+      btnBackHome.addEventListener("click", function () {
+        show("home");
+      });
+    }
+    var btnBackDevices = $("btn-back-devices");
+    if (btnBackDevices) {
+      btnBackDevices.addEventListener("click", function () {
+        show("devices");
+      });
+    }
+    var btnStuck = $("btn-stuck");
+    if (btnStuck) btnStuck.addEventListener("click", function () {
       var helpPanel = $("help-stuck");
       if (helpPanel) {
         helpPanel.classList.toggle("hidden");
@@ -567,7 +682,8 @@
     bindExternalLink($("btn-setup"));
     bindExternalLink($("btn-device-support"));
 
-    $("btn-events-ack").addEventListener("click", function () {
+    var btnEventsAck = $("btn-events-ack");
+    if (btnEventsAck) btnEventsAck.addEventListener("click", function () {
       fetch(STATUS_JSON)
         .then(function (r) {
           return r.json();
@@ -600,12 +716,14 @@
     .then(function (data) {
       content = data;
       initTelegram();
-      renderHome();
-      renderDevices();
+      if ($("hero-badge")) renderHome();
+      if ($("device-grid")) renderDevices();
       renderCabinet();
       bindActions();
       applyRouteFromHash();
-      trackFunnel("portal_view_home");
+      if (resolveRouteView() !== "cabinet") {
+        trackFunnel("portal_view_home");
+      }
     })
     .catch(function () {
       showError(

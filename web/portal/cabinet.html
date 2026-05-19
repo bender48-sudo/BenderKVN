@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0c">
+  <title>BenderVPN — личный кабинет</title>
+  <link rel="stylesheet" href="/portal/assets/portal.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>window.BVPN_INITIAL_VIEW = "cabinet";</script>
+  <script src="/portal/assets/portal.js" defer></script>
+</head>
+<body>
+  <main id="main-content">
+    <p id="load-error" class="note note-accent hidden" role="alert"></p>
+    <section data-view="cabinet" aria-labelledby="cabinet-title">
+      <h2 id="cabinet-title">Личный кабинет</h2>
+      <p class="muted" id="cabinet-lead">Загрузка…</p>
+      <p class="note hidden" id="cabinet-load-error" role="alert"></p>
+      <div class="panel hidden" id="cabinet-login-panel">
+        <label class="field-label" for="cabinet-customer-id" id="cabinet-customer-id-label">BVPN-ID</label>
+        <input type="text" id="cabinet-customer-id" class="field-input" autocomplete="off" />
+        <label class="field-label" for="cabinet-email" id="cabinet-email-label">Email</label>
+        <input type="email" id="cabinet-email" class="field-input" autocomplete="email" />
+        <button type="button" class="btn btn-primary" id="btn-cabinet-load">Показать баланс</button>
+      </div>
+      <div class="panel hidden" id="cabinet-balance-panel">
+        <p class="field-label" id="cabinet-balance-label">Баланс</p>
+        <p class="cabinet-balance" id="cabinet-balance">—</p>
+        <p class="muted" id="cabinet-balance-hint"></p>
+        <p class="muted" id="cabinet-web-notify"></p>
+      </div>
+      <div class="actions">
+        <a class="btn btn-primary hidden" id="btn-cabinet-bind" href="#" target="_blank" rel="noopener"></a>
+        <a class="btn btn-primary" id="btn-cabinet-bot" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener">Открыть бота</a>
+        <a class="btn btn-secondary" id="btn-cabinet-setup" href="/setup/">Получить настройку</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

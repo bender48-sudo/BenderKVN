@@ -227,13 +227,35 @@ async def show_main_menu(message: types.Message, edit_message: bool = False):
     user_id = message.chat.id
     user_db_data = get_user(user_id)
     user_keys = get_user_keys(user_id)
-    
+    now = datetime.now()
+    active_keys = [
+        k for k in user_keys
+        if datetime.fromisoformat(k["expiry_date"]) > now
+    ]
+    has_active_sub = len(active_keys) > 0
+
     trial_available = not (user_db_data and user_db_data.get('trial_used'))
     is_admin = str(user_id) == ADMIN_ID
 
-    text = "🏠 <b>Главное меню</b>\n\nВыберите действие:"
+    if has_active_sub:
+        text = (
+            "🏠 <b>Главное меню</b>\n\n"
+            "Кабинет — баланс и продление. «Мой VPN» — ключ и настройка."
+        )
+    else:
+        text = (
+            "🏠 <b>Главное меню</b>\n\n"
+            "Новичкам: бесплатный доступ или «Как подключить». "
+            "Уже есть ключ — откройте «Мой VPN» после активации."
+        )
     auto_renew = get_auto_renew(user_id) if user_db_data else False
-    keyboard = keyboards.create_main_menu_keyboard(user_keys, trial_available, is_admin, auto_renew=auto_renew)
+    keyboard = keyboards.create_main_menu_keyboard(
+        has_active_sub,
+        trial_available,
+        is_admin,
+        telegram_id=user_id,
+        auto_renew=auto_renew,
+    )
     
     if edit_message:
         try:
@@ -760,7 +782,9 @@ async def trial_period_handler(callback: types.CallbackQuery):
         await callback.message.edit_text(
             message_text,
             parse_mode="HTML",
-            reply_markup=keyboards.create_trial_success_keyboard(sub_url or uri),
+            reply_markup=keyboards.create_trial_success_keyboard(
+                sub_url or uri, telegram_id=user_id
+            ),
         )
     except Exception as e:
         logger.error(f"Error creating trial key for user {user_id}: {e}", exc_info=True)
@@ -816,7 +840,9 @@ async def my_account_handler(callback: types.CallbackQuery):
             f"👥 Приглашено друзей: {ref_count}"
         )
         await callback.message.edit_text(
-            text, parse_mode="HTML", reply_markup=keyboards.create_account_keyboard(sub_url)
+            text,
+            parse_mode="HTML",
+            reply_markup=keyboards.create_account_keyboard(sub_url, telegram_id=user_id),
         )
     else:
         trial_available = not (user_db_data and user_db_data.get("trial_used"))
@@ -827,6 +853,21 @@ async def my_account_handler(callback: types.CallbackQuery):
             f"👥 Приглашено друзей: {ref_count}"
         )
         await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboards.create_account_no_sub_keyboard(trial_available))
+
+@user_router.callback_query(F.data == "menu_help")
+async def menu_help_handler(callback: types.CallbackQuery):
+    await callback.answer()
+    text = (
+        "❓ <b>Помощь</b>\n\n"
+        "Инструкция в Mini App, видео и частые ошибки — ниже. "
+        "Если не получается — напишите в поддержку."
+    )
+    await callback.message.edit_text(
+        text,
+        parse_mode="HTML",
+        reply_markup=keyboards.create_help_menu_keyboard(),
+    )
+
 
 @user_router.callback_query(F.data == "contact_support")
 async def contact_support_handler(callback: types.CallbackQuery):
@@ -1369,10 +1410,6 @@ def create_heleket_signature(payload: dict, api_key: str) -> str:
     
     # 4. Добавляем API-ключ и хэшируем.
     string_to_hash = sign_string + api_key
-
-    # Отладка, чтобы убедиться, что все верно
-    print(f"DEBUG [Final]: String for hashing: '{string_to_hash}'")
-    
     return hashlib.sha256(string_to_hash.encode('utf-8')).hexdigest()
 
 @user_router.callback_query(F.data.startswith("pay_crypto_"))

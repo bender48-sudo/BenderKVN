@@ -78,10 +78,23 @@ def render_public_html(
         headline = "Есть активные инциденты"
 
     components: list[tuple[str, str, str]] = []
-    vpn_state, vpn_line = _vpn_summary(status.get("nodes") or [])
-    components.append(("vpn", vpn_state, vpn_line))
-    sub_state, sub_line = _sub_summary(status)
-    components.append(("sub", sub_state, sub_line))
+    comp_doc = status.get("components")
+    if isinstance(comp_doc, dict) and comp_doc:
+        for key in ("vpn", "subscription"):
+            block = comp_doc.get(key) or {}
+            if isinstance(block, dict) and block.get("summary"):
+                components.append(
+                    (
+                        key,
+                        str(block.get("state", "unknown")),
+                        str(block["summary"]),
+                    )
+                )
+    else:
+        vpn_state, vpn_line = _vpn_summary(status.get("nodes") or [])
+        components.append(("vpn", vpn_state, vpn_line))
+        sub_state, sub_line = _sub_summary(status)
+        components.append(("sub", sub_state, sub_line))
 
     comp_html = []
     for _key, state, line in components:

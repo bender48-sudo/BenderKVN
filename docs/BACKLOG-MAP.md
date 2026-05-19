@@ -32,9 +32,9 @@
 | **3** | 033–050, 063–078, 051–062 | **Репо закрыто** | Код/docs: security → продукт → флоу |
 | **4** | 079–084 | **Закрыта** | Накат LV/AMS (агент + SSH) |
 | **5** | 085 | **Закрыта** | ТСПУ red-team отчёт |
-| **6** | 086–097 | **В работе** | GTM security + discovery + polish |
+| **6** | 086–097 | **Закрыта** | GTM security + discovery + polish |
 
-**Сейчас:** **NEXT=Q087**. Карта: **`AGENT-PHASE6-BACKLOG.md`**. Владелец: **Q032**, LTE (**AUDIT-2026-05-TSPU-REDTEAM.md**).
+**Сейчас:** фаза 6 **DONE**; **NEXT** агента нет. Владелец: **Q032**, LTE (**AUDIT-2026-05-TSPU-REDTEAM.md**). Прод: накат Caddy LV + bot/portal deploy.
 
 ---
 

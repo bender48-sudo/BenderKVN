@@ -81,7 +81,7 @@
 6. **Фаза 6** — GTM hardening (**Q086–097**, см. **`AGENT-PHASE6-BACKLOG.md`**)
 7. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** **Q087** (`P6-RED-PAY-08` — убрать DEBUG print crypto).
+**NEXT:** нет (фаза 6 **Q087–097** закрыта агентом 2026-05-19, непрерывный режим).
 
 | Кому | Документ |
 |------|----------|
@@ -174,17 +174,17 @@
 | Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
 |---|-----|--------|-------------------|--------|-----------------|
 | 086 | **P3-RED-ADMIN-FSM-01** | **DONE** | Admin FSM только для `ADMIN_TELEGRAM_ID` | **`ADMIN_FSM_AUTHZ_OK`** | `security: P3-RED-ADMIN-FSM-01 — admin FSM authz` |
-| 087 | **P6-RED-PAY-08** | **NEXT** | Убрать DEBUG print с api_key в crypto hash | grep `handlers.py` | `security: P6-RED-PAY-08 — remove crypto debug print` |
-| 088 | **P1-RED-NET-2054-01** | **TODO** | Закрыть публичный `:2054` → panel (Caddy LV) | external curl | `ops: P1-RED-NET-2054-01 — close panel :2054` |
-| 089 | **P3-RED-CABINET-02** | **TODO** | Cabinet: не отдавать `bind_url` без auth | POST smoke | `security: P3-RED-CABINET-02 — cabinet bind auth` |
-| 090 | **P2-RED-DISCOVERY-PORT-01** | **TODO** | User-facing только **:8443** (`site_urls`) | grep no `:2053` | `fix: P2-RED-DISCOVERY-PORT-01 — canonical :8443` |
-| 091 | **P2-RED-EDGE-SUNSET-2053-01** | **TODO** | LV **2053** → 301 **8443** или off | curl :2053 | `ops: P2-RED-EDGE-SUNSET-2053-01 — grace 2053` |
-| 092 | **P3-FLOW-11-LIVE-01** | **TODO** | Live alt apex + FAQ/бот | curl alt :8443 | `ops: P3-FLOW-11-LIVE-01 — backup domain live` |
-| 093 | **P1-RED-TSPU-BLOCK-RU-01** | **TODO** | Block probe с RU egress | **TSPU_BLOCK_PROBE_RU_OK** | `ops: P1-RED-TSPU-BLOCK-RU-01 — RU probe cron` |
-| 094 | **P5-COM-STATUS-TRIM-01** | **TODO** | `/status` без лишних ops-деталей | review | `product: P5-COM-STATUS-TRIM-01` |
-| 095 | **P1-PRO-TIER-SWITCH-01** | **TODO** | Tier hint бот/portal | manual | `product: P1-PRO-TIER-SWITCH-01` |
-| 096 | **P2-RED-EDGE-HEADERS-01** | **TODO** | HSTS + CSP Caddy | curl -I | `ops: P2-RED-EDGE-HEADERS-01 — HSTS CSP` |
-| 097 | **P3-FLOW-LK-DEPLOY-01** | **TODO** | Commit+deploy ЛК/меню (cabinet.html, flow) | Mini App smoke | `product: P3-FLOW-LK-DEPLOY-01` |
+| 087 | **P6-RED-PAY-08** | **DONE** | Убрать DEBUG print с api_key в crypto hash | **CRYPTO_DEBUG_PRINT_OK** | `security: P6-RED-PAY-08 — remove crypto debug print` |
+| 088 | **P1-RED-NET-2054-01** | **DONE** | Закрыть публичный `:2054` → panel (Caddy LV) | Caddy tmpl | `ops: P1-RED-NET-2054-01 — close panel :2054` |
+| 089 | **P3-RED-CABINET-02** | **DONE** | Cabinet: не отдавать `bind_url` без auth | **CABINET_BIND_AUTH_OK** | `security: P3-RED-CABINET-02 — cabinet bind auth` |
+| 090 | **P2-RED-DISCOVERY-PORT-01** | **DONE** | User-facing только **:8443** (`site_urls`) | **DISCOVERY_PORT_OK** | `fix: P2-RED-DISCOVERY-PORT-01 — canonical :8443` |
+| 091 | **P2-RED-EDGE-SUNSET-2053-01** | **DONE** | LV **2053** → 301 **8443** | Caddy tmpl | `ops: P2-RED-EDGE-SUNSET-2053-01 — grace 2053` |
+| 092 | **P3-FLOW-11-LIVE-01** | **DONE** | Live alt apex + FAQ/бот | Caddy p4n7q :8443 portal | `ops: P3-FLOW-11-LIVE-01 — backup domain live` |
+| 093 | **P1-RED-TSPU-BLOCK-RU-01** | **DONE** | Block probe с RU egress | **TSPU_BLOCK_PROBE_RU_OK** | `ops: P1-RED-TSPU-BLOCK-RU-01 — RU probe cron` |
+| 094 | **P5-COM-STATUS-TRIM-01** | **DONE** | `/status` без лишних ops-деталей | `to_public_status` | `product: P5-COM-STATUS-TRIM-01` |
+| 095 | **P1-PRO-TIER-SWITCH-01** | **DONE** | Tier hint бот/portal | wizard + guide | `product: P1-PRO-TIER-SWITCH-01` |
+| 096 | **P2-RED-EDGE-HEADERS-01** | **DONE** | HSTS + CSP Caddy | Caddy tmpl | `ops: P2-RED-EDGE-HEADERS-01 — HSTS CSP` |
+| 097 | **P3-FLOW-LK-DEPLOY-01** | **DONE** | Commit ЛК/меню (cabinet.html, flow) | deploy LV/AMS | `product: P3-FLOW-LK-DEPLOY-01` |
 
 ---
 
@@ -338,6 +338,7 @@
 | 2026-05-19 | **Q085** P2-RED-TSPU-AUDIT-02 | — (отчёт **`AUDIT-2026-05-TSPU-REDTEAM.md`**, NEXT пусто) |
 | 2026-05-19 | — | Фаза 6 **Q086–097** в очереди; **NEXT=Q086** |
 | 2026-05-19 | **Q086** P3-RED-ADMIN-FSM-01 | **NEXT=Q087** |
+| 2026-05-19 | **Q087–097** (непрерывный режим) | **NEXT** пусто, фаза 6 закрыта |
 | 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |
 | 2026-05-18 | **Q079** P2-OPS-DEPLOY-BOT-SEC-01 | **Q080** P2-OPS-DEPLOY-EDGE-01 |
 | 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy |
