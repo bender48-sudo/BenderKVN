@@ -66,6 +66,8 @@ CRYPTO_API_KEY = None
 CRYPTO_MERCHANT_ID = None
 PAYMENT_METHODS = None
 PLANS = None
+from shop_bot.admin_auth import is_admin_telegram
+
 ADMIN_ID = os.getenv("ADMIN_TELEGRAM_ID")
 
 logger = logging.getLogger(__name__)
@@ -235,7 +237,7 @@ async def show_main_menu(message: types.Message, edit_message: bool = False):
     has_active_sub = len(active_keys) > 0
 
     trial_available = not (user_db_data and user_db_data.get('trial_used'))
-    is_admin = str(user_id) == ADMIN_ID
+    is_admin = is_admin_telegram(user_id)
 
     if has_active_sub:
         text = (
@@ -284,11 +286,10 @@ class VpnSetupWizard(StatesGroup):
 
 
 async def _fetch_subscription_url(user_id: int) -> str | None:
+    from shop_bot.subscription_resolve import resolve_subscription_url
+
     try:
-        async with aiohttp.ClientSession() as session:
-            remote = await remnawave_api.get_user_by_telegram_id(session, str(user_id))
-            if remote and remote.get("subscriptionUrl"):
-                return str(remote["subscriptionUrl"])
+        return await resolve_subscription_url(user_id)
     except Exception as exc:
         logger.warning("fetch_subscription_url: %s", exc)
     return None
@@ -846,14 +847,14 @@ async def trial_period_handler(callback: types.CallbackQuery):
 
 @user_router.callback_query(F.data == "open_admin_panel")
 async def open_admin_panel_handler(callback: types.CallbackQuery):
-    if str(callback.from_user.id) != ADMIN_ID:
+    if not is_admin_telegram(callback.from_user.id):
         await callback.answer("У вас нет доступа.", show_alert=True)
         return
-    
+
     await callback.answer()
     await callback.message.edit_text(
         "Добро пожаловать в админ-панель!",
-        reply_markup=keyboards.create_admin_keyboard()
+        reply_markup=keyboards.create_admin_keyboard(),
     )
 
 
@@ -876,13 +877,7 @@ async def my_account_handler(callback: types.CallbackQuery):
     )
     sub_url = None
     if active_keys:
-        try:
-            async with aiohttp.ClientSession() as session:
-                remote = await remnawave_api.get_user_by_telegram_id(session, str(user_id))
-                if remote:
-                    sub_url = remote.get("subscriptionUrl")
-        except Exception as e:
-            logger.warning("subscriptionUrl fetch for account: %s", e)
+        sub_url = await _fetch_subscription_url(user_id)
         latest = max(active_keys, key=lambda k: datetime.fromisoformat(k["expiry_date"]))
         exp = datetime.fromisoformat(latest["expiry_date"])
         text = (
@@ -964,7 +959,10 @@ async def copy_sub_url_handler(callback: types.CallbackQuery):
                 parse_mode="Markdown",
             )
         else:
-            await callback.message.answer("❌ " + user_messages.ERR_SUBSCRIPTION_URL_MISSING)
+            from shop_bot.subscription_resolve import subscription_unavailable
+
+            hint = subscription_unavailable(user_id)
+            await callback.message.answer(f"❌ {hint['message']}")
     except Exception as e:
         logger.error(f"Error in copy_sub_url: {e}")
         await callback.message.answer("❌ " + user_messages.ERR_GENERIC_RETRY)
@@ -979,7 +977,10 @@ async def show_sub_qr_handler(callback: types.CallbackQuery):
     try:
         sub_url = await _fetch_subscription_url(user_id)
         if not sub_url:
-            await callback.message.answer("❌ " + user_messages.ERR_SUBSCRIPTION_URL_MISSING)
+            from shop_bot.subscription_resolve import subscription_unavailable
+
+            hint = subscription_unavailable(user_id)
+            await callback.message.answer(f"❌ {hint['message']}")
             return
         png = subscription_qr_png(sub_url)
         await callback.message.answer_photo(
@@ -998,7 +999,7 @@ async def show_sub_qr_handler(callback: types.CallbackQuery):
 
 @user_router.callback_query(F.data == "admin_stats")
 async def admin_stats_handler(callback: types.CallbackQuery):
-    if str(callback.from_user.id) != ADMIN_ID:
+    if not is_admin_telegram(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True); return
     from shop_bot.data_manager.database import get_admin_stats, get_last_backup_timestamp
     stats = get_admin_stats()
@@ -1048,7 +1049,7 @@ async def admin_stats_handler(callback: types.CallbackQuery):
 
 @user_router.callback_query(F.data == "admin_backup")
 async def admin_backup_handler(callback: types.CallbackQuery):
-    if str(callback.from_user.id) != ADMIN_ID:
+    if not is_admin_telegram(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True)
         return
     
@@ -1076,14 +1077,14 @@ async def admin_backup_handler(callback: types.CallbackQuery):
 
 @user_router.callback_query(F.data == "admin_promos")
 async def admin_promos_menu(callback: types.CallbackQuery):
-    if str(callback.from_user.id) != ADMIN_ID:
+    if not is_admin_telegram(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True); return
     await callback.answer()
     await callback.message.edit_text("Управление промокодами:", reply_markup=keyboards.create_admin_promos_keyboard())
 
 @user_router.callback_query(F.data == "admin_promo_create")
 async def admin_promo_create_start(callback: types.CallbackQuery, state: FSMContext):
-    if str(callback.from_user.id) != ADMIN_ID:
+    if not is_admin_telegram(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True); return
     await callback.answer()
     await state.set_state(PromoCreate.waiting_for_code)
@@ -1091,7 +1092,7 @@ async def admin_promo_create_start(callback: types.CallbackQuery, state: FSMCont
 
 @user_router.message(PromoCreate.waiting_for_code)
 async def admin_promo_code(message: types.Message, state: FSMContext):
-    if str(message.from_user.id) != ADMIN_ID:
+    if not is_admin_telegram(message.from_user.id):
         await state.clear()
         return
     code = (message.text or '').strip()
@@ -1104,7 +1105,7 @@ async def admin_promo_code(message: types.Message, state: FSMContext):
 
 @user_router.message(PromoCreate.waiting_for_discount)
 async def admin_promo_discount(message: types.Message, state: FSMContext):
-    if str(message.from_user.id) != ADMIN_ID:
+    if not is_admin_telegram(message.from_user.id):
         await state.clear()
         return
     try:
@@ -1120,7 +1121,7 @@ async def admin_promo_discount(message: types.Message, state: FSMContext):
 
 @user_router.message(PromoCreate.waiting_for_days)
 async def admin_promo_days(message: types.Message, state: FSMContext):
-    if str(message.from_user.id) != ADMIN_ID:
+    if not is_admin_telegram(message.from_user.id):
         await state.clear()
         return
     try:
@@ -1136,7 +1137,7 @@ async def admin_promo_days(message: types.Message, state: FSMContext):
 
 @user_router.message(PromoCreate.waiting_for_limit)
 async def admin_promo_limit(message: types.Message, state: FSMContext):
-    if str(message.from_user.id) != ADMIN_ID:
+    if not is_admin_telegram(message.from_user.id):
         await state.clear()
         return
     try:
@@ -1158,7 +1159,7 @@ async def admin_promo_limit(message: types.Message, state: FSMContext):
 
 @user_router.callback_query(F.data == "admin_promo_list")
 async def admin_promo_list(callback: types.CallbackQuery):
-    if str(callback.from_user.id) != ADMIN_ID:
+    if not is_admin_telegram(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True); return
     promos = get_all_promos()
     if not promos:
@@ -1172,7 +1173,7 @@ async def admin_promo_list(callback: types.CallbackQuery):
 
 @user_router.callback_query(F.data.startswith("admin_promo_toggle_"))
 async def admin_promo_toggle(callback: types.CallbackQuery):
-    if str(callback.from_user.id) != ADMIN_ID:
+    if not is_admin_telegram(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True); return
     code = callback.data.split("admin_promo_toggle_")[1]
     from shop_bot.data_manager.database import get_promo, set_promo_active

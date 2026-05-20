@@ -801,6 +801,19 @@ def get_balance(telegram_id: int) -> float:
         return 0.0
 
 
+def set_balance(telegram_id: int, amount: float) -> None:
+    """Set wallet balance (admin / support correction)."""
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            conn.execute(
+                "UPDATE users SET balance = ? WHERE telegram_id = ?",
+                (float(amount), telegram_id),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error(f"Failed to set balance for {telegram_id}: {e}")
+
+
 def add_balance(telegram_id: int, amount: float):
     try:
         with sqlite3.connect(DB_FILE) as conn:

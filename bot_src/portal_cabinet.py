@@ -12,11 +12,33 @@ from shop_bot.web_trial_db import (
 )
 
 
+def _bot_open_url() -> str:
+    import os
+
+    username = (os.getenv("TELEGRAM_BOT_USERNAME") or "Bender_KVN_bot").strip().lstrip("@")
+    return f"https://t.me/{username}"
+
+
 def _cabinet_for_telegram(telegram_id: int) -> dict:
     """Balance for bot user opened Mini App from Telegram."""
     user = get_user(telegram_id)
     if not user:
-        return {"ok": False, "error": "not_found"}
+        return {
+            "ok": False,
+            "error": "not_found",
+            "message": "Нажмите /start в боте, затем «Принимаю».",
+            "bot_url": _bot_open_url(),
+        }
+    if not user.get("agreed_to_terms"):
+        return {
+            "ok": False,
+            "error": "terms_required",
+            "message": (
+                "Сначала в боте примите условия («Принимаю»), "
+                "затем «Начать бесплатно» или «Мой VPN»."
+            ),
+            "bot_url": _bot_open_url(),
+        }
     balance = float(user.get("balance") or 0)
     days = balance_to_days(balance)
     return {

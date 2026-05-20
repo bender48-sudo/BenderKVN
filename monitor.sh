@@ -17,14 +17,14 @@ FLAG_RU=$'\U0001F1F7\U0001F1FA'
 FLAG_AMS=$'\U0001F1F3\U0001F1F1'
 
 # Public subscription smoke URL (aligned with daily-report.sh; overrides via balancer.env OK)
-SUB_PUBLIC_ORIGIN="${SUB_PUBLIC_ORIGIN:-https://p4n7q.conntest.xyz:2053}"
+SUB_PUBLIC_ORIGIN="${SUB_PUBLIC_ORIGIN:-https://p4n7q.conntest.xyz:8443}"
 export SUB_PUBLIC_ORIGIN
 SUB_MONITOR_PROBE_URL="${SUB_MONITOR_PROBE_URL:-${SUB_PUBLIC_ORIGIN}/api/sub/JLCF43RGjyq4ML78Qcsbq7Kf2}"
-SUB_ALT_PUBLIC_ORIGIN="${SUB_ALT_PUBLIC_ORIGIN:-https://k9x2m1.conntest.xyz:2053}"
+SUB_ALT_PUBLIC_ORIGIN="${SUB_ALT_PUBLIC_ORIGIN:-https://k9x2m1.conntest.xyz:8443}"
 SUB_ALT_MONITOR_PROBE_URL="${SUB_ALT_MONITOR_PROBE_URL:-${SUB_ALT_PUBLIC_ORIGIN}/api/sub/JLCF43RGjyq4ML78Qcsbq7Kf2}"
 
 # After P0 migrations panel lives on AMS; balancer.env MUST set this (fallback matches tmpl)
-PANEL_URL="${PANEL_URL:-https://k9x2m1.conntest.xyz:2053}"
+PANEL_URL="${PANEL_URL:-https://k9x2m1.conntest.xyz:8443}"
 
 # Anti-correlation jitter: random delay 0-60s
 sleep $((RANDOM % 60))
@@ -92,11 +92,24 @@ recover() {
     local state_file="$STATE_DIR/alert_${check_name}"
 
     if [ -f "$state_file" ]; then
-        _tg_send "$message"
+        local notify=1
+        local rn="$STATE_DIR/recover_notify_${check_name}"
+        if [ -f "$rn" ]; then
+            local now last
+            now=$(date +%s)
+            last=$(cat "$rn" 2>/dev/null || echo 0)
+            if [ "$((now - last))" -lt "$RECOVER_NOTIFY_MIN_SEC" ]; then
+                notify=0
+            fi
+        fi
+        if [ "$notify" -eq 1 ]; then
+            _tg_send "$message"
+            date +%s >"$rn"
+        fi
         rm -f "$state_file"
         date +%s >"$STATE_DIR/cooldown_${check_name}"
         rm -f "$STATE_DIR/fail_streak_${check_name}" "$STATE_DIR/ok_streak_${check_name}"
-        log "RECOVERED: $check_name"
+        log "RECOVERED: $check_name (tg_notify=${notify})"
     fi
 }
 
@@ -105,6 +118,8 @@ recover() {
 FAIL_STREAK_THRESHOLD="${FAIL_STREAK_THRESHOLD:-3}"
 OK_STREAK_THRESHOLD="${OK_STREAK_THRESHOLD:-2}"
 RE_ALERT_COOLDOWN_SEC="${RE_ALERT_COOLDOWN_SEC:-900}"
+# Не слать RECOVERED в TG чаще раза в час на один check (флап панели :2053→:8443)
+RECOVER_NOTIFY_MIN_SEC="${RECOVER_NOTIFY_MIN_SEC:-3600}"
 
 _streak_bump() {
     local f="$1"

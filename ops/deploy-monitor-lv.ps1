@@ -8,7 +8,10 @@ if (-not (Test-Path $M)) { throw "monitor.sh not found: $M" }
 
 $HostLv = "176.126.162.158"
 $Port = 3333
-$Key = Join-Path $env:USERPROFILE ".ssh\id_ed25519"
+$Key = Join-Path $env:USERPROFILE ".ssh\bvpn_lv_ed25519"
+if (-not (Test-Path $Key)) {
+    $Key = Join-Path $env:USERPROFILE ".ssh\id_ed25519"
+}
 $Common = @("-i", $Key, "-o", "BatchMode=yes", "-o", "ConnectTimeout=25", "-o", "StrictHostKeyChecking=accept-new", "-o", "GSSAPIAuthentication=no", "-o", "PreferredAuthentications=publickey")
 
 Write-Host "[deploy-monitor-lv] scp..."

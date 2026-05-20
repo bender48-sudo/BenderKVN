@@ -124,6 +124,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
+        if path.startswith("/setup/api/"):
+            path = "/" + path[len("/setup/api/") :].lstrip("/")
+        elif path.startswith("/setup/api"):
+            path = path[len("/setup/api") :] or "/"
         if path == "/funnel-event":
             length = int(self.headers.get("Content-Length", "0") or "0")
             raw = self.rfile.read(length) if length > 0 else b"{}"
@@ -138,6 +142,32 @@ class Handler(BaseHTTPRequestHandler):
                 return
             _funnel_log(ev, {"ip_hash": hashlib.sha256(_client_ip(self).encode()).hexdigest()[:16]})
             self._json(200, {"ok": True})
+            return
+        if path == "/telegram-setup":
+            length = int(self.headers.get("Content-Length", "0") or "0")
+            raw = self.rfile.read(length) if length > 0 else b"{}"
+            try:
+                data = json.loads(raw.decode("utf-8"))
+            except json.JSONDecodeError:
+                self._json(400, {"ok": False, "error": "invalid_json"})
+                return
+            try:
+                tid = int(data.get("telegram_id"))
+            except (TypeError, ValueError):
+                self._json(400, {"ok": False, "error": "missing_telegram_id"})
+                return
+            if tid <= 0:
+                self._json(400, {"ok": False, "error": "missing_telegram_id"})
+                return
+            try:
+                ams = _ams_portal_post("/portal-telegram-setup", {"telegram_id": tid})
+            except Exception as e:
+                self._json(502, {"ok": False, "error": str(e)[:120]})
+                return
+            code = 200 if ams.get("ok") else 404
+            if ams.get("error") == "invalid_telegram":
+                code = 400
+            self._json(code, ams)
             return
         if path == "/cabinet":
             length = int(self.headers.get("Content-Length", "0") or "0")

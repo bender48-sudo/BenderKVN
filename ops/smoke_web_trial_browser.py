@@ -45,6 +45,10 @@ def main() -> int:
     if not doc.get("ok") or not doc.get("sub_url"):
         print(f"WEB_TRIAL_FAIL: {doc}", file=sys.stderr)
         return 1
+    days = doc.get("days")
+    if days is not None and int(days) > 7:
+        print(f"WEB_TRIAL_FAIL: web trial days={days} expected <=7 (anti-abuse)", file=sys.stderr)
+        return 1
     print("WEB_TRIAL_BROWSER_OK")
     return 0
 

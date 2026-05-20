@@ -24,7 +24,15 @@ logger = logging.getLogger(__name__)
 # REMNA_SERVER_SNI - optional override for SNI (if need to force different host in URI)
 # REMNA_FP - fingerprint value for utls (optional)
 
-BASE_URL = os.getenv("REMNA_BASE_URL", "").rstrip("/")
+def _normalize_remna_base_url(url: str) -> str:
+    """Panel API must hit :8443; :2053 redirects and aiohttp drops Bearer on port change."""
+    u = (url or "").rstrip("/")
+    if u.endswith(":2053"):
+        return u[:-5] + ":8443"
+    return u
+
+
+BASE_URL = _normalize_remna_base_url(os.getenv("REMNA_BASE_URL", ""))
 COOKIE = os.getenv("REMNA_COOKIE")
 INBOUND_CACHE_TTL = int(os.getenv("REMNA_INBOUND_CACHE_TTL", "300"))
 INBOUND_TAG = os.getenv("REMNA_INBOUND_TAG")

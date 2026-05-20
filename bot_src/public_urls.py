@@ -63,3 +63,14 @@ def setup_origin() -> str:
         os.getenv("PUBLIC_SETUP_ORIGIN", "").strip().rstrip("/")
         or portal_origin().rstrip("/")
     )
+
+
+def normalize_subscription_url(url: str | None) -> str:
+    """Panel may return :2053; public edge serves /api/sub on :8443 (no auth strip on redirect)."""
+    u = (url or "").strip()
+    if not u:
+        return u
+    for host in ("p4n7q.conntest.xyz", "k9x2m1.conntest.xyz"):
+        u = u.replace(f"://{host}:2053/", f"://{host}:8443/")
+        u = u.replace(f"://{host}:2053", f"://{host}:8443")
+    return u

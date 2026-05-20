@@ -9,11 +9,7 @@ import os
 import sys
 from datetime import datetime, timezone
 
-from shop_bot.config import KEY_EMAIL_DOMAIN
-
-REMNA_TRIAL_DAYS = int(
-    os.getenv("REMNA_TRIAL_DAYS", os.getenv("TRIAL_DAYS", os.getenv("REMNA_DEFAULT_DAYS", "90")))
-)
+from shop_bot.config import KEY_EMAIL_DOMAIN, WEB_TRIAL_DAYS, telegram_bind_url
 from shop_bot.data_manager.database import (
     add_new_key,
     get_next_key_number,
@@ -23,7 +19,6 @@ from shop_bot.data_manager.database import (
     set_terms_agreed,
     set_trial_used,
 )
-from shop_bot.config import telegram_bind_url
 from shop_bot.web_trial_db import (
     ensure_bind_token,
     format_customer_id,
@@ -41,11 +36,17 @@ import aiohttp
 logger = logging.getLogger(__name__)
 
 
+def _parse_expire_iso(expire_iso: str) -> datetime | None:
+    if not expire_iso:
+        return None
+    return datetime.fromisoformat(expire_iso.replace("Z", "+00:00"))
+
+
 async def issue_web_trial(
     contact_email: str,
     contact_phone: str | None = None,
 ) -> dict:
-    """Create panel user + trial subscription for a new web-only customer."""
+    """Create panel user + short web trial subscription for a new web-only customer."""
     em = normalize_contact_email(contact_email)
     if not is_valid_contact_email(em):
         return {"ok": False, "error": "invalid_email"}
@@ -69,7 +70,7 @@ async def issue_web_trial(
     try:
         uri, expire_iso, vless_uuid, sub_url = await remnawave_api.provision_key(
             panel_email,
-            days=REMNA_TRIAL_DAYS,
+            days=WEB_TRIAL_DAYS,
             telegram_id=None,
         )
     except Exception as exc:
@@ -93,7 +94,7 @@ async def issue_web_trial(
         "ok": True,
         "sub_url": sub_url,
         "expire_at": expiry_dt.strftime("%d.%m.%Y"),
-        "days": REMNA_TRIAL_DAYS,
+        "days": WEB_TRIAL_DAYS,
         "customer_id": format_customer_id(web_uid),
         "web_user_id": web_uid,
         "bind_token": bind_token,
@@ -103,7 +104,7 @@ async def issue_web_trial(
 
 
 async def recover_web_trial(contact_email: str) -> dict:
-    """Return existing subscription for a web customer (same panel user, fresh sub URL)."""
+    """Return existing subscription for a web customer if still valid (no extension)."""
     em = normalize_contact_email(contact_email)
     if not is_valid_contact_email(em):
         return {"ok": False, "error": "invalid_email"}
@@ -123,21 +124,18 @@ async def recover_web_trial(contact_email: str) -> dict:
     if not panel_email:
         return {"ok": False, "error": "not_found"}
 
+    now = datetime.now(timezone.utc)
     try:
         async with aiohttp.ClientSession() as session:
-            inbound = await remnawave_api.get_inbound(session)
-            if not inbound:
-                return {"ok": False, "error": "provision_failed"}
-
             user = await remnawave_api.get_user_by_email(session, panel_email)
             if not user:
                 user = await remnawave_api.get_user_by_telegram_id(session, str(web_uid))
 
             if user:
-                sub_url = user.get("subscriptionUrl") or ""
+                sub_url = (user.get("subscriptionUrl") or "").strip()
                 expire_iso = user.get("expireAt") or ""
-                if sub_url and expire_iso:
-                    expiry_dt = datetime.fromisoformat(expire_iso.replace("Z", "+00:00"))
+                expiry_dt = _parse_expire_iso(expire_iso)
+                if sub_url and expiry_dt and expiry_dt > now:
                     return {
                         "ok": True,
                         "sub_url": sub_url,
@@ -146,29 +144,18 @@ async def recover_web_trial(contact_email: str) -> dict:
                         "recovered": True,
                         **bind_extra,
                     }
-
-            uri, expire_iso, vless_uuid, sub_url = await remnawave_api.provision_key(
-                panel_email,
-                days=REMNA_TRIAL_DAYS,
-                telegram_id=str(web_uid),
-            )
+                if expiry_dt and expiry_dt <= now:
+                    return {
+                        "ok": False,
+                        "error": "trial_expired",
+                        "bind_url": bind_extra.get("bind_url"),
+                        "customer_id": format_customer_id(web_uid),
+                    }
     except Exception as exc:
         logger.exception("recover_web_trial failed for %s", em)
         return {"ok": False, "error": "provision_failed", "detail": str(exc)[:200]}
 
-    if not sub_url or not expire_iso:
-        return {"ok": False, "error": "provision_failed"}
-
-    expiry_dt = datetime.fromisoformat(expire_iso.replace("Z", "+00:00"))
-    return {
-        "ok": True,
-        "sub_url": sub_url,
-        "expire_at": expiry_dt.strftime("%d.%m.%Y"),
-        "customer_id": format_customer_id(web_uid),
-        "recovered": True,
-        "reprovisioned": True,
-        **bind_extra,
-    }
+    return {"ok": False, "error": "not_found"}
 
 
 def main() -> int:

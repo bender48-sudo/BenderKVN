@@ -32,8 +32,13 @@ $WebhookPayAmt = Join-Path $RepoRoot "bot_src\webhook_server\payment_amount_veri
 $WebhookPayloadRedact = Join-Path $RepoRoot "bot_src\webhook_server\payload_redact.py"
 $PortalCabinet = Join-Path $RepoRoot "bot_src\portal_cabinet.py"
 $PortalBrowserResolve = Join-Path $RepoRoot "bot_src\portal_browser_resolve.py"
+$PortalTelegramSetup = Join-Path $RepoRoot "bot_src\portal_telegram_setup.py"
+$SubscriptionResolve = Join-Path $RepoRoot "bot_src\subscription_resolve.py"
 $PublicUrls = Join-Path $RepoRoot "bot_src\public_urls.py"
-foreach ($f in @($Handlers, $UserMsgs, $Scheduler, $Keyboards, $MainPy, $ConfigPy, $PortalLinks, $PortalWebTrial, $WebTrialDb, $WebTgBind, $VpnWizard, $SubQr, $SubRefresh, $AutoRenew, $SupportAuth, $SupportHandler, $RemnaApi, $PortalCabinet, $PortalBrowserResolve, $PublicUrls, $Database, $WebhookApp, $WebhookAppMain, $WebhookAuth, $WebhookPayQ, $WebhookPayAmt, $WebhookPayloadRedact)) {
+$AdminHandlers = Join-Path $RepoRoot "bot_src\admin_handlers.py"
+$AdminFlowTest = Join-Path $RepoRoot "bot_src\admin_flow_test.py"
+$AdminAuth = Join-Path $RepoRoot "bot_src\admin_auth.py"
+foreach ($f in @($Handlers, $UserMsgs, $Scheduler, $Keyboards, $MainPy, $ConfigPy, $PortalLinks, $PortalWebTrial, $WebTrialDb, $WebTgBind, $VpnWizard, $SubQr, $SubRefresh, $AutoRenew, $SupportAuth, $SupportHandler, $RemnaApi, $PortalCabinet, $PortalBrowserResolve, $PortalTelegramSetup, $SubscriptionResolve, $PublicUrls, $AdminHandlers, $AdminFlowTest, $AdminAuth, $Database, $WebhookApp, $WebhookAppMain, $WebhookAuth, $WebhookPayQ, $WebhookPayAmt, $WebhookPayloadRedact)) {
     if (-not (Test-Path $f)) { throw "Missing: $f" }
 }
 
@@ -88,7 +93,12 @@ Write-Host "[deploy-bot-handlers-ams] scp..."
 & scp @($Common + @("-P", "$Port", "${WebhookPayloadRedact}", "root@${HostAms}:/tmp/webhook_payload_redact.py"))
 & scp @($Common + @("-P", "$Port", "${PortalCabinet}", "root@${HostAms}:/tmp/portal_cabinet.py"))
 & scp @($Common + @("-P", "$Port", "${PortalBrowserResolve}", "root@${HostAms}:/tmp/portal_browser_resolve.py"))
+& scp @($Common + @("-P", "$Port", "${PortalTelegramSetup}", "root@${HostAms}:/tmp/portal_telegram_setup.py"))
+& scp @($Common + @("-P", "$Port", "${SubscriptionResolve}", "root@${HostAms}:/tmp/subscription_resolve.py"))
 & scp @($Common + @("-P", "$Port", "${PublicUrls}", "root@${HostAms}:/tmp/public_urls.py"))
+& scp @($Common + @("-P", "$Port", "${AdminHandlers}", "root@${HostAms}:/tmp/admin_handlers.py"))
+& scp @($Common + @("-P", "$Port", "${AdminFlowTest}", "root@${HostAms}:/tmp/admin_flow_test.py"))
+& scp @($Common + @("-P", "$Port", "${AdminAuth}", "root@${HostAms}:/tmp/admin_auth.py"))
 
 $sshCmd = @'
 set -e
@@ -97,7 +107,13 @@ BT=/opt/remna-shop/src/shop_bot/bot
 SB=/opt/remna-shop/src/shop_bot
 DM=/opt/remna-shop/src/shop_bot/data_manager
 WH=/opt/remna-shop/src/shop_bot/webhook_server
-sed -i 's/\r$//' /tmp/handlers.py /tmp/user_messages.py /tmp/scheduler.py /tmp/keyboards.py /tmp/main.py /tmp/config.py /tmp/portal_links.py /tmp/portal_web_trial.py /tmp/web_trial_db.py /tmp/web_tg_bind.py /tmp/vpn_setup_wizard.py /tmp/subscription_qr.py /tmp/subscription_refresh.py /tmp/auto_renew_billing.py /tmp/support_auth.py /tmp/support_handler.py /tmp/remnawave_api.py /tmp/portal_cabinet.py /tmp/portal_browser_resolve.py /tmp/public_urls.py /tmp/database.py /tmp/webhook_app_ams.py /tmp/webhook_app_main.py /tmp/webhook_auth.py /tmp/webhook_payment_queue.py /tmp/webhook_payment_amount_verify.py /tmp/webhook_payload_redact.py
+sed -i 's/\r$//' /tmp/handlers.py /tmp/user_messages.py /tmp/scheduler.py /tmp/keyboards.py /tmp/main.py /tmp/config.py /tmp/portal_links.py /tmp/portal_web_trial.py /tmp/portal_telegram_setup.py /tmp/subscription_resolve.py /tmp/web_trial_db.py /tmp/web_tg_bind.py /tmp/vpn_setup_wizard.py /tmp/subscription_qr.py /tmp/subscription_refresh.py /tmp/auto_renew_billing.py /tmp/support_auth.py /tmp/support_handler.py /tmp/remnawave_api.py /tmp/portal_cabinet.py /tmp/portal_browser_resolve.py /tmp/public_urls.py /tmp/admin_handlers.py /tmp/admin_flow_test.py /tmp/database.py /tmp/webhook_app_ams.py /tmp/webhook_app_main.py /tmp/webhook_auth.py /tmp/webhook_payment_queue.py /tmp/webhook_payment_amount_verify.py /tmp/webhook_payload_redact.py
+ENV=/opt/remna-shop/.env
+grep -q '^WEB_TRIAL_DAYS=' "$ENV" 2>/dev/null && sed -i '/^WEB_TRIAL_DAYS=/d' "$ENV" || true
+echo 'WEB_TRIAL_DAYS=1' >> "$ENV"
+sed -i 's|REMNA_BASE_URL=https://k9x2m1.conntest.xyz:2053|REMNA_BASE_URL=https://k9x2m1.conntest.xyz:8443|' "$ENV" || true
+sed -i 's|SUB_DOMAIN=p4n7q.conntest.xyz:2053|SUB_DOMAIN=p4n7q.conntest.xyz:8443|' "$ENV" || true
+grep -q '^ADMIN_TELEGRAM_IDS=' "$ENV" 2>/dev/null || echo 'ADMIN_TELEGRAM_IDS=' >> "$ENV"
 mkdir -p "$BT" "$DM" "$WH"
 CFG=/opt/remna-shop/src/shop_bot/config.py
 for f in handlers.py user_messages.py keyboards.py; do
@@ -123,9 +139,15 @@ install -m 0644 /tmp/database.py "$DM/database.py"
 install -m 0644 /tmp/support_auth.py "$SB/support_auth.py"
 install -m 0644 /tmp/support_handler.py "$BT/support_handler.py"
 install -m 0644 /tmp/remnawave_api.py "$SB/remnawave_api.py"
+install -m 0644 /tmp/remnawave_api.py "$SB/modules/remnawave_api.py"
 install -m 0644 /tmp/portal_cabinet.py "$SB/portal_cabinet.py"
 install -m 0644 /tmp/portal_browser_resolve.py "$SB/portal_browser_resolve.py"
+install -m 0644 /tmp/portal_telegram_setup.py "$SB/portal_telegram_setup.py"
+install -m 0644 /tmp/subscription_resolve.py "$SB/subscription_resolve.py"
 install -m 0644 /tmp/public_urls.py "$SB/public_urls.py"
+install -m 0644 /tmp/admin_handlers.py "$BT/admin_handlers.py"
+install -m 0644 /tmp/admin_flow_test.py "$SB/admin_flow_test.py"
+install -m 0644 /tmp/admin_auth.py "$SB/admin_auth.py"
 install -m 0644 /tmp/webhook_app_ams.py "$WH/app_ams_with_portal_trial.py"
 install -m 0644 /tmp/webhook_app_main.py "$WH/app.py"
 install -m 0644 /tmp/webhook_auth.py "$WH/auth.py"
@@ -150,9 +172,15 @@ docker cp /tmp/database.py remna-shop-bot:/app/src/shop_bot/data_manager/databas
 docker cp /tmp/support_auth.py remna-shop-bot:/app/src/shop_bot/support_auth.py
 docker cp /tmp/support_handler.py remna-shop-bot:/app/src/shop_bot/bot/support_handler.py
 docker cp /tmp/remnawave_api.py remna-shop-bot:/app/src/shop_bot/remnawave_api.py
+docker cp /tmp/remnawave_api.py remna-shop-bot:/app/src/shop_bot/modules/remnawave_api.py
 docker cp /tmp/portal_cabinet.py remna-shop-bot:/app/src/shop_bot/portal_cabinet.py
 docker cp /tmp/portal_browser_resolve.py remna-shop-bot:/app/src/shop_bot/portal_browser_resolve.py
+docker cp /tmp/portal_telegram_setup.py remna-shop-bot:/app/src/shop_bot/portal_telegram_setup.py
+docker cp /tmp/subscription_resolve.py remna-shop-bot:/app/src/shop_bot/subscription_resolve.py
 docker cp /tmp/public_urls.py remna-shop-bot:/app/src/shop_bot/public_urls.py
+docker cp /tmp/admin_handlers.py remna-shop-bot:/app/src/shop_bot/bot/admin_handlers.py
+docker cp /tmp/admin_flow_test.py remna-shop-bot:/app/src/shop_bot/admin_flow_test.py
+docker cp /tmp/admin_auth.py remna-shop-bot:/app/src/shop_bot/admin_auth.py
 docker cp /tmp/webhook_app_ams.py remna-shop-bot:/app/src/shop_bot/webhook_server/app_ams_with_portal_trial.py
 docker cp /tmp/webhook_app_main.py remna-shop-bot:/app/src/shop_bot/webhook_server/app.py
 docker cp /tmp/webhook_auth.py remna-shop-bot:/app/src/shop_bot/webhook_server/auth.py
@@ -160,7 +188,7 @@ docker cp /tmp/webhook_payment_queue.py remna-shop-bot:/app/src/shop_bot/webhook
 docker cp /tmp/webhook_payment_amount_verify.py remna-shop-bot:/app/src/shop_bot/webhook_server/payment_amount_verify.py
 docker cp /tmp/webhook_payload_redact.py remna-shop-bot:/app/src/shop_bot/webhook_server/payload_redact.py
 docker cp /tmp/main.py remna-shop-bot:/app/src/shop_bot/main.py
-docker restart remna-shop-bot
+cd /opt/remna-shop && docker compose restart remna-shop-bot
 echo "Remote md5:"
 md5sum "$BT/handlers.py" "$BT/user_messages.py" "$BT/keyboards.py" "$CFG" /opt/remna-shop/src/shop_bot/main.py "$DM/scheduler.py"
 '@

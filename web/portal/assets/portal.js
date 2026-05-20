@@ -8,6 +8,7 @@
   const SETUP_PATH = "/setup/";
   const API_FUNNEL = "/setup/api/funnel-event";
   const API_CABINET = "/setup/api/cabinet";
+  const API_TELEGRAM_SETUP = "/setup/api/telegram-setup";
   const ACK_KEY = "bvpn_vpn_config_ack";
   const SUB_URL_KEY = "bvpn_subscription_url";
   const CID_KEY = "bvpn_customer_id";
@@ -30,24 +31,33 @@
   }
 
   function getTelegramUserId() {
+    var tg = getTelegramWebApp();
+    if (tg) {
+      var u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+      if (u && u.id) return u.id;
+      try {
+        var idp = new URLSearchParams(tg.initData || "");
+        var uj = idp.get("user");
+        if (uj) {
+          var parsed = JSON.parse(uj);
+          if (parsed && parsed.id) return parsed.id;
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    }
     var params = new URLSearchParams(window.location.search || "");
     var tid = parseInt(params.get("tid") || "0", 10);
     if (tid > 0) return tid;
-    var tg = getTelegramWebApp();
-    if (!tg) return 0;
-    var u = tg.initDataUnsafe && tg.initDataUnsafe.user;
-    if (u && u.id) return u.id;
-    try {
-      var idp = new URLSearchParams(tg.initData || "");
-      var uj = idp.get("user");
-      if (uj) {
-        var parsed = JSON.parse(uj);
-        if (parsed && parsed.id) return parsed.id;
-      }
-    } catch (e) {
-      /* ignore */
-    }
     return 0;
+  }
+
+  function normalizeSubUrl(url) {
+    var u = (url || "").trim();
+    if (!u) return u;
+    return u
+      .replace("://p4n7q.conntest.xyz:2053", "://p4n7q.conntest.xyz:8443")
+      .replace("://k9x2m1.conntest.xyz:2053", "://k9x2m1.conntest.xyz:8443");
   }
 
   function copyToClipboard(text) {
@@ -125,6 +135,79 @@
         ev.preventDefault();
         openExternal(el.href);
       }
+    });
+  }
+
+  function postJson(url, body) {
+    return fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).then(function (r) {
+      return r.json().then(function (j) {
+        return { code: r.status, body: j };
+      });
+    });
+  }
+
+  function openTelegramSetup(ev) {
+    if (ev) ev.preventDefault();
+    var tid = getTelegramUserId();
+    if (!getTelegramWebApp() && tid <= 0) {
+      window.location.href = SETUP_PATH;
+      return;
+    }
+    trackFunnel("portal_tg_setup");
+    if (!tid) {
+      window.alert(
+        "Не удалось определить Telegram. Закройте Mini App и откройте снова из бота."
+      );
+      return;
+    }
+    postJson(API_TELEGRAM_SETUP, { telegram_id: tid })
+      .then(function (res) {
+        if (res.body && res.body.sub_url) {
+          try {
+            localStorage.setItem(SUB_URL_KEY, normalizeSubUrl(res.body.sub_url));
+          } catch (e) {
+            /* ignore */
+          }
+        }
+        if (res.body && res.body.ok && res.body.setup_page_url) {
+          if (getTelegramWebApp()) {
+            window.location.href = res.body.setup_page_url;
+          } else {
+            openExternal(res.body.setup_page_url);
+          }
+          return;
+        }
+        var msg =
+          (res.body && res.body.message) ||
+          (content.setup && content.setup.error_no_subscription) ||
+          "Сначала получите доступ в боте.";
+        if (res.body && res.body.bot_url) {
+          if (getTelegramWebApp()) {
+            openExternal(res.body.bot_url);
+          } else {
+            window.location.href = res.body.bot_url;
+          }
+        }
+        window.alert(msg);
+      })
+      .catch(function () {
+        window.alert(content.errors.generic);
+      });
+  }
+
+  function bindSetupEntryButtons() {
+    ["btn-setup", "btn-cabinet-setup"].forEach(function (id) {
+      var el = $(id);
+      if (!el) return;
+      el.addEventListener("click", function (ev) {
+        if (getTelegramWebApp() || getTelegramUserId() > 0) {
+          openTelegramSetup(ev);
+        }
+      });
     });
   }
 
@@ -218,13 +301,18 @@
 
   function renderHome() {
     var home = content.home;
+    var tg = getTelegramWebApp();
     $("page-title").textContent = home.title;
     if ($("hero-badge") && home.hero_badge) {
-      $("hero-badge").textContent = home.hero_badge;
+      $("hero-badge").textContent = tg && home.hero_badge_tg
+        ? home.hero_badge_tg
+        : home.hero_badge;
     }
     var sub = $("page-subtitle");
     if (sub) {
-      sub.textContent = home.hero_mono || home.subtitle || "";
+      sub.textContent = tg
+        ? home.subtitle_tg || home.hero_mono || home.subtitle || ""
+        : home.hero_mono || home.subtitle || "";
     }
     var stack = $("hero-stack");
     if (stack && home.features && home.features.length) {
@@ -241,8 +329,13 @@
     $("btn-connect").textContent = content.buttons.connect;
     var setupBtn = $("btn-setup");
     if (setupBtn && content.buttons.setup_browser) {
-      setupBtn.textContent = content.buttons.setup_browser;
-      setupBtn.href = SETUP_PATH;
+      if (tg) {
+        setupBtn.textContent = content.buttons.setup_tg || "Моя настройка VPN";
+        setupBtn.href = "#";
+      } else {
+        setupBtn.textContent = content.buttons.setup_browser;
+        setupBtn.href = SETUP_PATH;
+      }
     }
     var guideBtn = $("btn-guide");
     if (guideBtn && content.buttons.watch_guide) {
@@ -426,13 +519,19 @@
       $("cabinet-web-notify").textContent = cab.web_notify_lead || "";
     }
     $("btn-cabinet-bot").textContent = cab.open_bot || "Открыть бота";
-    $("btn-cabinet-setup").textContent = content.buttons.setup_browser;
+    if (tg) {
+      $("btn-cabinet-setup").textContent =
+        cab.setup_tg || content.buttons.setup_tg || "QR для Happ";
+      $("btn-cabinet-setup").href = "#";
+    } else {
+      $("btn-cabinet-setup").textContent = content.buttons.setup_browser;
+      $("btn-cabinet-setup").href = SETUP_PATH;
+    }
     var bindBtn = $("btn-cabinet-bind");
     if (bindBtn) {
       bindBtn.textContent = cab.bind_tg || "Привязать Telegram";
     }
     bindExternalLink($("btn-cabinet-bot"));
-    bindExternalLink($("btn-cabinet-setup"));
     bindExternalLink(bindBtn);
     try {
       var cid = localStorage.getItem(CID_KEY) || "";
@@ -469,11 +568,20 @@
     var err = $("cabinet-load-error");
     if (err) err.classList.add("hidden");
     if (!doc || !doc.ok) {
-      showCabinetError(
-        getTelegramWebApp()
+      var msg =
+        (doc && doc.message) ||
+        (getTelegramWebApp()
           ? "Аккаунт не найден. Нажмите /start в боте и попробуйте снова."
-          : "Не найдено. Проверьте email или BVPN-ID."
-      );
+          : "Не найдено. Проверьте email или BVPN-ID.");
+      showCabinetError(msg);
+      if (doc && doc.bot_url) {
+        var bindBtn = $("btn-cabinet-bind");
+        if (bindBtn) {
+          bindBtn.href = doc.bot_url;
+          bindBtn.textContent = content.cabinet.open_bot || "Открыть бота";
+          bindBtn.classList.remove("hidden");
+        }
+      }
       return;
     }
     var fmt = cab.balance_format || "{balance} ₽ · ~{days} дн.";
@@ -539,11 +647,27 @@
         body: JSON.stringify({ telegram_id: uid }),
       })
         .then(function (r) {
-          return r.json();
+          return r.json().then(function (j) {
+            return { status: r.status, body: j };
+          });
         })
-        .then(applyCabinetData)
+        .then(function (res) {
+          if (res.body && res.body.ok) {
+            applyCabinetData(res.body);
+            return;
+          }
+          applyCabinetData(
+            res.body || {
+              ok: false,
+              message:
+                res.status === 502
+                  ? "Сервис кабинета временно недоступен. Попробуйте через минуту."
+                  : "Аккаунт не найден. Нажмите /start в боте и откройте кабинет снова.",
+            }
+          );
+        })
         .catch(function () {
-          applyCabinetData({ ok: false });
+          applyCabinetData({ ok: false, message: content.errors.generic });
         });
       return;
     }
@@ -679,7 +803,6 @@
       }
     });
     bindExternalLink($("btn-support"));
-    bindExternalLink($("btn-setup"));
     bindExternalLink($("btn-device-support"));
 
     var btnEventsAck = $("btn-events-ack");
@@ -720,6 +843,7 @@
       if ($("device-grid")) renderDevices();
       renderCabinet();
       bindActions();
+      bindSetupEntryButtons();
       applyRouteFromHash();
       if (resolveRouteView() !== "cabinet") {
         trackFunnel("portal_view_home");

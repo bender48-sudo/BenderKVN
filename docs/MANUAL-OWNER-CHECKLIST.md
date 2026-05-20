@@ -31,6 +31,12 @@
 - [ ] **BotFather** → Menu Button / Web App URL = **`https://k9x2m1.conntest.xyz:8443/portal/`** (см. **`ops/site.env.example`**).
 - [ ] Ручной тест: Mini App на телефоне = тот же экран, что **`/start/`** в браузере (**без VPN**, мобильная сеть).
 
+## Админ: smoke флоу в боте (после деплоя)
+
+- [ ] В **главном меню** есть **«Админ-панель»** (ваш Telegram ID в `ADMIN_TELEGRAM_ID` или `ADMIN_TELEGRAM_IDS` в `/opt/remna-shop/.env`).
+- [ ] **Админ-панель** → **«Тест флоу»** → **«Запустить все проверки»** — все строки **✅** (особенно Remna API и `subscriptionUrl`).
+- [ ] При регрессе: красные пункты с `:2053` или `401` → **`docs/RUNBOOK-REMNA-API-TOKEN.md`**, `REMNA_BASE_URL=https://…:8443` в `/opt/remna-shop/.env`.
+
 ---
 
 ## CryptoBot (~2 мин)
@@ -65,7 +71,9 @@
 ## Секреты (один раз; агент не создаёт офлайн-копии)
 
 - [ ] Passphrase **LUKS Postgres AMS** в Bitwarden + **ваша** офлайн-копия (агент: `deploy-postgres-luks-ams.ps1 -ProbeOnly` в **Q083**).
-- [ ] Подтвердить, что **`SUPPORT_STAFF_IDS`** в Bitwarden совпадает с тем, что агент залил в **Q079**.
+- [x] **`SUPPORT_STAFF_IDS`** на AMS: все, кто отвечает из группы Support (ваш TG + `ADMIN_TELEGRAM_ID`), через запятую. Иначе бот **молча игнорирует** ответы (`Ignored support reply from unauthorized` в логах).
+- [ ] **BotFather → Group Privacy → Turn off** для @Bender_KVN_bot (иначе ответы в Support не доходят до клиента).
+- [ ] После деплоя email-trial: на AMS в `/opt/remna-shop/.env` — **`WEB_TRIAL_DAYS=1`** (отдельно от `REMNA_TRIAL_DAYS=90` в боте).
 
 ---
 

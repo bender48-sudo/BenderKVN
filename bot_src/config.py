@@ -10,6 +10,9 @@ REMNA_TRIAL_DAYS = int(
     os.getenv("REMNA_TRIAL_DAYS", os.getenv("TRIAL_DAYS", os.getenv("REMNA_DEFAULT_DAYS", "90")))
 )
 
+# Browser /email trial: short access only to complete Happ setup + bind Telegram (anti-abuse).
+WEB_TRIAL_DAYS = int(os.getenv("WEB_TRIAL_DAYS", "1"))
+
 # Оплата в боте (ЮKassa/TG Stars и т.д.). Если false — напоминания об окончании
 # пробного периода без кнопки пополнения, только поддержка.
 BOT_PAYMENTS_LIVE = os.getenv("BOT_PAYMENTS_LIVE", "").strip().lower() in ("1", "true", "yes")

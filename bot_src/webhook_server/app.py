@@ -140,11 +140,44 @@ def create_webhook_app(bot, payment_processor):
             return False
         return request.headers.get("X-Portal-Lookup-Key", "") == secret
 
+    def _portal_service_auth() -> bool:
+        """LV setup_verify uses PORTAL_WEB_TRIAL_SECRET; optional separate lookup key."""
+        trial = os.getenv("PORTAL_WEB_TRIAL_SECRET", "").strip()
+        if trial and request.headers.get("X-Portal-Web-Trial-Key") == trial:
+            return True
+        return _portal_lookup_auth()
+
+    @flask_app.route("/portal-telegram-setup", methods=["POST"])
+    def portal_telegram_setup_handler():
+        """Mini App / portal: signed /setup/?t= for Telegram user (not email trial)."""
+        secret = os.getenv("PORTAL_WEB_TRIAL_SECRET", "").strip()
+        if not secret or request.headers.get("X-Portal-Web-Trial-Key") != secret:
+            return _reject_auth()
+        try:
+            data = request.get_json(silent=True) or {}
+            raw_tid = data.get("telegram_id")
+            try:
+                tid = int(raw_tid)
+            except (TypeError, ValueError):
+                tid = 0
+            if tid <= 0:
+                return jsonify({"ok": False, "error": "missing_telegram_id"}), 400
+            from shop_bot.portal_telegram_setup import telegram_setup_for_user
+
+            result = asyncio.run(telegram_setup_for_user(tid))
+            code = 200 if result.get("ok") else 404
+            if result.get("error") in ("invalid_telegram", "missing_telegram_id"):
+                code = 400
+            return jsonify(result), code
+        except Exception as e:
+            logger.error("portal-telegram-setup: %s", e, exc_info=True)
+            return jsonify({"ok": False, "error": "server_error"}), 500
+
     @flask_app.route("/portal-cabinet", methods=["POST"])
     def portal_cabinet_handler():
         """Read-only balance for web trial (BVPN-ID or email)."""
         try:
-            if not _portal_lookup_auth():
+            if not _portal_service_auth():
                 return _reject_auth()
             data = request.get_json(silent=True) or {}
             from shop_bot.portal_cabinet import cabinet_snapshot
@@ -169,7 +202,7 @@ def create_webhook_app(bot, payment_processor):
     def portal_setup_resolve_handler():
         """Browser setup: resolve @username / telegram id → subscription URL."""
         try:
-            if not _portal_lookup_auth():
+            if not _portal_service_auth():
                 return _reject_auth()
             data = request.get_json(silent=True) or {}
             username = (data.get("username") or "").strip()

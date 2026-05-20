@@ -5,13 +5,15 @@ import os
 
 from aiogram.types import User
 
+from shop_bot.admin_auth import admin_telegram_ids
+
 
 def support_staff_ids() -> set[int]:
     """Telegram user ids allowed to reply from SUPPORT_GROUP_ID topics."""
     ids: set[int] = set()
-    admin = (os.getenv("ADMIN_TELEGRAM_ID") or "").strip()
-    if admin.isdigit():
-        ids.add(int(admin))
+    for aid in admin_telegram_ids():
+        if aid.isdigit():
+            ids.add(int(aid))
     raw = (os.getenv("SUPPORT_STAFF_IDS") or "").strip()
     for part in raw.split(","):
         part = part.strip()

@@ -5,6 +5,8 @@
   var API_TRIAL = "/setup/api/web-trial";
   var API_RECOVER = "/setup/api/web-trial-recover";
   var API_VERIFY = "/setup/api/verify";
+  var API_TELEGRAM_SETUP = "/setup/api/telegram-setup";
+  var SUPPORT_BOT_URL = "https://t.me/Bender_KVN_bot";
 
   var params = new URLSearchParams(window.location.search);
   var token = params.get("t") || "";
@@ -48,39 +50,50 @@
     return stores[key] || stores.generic || null;
   }
 
+  function normalizeSubUrl(url) {
+    var u = (url || "").trim();
+    if (!u) return u;
+    return u
+      .replace("://p4n7q.conntest.xyz:2053", "://p4n7q.conntest.xyz:8443")
+      .replace("://k9x2m1.conntest.xyz:2053", "://k9x2m1.conntest.xyz:8443");
+  }
+
+  function renderPlatformDownloads() {
+    var wrap = $("platform-downloads");
+    var title = $("platform-downloads-title");
+    var s = content.setup || {};
+    if (title) {
+      title.textContent = s.platform_downloads_title || "Скачать Happ";
+    }
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    var stores = (content && content.happ_install) || {};
+    ["ios", "android", "windows", "mac"].forEach(function (key) {
+      var st = stores[key];
+      if (!st || !st.url) return;
+      var a = document.createElement("a");
+      a.className = "btn btn-secondary";
+      a.href = st.url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = "↓ " + (st.label || key);
+      wrap.appendChild(a);
+    });
+  }
+
   function renderHappStoreLink(key) {
     var link = $("happ-store-link");
     if (!link) return;
-    var store = storeForKey(key || "generic");
-    if (!store) {
-      hide(link);
-      return;
-    }
-    link.href = store.url;
-    link.textContent = "↓ " + store.label;
-    showEl(link.parentElement);
+    hide(link);
   }
 
-  function renderStepList(ol, steps, storeKey) {
+  function renderStepList(ol, steps) {
     if (!ol) return;
     ol.innerHTML = "";
-    (steps || []).forEach(function (text, idx) {
+    (steps || []).forEach(function (text) {
       var li = document.createElement("li");
       li.textContent = text;
       ol.appendChild(li);
-      if (idx === 0 && storeKey) {
-        var store = storeForKey(storeKey);
-        if (store) {
-          var a = document.createElement("a");
-          a.className = "store-link";
-          a.href = store.url;
-          a.target = "_blank";
-          a.rel = "noopener";
-          a.textContent = "↓ " + store.label;
-          li.appendChild(document.createElement("br"));
-          li.appendChild(a);
-        }
-      }
     });
   }
 
@@ -154,10 +167,17 @@
         (s.success_trial || "Готово! Бесплатный доступ до") + " " + extra.expire_at;
     }
     var step1Lead = $("setup-step1-lead");
-    if (step1Lead && s.step1_lead) {
-      step1Lead.textContent = s.step1_lead;
-      showEl(step1Lead);
+    if (step1Lead) {
+      var inTg = !!getTelegramWebApp();
+      var lead = inTg
+        ? s.step1_lead_tg || s.step1_lead
+        : s.step1_lead;
+      if (lead) {
+        step1Lead.textContent = lead;
+        showEl(step1Lead);
+      }
     }
+    renderPlatformDownloads();
     var happTitle = $("happ-steps-title");
     if (happTitle) happTitle.textContent = s.step1_title || "Шаг 1 — Happ";
     if (extra && extra.customer_id) {
@@ -172,12 +192,13 @@
     } else {
       hide($("customer-id-panel"));
     }
-    $("setup-link").textContent = url;
-    $("setup-link").href = url;
-    $("btn-open-happ").href = url;
-    renderQr(url);
+    var norm = normalizeSubUrl(url);
+    $("setup-link").textContent = norm;
+    $("setup-link").href = norm;
+    $("btn-open-happ").href = norm;
+    renderQr(norm);
     try {
-      localStorage.setItem("bvpn_subscription_url", url);
+      localStorage.setItem("bvpn_subscription_url", norm);
     } catch (e) {
       /* ignore */
     }
@@ -185,7 +206,7 @@
     if (extra && extra.customer_id) {
       bindCopy($("btn-copy-id"), extra.customer_id, s.copied_id);
     }
-    renderStepList($("happ-steps"), s.happ_steps, lastStoreKey);
+    renderStepList($("happ-steps"), s.happ_steps);
     renderHappStoreLink(lastStoreKey);
     renderBindTelegram(extra);
     showEl($("setup-content"));
@@ -250,6 +271,11 @@
             showSetupResult(res.body.sub_url, res.body);
             return;
           }
+          if (res.body && res.body.error === "trial_expired") {
+            showError(s.signup_error_expired || s.signup_error_used, "trial_expired");
+            if (res.body.bind_url) renderBindTelegram(res.body);
+            return;
+          }
           if (res.code === 404) {
             showError(s.signup_error_not_found, "trial_used");
             return;
@@ -277,6 +303,11 @@
         .then(function (res) {
           hide($("setup-loading"));
           if (!res.body.ok || !res.body.sub_url) {
+            if (res.body.error === "trial_expired") {
+              showError(s.signup_error_expired || s.signup_error_used, "trial_expired");
+              if (res.body.bind_url) renderBindTelegram(res.body);
+              return;
+            }
             if (res.body.error === "not_found") showError(s.signup_error_not_found, "trial_used");
             else showError(s.signup_error_generic, "service_unavailable");
             return;
@@ -290,10 +321,105 @@
     });
   }
 
+  function getTelegramWebApp() {
+    return window.Telegram && window.Telegram.WebApp;
+  }
+
+  function getTelegramUserId() {
+    var tg = getTelegramWebApp();
+    if (tg) {
+      var u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+      if (u && u.id) return u.id;
+      try {
+        var idp = new URLSearchParams(tg.initData || "");
+        var uj = idp.get("user");
+        if (uj) {
+          var parsed = JSON.parse(uj);
+          if (parsed && parsed.id) return parsed.id;
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    }
+    var params = new URLSearchParams(window.location.search || "");
+    var tid = parseInt(params.get("tid") || "0", 10);
+    if (tid > 0) return tid;
+    return 0;
+  }
+
+  function loadTelegramSetup(retry) {
+    var s = content.setup;
+    var tg = getTelegramWebApp();
+    if (tg) {
+      document.documentElement.classList.add("tg-webapp");
+      tg.ready();
+      tg.expand();
+    }
+    $("setup-title").textContent = s.title_tg || s.title;
+    $("setup-lead").textContent = s.lead_tg || s.lead_browser;
+    hide($("setup-signup"));
+    hide($("setup-error"));
+    showEl($("setup-loading"));
+    $("setup-loading").textContent = s.signup_loading_tg || s.signup_loading;
+
+    var tid = getTelegramUserId();
+    if (!tid && retry < 8) {
+      setTimeout(function () {
+        loadTelegramSetup(retry + 1);
+      }, 120);
+      return;
+    }
+    if (!tid) {
+      hide($("setup-loading"));
+      showError(
+        "Не удалось определить Telegram. Закройте страницу и откройте снова из бота или Mini App.",
+        "service_unavailable"
+      );
+      return;
+    }
+
+    postJson(API_TELEGRAM_SETUP, { telegram_id: tid })
+      .then(function (res) {
+        hide($("setup-loading"));
+        if (res.body && res.body.ok && res.body.setup_page_url) {
+          window.location.replace(res.body.setup_page_url);
+          return;
+        }
+        if (res.body && res.body.ok && res.body.sub_url) {
+          showSetupResult(res.body.sub_url, null);
+          return;
+        }
+        var msg =
+          (res.body && res.body.message) ||
+          s.signup_error_generic ||
+          "Не удалось загрузить настройку.";
+        if (res.body && res.body.error === "no_subscription") {
+          msg = s.error_no_subscription || msg;
+        }
+        showError(msg, res.body && res.body.error);
+        if (res.body && res.body.bot_url) {
+          var helpWrap = $("setup-error-help");
+          var helpLink = $("setup-error-help-link");
+          if (helpWrap && helpLink) {
+            helpLink.href = res.body.bot_url;
+            helpLink.textContent = s.error_open_bot || "Открыть бота";
+            showEl(helpWrap);
+          }
+        }
+      })
+      .catch(function () {
+        hide($("setup-loading"));
+        showError(content.errors.generic, "service_unavailable");
+      });
+  }
+
   function bindTexts() {
     var s = content.setup;
-    $("setup-title").textContent = s.title_browser || s.title;
-    $("setup-lead").textContent = s.lead_browser;
+    var inTg = !!getTelegramWebApp();
+    $("setup-title").textContent = inTg
+      ? s.title_tg || s.title
+      : s.title_browser || s.title;
+    $("setup-lead").textContent = inTg ? s.lead_tg || s.lead_browser : s.lead_browser;
     $("signup-heading").textContent = s.signup_heading;
     $("signup-lead").textContent = s.signup_lead;
     $("recover-heading").textContent = s.recover_heading;
@@ -331,6 +457,10 @@
       bindForms();
 
       if (!token) {
+        if (getTelegramWebApp() || getTelegramUserId() > 0) {
+          loadTelegramSetup(0);
+          return;
+        }
         showEl($("setup-signup"));
         return;
       }

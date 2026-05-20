@@ -193,26 +193,63 @@ async def user_message_to_support(message: types.Message, bot: Bot):
         )
 
 
+def _user_id_from_reply(message: types.Message) -> int | None:
+    """Resolve client from reply-to forwarded user message in support topic."""
+    ref = message.reply_to_message
+    if not ref:
+        return None
+    if ref.forward_from and not ref.forward_from.is_bot:
+        return int(ref.forward_from.id)
+    origin = getattr(ref, "forward_origin", None)
+    if origin is not None:
+        sender = getattr(origin, "sender_user", None)
+        if sender and not getattr(sender, "is_bot", False):
+            return int(sender.id)
+    if ref.from_user and not ref.from_user.is_bot and ref.chat.type == "private":
+        return int(ref.from_user.id)
+    return None
+
+
 @support_router.message(F.chat.id == SUPPORT_GROUP_ID, F.message_thread_id)
 async def admin_reply_in_topic(message: types.Message, bot: Bot):
     """Forward admin replies from support group topic back to user."""
-    if not message.message_thread_id:
-        return
-
-    user_id = _find_user_by_topic(message.message_thread_id)
-    if not user_id:
+    thread_id = message.message_thread_id
+    if not thread_id:
         return
 
     if not is_authorized_support_staff(message.from_user):
         logger.warning(
             "Ignored support reply from unauthorized tg_id=%s in topic=%s",
             getattr(message.from_user, "id", None),
-            message.message_thread_id,
+            thread_id,
+        )
+        return
+
+    user_id = _find_user_by_topic(thread_id)
+    if not user_id:
+        user_id = _user_id_from_reply(message)
+        if user_id:
+            _set_support_topic(user_id, thread_id)
+            logger.info(
+                "Support topic %s remapped to user %s via reply_to forward",
+                thread_id,
+                user_id,
+            )
+    if not user_id:
+        logger.warning(
+            "Support reply dropped: unknown topic=%s staff=%s (reply in thread or remap DB)",
+            thread_id,
+            message.from_user.id,
+        )
+        await message.reply(
+            f"⚠️ Сообщение не доставлено клиенту: топик {thread_id} не привязан к user_id. "
+            "Ответьте *реплаем* на пересланное сообщение клиента или попросите его написать боту снова.",
+            parse_mode="Markdown",
         )
         return
 
     try:
-        _touch_support_staff(message.message_thread_id)
+        _touch_support_staff(thread_id)
         if message.text:
             await bot.send_message(chat_id=user_id, text=message.text)
         elif message.photo:
@@ -223,6 +260,25 @@ async def admin_reply_in_topic(message: types.Message, bot: Bot):
             await bot.send_video(chat_id=user_id, video=message.video.file_id, caption=message.caption)
         elif message.sticker:
             await bot.send_sticker(chat_id=user_id, sticker=message.sticker.file_id)
+        else:
+            await bot.copy_message(
+                chat_id=user_id,
+                from_chat_id=message.chat.id,
+                message_id=message.message_id,
+            )
+        logger.info(
+            "Support reply delivered to user %s from staff %s topic=%s",
+            user_id,
+            message.from_user.id,
+            thread_id,
+        )
     except Exception as e:
-        logger.error(f"Failed to forward reply to user {user_id}: {e}")
-        await message.reply("\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u043e\u0442\u0432\u0435\u0442 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044e.")
+        logger.error(
+            "Failed to deliver support reply to user %s topic=%s: %s",
+            user_id,
+            thread_id,
+            e,
+        )
+        await message.reply(
+            f"\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u043e\u0442\u0432\u0435\u0442 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044e ({e})."
+        )

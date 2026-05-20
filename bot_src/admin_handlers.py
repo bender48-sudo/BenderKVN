@@ -7,18 +7,17 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from shop_bot.data_manager.database import update_setting
+from shop_bot.admin_auth import is_admin_telegram
+from shop_bot.data_manager.database import get_user, get_user_keys, update_setting
+from shop_bot import admin_flow_test
 from . import keyboards
 
-ADMIN_ID = os.getenv("ADMIN_TELEGRAM_ID")
 logger = logging.getLogger(__name__)
 admin_router = Router()
 
 
 def _is_admin(user_id: int | None) -> bool:
-    if user_id is None or not ADMIN_ID:
-        return False
-    return str(user_id) == str(ADMIN_ID)
+    return is_admin_telegram(user_id)
 
 class AdminEdit(StatesGroup):
     waiting_for_about_text = State()
@@ -36,7 +35,7 @@ def is_valid_url(url: str) -> bool:
 
 @admin_router.message(Command("admin"))
 async def admin_panel_handler(message: types.Message):
-    if str(message.from_user.id) != ADMIN_ID:
+    if not is_admin_telegram(message.from_user.id):
         return
     await message.answer("Добро пожаловать в админ-панель!", reply_markup=keyboards.create_admin_keyboard())
 
@@ -127,3 +126,158 @@ async def process_support_user(message: types.Message, state: FSMContext):
 async def process_support_text(message: types.Message, state: FSMContext):
     logger.info(f"process_support_text called with text: {message.text}")
     await process_new_content(message, state, "support_text")
+
+
+@admin_router.callback_query(F.data == "admin_flow_test_menu")
+async def admin_flow_test_menu(callback: types.CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await callback.answer()
+    await callback.message.edit_text(
+        "🧪 <b>Тест пользовательских флоу</b>\n\n"
+        "Проверки ловят типичные регрессии (порт :2053, 401 панели, кабинет, /setup).\n"
+        "«Сценарий» — живое меню или ссылка /setup/; БД не меняется.",
+        reply_markup=keyboards.create_admin_flow_test_keyboard(),
+    )
+
+
+@admin_router.callback_query(F.data == "admin_flow_smoke_all")
+async def admin_flow_smoke_all(callback: types.CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await callback.answer("Запускаю проверки…")
+    await callback.message.edit_text("⏳ Проверка флоу…")
+    text = await admin_flow_test.run_all_smokes(callback.from_user.id)
+    await callback.message.edit_text(
+        text,
+        reply_markup=keyboards.create_admin_flow_test_keyboard(),
+    )
+
+
+@admin_router.callback_query(F.data == "admin_flow_smoke_existing")
+async def admin_flow_smoke_existing(callback: types.CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await callback.answer()
+    checks = await admin_flow_test.smoke_existing_user(callback.from_user.id)
+    infra = await admin_flow_test.smoke_infrastructure()
+    text = (
+        "🧪 <b>Существующий пользователь (Telegram)</b>\n\n"
+        + admin_flow_test.format_section("Инфра", infra)
+        + "\n\n"
+        + admin_flow_test.format_section("Ваш аккаунт", checks)
+    )
+    await callback.message.edit_text(
+        text[:3900],
+        reply_markup=keyboards.create_admin_flow_test_keyboard(),
+    )
+
+
+@admin_router.callback_query(F.data == "admin_flow_smoke_newbie")
+async def admin_flow_smoke_newbie(callback: types.CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await callback.answer()
+    infra = await admin_flow_test.smoke_infrastructure()
+    newbie = admin_flow_test.smoke_newbie_logic()
+    text = (
+        "🧪 <b>Новичок в боте</b>\n\n"
+        + admin_flow_test.format_section("Инфра", infra)
+        + "\n\n"
+        + admin_flow_test.format_section("Логика /start", newbie)
+    )
+    await callback.message.edit_text(
+        text[:3900],
+        reply_markup=keyboards.create_admin_flow_test_keyboard(),
+    )
+
+
+@admin_router.callback_query(F.data == "admin_flow_smoke_email")
+async def admin_flow_smoke_email(callback: types.CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await callback.answer()
+    infra = await admin_flow_test.smoke_infrastructure()
+    email = admin_flow_test.smoke_email_web()
+    text = (
+        "🧪 <b>Email / web</b>\n\n"
+        + admin_flow_test.format_section("Инфра", infra)
+        + "\n\n"
+        + admin_flow_test.format_section("Web trial", email)
+    )
+    await callback.message.edit_text(
+        text[:3900],
+        reply_markup=keyboards.create_admin_flow_test_keyboard(),
+    )
+
+
+@admin_router.callback_query(F.data == "admin_flow_run_newbie")
+async def admin_flow_run_newbie(callback: types.CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await callback.answer()
+    tid = callback.from_user.id
+    kb = keyboards.create_main_menu_keyboard(
+        has_active_sub=False,
+        trial_available=True,
+        is_admin=False,
+        telegram_id=tid,
+    )
+    await callback.message.edit_text(
+        admin_flow_test.sim_newbie_header(),
+        reply_markup=keyboards.with_admin_flow_back(kb),
+    )
+
+
+@admin_router.callback_query(F.data == "admin_flow_run_existing")
+async def admin_flow_run_existing(callback: types.CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await callback.answer()
+    tid = callback.from_user.id
+    kb = keyboards.create_main_menu_keyboard(
+        has_active_sub=True,
+        trial_available=False,
+        is_admin=False,
+        telegram_id=tid,
+    )
+    await callback.message.edit_text(
+        admin_flow_test.sim_existing_header(tid),
+        reply_markup=keyboards.with_admin_flow_back(kb),
+    )
+
+
+@admin_router.callback_query(F.data == "admin_flow_run_email")
+async def admin_flow_run_email(callback: types.CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await callback.answer()
+    setup_url = f"{admin_flow_test.setup_origin().rstrip('/')}/setup/"
+    from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+    rows = [
+        [
+            InlineKeyboardButton(
+                text="\U0001f310 \u041e\u0442\u043a\u0440\u044b\u0442\u044c /setup/ \u0432 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0435",
+                url=setup_url,
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="\U0001f519 \u041a \u0442\u0435\u0441\u0442\u0430\u043c \u0444\u043b\u043e\u0443",
+                callback_data="admin_flow_test_menu",
+            )
+        ],
+    ]
+    await callback.message.edit_text(
+        admin_flow_test.sim_email_header(),
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
+    )

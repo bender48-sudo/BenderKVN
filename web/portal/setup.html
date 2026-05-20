@@ -65,16 +65,18 @@
       <div class="panel qr-wrap">
         <canvas id="setup-qr" aria-label="QR-код"></canvas>
       </div>
-      <p><a id="setup-link" class="muted setup-link" href="#" rel="noopener"></a></p>
+      <p class="setup-link-wrap muted"><a id="setup-link" class="setup-link" href="#" rel="noopener"></a></p>
       <div class="actions">
         <button type="button" class="btn btn-primary" id="btn-copy"></button>
         <a class="btn btn-secondary" id="btn-open-happ" href="#" rel="noopener"></a>
       </div>
       <div class="panel">
+        <h2 id="platform-downloads-title"></h2>
+        <div class="actions" id="platform-downloads" style="margin-bottom:0.75rem"></div>
         <h2 id="happ-steps-title"></h2>
         <ol class="steps" id="happ-steps"></ol>
         <p style="margin-top:0.75rem">
-          <a class="store-link" id="happ-store-link" href="#" target="_blank" rel="noopener"></a>
+          <a class="store-link" id="happ-store-link" href="#" target="_blank" rel="noopener" hidden></a>
         </p>
         <p style="margin-top:0.75rem">
           <a class="btn btn-secondary btn-no-code" id="btn-setup-guide" href="/portal/guide.html"></a>
