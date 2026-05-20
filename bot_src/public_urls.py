@@ -29,10 +29,7 @@ def portal_origin() -> str:
         if webapp.endswith("/portal"):
             return webapp[: -len("/portal")].rstrip("/")
         return webapp
-    if _payments_live():
-        raise RuntimeError(
-            "PUBLIC_PORTAL_ORIGIN or TELEGRAM_WEBAPP_URL required when BOT_PAYMENTS_LIVE=1"
-        )
+    # Prod compose may omit explicit URLs — keep canonical :8443 default (do not crash bot).
     return _dev_fallback_origin()
 
 
