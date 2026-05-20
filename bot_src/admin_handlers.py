@@ -252,6 +252,7 @@ async def _edit_guide_message(
         await callback.message.edit_text(
             text,
             reply_markup=reply_markup,
+            parse_mode="HTML",
             disable_web_page_preview=disable_web_page_preview,
         )
     except TelegramBadRequest as exc:
@@ -259,6 +260,7 @@ async def _edit_guide_message(
         await callback.message.answer(
             text,
             reply_markup=reply_markup,
+            parse_mode="HTML",
             disable_web_page_preview=disable_web_page_preview,
         )
 
@@ -298,6 +300,7 @@ async def _render_admin_flow_guide(
                 trial_available=True,
                 is_admin=False,
                 telegram_id=tid,
+                for_simulation=True,
             )
             await _edit_guide_message(
                 callback,
@@ -320,6 +323,7 @@ async def _render_admin_flow_guide(
                 trial_available=False,
                 is_admin=False,
                 telegram_id=tid,
+                for_simulation=True,
             )
             await _edit_guide_message(
                 callback,

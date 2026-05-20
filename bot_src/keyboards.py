@@ -62,11 +62,12 @@ def create_main_menu_keyboard(
     trial_available=True,
     is_admin=False,
     telegram_id: int | None = None,
+    for_simulation: bool = False,
     **kwargs,
 ):
     builder = InlineKeyboardBuilder()
     if has_active_sub:
-        if TELEGRAM_WEBAPP_URL:
+        if TELEGRAM_WEBAPP_URL and not for_simulation:
             builder.button(
                 text="\U0001f3e0 \u041b\u0438\u0447\u043d\u044b\u0439 \u043a\u0430\u0431\u0438\u043d\u0435\u0442",
                 web_app=WebAppInfo(url=telegram_cabinet_webapp_url(telegram_id)),

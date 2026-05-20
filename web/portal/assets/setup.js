@@ -50,6 +50,43 @@
     return stores[key] || stores.generic || null;
   }
 
+  function getTelegramWebApp() {
+    return window.Telegram && window.Telegram.WebApp;
+  }
+
+  function openExternal(url) {
+    var u = (url || "").trim();
+    if (!u) return;
+    var tg = getTelegramWebApp();
+    if (tg) {
+      if (
+        /^https?:\/\/(t\.me|telegram\.me)\//i.test(u) &&
+        typeof tg.openTelegramLink === "function"
+      ) {
+        tg.openTelegramLink(u);
+        return;
+      }
+      if (typeof tg.openLink === "function") {
+        tg.openLink(u);
+        return;
+      }
+    }
+    window.open(u, "_blank", "noopener");
+  }
+
+  function bindExternalLink(el) {
+    if (!el || el.dataset.bvpnBound === "1") return;
+    el.dataset.bvpnBound = "1";
+    el.addEventListener("click", function (ev) {
+      var href = (el.getAttribute("href") || "").trim();
+      if (!href || href === "#") return;
+      if (getTelegramWebApp()) {
+        ev.preventDefault();
+        openExternal(href);
+      }
+    });
+  }
+
   function normalizeSubUrl(url) {
     var u = (url || "").trim();
     if (!u) return u;
@@ -178,6 +215,7 @@
     var btn = $("btn-bind-tg");
     btn.href = extra.bind_url;
     btn.textContent = s.bind_tg_button || "Открыть бота";
+    bindExternalLink(btn);
     $("bind-tg-note").textContent = s.bind_tg_note || "";
     var copyBind = $("btn-copy-bind");
     if (copyBind) {
@@ -237,8 +275,8 @@
       hide($("customer-id-panel"));
     }
     var norm = normalizeSubUrl(url);
-    $("setup-link").textContent = norm;
-    $("setup-link").href = norm;
+    var linkEl = $("setup-link");
+    if (linkEl) linkEl.textContent = norm;
     $("btn-open-happ").href = norm;
     renderQr(norm);
     try {
@@ -363,10 +401,6 @@
           showError(content.errors.generic, "service_unavailable");
         });
     });
-  }
-
-  function getTelegramWebApp() {
-    return window.Telegram && window.Telegram.WebApp;
   }
 
   function getTelegramUserId() {

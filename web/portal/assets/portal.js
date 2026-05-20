@@ -107,12 +107,23 @@
   }
 
   function openExternal(url) {
+    var u = (url || "").trim();
+    if (!u) return;
     var tg = getTelegramWebApp();
-    if (tg && typeof tg.openLink === "function") {
-      tg.openLink(url);
-      return;
+    if (tg) {
+      if (
+        /^https?:\/\/(t\.me|telegram\.me)\//i.test(u) &&
+        typeof tg.openTelegramLink === "function"
+      ) {
+        tg.openTelegramLink(u);
+        return;
+      }
+      if (typeof tg.openLink === "function") {
+        tg.openLink(u);
+        return;
+      }
     }
-    window.open(url, "_blank", "noopener");
+    window.open(u, "_blank", "noopener");
   }
 
   function trackFunnel(event) {
@@ -129,11 +140,14 @@
   }
 
   function bindExternalLink(el) {
-    if (!el) return;
+    if (!el || el.dataset.bvpnBound === "1") return;
+    el.dataset.bvpnBound = "1";
     el.addEventListener("click", function (ev) {
+      var href = (el.getAttribute("href") || "").trim();
+      if (!href || href === "#") return;
       if (getTelegramWebApp()) {
         ev.preventDefault();
-        openExternal(el.href);
+        openExternal(href);
       }
     });
   }
@@ -592,6 +606,10 @@
       balEl.classList.add("cabinet-balance--low");
     }
     if (panel) panel.classList.remove("hidden");
+    var botBtn = $("btn-cabinet-bot");
+    if (botBtn && doc.bot_url) {
+      botBtn.href = doc.bot_url;
+    }
     var bindBtn = $("btn-cabinet-bind");
     if (bindBtn) {
       var bindHref = "";
