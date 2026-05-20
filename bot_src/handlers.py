@@ -416,6 +416,7 @@ async def agree_to_terms_handler(callback: types.CallbackQuery, state: FSMContex
     data = await state.get_data()
     pending_bind = data.get("pending_web_bind")
     set_terms_agreed(user_id)
+    log_action(user_id, "terms_accepted", "")
     await state.clear()
 
     try:

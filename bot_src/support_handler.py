@@ -8,6 +8,7 @@ from aiogram.filters import Command
 from aiogram.exceptions import TelegramBadRequest
 
 from shop_bot.data_manager import database
+from shop_bot.data_manager.database import get_user, register_user_if_not_exists
 from shop_bot.support_auth import is_authorized_support_staff
 
 logger = logging.getLogger(__name__)
@@ -48,14 +49,18 @@ def _get_support_topic(telegram_id: int):
         return row[0] if row and row[0] else None
 
 
-def _set_support_topic(telegram_id: int, topic_id):
+def _set_support_topic(telegram_id: int, topic_id: int | None) -> None:
     with sqlite3.connect(_db_path()) as conn:
         c = conn.cursor()
         c.execute(
-            "INSERT INTO users (telegram_id, support_topic_id) VALUES (?, ?) "
-            "ON CONFLICT(telegram_id) DO UPDATE SET support_topic_id = excluded.support_topic_id",
-            (telegram_id, topic_id),
+            "UPDATE users SET support_topic_id = ? WHERE telegram_id = ?",
+            (topic_id, telegram_id),
         )
+        if topic_id is not None and c.rowcount == 0:
+            c.execute(
+                "INSERT INTO users (telegram_id, support_topic_id) VALUES (?, ?)",
+                (telegram_id, topic_id),
+            )
         conn.commit()
 
 
@@ -100,6 +105,18 @@ async def _create_topic(bot: Bot, user_id: int, full_name: str):
     return topic_id
 
 
+async def _relay_user_message_to_topic(
+    bot: Bot, message: types.Message, topic_id: int
+) -> None:
+    """Copy user message into support forum topic (more reliable than forward)."""
+    await bot.copy_message(
+        chat_id=SUPPORT_GROUP_ID,
+        from_chat_id=message.chat.id,
+        message_id=message.message_id,
+        message_thread_id=topic_id,
+    )
+
+
 @support_router.message(F.chat.type == "private", ~F.text.startswith("/"), ~F.successful_payment)
 async def user_message_to_support(message: types.Message, bot: Bot):
     """Forward user messages to support group topic."""
@@ -107,6 +124,20 @@ async def user_message_to_support(message: types.Message, bot: Bot):
         return
 
     user_id = message.from_user.id
+    register_user_if_not_exists(
+        user_id, message.from_user.username or message.from_user.full_name or ""
+    )
+    user_data = get_user(user_id)
+    if not user_data or not user_data.get("agreed_to_terms"):
+        await message.answer(
+            "Сначала примите <b>Условия использования</b>:\n"
+            "отправьте /start и нажмите кнопку <b>«Принимаю»</b>.\n\n"
+            "Если кнопка «загружается» — закройте чат и снова /start, "
+            "затем нажмите «Принимаю» на <b>новом</b> сообщении.",
+            parse_mode="HTML",
+        )
+        return
+
     if _support_rate_limited(user_id):
         await message.answer(
             "Слишком много сообщений подряд. Подождите минуту и напишите снова."
@@ -125,39 +156,41 @@ async def user_message_to_support(message: types.Message, bot: Bot):
             return
 
     try:
-        await bot.forward_message(
-            chat_id=SUPPORT_GROUP_ID,
-            from_chat_id=message.chat.id,
-            message_id=message.message_id,
-            message_thread_id=topic_id,
-        )
+        await _relay_user_message_to_topic(bot, message, topic_id)
         _touch_support_user(user_id)
         if is_new_topic:
             await message.answer("\u041f\u043e\u043b\u0443\u0447\u0438\u043b\u0438 \u0432\u0430\u0448\u0435 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435! \u041e\u0442\u0432\u0435\u0442\u0438\u043c \u0432 \u0441\u0430\u043c\u043e\u0435 \u0431\u043b\u0438\u0436\u0430\u0439\u0448\u0435\u0435 \u0432\u0440\u0435\u043c\u044f \U0001f64f")
     except TelegramBadRequest as e:
-        if "thread not found" in str(e).lower():
-            # Topic was deleted from the group — create a new one
-            logger.warning(f"Topic {topic_id} not found for user {user_id}, recreating")
-            _set_support_topic(user_id, None)
+        err = str(e).lower()
+        if "thread not found" in err or "topic not found" in err:
+            logger.warning("Support topic %s missing for user %s, recreating once", topic_id, user_id)
             try:
                 topic_id = await _create_topic(bot, user_id, message.from_user.full_name)
-                await bot.forward_message(
-                    chat_id=SUPPORT_GROUP_ID,
-                    from_chat_id=message.chat.id,
-                    message_id=message.message_id,
-                    message_thread_id=topic_id,
-                )
+                await _relay_user_message_to_topic(bot, message, topic_id)
                 _touch_support_user(user_id)
-                await message.answer("\u041f\u043e\u043b\u0443\u0447\u0438\u043b\u0438 \u0432\u0430\u0448\u0435 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435! \u041e\u0442\u0432\u0435\u0442\u0438\u043c \u0432 \u0441\u0430\u043c\u043e\u0435 \u0431\u043b\u0438\u0436\u0430\u0439\u0448\u0435\u0435 \u0432\u0440\u0435\u043c\u044f \U0001f64f")
+                if is_new_topic:
+                    await message.answer(
+                        "\u041f\u043e\u043b\u0443\u0447\u0438\u043b\u0438 \u0432\u0430\u0448\u0435 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435! "
+                        "\u041e\u0442\u0432\u0435\u0442\u0438\u043c \u0432 \u0441\u0430\u043c\u043e\u0435 \u0431\u043b\u0438\u0436\u0430\u0439\u0448\u0435\u0435 \u0432\u0440\u0435\u043c\u044f \U0001f64f"
+                    )
             except Exception as e2:
-                logger.error(f"Failed to recreate topic for {user_id}: {e2}")
-                await message.answer("\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435 \u0432 \u043f\u043e\u0434\u0434\u0435\u0440\u0436\u043a\u0443. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u0437\u0436\u0435.")
+                logger.error("Failed to recreate support topic for %s: %s", user_id, e2)
+                await message.answer(
+                    "\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435 \u0432 \u043f\u043e\u0434\u0434\u0435\u0440\u0436\u043a\u0443. "
+                    "\u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u0437\u0436\u0435."
+                )
         else:
-            logger.error(f"Failed to forward message to topic {topic_id}: {e}")
-            await message.answer("\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435 \u0432 \u043f\u043e\u0434\u0434\u0435\u0440\u0436\u043a\u0443. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u0437\u0436\u0435.")
+            logger.error("Failed to relay message to topic %s: %s", topic_id, e)
+            await message.answer(
+                "\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435 \u0432 \u043f\u043e\u0434\u0434\u0435\u0440\u0436\u043a\u0443. "
+                "\u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u0437\u0436\u0435."
+            )
     except Exception as e:
-        logger.error(f"Failed to forward message to topic {topic_id}: {e}")
-        await message.answer("\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435 \u0432 \u043f\u043e\u0434\u0434\u0435\u0440\u0436\u043a\u0443. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u0437\u0436\u0435.")
+        logger.error("Failed to relay message to topic %s: %s", topic_id, e)
+        await message.answer(
+            "\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435 \u0432 \u043f\u043e\u0434\u0434\u0435\u0440\u0436\u043a\u0443. "
+            "\u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u0437\u0436\u0435."
+        )
 
 
 @support_router.message(F.chat.id == SUPPORT_GROUP_ID, F.message_thread_id)
