@@ -310,6 +310,50 @@ def create_admin_demo_agreement_keyboard():
     return builder.as_markup()
 
 
+def create_admin_guide_nb_step1_keyboard():
+    """Новичок шаг 1 — без merge двух markup (Telegram иногда ломает edit)."""
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text="\u2705 \u041f\u0440\u0438\u043d\u0438\u043c\u0430\u044e (\u0434\u0435\u043c\u043e \u2192 \u0448\u0430\u0433 2)",
+        callback_data="admin_demo_agree",
+    )
+    builder.button(text="\u0414\u0430\u043b\u0435\u0435 \u25b6\ufe0f", callback_data="admin_flow_g_nb_2")
+    builder.button(
+        text="\U0001f519 \u041a \u0442\u0435\u0441\u0442\u0430\u043c \u0444\u043b\u043e\u0443",
+        callback_data="admin_flow_test_menu",
+    )
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_admin_guide_nb_step2_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text="\U0001f381 \u041d\u0430\u0447\u0430\u0442\u044c \u0431\u0435\u0441\u043f\u043b\u0430\u0442\u043d\u043e (\u0434\u0435\u043c\u043e)",
+        callback_data="admin_demo_hint_trial",
+    )
+    builder.button(
+        text="\U0001f4d6 \u041a\u0430\u043a \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u044c (\u0434\u0435\u043c\u043e)",
+        callback_data="admin_demo_hint_help",
+    )
+    builder.button(text="\u25c0\ufe0f \u041d\u0430\u0437\u0430\u0434", callback_data="admin_flow_g_nb_1")
+    builder.button(text="\u0414\u0430\u043b\u0435\u0435 \u25b6\ufe0f", callback_data="admin_flow_g_nb_3")
+    builder.button(
+        text="\U0001f519 \u041a \u0442\u0435\u0441\u0442\u0430\u043c \u0444\u043b\u043e\u0443",
+        callback_data="admin_flow_test_menu",
+    )
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_admin_guide_nb_step3_keyboard():
+    return create_admin_flow_nav_keyboard("nb", 3, 4)
+
+
+def create_admin_guide_nb_step4_keyboard(extra: list[tuple[str, str]] | None = None):
+    return create_admin_flow_nav_keyboard("nb", 4, 4, extra)
+
+
 def create_admin_flow_nav_keyboard(
     flow: str,
     step: int,

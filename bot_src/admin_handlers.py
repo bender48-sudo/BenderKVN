@@ -1,5 +1,6 @@
 import logging
 import os
+from html import escape
 from urllib.parse import urlparse
 
 from aiogram import Router, F, types
@@ -278,44 +279,42 @@ async def _render_admin_flow_guide(
 
     if flow == "nb":
         if step == 1:
-            terms_url = get_setting("terms_url") or "https://example.com/terms"
-            privacy_url = get_setting("privacy_url") or "https://example.com/privacy"
+            terms_url = escape((get_setting("terms_url") or "").strip())
+            privacy_url = escape((get_setting("privacy_url") or "").strip())
             text = admin_flow_guide.guide_newbie_step(step) + (
-                "\n\n<b>Добро пожаловать!</b>\n"
-                f"<a href='{terms_url}'>Условия</a> · "
-                f"<a href='{privacy_url}'>Политика</a>"
+                "\n\n<b>Как у пользователя после /start:</b>\n"
+                "Экран «Принимаю» (условия и политика — ссылки в настройках бота).\n"
             )
-            agree = keyboards.create_admin_demo_agreement_keyboard()
-            step_nav = keyboards.create_admin_flow_nav_keyboard("nb", 1, 4, extra)
+            if terms_url and privacy_url:
+                text += (
+                    f"\n<a href=\"{terms_url}\">Условия</a> · "
+                    f"<a href=\"{privacy_url}\">Политика</a>"
+                )
             await _edit_guide_message(
                 callback,
                 text,
-                _merge_menu_with_nav(agree, step_nav),
+                keyboards.create_admin_guide_nb_step1_keyboard(),
                 disable_web_page_preview=True,
             )
             return
         if step == 2:
-            menu = keyboards.create_main_menu_keyboard(
-                has_active_sub=False,
-                trial_available=True,
-                is_admin=False,
-                telegram_id=tid,
-                for_simulation=True,
-            )
             await _edit_guide_message(
                 callback,
                 admin_flow_guide.guide_newbie_step(step),
-                _merge_menu_with_nav(menu, nav),
+                keyboards.create_admin_guide_nb_step2_keyboard(),
             )
             return
         if step == 3:
             await _edit_guide_message(
                 callback,
                 admin_flow_guide.demo_trial_success_text(),
-                nav,
+                keyboards.create_admin_guide_nb_step3_keyboard(),
             )
             return
         text = admin_flow_guide.guide_newbie_step(step)
+        kb = keyboards.create_admin_guide_nb_step4_keyboard(extra)
+        await _edit_guide_message(callback, text, kb)
+        return
     elif flow == "ex":
         if step == 1:
             menu = keyboards.create_main_menu_keyboard(
@@ -338,13 +337,46 @@ async def _render_admin_flow_guide(
     await _edit_guide_message(callback, text, nav)
 
 
+@admin_router.callback_query(F.data == "admin_flow_g_nb_1")
+async def admin_flow_g_nb_1(callback: types.CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await callback.answer()
+    logger.info("admin guide nb step 1 uid=%s", callback.from_user.id)
+    await _render_admin_flow_guide(callback, "nb", 1)
+
+
 @admin_router.callback_query(F.data == "admin_demo_agree")
 async def admin_demo_agree(callback: types.CallbackQuery):
     if not _is_admin(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True)
         return
-    await callback.answer("Демо: условия приняты (БД не менялась)", show_alert=True)
+    await callback.answer("Демо: шаг 2 — меню новичка", show_alert=False)
     await _render_admin_flow_guide(callback, "nb", 2)
+
+
+@admin_router.callback_query(F.data == "admin_demo_hint_trial")
+async def admin_demo_hint_trial(callback: types.CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await callback.answer(
+        "У пользователя: бот создаёт trial ~3 мес. и даёт ссылку. "
+        "На вашем аккаунте trial может быть уже использован.",
+        show_alert=True,
+    )
+
+
+@admin_router.callback_query(F.data == "admin_demo_hint_help")
+async def admin_demo_hint_help(callback: types.CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await callback.answer(
+        "У пользователя: мастер настройки / Mini App с QR и ссылкой для Happ.",
+        show_alert=True,
+    )
 
 
 @admin_router.callback_query(F.data == "admin_flow_ex_demo_vpn")

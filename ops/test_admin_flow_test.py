@@ -19,7 +19,8 @@ text = admin_h.read_text(encoding="utf-8")
 for needle in (
     "admin_flow_test_menu",
     "admin_flow_smoke_all",
-    'F.data.startswith("admin_flow_g_")',
+    "admin_flow_g_nb_1",
+    "admin_demo_hint_trial",
     "admin_flow_guide",
     "_render_admin_flow_guide",
 ):
@@ -31,7 +32,8 @@ kb_text = kb.read_text(encoding="utf-8")
 for needle_kb in (
     "admin_flow_test_menu",
     "admin_flow_g_nb_1",
-    "create_admin_flow_nav_keyboard",
+    "create_admin_guide_nb_step1_keyboard",
+    "admin_demo_hint_trial",
 ):
     if needle_kb not in kb_text:
         print(f"FAIL: keyboards missing {needle_kb}", file=sys.stderr)
