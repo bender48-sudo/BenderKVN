@@ -280,32 +280,20 @@ def create_admin_keyboard():
 def create_admin_flow_test_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(
-        text="\u25b6\ufe0f \u0417\u0430\u043f\u0443\u0441\u0442\u0438\u0442\u044c \u0432\u0441\u0435 \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0438",
-        callback_data="admin_flow_smoke_all",
-    )
-    builder.button(
-        text="\U0001f464 \u0421\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u044e\u0449\u0438\u0439 (TG)",
-        callback_data="admin_flow_smoke_existing",
-    )
-    builder.button(
-        text="\U0001f331 \u041d\u043e\u0432\u0438\u0447\u043e\u043a (TG)",
-        callback_data="admin_flow_smoke_newbie",
-    )
-    builder.button(
-        text="\U0001f4e7 Email / web",
-        callback_data="admin_flow_smoke_email",
-    )
-    builder.button(
-        text="\U0001f9ed \u0413\u0438\u0434: \u043d\u043e\u0432\u0438\u043a (4 \u0448\u0430\u0433\u0430)",
+        text="\U0001f9ed \u0413\u0438\u0434: \u043d\u043e\u0432\u0438\u043a \u0432 \u0431\u043e\u0442\u0435",
         callback_data="admin_flow_g_nb_1",
     )
     builder.button(
-        text="\U0001f9ed \u0413\u0438\u0434: \u043f\u043e\u0434\u043f\u0438\u0441\u0447\u0438\u043a (3 \u0448\u0430\u0433\u0430)",
+        text="\U0001f9ed \u0413\u0438\u0434: \u043f\u043e\u0434\u043f\u0438\u0441\u0447\u0438\u043a",
         callback_data="admin_flow_g_ex_1",
     )
     builder.button(
-        text="\U0001f9ed \u0413\u0438\u0434: web / email (4 \u0448\u0430\u0433\u0430)",
+        text="\U0001f9ed \u0413\u0438\u0434: email / \u0441\u0430\u0439\u0442 (web)",
         callback_data="admin_flow_g_web_1",
+    )
+    builder.button(
+        text="\U0001f527 \u0414\u0438\u0430\u0433\u043d\u043e\u0441\u0442\u0438\u043a\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0430",
+        callback_data="admin_flow_smoke_all",
     )
     builder.button(text="\u2b05\ufe0f \u0412 \u0430\u0434\u043c\u0438\u043d-\u043f\u0430\u043d\u0435\u043b\u044c", callback_data="open_admin_panel")
     builder.adjust(1)

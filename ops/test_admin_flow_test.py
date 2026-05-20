@@ -19,7 +19,7 @@ text = admin_h.read_text(encoding="utf-8")
 for needle in (
     "admin_flow_test_menu",
     "admin_flow_smoke_all",
-    "_FLOW_STEP_RE",
+    'F.data.startswith("admin_flow_g_")',
     "admin_flow_guide",
     "_render_admin_flow_guide",
 ):

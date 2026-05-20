@@ -11,11 +11,22 @@ from shop_bot.admin_auth import is_admin_telegram
 from shop_bot.data_manager.database import get_user, get_user_keys, update_setting
 import re
 
+from aiogram.exceptions import TelegramBadRequest
+
 from shop_bot import admin_flow_test, admin_flow_guide
 from . import keyboards
 
 _FLOW_STEP_RE = re.compile(r"^admin_flow_g_(nb|ex|web)_(\d+)$")
 _FLOW_TOTALS = {"nb": 4, "ex": 3, "web": 4}
+
+
+def _parse_flow_step(data: str | None) -> tuple[str, int] | None:
+    if not data:
+        return None
+    m = _FLOW_STEP_RE.match(data)
+    if not m:
+        return None
+    return m.group(1), int(m.group(2))
 
 logger = logging.getLogger(__name__)
 admin_router = Router()
@@ -140,9 +151,11 @@ async def admin_flow_test_menu(callback: types.CallbackQuery):
         return
     await callback.answer()
     await callback.message.edit_text(
-        "🧪 <b>Тест пользовательских флоу</b>\n\n"
-        "Проверки ловят типичные регрессии (порт :2053, 401 панели, кабинет, /setup).\n"
-        "«Гид» — пошаговый проход с кнопками «Далее» и ссылкой на /setup/.",
+        "🧪 <b>Тест флоу</b>\n\n"
+        "<b>🧭 Гиды</b> — пройти путь пользователя по шагам "
+        "(«Далее», «Назад», на web — ссылка в браузер).\n\n"
+        "<b>🔧 Диагностика</b> — робот проверяет сервер: панель, :8443, /setup, "
+        "ваш аккаунт. Это не сценарий для клиента, а тех. отчёт ✅/❌.",
         reply_markup=keyboards.create_admin_flow_test_keyboard(),
     )
 
@@ -152,8 +165,8 @@ async def admin_flow_smoke_all(callback: types.CallbackQuery):
     if not _is_admin(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True)
         return
-    await callback.answer("Запускаю проверки…")
-    await callback.message.edit_text("⏳ Проверка флоу…")
+    await callback.answer("Диагностика сервера…")
+    await callback.message.edit_text("⏳ Диагностика: панель, URL, /setup, ваш TG…")
     text = await admin_flow_test.run_all_smokes(callback.from_user.id)
     await callback.message.edit_text(
         text,
@@ -229,6 +242,27 @@ def _merge_menu_with_nav(menu_markup, nav_markup):
     )
 
 
+async def _edit_guide_message(
+    callback: types.CallbackQuery,
+    text: str,
+    reply_markup,
+    disable_web_page_preview: bool = False,
+) -> None:
+    try:
+        await callback.message.edit_text(
+            text,
+            reply_markup=reply_markup,
+            disable_web_page_preview=disable_web_page_preview,
+        )
+    except TelegramBadRequest as exc:
+        logger.warning("admin flow guide edit failed: %s", exc)
+        await callback.message.answer(
+            text,
+            reply_markup=reply_markup,
+            disable_web_page_preview=disable_web_page_preview,
+        )
+
+
 async def _render_admin_flow_guide(
     callback: types.CallbackQuery,
     flow: str,
@@ -251,9 +285,10 @@ async def _render_admin_flow_guide(
             )
             agree = keyboards.create_admin_demo_agreement_keyboard()
             step_nav = keyboards.create_admin_flow_nav_keyboard("nb", 1, 4, extra)
-            await callback.message.edit_text(
+            await _edit_guide_message(
+                callback,
                 text,
-                reply_markup=_merge_menu_with_nav(agree, step_nav),
+                _merge_menu_with_nav(agree, step_nav),
                 disable_web_page_preview=True,
             )
             return
@@ -264,15 +299,17 @@ async def _render_admin_flow_guide(
                 is_admin=False,
                 telegram_id=tid,
             )
-            await callback.message.edit_text(
+            await _edit_guide_message(
+                callback,
                 admin_flow_guide.guide_newbie_step(step),
-                reply_markup=_merge_menu_with_nav(menu, nav),
+                _merge_menu_with_nav(menu, nav),
             )
             return
         if step == 3:
-            await callback.message.edit_text(
+            await _edit_guide_message(
+                callback,
                 admin_flow_guide.demo_trial_success_text(),
-                reply_markup=nav,
+                nav,
             )
             return
         text = admin_flow_guide.guide_newbie_step(step)
@@ -284,28 +321,17 @@ async def _render_admin_flow_guide(
                 is_admin=False,
                 telegram_id=tid,
             )
-            await callback.message.edit_text(
+            await _edit_guide_message(
+                callback,
                 admin_flow_guide.guide_existing_step(step),
-                reply_markup=_merge_menu_with_nav(menu, nav),
+                _merge_menu_with_nav(menu, nav),
             )
             return
         text = admin_flow_guide.guide_existing_step(step)
     else:
         text = admin_flow_guide.guide_web_step(step)
 
-    await callback.message.edit_text(text, reply_markup=nav)
-
-
-@admin_router.callback_query(F.data.regexp(_FLOW_STEP_RE))
-async def admin_flow_guide_step(callback: types.CallbackQuery):
-    if not _is_admin(callback.from_user.id):
-        await callback.answer("Нет доступа", show_alert=True)
-        return
-    await callback.answer()
-    m = _FLOW_STEP_RE.match(callback.data or "")
-    if not m:
-        return
-    await _render_admin_flow_guide(callback, m.group(1), int(m.group(2)))
+    await _edit_guide_message(callback, text, nav)
 
 
 @admin_router.callback_query(F.data == "admin_demo_agree")
@@ -317,14 +343,26 @@ async def admin_demo_agree(callback: types.CallbackQuery):
     await _render_admin_flow_guide(callback, "nb", 2)
 
 
-@admin_router.callback_query(F.data == "admin_flow_g_ex_demo_vpn")
-async def admin_flow_g_ex_demo_vpn(callback: types.CallbackQuery):
+@admin_router.callback_query(F.data == "admin_flow_ex_demo_vpn")
+async def admin_flow_ex_demo_vpn(callback: types.CallbackQuery):
     if not _is_admin(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True)
         return
     await callback.answer()
     nav = keyboards.create_admin_flow_nav_keyboard("ex", 2, 3)
-    await callback.message.edit_text(
-        admin_flow_guide.demo_my_vpn_text(),
-        reply_markup=nav,
-    )
+    await _edit_guide_message(callback, admin_flow_guide.demo_my_vpn_text(), nav)
+
+
+@admin_router.callback_query(F.data.startswith("admin_flow_g_"))
+async def admin_flow_guide_step(callback: types.CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    parsed = _parse_flow_step(callback.data)
+    if not parsed:
+        await callback.answer("Неизвестная кнопка", show_alert=True)
+        return
+    await callback.answer()
+    flow, step = parsed
+    await _render_admin_flow_guide(callback, flow, step)
+

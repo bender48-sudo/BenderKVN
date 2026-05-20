@@ -30,7 +30,7 @@ def nav_extra(flow: str, step: int) -> list[tuple[str, str]]:
         return [
             (
                 "\U0001f50c \u0414\u0435\u043c\u043e: \u00ab\u041c\u043e\u0439 VPN\u00bb",
-                "admin_flow_g_ex_demo_vpn",
+                "admin_flow_ex_demo_vpn",
             ),
         ]
     return []
