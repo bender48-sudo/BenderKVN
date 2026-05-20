@@ -42,8 +42,20 @@ async def _probe_panel_api() -> dict[str, Any]:
     token = (api.API_TOKEN or os.getenv("REMNA_API_TOKEN") or "").strip()
     if not base or not token:
         return _check("Remna API (BASE_URL)", False, "BASE_URL или токен пусто")
-    async with aiohttp.ClientSession() as session:
-        data = await api._fetch_json(session, "GET", "/api/config-profiles/inbounds")
+
+    async def _call():
+        timeout = aiohttp.ClientTimeout(total=12)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            return await api._fetch_json(session, "GET", "/api/config-profiles/inbounds")
+
+    try:
+        import asyncio
+
+        data = await asyncio.wait_for(_call(), timeout=14.0)
+    except asyncio.TimeoutError:
+        return _check("Remna API (inbounds)", False, "таймаут 14 с")
+    except Exception as exc:
+        return _check("Remna API (inbounds)", False, str(exc)[:80])
     ok = bool(data and isinstance(data.get("response"), (dict, list)))
     return _check("Remna API (inbounds)", ok, base if ok else "401 или пустой ответ")
 

@@ -569,7 +569,11 @@
         .then(function (res) {
           hide($("setup-loading"));
           if (!res.body.ok || !res.body.sub_url) {
-            showError(s.invalid_token, "link_expired");
+            showError(
+              (content.setup && content.setup.invalid_token) ||
+                "Ссылка устарела. Получите новый доступ через форму ниже.",
+              "link_expired"
+            );
             return;
           }
           showSetupResult(res.body.sub_url, null);

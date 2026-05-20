@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from html import escape
@@ -166,12 +167,34 @@ async def admin_flow_smoke_all(callback: types.CallbackQuery):
     if not _is_admin(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True)
         return
-    await callback.answer("Диагностика сервера…")
-    await callback.message.edit_text("⏳ Диагностика: панель, URL, /setup, ваш TG…")
-    text = await admin_flow_test.run_all_smokes(callback.from_user.id)
-    await callback.message.edit_text(
+    await callback.answer("Диагностика…")
+    await _edit_guide_message(
+        callback,
+        "⏳ <b>Диагностика</b>\n\nПанель, URL :8443, /setup/, ваш Telegram… (до 30 с)",
+        keyboards.create_admin_flow_test_keyboard(),
+    )
+    try:
+        text = await asyncio.wait_for(
+            admin_flow_test.run_all_smokes(callback.from_user.id),
+            timeout=30.0,
+        )
+    except asyncio.TimeoutError:
+        logger.warning("admin_flow_smoke_all timeout uid=%s", callback.from_user.id)
+        text = (
+            "⏱ <b>Диагностика не уложилась в 30 с</b>\n\n"
+            "Часто виноват долгий ответ панели Remna. Повторите через минуту "
+            "или смотрите <code>docker logs remna-shop-bot</code> на AMS."
+        )
+    except Exception as exc:
+        logger.exception("admin_flow_smoke_all failed")
+        text = (
+            "❌ <b>Ошибка диагностики</b>\n\n"
+            f"<code>{escape(str(exc)[:240])}</code>"
+        )
+    await _edit_guide_message(
+        callback,
         text,
-        reply_markup=keyboards.create_admin_flow_test_keyboard(),
+        keyboards.create_admin_flow_test_keyboard(),
     )
 
 
@@ -189,9 +212,10 @@ async def admin_flow_smoke_existing(callback: types.CallbackQuery):
         + "\n\n"
         + admin_flow_test.format_section("Ваш аккаунт", checks)
     )
-    await callback.message.edit_text(
+    await _edit_guide_message(
+        callback,
         text[:3900],
-        reply_markup=keyboards.create_admin_flow_test_keyboard(),
+        keyboards.create_admin_flow_test_keyboard(),
     )
 
 
@@ -209,9 +233,10 @@ async def admin_flow_smoke_newbie(callback: types.CallbackQuery):
         + "\n\n"
         + admin_flow_test.format_section("Логика /start", newbie)
     )
-    await callback.message.edit_text(
+    await _edit_guide_message(
+        callback,
         text[:3900],
-        reply_markup=keyboards.create_admin_flow_test_keyboard(),
+        keyboards.create_admin_flow_test_keyboard(),
     )
 
 
@@ -229,9 +254,10 @@ async def admin_flow_smoke_email(callback: types.CallbackQuery):
         + "\n\n"
         + admin_flow_test.format_section("Web trial", email)
     )
-    await callback.message.edit_text(
+    await _edit_guide_message(
+        callback,
         text[:3900],
-        reply_markup=keyboards.create_admin_flow_test_keyboard(),
+        keyboards.create_admin_flow_test_keyboard(),
     )
 
 

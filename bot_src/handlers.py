@@ -261,11 +261,11 @@ async def show_main_menu(message: types.Message, edit_message: bool = False):
     
     if edit_message:
         try:
-            await message.edit_text(text, reply_markup=keyboard)
+            await message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
         except TelegramBadRequest:
             pass
     else:
-        await message.answer(text, reply_markup=keyboard)
+        await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
 
 class UserAgreement(StatesGroup):
     waiting_for_agreement = State()
