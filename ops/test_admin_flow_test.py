@@ -8,26 +8,31 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 mod = ROOT / "bot_src" / "admin_flow_test.py"
+guide = ROOT / "bot_src" / "admin_flow_guide.py"
 admin_h = ROOT / "bot_src" / "admin_handlers.py"
 kb = ROOT / "bot_src" / "keyboards.py"
 
-for p in (mod, admin_h, kb):
+for p in (mod, guide, admin_h, kb):
     ast.parse(p.read_text(encoding="utf-8"))
 
 text = admin_h.read_text(encoding="utf-8")
 for needle in (
     "admin_flow_test_menu",
     "admin_flow_smoke_all",
-    "admin_flow_run_newbie",
-    "admin_flow_run_existing",
-    "from shop_bot import admin_flow_test",
+    "_FLOW_STEP_RE",
+    "admin_flow_guide",
+    "_render_admin_flow_guide",
 ):
     if needle not in text:
         print(f"FAIL: missing {needle} in admin_handlers.py", file=sys.stderr)
         raise SystemExit(1)
 
 kb_text = kb.read_text(encoding="utf-8")
-for needle_kb in ("admin_flow_test_menu", "admin_flow_run_newbie", "with_admin_flow_back"):
+for needle_kb in (
+    "admin_flow_test_menu",
+    "admin_flow_g_nb_1",
+    "create_admin_flow_nav_keyboard",
+):
     if needle_kb not in kb_text:
         print(f"FAIL: keyboards missing {needle_kb}", file=sys.stderr)
         raise SystemExit(1)

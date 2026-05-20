@@ -58,6 +58,41 @@
       .replace("://k9x2m1.conntest.xyz:2053", "://k9x2m1.conntest.xyz:8443");
   }
 
+  function isBrowserFlow() {
+    return !getTelegramWebApp() && !token;
+  }
+
+  function renderJourney(activeStep) {
+    var wrap = $("setup-journey");
+    var s = content.setup || {};
+    if (!wrap || !isBrowserFlow()) {
+      hide(wrap);
+      return;
+    }
+    var steps = s.journey_steps || [];
+    if (!steps.length) {
+      hide(wrap);
+      return;
+    }
+    wrap.innerHTML = "";
+    if (s.journey_title) {
+      var h = document.createElement("p");
+      h.className = "step-badge";
+      h.textContent = s.journey_title;
+      wrap.appendChild(h);
+    }
+    steps.forEach(function (label, idx) {
+      var n = idx + 1;
+      var el = document.createElement("div");
+      el.className = "flow-journey__step";
+      if (n < activeStep) el.className += " flow-journey__step--done";
+      if (n === activeStep) el.className += " flow-journey__step--active";
+      el.textContent = n + ". " + label;
+      wrap.appendChild(el);
+    });
+    showEl(wrap);
+  }
+
   function renderPlatformDownloads() {
     var wrap = $("platform-downloads");
     var title = $("platform-downloads-title");
@@ -149,6 +184,7 @@
       copyBind.textContent = s.bind_tg_copy || "Скопировать ссылку на бота";
       bindCopy(copyBind, extra.bind_url, s.bind_tg_copied || "Скопировано");
     }
+    renderJourney(3);
     showEl(panel);
     try {
       localStorage.setItem("bvpn_bind_url", extra.bind_url);
@@ -177,7 +213,15 @@
         showEl(step1Lead);
       }
     }
+    renderJourney(2);
     renderPlatformDownloads();
+    var afterVpn = $("setup-after-vpn");
+    if (afterVpn && s.after_vpn_ok && isBrowserFlow()) {
+      afterVpn.textContent = s.after_vpn_ok;
+      showEl(afterVpn);
+    } else if (afterVpn) {
+      hide(afterVpn);
+    }
     var happTitle = $("happ-steps-title");
     if (happTitle) happTitle.textContent = s.step1_title || "Шаг 1 — Happ";
     if (extra && extra.customer_id) {
@@ -416,10 +460,22 @@
   function bindTexts() {
     var s = content.setup;
     var inTg = !!getTelegramWebApp();
+    var browser = isBrowserFlow();
     $("setup-title").textContent = inTg
       ? s.title_tg || s.title
       : s.title_browser || s.title;
     $("setup-lead").textContent = inTg ? s.lead_tg || s.lead_browser : s.lead_browser;
+    if (browser) {
+      renderJourney(1);
+      var badge = $("signup-step-badge");
+      if (badge) {
+        badge.textContent = "Шаг 1 из 3";
+        showEl(badge);
+      }
+    } else {
+      hide($("setup-journey"));
+      hide($("signup-step-badge"));
+    }
     $("signup-heading").textContent = s.signup_heading;
     $("signup-lead").textContent = s.signup_lead;
     $("recover-heading").textContent = s.recover_heading;

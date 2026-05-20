@@ -296,18 +296,57 @@ def create_admin_flow_test_keyboard():
         callback_data="admin_flow_smoke_email",
     )
     builder.button(
-        text="\u25b6\ufe0f \u0421\u0446\u0435\u043d\u0430\u0440\u0438\u0439: \u043d\u043e\u0432\u0438\u0447\u043e\u043a",
-        callback_data="admin_flow_run_newbie",
+        text="\U0001f9ed \u0413\u0438\u0434: \u043d\u043e\u0432\u0438\u043a (4 \u0448\u0430\u0433\u0430)",
+        callback_data="admin_flow_g_nb_1",
     )
     builder.button(
-        text="\u25b6\ufe0f \u0421\u0446\u0435\u043d\u0430\u0440\u0438\u0439: \u043f\u043e\u0434\u043f\u0438\u0441\u0447\u0438\u043a",
-        callback_data="admin_flow_run_existing",
+        text="\U0001f9ed \u0413\u0438\u0434: \u043f\u043e\u0434\u043f\u0438\u0441\u0447\u0438\u043a (3 \u0448\u0430\u0433\u0430)",
+        callback_data="admin_flow_g_ex_1",
     )
     builder.button(
-        text="\u25b6\ufe0f \u0421\u0446\u0435\u043d\u0430\u0440\u0438\u0439: email / web",
-        callback_data="admin_flow_run_email",
+        text="\U0001f9ed \u0413\u0438\u0434: web / email (4 \u0448\u0430\u0433\u0430)",
+        callback_data="admin_flow_g_web_1",
     )
     builder.button(text="\u2b05\ufe0f \u0412 \u0430\u0434\u043c\u0438\u043d-\u043f\u0430\u043d\u0435\u043b\u044c", callback_data="open_admin_panel")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_admin_demo_agreement_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text="\u2705 \u041f\u0440\u0438\u043d\u0438\u043c\u0430\u044e (\u0434\u0435\u043c\u043e)",
+        callback_data="admin_demo_agree",
+    )
+    return builder.as_markup()
+
+
+def create_admin_flow_nav_keyboard(
+    flow: str,
+    step: int,
+    total: int,
+    extra: list[tuple[str, str]] | None = None,
+):
+    builder = InlineKeyboardBuilder()
+    for text, data in extra or []:
+        if data.startswith("http"):
+            builder.button(text=text, url=data)
+        else:
+            builder.button(text=text, callback_data=data)
+    if step > 1:
+        builder.button(
+            text="\u25c0\ufe0f \u041d\u0430\u0437\u0430\u0434",
+            callback_data=f"admin_flow_g_{flow}_{step - 1}",
+        )
+    if step < total:
+        builder.button(
+            text="\u0414\u0430\u043b\u0435\u0435 \u25b6\ufe0f",
+            callback_data=f"admin_flow_g_{flow}_{step + 1}",
+        )
+    builder.button(
+        text="\U0001f519 \u041a \u0442\u0435\u0441\u0442\u0430\u043c \u0444\u043b\u043e\u0443",
+        callback_data="admin_flow_test_menu",
+    )
     builder.adjust(1)
     return builder.as_markup()
 

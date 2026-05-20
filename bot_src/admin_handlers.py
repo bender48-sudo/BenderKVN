@@ -9,8 +9,13 @@ from aiogram.fsm.state import State, StatesGroup
 
 from shop_bot.admin_auth import is_admin_telegram
 from shop_bot.data_manager.database import get_user, get_user_keys, update_setting
-from shop_bot import admin_flow_test
+import re
+
+from shop_bot import admin_flow_test, admin_flow_guide
 from . import keyboards
+
+_FLOW_STEP_RE = re.compile(r"^admin_flow_g_(nb|ex|web)_(\d+)$")
+_FLOW_TOTALS = {"nb": 4, "ex": 3, "web": 4}
 
 logger = logging.getLogger(__name__)
 admin_router = Router()
@@ -137,7 +142,7 @@ async def admin_flow_test_menu(callback: types.CallbackQuery):
     await callback.message.edit_text(
         "🧪 <b>Тест пользовательских флоу</b>\n\n"
         "Проверки ловят типичные регрессии (порт :2053, 401 панели, кабинет, /setup).\n"
-        "«Сценарий» — живое меню или ссылка /setup/; БД не меняется.",
+        "«Гид» — пошаговый проход с кнопками «Далее» и ссылкой на /setup/.",
         reply_markup=keyboards.create_admin_flow_test_keyboard(),
     )
 
@@ -216,68 +221,110 @@ async def admin_flow_smoke_email(callback: types.CallbackQuery):
     )
 
 
-@admin_router.callback_query(F.data == "admin_flow_run_newbie")
-async def admin_flow_run_newbie(callback: types.CallbackQuery):
-    if not _is_admin(callback.from_user.id):
-        await callback.answer("Нет доступа", show_alert=True)
-        return
-    await callback.answer()
+def _merge_menu_with_nav(menu_markup, nav_markup):
+    from aiogram.types import InlineKeyboardMarkup
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=list(menu_markup.inline_keyboard) + list(nav_markup.inline_keyboard)
+    )
+
+
+async def _render_admin_flow_guide(
+    callback: types.CallbackQuery,
+    flow: str,
+    step: int,
+) -> None:
     tid = callback.from_user.id
-    kb = keyboards.create_main_menu_keyboard(
-        has_active_sub=False,
-        trial_available=True,
-        is_admin=False,
-        telegram_id=tid,
-    )
-    await callback.message.edit_text(
-        admin_flow_test.sim_newbie_header(),
-        reply_markup=keyboards.with_admin_flow_back(kb),
-    )
+    total = _FLOW_TOTALS[flow]
+    step = max(1, min(step, total))
+    extra = admin_flow_guide.nav_extra(flow, step)
+    nav = keyboards.create_admin_flow_nav_keyboard(flow, step, total, extra)
+
+    if flow == "nb":
+        if step == 1:
+            terms_url = get_setting("terms_url") or "https://example.com/terms"
+            privacy_url = get_setting("privacy_url") or "https://example.com/privacy"
+            text = admin_flow_guide.guide_newbie_step(step) + (
+                "\n\n<b>Добро пожаловать!</b>\n"
+                f"<a href='{terms_url}'>Условия</a> · "
+                f"<a href='{privacy_url}'>Политика</a>"
+            )
+            agree = keyboards.create_admin_demo_agreement_keyboard()
+            step_nav = keyboards.create_admin_flow_nav_keyboard("nb", 1, 4, extra)
+            await callback.message.edit_text(
+                text,
+                reply_markup=_merge_menu_with_nav(agree, step_nav),
+                disable_web_page_preview=True,
+            )
+            return
+        if step == 2:
+            menu = keyboards.create_main_menu_keyboard(
+                has_active_sub=False,
+                trial_available=True,
+                is_admin=False,
+                telegram_id=tid,
+            )
+            await callback.message.edit_text(
+                admin_flow_guide.guide_newbie_step(step),
+                reply_markup=_merge_menu_with_nav(menu, nav),
+            )
+            return
+        if step == 3:
+            await callback.message.edit_text(
+                admin_flow_guide.demo_trial_success_text(),
+                reply_markup=nav,
+            )
+            return
+        text = admin_flow_guide.guide_newbie_step(step)
+    elif flow == "ex":
+        if step == 1:
+            menu = keyboards.create_main_menu_keyboard(
+                has_active_sub=True,
+                trial_available=False,
+                is_admin=False,
+                telegram_id=tid,
+            )
+            await callback.message.edit_text(
+                admin_flow_guide.guide_existing_step(step),
+                reply_markup=_merge_menu_with_nav(menu, nav),
+            )
+            return
+        text = admin_flow_guide.guide_existing_step(step)
+    else:
+        text = admin_flow_guide.guide_web_step(step)
+
+    await callback.message.edit_text(text, reply_markup=nav)
 
 
-@admin_router.callback_query(F.data == "admin_flow_run_existing")
-async def admin_flow_run_existing(callback: types.CallbackQuery):
+@admin_router.callback_query(F.data.regexp(_FLOW_STEP_RE))
+async def admin_flow_guide_step(callback: types.CallbackQuery):
     if not _is_admin(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True)
         return
     await callback.answer()
-    tid = callback.from_user.id
-    kb = keyboards.create_main_menu_keyboard(
-        has_active_sub=True,
-        trial_available=False,
-        is_admin=False,
-        telegram_id=tid,
-    )
-    await callback.message.edit_text(
-        admin_flow_test.sim_existing_header(tid),
-        reply_markup=keyboards.with_admin_flow_back(kb),
-    )
+    m = _FLOW_STEP_RE.match(callback.data or "")
+    if not m:
+        return
+    await _render_admin_flow_guide(callback, m.group(1), int(m.group(2)))
 
 
-@admin_router.callback_query(F.data == "admin_flow_run_email")
-async def admin_flow_run_email(callback: types.CallbackQuery):
+@admin_router.callback_query(F.data == "admin_demo_agree")
+async def admin_demo_agree(callback: types.CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    await callback.answer("Демо: условия приняты (БД не менялась)", show_alert=True)
+    await _render_admin_flow_guide(callback, "nb", 2)
+
+
+@admin_router.callback_query(F.data == "admin_flow_g_ex_demo_vpn")
+async def admin_flow_g_ex_demo_vpn(callback: types.CallbackQuery):
     if not _is_admin(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True)
         return
     await callback.answer()
-    setup_url = f"{admin_flow_test.setup_origin().rstrip('/')}/setup/"
-    from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
-    rows = [
-        [
-            InlineKeyboardButton(
-                text="\U0001f310 \u041e\u0442\u043a\u0440\u044b\u0442\u044c /setup/ \u0432 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0435",
-                url=setup_url,
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text="\U0001f519 \u041a \u0442\u0435\u0441\u0442\u0430\u043c \u0444\u043b\u043e\u0443",
-                callback_data="admin_flow_test_menu",
-            )
-        ],
-    ]
+    nav = keyboards.create_admin_flow_nav_keyboard("ex", 2, 3)
     await callback.message.edit_text(
-        admin_flow_test.sim_email_header(),
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
+        admin_flow_guide.demo_my_vpn_text(),
+        reply_markup=nav,
     )
