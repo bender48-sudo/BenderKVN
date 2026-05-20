@@ -352,7 +352,15 @@ def set_terms_agreed(telegram_id: int):
     try:
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
-            cursor.execute("UPDATE users SET agreed_to_terms = 1 WHERE telegram_id = ?", (telegram_id,))
+            cursor.execute(
+                "UPDATE users SET agreed_to_terms = 1 WHERE telegram_id = ?",
+                (telegram_id,),
+            )
+            if cursor.rowcount == 0:
+                cursor.execute(
+                    "INSERT INTO users (telegram_id, username, agreed_to_terms) VALUES (?, ?, 1)",
+                    (telegram_id, ""),
+                )
             conn.commit()
             logging.info(f"User {telegram_id} has agreed to terms.")
     except sqlite3.Error as e:

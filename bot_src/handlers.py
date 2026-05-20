@@ -363,7 +363,7 @@ async def start_handler(message: types.Message, state: FSMContext):
     register_user_if_not_exists(user_id, username)
     funnel_detail = "bind:***" if bind_token else (ref_code or "")
     log_action(user_id, "funnel_bot_start", funnel_detail)
-    user_data = get_user(user_id)
+    user_data = get_user(user_id)  # after register — fresh row
     if ref_code and user_data and not user_data.get("referred_by"):
         if link_referral(ref_code, user_id):
             log_action(user_id, "referral_linked", ref_code)
@@ -395,18 +395,33 @@ async def start_handler(message: types.Message, state: FSMContext):
         await message.answer(agreement_text, reply_markup=keyboards.create_agreement_keyboard(), disable_web_page_preview=True)
         await state.set_state(UserAgreement.waiting_for_agreement)
 
-@user_router.callback_query(UserAgreement.waiting_for_agreement, F.data == "agree_to_terms")
+@user_router.callback_query(F.data == "agree_to_terms")
 async def agree_to_terms_handler(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer()
+    """Accept terms — works without FSM state (old inline buttons after bot restart)."""
     user_id = callback.from_user.id
+    username = callback.from_user.username or callback.from_user.full_name or ""
+    await callback.answer()
+    register_user_if_not_exists(user_id, username)
+
+    user_data = get_user(user_id)
+    if user_data and user_data.get("agreed_to_terms"):
+        await state.clear()
+        try:
+            await callback.message.delete()
+        except TelegramBadRequest:
+            pass
+        await show_main_menu(callback.message)
+        return
+
     data = await state.get_data()
     pending_bind = data.get("pending_web_bind")
-
     set_terms_agreed(user_id)
-
     await state.clear()
 
-    await callback.message.delete()
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest:
+        pass
 
     await callback.message.answer(
         "✅ Спасибо! Приятного использования.",
@@ -414,14 +429,49 @@ async def agree_to_terms_handler(callback: types.CallbackQuery, state: FSMContex
     )
     if pending_bind:
         await _apply_web_bind(callback.message, pending_bind)
+        await state.update_data(pending_web_bind=None)
     await show_main_menu(callback.message)
 
 @user_router.message(UserAgreement.waiting_for_agreement)
 async def agreement_fallback_handler(message: types.Message):
-    await message.answer("Пожалуйста, сначала примите условия использования, нажав на кнопку выше.")
+    await message.answer("Пожалуйста, сначала примите условия использования, нажав на кнопку «Принимаю» выше.")
+
+
+async def _ensure_terms_or_prompt(message: types.Message, state: FSMContext) -> bool:
+    """Return True if user may use the bot (terms accepted)."""
+    user_id = message.from_user.id
+    username = message.from_user.username or message.from_user.full_name or ""
+    register_user_if_not_exists(user_id, username)
+    user_data = get_user(user_id)
+    if user_data and user_data.get("agreed_to_terms"):
+        return True
+    terms_url = get_setting("terms_url")
+    privacy_url = get_setting("privacy_url")
+    if not terms_url or not privacy_url:
+        await message.answer(
+            "❗️ Условия и политика конфиденциальности не настроены. Напишите в поддержку."
+        )
+        return False
+    agreement_text = (
+        "<b>Добро пожаловать!</b>\n\n"
+        "Перед началом использования бота, пожалуйста, ознакомьтесь и примите наши "
+        f"<a href='{terms_url}'>Условия использования</a> и "
+        f"<a href='{privacy_url}'>Политику конфиденциальности</a>.\n\n"
+        "Нажимая кнопку «Принимаю», вы подтверждаете согласие с этими документами."
+    )
+    await message.answer(
+        agreement_text,
+        reply_markup=keyboards.create_agreement_keyboard(),
+        disable_web_page_preview=True,
+    )
+    await state.set_state(UserAgreement.waiting_for_agreement)
+    return False
+
 
 @user_router.message(F.text == "🏠 Главное меню")
-async def main_menu_handler(message: types.Message):
+async def main_menu_handler(message: types.Message, state: FSMContext):
+    if not await _ensure_terms_or_prompt(message, state):
+        return
     await show_main_menu(message)
 
 @user_router.callback_query(F.data == "back_to_main_menu")
