@@ -1,4 +1,4 @@
-﻿import logging
+import logging
 import uuid
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
