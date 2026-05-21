@@ -249,9 +249,9 @@ async def show_main_menu(message: types.Message, edit_message: bool = False):
     else:
         text = (
             "🏠 <b>Главное меню</b>\n\n"
-            "Шаг 1: «Начать бесплатно» — ключ на ~3 месяца.\n"
+            "Шаг 1: «Начать бесплатно» — ключ на ~3 месяца (только в боте).\n"
             "Шаг 2: «Подключить VPN» — выбор устройства и QR.\n"
-            "Уже есть ключ — сразу «Подключить VPN»."
+            "На сайте по email — отдельный trial 1 сутки."
         )
     auto_renew = get_auto_renew(user_id) if user_db_data else False
     keyboard = keyboards.create_main_menu_keyboard(
@@ -823,7 +823,12 @@ async def trial_period_handler(callback: types.CallbackQuery):
         if not uri or not expire_iso or not vless_uuid:
             # Сбрасываем флаг при ошибке создания ключа
             reset_trial_used(user_id)
-            await callback.message.edit_text("❌ " + user_messages.ERR_TRIAL_CREATE)
+            await callback.message.edit_text(
+                "❌ " + user_messages.ERR_TRIAL_CREATE,
+                reply_markup=keyboards.create_support_keyboard(
+                    get_setting("support_user")
+                ),
+            )
             return
         # convert ISO to timestamp ms for storage
         expiry_dt = datetime.fromisoformat(expire_iso.replace('Z', '+00:00'))
@@ -853,7 +858,12 @@ async def trial_period_handler(callback: types.CallbackQuery):
         logger.error(f"Error creating trial key for user {user_id}: {e}", exc_info=True)
         # Сбрасываем флаг при любой ошибке
         reset_trial_used(user_id)
-        await callback.message.edit_text("❌ " + user_messages.ERR_TRIAL_CREATE)
+        await callback.message.edit_text(
+            "❌ " + user_messages.ERR_TRIAL_CREATE,
+            reply_markup=keyboards.create_support_keyboard(
+                get_setting("support_user")
+            ),
+        )
 
 @user_router.callback_query(F.data == "open_admin_panel")
 async def open_admin_panel_handler(callback: types.CallbackQuery):

@@ -1,7 +1,9 @@
 """Admin smoke tests for newbie / existing TG / email web flows."""
 from __future__ import annotations
 
+import json
 import os
+import time
 from datetime import datetime
 from typing import Any
 
@@ -186,7 +188,42 @@ def smoke_newbie_logic() -> list[dict[str, Any]]:
     return checks
 
 
-def smoke_email_web() -> list[dict[str, Any]]:
+async def _probe_web_trial_api() -> dict[str, Any]:
+    """Live POST like ops/smoke_web_trial_browser.py (healthcheck email)."""
+    origin = setup_origin().rstrip("/")
+    url = f"{origin}/api/web-trial"
+    email = f"healthcheck+{int(time.time())}@example.invalid"
+    timeout = aiohttp.ClientTimeout(total=20)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(
+                url,
+                json={"email": email, "phone": ""},
+                headers={"Content-Type": "application/json"},
+            ) as resp:
+                code = resp.status
+                raw = await resp.text()
+    except Exception as exc:
+        return _check("API web-trial POST", False, str(exc)[:80])
+
+    if code == 429:
+        return _check("API web-trial POST", True, "HTTP 429 — endpoint жив (rate limit)")
+    try:
+        doc = json.loads(raw) if raw else {}
+    except json.JSONDecodeError:
+        return _check("API web-trial POST", False, f"HTTP {code}: не JSON")
+
+    if code in (200, 201) and doc.get("ok") and doc.get("sub_url"):
+        days = doc.get("days")
+        extra = f", days={days}" if days is not None else ""
+        return _check("API web-trial POST", True, f"HTTP {code} sub_url ok{extra}")
+    if code in (400, 409, 422):
+        err = (doc.get("error") or doc.get("message") or "")[:48]
+        return _check("API web-trial POST", True, f"HTTP {code} — API отвечает ({err})")
+    return _check("API web-trial POST", False, f"HTTP {code}: {raw[:56]}")
+
+
+async def smoke_email_web() -> list[dict[str, Any]]:
     """Browser /setup email trial — not Telegram Mini App path."""
     checks: list[dict[str, Any]] = []
     origin = setup_origin()
@@ -199,13 +236,7 @@ def smoke_email_web() -> list[dict[str, Any]]:
     checks.append(
         _check("Trial по email", wtd == 1, f"WEB_TRIAL_DAYS={wtd} (ожидали 1)")
     )
-    checks.append(
-        _check(
-            "API web-trial (LV→AMS)",
-            True,
-            "POST /setup/api/web-trial — только с email, не telegram_id",
-        )
-    )
+    checks.append(await _probe_web_trial_api())
     checks.append(
         _check(
             "Путь пользователя",
@@ -227,7 +258,7 @@ async def run_all_smokes(admin_telegram_id: int) -> str:
     infra = await smoke_infrastructure()
     existing = await smoke_existing_user(admin_telegram_id)
     newbie = smoke_newbie_logic()
-    email = smoke_email_web()
+    email = await smoke_email_web()
     parts = [
         "🧪 <b>Проверка флоу</b> (prod env + ваш TG-аккаунт)\n",
         format_section("1. Инфраструктура", infra),

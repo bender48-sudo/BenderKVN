@@ -115,16 +115,12 @@ def create_main_menu_keyboard(
 
 
 def create_trial_success_keyboard(sub_url, telegram_id: int | None = None):
-    """После trial: QR + кабинет, без лишних ссылок."""
+    """После trial: до 4 кнопок — QR, настройка, поддержка, меню."""
     builder = InlineKeyboardBuilder()
-    if TELEGRAM_WEBAPP_URL and telegram_id:
-        builder.button(
-            text="\U0001f3e0 \u041b\u0438\u0447\u043d\u044b\u0439 \u043a\u0430\u0431\u0438\u043d\u0435\u0442",
-            web_app=WebAppInfo(url=telegram_cabinet_webapp_url(telegram_id)),
-        )
     if sub_url:
         builder.button(text="\U0001f4f7 QR \u0434\u043b\u044f Happ", callback_data="show_sub_qr")
     builder.button(text="\U0001f4d6 \u041a\u0430\u043a \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c", callback_data="connect_vpn")
+    builder.button(text="\U0001f4ac \u041d\u0430\u043f\u0438\u0441\u0430\u0442\u044c \u043d\u0430\u043c", callback_data="contact_support")
     builder.button(text="\U0001f519 \u0413\u043b\u0430\u0432\u043d\u043e\u0435 \u043c\u0435\u043d\u044e", callback_data="back_to_main_menu")
     builder.adjust(1)
     return builder.as_markup()
@@ -296,6 +292,10 @@ def create_admin_keyboard():
 def create_admin_flow_test_keyboard():
     builder = InlineKeyboardBuilder()
     builder.button(
+        text="\u25b6\ufe0f \u041f\u0440\u043e\u0434-\u0441\u0438\u043c: \u043c\u0435\u043d\u044e \u043d\u043e\u0432\u0438\u0447\u043a",
+        callback_data="admin_flow_g_nb_2",
+    )
+    builder.button(
         text="\U0001f9ed \u0413\u0438\u0434: \u043d\u043e\u0432\u0438\u043a \u0432 \u0431\u043e\u0442\u0435",
         callback_data="admin_flow_g_nb_1",
     )
@@ -329,7 +329,7 @@ def create_admin_guide_nb_step1_keyboard():
     """Новичок шаг 1 — без merge двух markup (Telegram иногда ломает edit)."""
     builder = InlineKeyboardBuilder()
     builder.button(
-        text="\u2705 \u041f\u0440\u0438\u043d\u0438\u043c\u0430\u044e (\u0434\u0435\u043c\u043e \u2192 \u0448\u0430\u0433 2)",
+        text="\u2705 \u041f\u0440\u0438\u043d\u0438\u043c\u0430\u044e (\u0434\u0435\u043c\u043e \u2192 \u043f\u0440\u043e\u0434-\u043c\u0435\u043d\u044e)",
         callback_data="admin_demo_agree",
     )
     builder.button(text="\u0414\u0430\u043b\u0435\u0435 \u25b6\ufe0f", callback_data="admin_flow_g_nb_2")

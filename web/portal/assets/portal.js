@@ -481,12 +481,43 @@
     }
   }
 
+  function resolveSubscriptionUrl(done) {
+    var stored = readStoredSubscriptionUrl();
+    if (stored) {
+      done(stored);
+      return;
+    }
+    var tid = getTelegramUserId();
+    if (tid <= 0) {
+      done("");
+      return;
+    }
+    postJson(API_TELEGRAM_SETUP, { telegram_id: tid })
+      .then(function (res) {
+        if (res.body && res.body.sub_url) {
+          var u = normalizeSubUrl(res.body.sub_url);
+          try {
+            localStorage.setItem(SUB_URL_KEY, u);
+          } catch (e) {
+            /* ignore */
+          }
+          done(u);
+          return;
+        }
+        done("");
+      })
+      .catch(function () {
+        done("");
+      });
+  }
+
   function showDeviceDetail(deviceId) {
     var dev = content.devices.find(function (d) {
       return d.id === deviceId;
     });
     if (!dev) return;
-    renderDeviceSubscriptionQr(readStoredSubscriptionUrl());
+    resolveSubscriptionUrl(function (subUrl) {
+      renderDeviceSubscriptionQr(subUrl);
     var screens = content.screens || {};
     if ($("install-steps-title") && screens.install_steps_title) {
       $("install-steps-title").textContent = screens.install_steps_title;
@@ -529,7 +560,8 @@
       li.textContent = step;
       after.appendChild(li);
     });
-    show("device");
+      show("device");
+    });
   }
 
   function renderCabinet() {

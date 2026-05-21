@@ -154,8 +154,8 @@ async def admin_flow_test_menu(callback: types.CallbackQuery):
     await callback.answer()
     await callback.message.edit_text(
         "🧪 <b>Тест флоу</b>\n\n"
-        "<b>🧭 Гиды</b> — пройти путь пользователя по шагам "
-        "(«Далее», «Назад», на web — ссылка в браузер).\n\n"
+        "<b>🧭 Гиды</b> — шаг 2+ с <b>реальными</b> кнопками бота (прод-сим). "
+        "«Далее» / «Назад»; на web — ссылка в браузер.\n\n"
         "<b>🔧 Диагностика</b> — робот проверяет сервер: панель, :8443, /setup, "
         "ваш аккаунт. Это не сценарий для клиента, а тех. отчёт ✅/❌.",
         reply_markup=keyboards.create_admin_flow_test_keyboard(),
@@ -176,7 +176,7 @@ async def admin_flow_smoke_all(callback: types.CallbackQuery):
     try:
         text = await asyncio.wait_for(
             admin_flow_test.run_all_smokes(callback.from_user.id),
-            timeout=30.0,
+            timeout=45.0,
         )
     except asyncio.TimeoutError:
         logger.warning("admin_flow_smoke_all timeout uid=%s", callback.from_user.id)
@@ -247,7 +247,7 @@ async def admin_flow_smoke_email(callback: types.CallbackQuery):
         return
     await callback.answer()
     infra = await admin_flow_test.smoke_infrastructure()
-    email = admin_flow_test.smoke_email_web()
+    email = await admin_flow_test.smoke_email_web()
     text = (
         "🧪 <b>Email / web</b>\n\n"
         + admin_flow_test.format_section("Инфра", infra)
@@ -324,18 +324,30 @@ async def _render_admin_flow_guide(
             )
             return
         if step == 2:
+            user_db = get_user(tid)
+            trial_avail = not (user_db and user_db.get("trial_used"))
+            menu = keyboards.create_main_menu_keyboard(
+                has_active_sub=False,
+                trial_available=trial_avail,
+                is_admin=True,
+                telegram_id=tid,
+                for_simulation=False,
+            )
             await _edit_guide_message(
                 callback,
                 admin_flow_guide.guide_newbie_step(step),
-                keyboards.create_admin_guide_nb_step2_keyboard(),
+                _merge_menu_with_nav(menu, nav),
             )
             return
         if step == 3:
-            await _edit_guide_message(
-                callback,
-                admin_flow_guide.demo_trial_success_text(),
-                keyboards.create_admin_guide_nb_step3_keyboard(),
+            text = (
+                admin_flow_guide.guide_newbie_step(step)
+                + "\n\n"
+                + admin_flow_guide.demo_trial_success_text()
+                + "\n\n<i>Пример экрана. На шаге 2 нажмите «Начать бесплатно» — "
+                "увидите свой ключ.</i>"
             )
+            await _edit_guide_message(callback, text, nav)
             return
         text = admin_flow_guide.guide_newbie_step(step)
         kb = keyboards.create_admin_guide_nb_step4_keyboard(extra)
@@ -346,9 +358,9 @@ async def _render_admin_flow_guide(
             menu = keyboards.create_main_menu_keyboard(
                 has_active_sub=True,
                 trial_available=False,
-                is_admin=False,
+                is_admin=True,
                 telegram_id=tid,
-                for_simulation=True,
+                for_simulation=False,
             )
             await _edit_guide_message(
                 callback,
@@ -378,7 +390,7 @@ async def admin_demo_agree(callback: types.CallbackQuery):
     if not _is_admin(callback.from_user.id):
         await callback.answer("Нет доступа", show_alert=True)
         return
-    await callback.answer("Демо: шаг 2 — меню новичка", show_alert=False)
+    await callback.answer("Шаг 2 — реальное меню новичка", show_alert=False)
     await _render_admin_flow_guide(callback, "nb", 2)
 
 
@@ -388,8 +400,7 @@ async def admin_demo_hint_trial(callback: types.CallbackQuery):
         await callback.answer("Нет доступа", show_alert=True)
         return
     await callback.answer(
-        "У пользователя: бот создаёт trial ~3 мес. и даёт ссылку. "
-        "На вашем аккаунте trial может быть уже использован.",
+        "Нажмите «Начать бесплатно» в меню выше — это реальный get_trial (~3 мес.).",
         show_alert=True,
     )
 
@@ -400,7 +411,7 @@ async def admin_demo_hint_help(callback: types.CallbackQuery):
         await callback.answer("Нет доступа", show_alert=True)
         return
     await callback.answer(
-        "У пользователя: мастер настройки / Mini App с QR и ссылкой для Happ.",
+        "Нажмите «Подключить VPN» в меню выше — мастер настройки как у пользователя.",
         show_alert=True,
     )
 

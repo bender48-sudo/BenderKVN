@@ -20,6 +20,7 @@ for needle in (
     "admin_flow_test_menu",
     "admin_flow_smoke_all",
     "admin_flow_g_nb_1",
+    "_parse_flow_step",
     "admin_demo_hint_trial",
     "admin_flow_guide",
     "_render_admin_flow_guide",
@@ -32,6 +33,7 @@ kb_text = kb.read_text(encoding="utf-8")
 for needle_kb in (
     "admin_flow_test_menu",
     "admin_flow_g_nb_1",
+    "admin_flow_g_nb_2",
     "create_admin_guide_nb_step1_keyboard",
     "admin_demo_hint_trial",
 ):
@@ -45,6 +47,7 @@ for fn in (
     "smoke_existing_user",
     "smoke_newbie_logic",
     "smoke_email_web",
+    "_probe_web_trial_api",
     "sim_newbie_header",
 ):
     if f"def {fn}" not in mod_text and f"async def {fn}" not in mod_text:
