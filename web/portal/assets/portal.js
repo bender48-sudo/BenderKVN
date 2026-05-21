@@ -15,6 +15,7 @@
   const EMAIL_KEY = "bvpn_customer_email";
 
   let content = null;
+  let lastCabinetDoc = null;
 
   function $(id) {
     return document.getElementById(id);
@@ -213,12 +214,31 @@
       });
   }
 
+  function cabinetBotTopupUrl(doc) {
+    var base = (doc && doc.bot_url) || SUPPORT_URL;
+    if (base.indexOf("?") >= 0) return base;
+    return base + "?start=topup";
+  }
+
+  function openCabinetTopup() {
+    openExternal(cabinetBotTopupUrl(lastCabinetDoc));
+    var tg = getTelegramWebApp();
+    if (tg && typeof tg.close === "function") {
+      try {
+        tg.close();
+      } catch (e) {
+        /* ignore */
+      }
+    }
+  }
+
   function bindSetupEntryButtons() {
     ["btn-setup", "btn-cabinet-setup"].forEach(function (id) {
       var el = $(id);
       if (!el) return;
       el.addEventListener("click", function (ev) {
         if (getTelegramWebApp() || getTelegramUserId() > 0) {
+          ev.preventDefault();
           openTelegramSetup(ev);
         }
       });
@@ -532,14 +552,25 @@
     if ($("cabinet-web-notify")) {
       $("cabinet-web-notify").textContent = cab.web_notify_lead || "";
     }
-    $("btn-cabinet-bot").textContent = cab.open_bot || "Открыть бота";
-    if (tg) {
-      $("btn-cabinet-setup").textContent =
-        cab.setup_tg || content.buttons.setup_tg || "QR для Happ";
-      $("btn-cabinet-setup").href = "#";
-    } else {
-      $("btn-cabinet-setup").textContent = content.buttons.setup_browser;
-      $("btn-cabinet-setup").href = SETUP_PATH;
+    var topupBtn = $("btn-cabinet-topup");
+    if (topupBtn) {
+      topupBtn.textContent = cab.topup || "Пополнить баланс";
+      topupBtn.classList.add("hidden");
+    }
+    var botBtn = $("btn-cabinet-bot");
+    if (botBtn) {
+      botBtn.textContent = cab.open_bot || "Открыть бота";
+      if (tg) botBtn.classList.add("hidden");
+      else botBtn.classList.remove("hidden");
+    }
+    var setupBtn = $("btn-cabinet-setup");
+    if (setupBtn) {
+      if (tg) {
+        setupBtn.textContent =
+          cab.setup_tg || content.buttons.setup_tg || "Настроить VPN (QR)";
+      } else {
+        setupBtn.textContent = content.buttons.setup_browser;
+      }
     }
     var bindBtn = $("btn-cabinet-bind");
     if (bindBtn) {
@@ -576,10 +607,13 @@
   }
 
   function applyCabinetData(doc) {
+    lastCabinetDoc = doc || null;
     var cab = content.cabinet || {};
     var balEl = $("cabinet-balance");
     var panel = $("cabinet-balance-panel");
     var err = $("cabinet-load-error");
+    var lead = $("cabinet-lead");
+    var topupBtn = $("btn-cabinet-topup");
     if (err) err.classList.add("hidden");
     if (!doc || !doc.ok) {
       var msg =
@@ -602,10 +636,19 @@
     balEl.textContent = fmt
       .replace("{balance}", String(Math.round(doc.balance_rub)))
       .replace("{days}", String(doc.days_left));
-    if (doc.days_left <= 3) {
-      balEl.classList.add("cabinet-balance--low");
+    balEl.classList.remove("cabinet-balance--warn", "cabinet-balance--empty");
+    if (doc.balance_rub <= 0 || doc.days_left <= 0) {
+      balEl.classList.add("cabinet-balance--empty");
+    } else if (doc.days_left <= 3) {
+      balEl.classList.add("cabinet-balance--warn");
     }
     if (panel) panel.classList.remove("hidden");
+    if (lead && cab.lead_loaded) {
+      lead.textContent = cab.lead_loaded;
+    }
+    if (topupBtn) {
+      topupBtn.classList.remove("hidden");
+    }
     var botBtn = $("btn-cabinet-bot");
     if (botBtn && doc.bot_url) {
       botBtn.href = doc.bot_url;
@@ -781,6 +824,12 @@
     var loadBal = $("btn-cabinet-load");
     if (loadBal) {
       loadBal.addEventListener("click", loadCabinetBalance);
+    }
+    var topupBtn = $("btn-cabinet-topup");
+    if (topupBtn) {
+      topupBtn.addEventListener("click", function () {
+        openCabinetTopup();
+      });
     }
     var backCab = $("btn-back-home-cabinet");
     if (backCab) {

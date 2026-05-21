@@ -50,6 +50,7 @@ def _cabinet_for_telegram(telegram_id: int) -> dict:
         "telegram_bound": True,
         "web_only": False,
         "source": "telegram",
+        "bot_url": _bot_open_url(),
     }
 
 

@@ -1,4 +1,4 @@
-﻿import logging
+import logging
 import uuid
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
@@ -358,8 +358,10 @@ async def start_handler(message: types.Message, state: FSMContext):
     username = message.from_user.username or message.from_user.full_name
     ref_code = None
     bind_token = None
+    start_arg = ""
     if message.text and " " in message.text:
         arg = message.text.split(" ", 1)[1].strip()
+        start_arg = arg
         if arg.startswith("ref_"):
             ref_code = arg[4:]
         elif arg.startswith("bind_"):
@@ -378,6 +380,17 @@ async def start_handler(message: types.Message, state: FSMContext):
         if bind_token:
             await _apply_web_bind(message, bind_token)
             await state.update_data(pending_web_bind=None)
+        if start_arg == "topup":
+            await message.answer(
+                f"👋 Снова здравствуйте, {html.bold(message.from_user.full_name)}!",
+                reply_markup=keyboards.main_reply_keyboard,
+            )
+            await message.answer(
+                "💰 <b>Пополнить баланс</b>\n\nВыберите сумму (Telegram Stars):",
+                reply_markup=keyboards.create_topup_keyboard(),
+                parse_mode="HTML",
+            )
+            return
         await message.answer(
             f"👋 Снова здравствуйте, {html.bold(message.from_user.full_name)}!",
             reply_markup=keyboards.main_reply_keyboard,

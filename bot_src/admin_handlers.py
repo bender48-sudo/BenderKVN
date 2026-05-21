@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from shop_bot.admin_auth import is_admin_telegram
-from shop_bot.data_manager.database import get_user, get_user_keys, update_setting
+from shop_bot.data_manager.database import get_user, get_user_keys, update_setting, get_setting
 import re
 
 from aiogram.exceptions import TelegramBadRequest
