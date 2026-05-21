@@ -10,13 +10,14 @@
   <script>window.BVPN_INITIAL_VIEW = "cabinet";</script>
   <script src="/portal/assets/portal.js" defer></script>
 </head>
-<body>
-  <main id="main-content">
+<body class="cabinet-page">
+  <main id="main-content" class="cabinet-main">
     <p id="load-error" class="note note-accent hidden" role="alert"></p>
-    <section data-view="cabinet" aria-labelledby="cabinet-title">
-      <h2 id="cabinet-title">Личный кабинет</h2>
-      <p class="muted" id="cabinet-lead">Загрузка…</p>
+    <section data-view="cabinet" class="cabinet-shell" aria-labelledby="cabinet-title">
+      <h2 id="cabinet-title" class="cabinet-heading">Личный кабинет</h2>
+      <p class="muted cabinet-lead" id="cabinet-lead">Загрузка…</p>
       <p class="note hidden" id="cabinet-load-error" role="alert"></p>
+
       <div class="panel hidden" id="cabinet-login-panel">
         <label class="field-label" for="cabinet-customer-id" id="cabinet-customer-id-label">BVPN-ID</label>
         <input type="text" id="cabinet-customer-id" class="field-input" autocomplete="off" />
@@ -24,17 +25,22 @@
         <input type="email" id="cabinet-email" class="field-input" autocomplete="email" />
         <button type="button" class="btn btn-primary" id="btn-cabinet-load">Показать баланс</button>
       </div>
-      <div class="panel hidden" id="cabinet-balance-panel">
-        <p class="field-label" id="cabinet-balance-label">Баланс</p>
+
+      <div class="cabinet-card hidden" id="cabinet-balance-panel">
+        <p class="cabinet-status-pill" id="cabinet-vpn-status" role="status"></p>
+        <p class="field-label" id="cabinet-balance-label">Ваш баланс</p>
         <p class="cabinet-balance" id="cabinet-balance">—</p>
+        <p class="muted cabinet-balance-sub" id="cabinet-balance-days"></p>
         <p class="muted" id="cabinet-balance-hint"></p>
-        <p class="muted" id="cabinet-web-notify"></p>
+        <p class="muted hidden" id="cabinet-web-notify"></p>
       </div>
-      <div class="actions actions-cabinet">
-        <button type="button" class="btn btn-primary hidden" id="btn-cabinet-topup">Пополнить баланс</button>
+
+      <div class="actions actions-cabinet hidden" id="cabinet-actions">
+        <button type="button" class="btn btn-primary" id="btn-cabinet-topup">Пополнить баланс</button>
         <button type="button" class="btn btn-secondary" id="btn-cabinet-setup">Настроить VPN (QR)</button>
+        <button type="button" class="btn btn-secondary" id="btn-cabinet-invite">Пригласить друга</button>
         <a class="btn btn-ghost hidden" id="btn-cabinet-bind" href="#" target="_blank" rel="noopener"></a>
-        <a class="btn btn-ghost hidden" id="btn-cabinet-bot" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener">Открыть бота</a>
+        <a class="btn btn-ghost hidden" id="btn-cabinet-bot" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
       </div>
     </section>
   </main>

@@ -557,6 +557,13 @@
       topupBtn.textContent = cab.topup || "Пополнить баланс";
       topupBtn.classList.add("hidden");
     }
+    var inviteBtn = $("btn-cabinet-invite");
+    if (inviteBtn) {
+      inviteBtn.textContent = cab.invite || "Пригласить друга";
+      inviteBtn.classList.add("hidden");
+    }
+    var actionsWrap = $("cabinet-actions");
+    if (actionsWrap) actionsWrap.classList.add("hidden");
     var botBtn = $("btn-cabinet-bot");
     if (botBtn) {
       botBtn.textContent = cab.open_bot || "Открыть бота";
@@ -632,22 +639,48 @@
       }
       return;
     }
-    var fmt = cab.balance_format || "{balance} ₽ · ~{days} дн.";
-    balEl.textContent = fmt
-      .replace("{balance}", String(Math.round(doc.balance_rub)))
-      .replace("{days}", String(doc.days_left));
+    var balMain = Math.round(doc.balance_rub) + " ₽";
+    balEl.textContent = balMain;
+    var daysLine = $("cabinet-balance-days");
+    if (daysLine) {
+      var dl = cab.days_line || "хватит примерно {days} дн.";
+      daysLine.textContent = dl.replace("{days}", String(doc.days_left));
+    }
     balEl.classList.remove("cabinet-balance--warn", "cabinet-balance--empty");
     if (doc.balance_rub <= 0 || doc.days_left <= 0) {
       balEl.classList.add("cabinet-balance--empty");
     } else if (doc.days_left <= 3) {
       balEl.classList.add("cabinet-balance--warn");
     }
+    var statusEl = $("cabinet-vpn-status");
+    if (statusEl) {
+      statusEl.classList.remove(
+        "cabinet-status-pill--warn",
+        "cabinet-status-pill--off"
+      );
+      if (doc.vpn_until) {
+        var st = cab.vpn_active || "VPN активен до {date}";
+        statusEl.textContent = st.replace("{date}", doc.vpn_until);
+      } else {
+        statusEl.textContent = cab.vpn_no_key || "Получите VPN в боте";
+        statusEl.classList.add("cabinet-status-pill--warn");
+      }
+      if (doc.days_left <= 0) {
+        statusEl.classList.add("cabinet-status-pill--off");
+      }
+    }
     if (panel) panel.classList.remove("hidden");
+    var actionsWrap = $("cabinet-actions");
+    if (actionsWrap) actionsWrap.classList.remove("hidden");
     if (lead && cab.lead_loaded) {
       lead.textContent = cab.lead_loaded;
     }
     if (topupBtn) {
       topupBtn.classList.remove("hidden");
+    }
+    var inviteBtn = $("btn-cabinet-invite");
+    if (inviteBtn && getTelegramWebApp()) {
+      inviteBtn.classList.remove("hidden");
     }
     var botBtn = $("btn-cabinet-bot");
     if (botBtn && doc.bot_url) {
@@ -829,6 +862,13 @@
     if (topupBtn) {
       topupBtn.addEventListener("click", function () {
         openCabinetTopup();
+      });
+    }
+    var inviteBtn = $("btn-cabinet-invite");
+    if (inviteBtn) {
+      inviteBtn.addEventListener("click", function () {
+        var url = cabinetBotTopupUrl(lastCabinetDoc).replace("?start=topup", "");
+        openExternal(url);
       });
     }
     var backCab = $("btn-back-home-cabinet");

@@ -464,6 +464,58 @@ h2 {
   margin-top: 1rem;
 }
 
+.cabinet-page .cabinet-main {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 1rem 1rem 2rem;
+}
+
+.cabinet-shell {
+  margin-top: 0.5rem;
+}
+
+.cabinet-heading {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+}
+
+.cabinet-card {
+  margin-top: 1rem;
+  padding: 1.1rem 1.15rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+}
+
+.cabinet-status-pill {
+  display: inline-block;
+  margin: 0 0 0.85rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: rgba(74, 222, 128, 0.12);
+  color: var(--ok);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+}
+
+.cabinet-status-pill--warn {
+  background: rgba(251, 146, 60, 0.12);
+  color: var(--warn);
+  border-color: rgba(251, 146, 60, 0.4);
+}
+
+.cabinet-status-pill--off {
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--bad);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.cabinet-balance-sub {
+  margin: 0.15rem 0 0.65rem;
+  font-size: 1rem;
+}
+
 .btn-events-ack::before {
   content: "✓";
   font-family: var(--sans);

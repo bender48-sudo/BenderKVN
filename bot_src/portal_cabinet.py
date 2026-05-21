@@ -1,8 +1,10 @@
 """Read-only web cabinet snapshot (P3-FLOW-15)."""
 from __future__ import annotations
 
+from datetime import datetime
+
 from shop_bot.config import DAILY_RATE, balance_to_days
-from shop_bot.data_manager.database import get_user
+from shop_bot.data_manager.database import get_user, get_user_keys
 from shop_bot.web_trial_db import (
     format_customer_id,
     get_claim_by_customer_id,
@@ -41,6 +43,13 @@ def _cabinet_for_telegram(telegram_id: int) -> dict:
         }
     balance = float(user.get("balance") or 0)
     days = balance_to_days(balance)
+    vpn_until = None
+    now = datetime.now()
+    keys = get_user_keys(telegram_id)
+    active = [k for k in keys if datetime.fromisoformat(k["expiry_date"]) > now]
+    if active:
+        latest = max(active, key=lambda k: datetime.fromisoformat(k["expiry_date"]))
+        vpn_until = datetime.fromisoformat(latest["expiry_date"]).strftime("%d.%m.%Y")
     return {
         "ok": True,
         "customer_id": f"TG-{telegram_id}",
@@ -51,6 +60,8 @@ def _cabinet_for_telegram(telegram_id: int) -> dict:
         "web_only": False,
         "source": "telegram",
         "bot_url": _bot_open_url(),
+        "vpn_active": bool(active),
+        "vpn_until": vpn_until,
     }
 
 
