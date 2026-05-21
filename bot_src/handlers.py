@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 import uuid
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
@@ -243,7 +243,8 @@ async def show_main_menu(message: types.Message, edit_message: bool = False):
         text = (
             "🏠 <b>Главное меню</b>\n\n"
             "Шаг 1: «Настроить VPN» — QR и Happ.\n"
-            "«Мой аккаунт» — баланс. «Кабинет» — пополнение в Mini App."
+            "«Мой аккаунт» — баланс и «Пригласить друга» (+3 дня).\n"
+            "«Кабинет» — пополнение в Mini App."
         )
     else:
         text = (

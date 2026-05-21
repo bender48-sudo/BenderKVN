@@ -84,6 +84,10 @@ def create_main_menu_keyboard(
             text="\U0001f4b0 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u0431\u0430\u043b\u0430\u043d\u0441",
             callback_data="show_topup",
         )
+        builder.button(
+            text="\U0001f465 \u041f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u0442\u044c \u0434\u0440\u0443\u0433\u0430",
+            callback_data="invite_friend",
+        )
     else:
         if trial_available:
             builder.button(
@@ -144,6 +148,10 @@ def create_account_keyboard(sub_url=None, telegram_id: int | None = None):
             callback_data="copy_sub_url",
         )
     builder.button(text="\U0001f4b0 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u0431\u0430\u043b\u0430\u043d\u0441", callback_data="show_topup")
+    builder.button(
+        text="\U0001f465 \u041f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u0442\u044c \u0434\u0440\u0443\u0433\u0430",
+        callback_data="invite_friend",
+    )
     builder.button(text="\U0001f519 \u041d\u0430\u0437\u0430\u0434", callback_data="back_to_main_menu")
     builder.adjust(1)
     return builder.as_markup()
