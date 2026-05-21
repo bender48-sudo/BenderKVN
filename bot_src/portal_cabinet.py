@@ -4,7 +4,8 @@ from __future__ import annotations
 from datetime import datetime
 
 from shop_bot.config import DAILY_RATE, balance_to_days
-from shop_bot.data_manager.database import get_user, get_user_keys
+from shop_bot.config import TELEGRAM_BOT_USERNAME
+from shop_bot.data_manager.database import ensure_user_ref_code, get_user, get_user_keys
 from shop_bot.web_trial_db import (
     format_customer_id,
     get_claim_by_customer_id,
@@ -15,10 +16,15 @@ from shop_bot.web_trial_db import (
 
 
 def _bot_open_url() -> str:
-    import os
-
-    username = (os.getenv("TELEGRAM_BOT_USERNAME") or "Bender_KVN_bot").strip().lstrip("@")
+    username = TELEGRAM_BOT_USERNAME.strip().lstrip("@") or "Bender_KVN_bot"
     return f"https://t.me/{username}"
+
+
+def _invite_open_url(telegram_id: int) -> str:
+    """Deep link: invite screen in bot (Mini App «Пригласить друга»)."""
+    ensure_user_ref_code(int(telegram_id))
+    username = TELEGRAM_BOT_USERNAME.strip().lstrip("@") or "Bender_KVN_bot"
+    return f"https://t.me/{username}?start=invite"
 
 
 def _cabinet_for_telegram(telegram_id: int) -> dict:
@@ -60,6 +66,7 @@ def _cabinet_for_telegram(telegram_id: int) -> dict:
         "web_only": False,
         "source": "telegram",
         "bot_url": _bot_open_url(),
+        "invite_url": _invite_open_url(telegram_id),
         "vpn_active": bool(active),
         "vpn_until": vpn_until,
     }

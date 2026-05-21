@@ -391,6 +391,22 @@ async def start_handler(message: types.Message, state: FSMContext):
                 parse_mode="HTML",
             )
             return
+        if start_arg == "invite":
+            await message.answer(
+                f"👋 Снова здравствуйте, {html.bold(message.from_user.full_name)}!",
+                reply_markup=keyboards.main_reply_keyboard,
+            )
+            ref_code = ensure_user_ref_code(user_id)
+            ref_count = count_referrals(ref_code)
+            bot_info = await message.bot.get_me()
+            ref_url = f"https://t.me/{bot_info.username}?start=ref_{ref_code}"
+            await message.answer(
+                f"👥 <b>Пригласите друга</b>\n\nКогда друг активирует подписку —\n"
+                f"вы оба получите +3 дня 🎁\n\n👥 Приглашено: {ref_count}",
+                parse_mode="HTML",
+                reply_markup=keyboards.create_invite_keyboard(ref_url),
+            )
+            return
         await message.answer(
             f"👋 Снова здравствуйте, {html.bold(message.from_user.full_name)}!",
             reply_markup=keyboards.main_reply_keyboard,

@@ -465,9 +465,16 @@ h2 {
 }
 
 .cabinet-page .cabinet-main {
+  position: relative;
+  z-index: 1;
   max-width: 420px;
   margin: 0 auto;
   padding: 1rem 1rem 2rem;
+}
+
+.actions-cabinet .btn {
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 .cabinet-shell {

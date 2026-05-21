@@ -232,17 +232,64 @@
     }
   }
 
+  function openCabinetVpnSetup(ev) {
+    if (ev) ev.preventDefault();
+    var tid = getTelegramUserId();
+    if (!tid) {
+      window.alert(
+        "Не удалось определить Telegram. Закройте кабинет и откройте снова из бота."
+      );
+      return;
+    }
+    trackFunnel("portal_cabinet_setup");
+    postJson(API_TELEGRAM_SETUP, { telegram_id: tid })
+      .then(function (res) {
+        if (res.body && res.body.ok && res.body.setup_page_url) {
+          openExternal(res.body.setup_page_url);
+          return;
+        }
+        var msg =
+          (res.body && res.body.message) ||
+          (content.setup && content.setup.error_no_subscription) ||
+          "Сначала получите VPN в боте («Начать бесплатно»).";
+        window.alert(msg);
+      })
+      .catch(function () {
+        window.alert(content.errors.generic);
+      });
+  }
+
+  function openCabinetInvite() {
+    var url =
+      (lastCabinetDoc && lastCabinetDoc.invite_url) ||
+      cabinetBotTopupUrl(lastCabinetDoc).replace(/\?start=topup$/, "") +
+        "?start=invite";
+    trackFunnel("portal_cabinet_invite");
+    openExternal(url);
+    var tg = getTelegramWebApp();
+    if (tg && typeof tg.close === "function") {
+      try {
+        tg.close();
+      } catch (e) {
+        /* ignore */
+      }
+    }
+  }
+
   function bindSetupEntryButtons() {
-    ["btn-setup", "btn-cabinet-setup"].forEach(function (id) {
-      var el = $(id);
-      if (!el) return;
-      el.addEventListener("click", function (ev) {
+    var mainSetup = $("btn-setup");
+    if (mainSetup) {
+      mainSetup.addEventListener("click", function (ev) {
         if (getTelegramWebApp() || getTelegramUserId() > 0) {
           ev.preventDefault();
           openTelegramSetup(ev);
         }
       });
-    });
+    }
+    var cabSetup = $("btn-cabinet-setup");
+    if (cabSetup) {
+      cabSetup.addEventListener("click", openCabinetVpnSetup);
+    }
   }
 
   function readAckGeneration() {
@@ -710,9 +757,15 @@
     if (topupBtn) {
       topupBtn.classList.remove("hidden");
     }
+    var setupBtn = $("btn-cabinet-setup");
+    if (setupBtn) {
+      setupBtn.classList.remove("hidden");
+      setupBtn.disabled = false;
+    }
     var inviteBtn = $("btn-cabinet-invite");
-    if (inviteBtn && getTelegramWebApp()) {
+    if (inviteBtn && (getTelegramWebApp() || getTelegramUserId() > 0)) {
       inviteBtn.classList.remove("hidden");
+      inviteBtn.disabled = false;
     }
     var botBtn = $("btn-cabinet-bot");
     if (botBtn && doc.bot_url) {
@@ -898,10 +951,7 @@
     }
     var inviteBtn = $("btn-cabinet-invite");
     if (inviteBtn) {
-      inviteBtn.addEventListener("click", function () {
-        var url = cabinetBotTopupUrl(lastCabinetDoc).replace("?start=topup", "");
-        openExternal(url);
-      });
+      inviteBtn.addEventListener("click", openCabinetInvite);
     }
     var backCab = $("btn-back-home-cabinet");
     if (backCab) {
