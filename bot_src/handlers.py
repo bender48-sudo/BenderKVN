@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 import uuid
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
@@ -242,13 +242,15 @@ async def show_main_menu(message: types.Message, edit_message: bool = False):
     if has_active_sub:
         text = (
             "🏠 <b>Главное меню</b>\n\n"
-            "Кабинет — баланс и продление. «Мой VPN» — ключ и настройка."
+            "Шаг 1: «Настроить VPN» — QR и Happ.\n"
+            "«Мой аккаунт» — баланс. «Кабинет» — пополнение в Mini App."
         )
     else:
         text = (
             "🏠 <b>Главное меню</b>\n\n"
-            "Новичкам: бесплатный доступ или «Как подключить». "
-            "Уже есть ключ — откройте «Мой VPN» после активации."
+            "Шаг 1: «Начать бесплатно» — ключ на ~3 месяца.\n"
+            "Шаг 2: «Подключить VPN» — выбор устройства и QR.\n"
+            "Уже есть ключ — сразу «Подключить VPN»."
         )
     auto_renew = get_auto_renew(user_id) if user_db_data else False
     keyboard = keyboards.create_main_menu_keyboard(
@@ -512,6 +514,10 @@ async def connect_vpn_wizard_device(callback: types.CallbackQuery, state: FSMCon
     user_id = callback.from_user.id
     user_db = get_user(user_id)
     trial_available = not (user_db and user_db.get("trial_used"))
+    now = datetime.now()
+    has_key = any(
+        datetime.fromisoformat(k["expiry_date"]) > now for k in get_user_keys(user_id)
+    )
     setup_url = await _wizard_setup_url(user_id)
     log_action(user_id, "wizard_device", device_id)
     await callback.message.edit_text(
@@ -520,6 +526,7 @@ async def connect_vpn_wizard_device(callback: types.CallbackQuery, state: FSMCon
             device_id,
             trial_available=trial_available,
             setup_url=setup_url,
+            has_key=has_key,
         ),
         parse_mode="HTML",
         disable_web_page_preview=True,
@@ -585,15 +592,8 @@ async def profile_handler_callback(callback: types.CallbackQuery):
 
 @user_router.callback_query(F.data == "show_referrals")
 async def referrals_handler(callback: types.CallbackQuery):
-    await callback.answer()
-    user_id = callback.from_user.id
-    
-    ref_code = ensure_user_ref_code(user_id)
-    ref_count = count_referrals(ref_code)
-    
-    text = f"👥 <b>Пригласите друга</b>\n\nКогда друг активирует подписку —\nвы оба получите +3 дня 🎁\n\n👥 Приглашено: {ref_count}"
-    
-    await callback.message.edit_text(text, reply_markup=keyboards.create_back_to_menu_keyboard())
+    """Legacy callback — same screen as invite_friend."""
+    await invite_friend_handler(callback)
 
 @user_router.callback_query(F.data == "show_about")
 async def about_handler(callback: types.CallbackQuery):
@@ -692,7 +692,7 @@ async def refresh_traffic_handler(callback: types.CallbackQuery):
     await traffic_status_handler(callback)
 
 @user_router.callback_query(F.data == "show_help")
-async def about_handler(callback: types.CallbackQuery):
+async def help_handler(callback: types.CallbackQuery):
     await callback.answer()
 
     support_user = get_setting("support_user")
@@ -816,20 +816,16 @@ async def trial_period_handler(callback: types.CallbackQuery):
         expiry_ms = int(expiry_dt.timestamp() * 1000)
         new_key_id = add_new_key(user_id, vless_uuid, email, expiry_ms)
         
-        # Показываем созданный ключ пользователю
-        expiry_str = expiry_dt.strftime("%d.%m.%Y %H:%M")
-        message_text = "\u2705 <b>Готово!</b> Сейчас даём <b>бесплатную подписку примерно на 3 месяца</b> "
-        message_text += f"(до <b>{expiry_str}</b>). Дальше — платный доступ.\n\n"
-        message_text += "<b>Ссылка для Happ:</b>\n"
+        expiry_str = expiry_dt.strftime("%d.%m.%Y")
+        message_text = f"✅ <b>Подписка активна до {expiry_str}</b>\n\n"
+        message_text += "Скопируйте ссылку в Happ — и VPN готов к работе:\n\n"
         message_text += f"<code>{html.quote(sub_url or uri)}</code>\n\n"
-        message_text += "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-        message_text += "\U0001f4f1 Как установить:\n\n"
-        message_text += "1\ufe0f\u20e3 Скачай приложение Happ (кнопка ниже)\n\n"
-        message_text += "2\ufe0f\u20e3 Открой Happ\n\n"
-        message_text += "3\ufe0f\u20e3 Нажми + в правом верхнем углу\n\n"
-        message_text += '4\ufe0f\u20e3 Выбери "Из буфера обмена" или отсканируй QR (кнопка ниже)\n\n'
-        message_text += "5\ufe0f\u20e3 Нажми кнопку питания \u2014 готово! \U0001f389\n"
-        message_text += "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
+        message_text += "━━━━━━━━━━━━━━━\n"
+        message_text += "\U0001f4f1 <b>Установка за 3 шага:</b>\n\n"
+        message_text += "1️⃣ Скачайте Happ (кнопка ниже)\n\n"
+        message_text += "2️⃣ Нажмите <b>+</b> → «Из буфера» или отсканируйте QR\n\n"
+        message_text += "3️⃣ Включите VPN — готово! \U0001f389\n"
+        message_text += "━━━━━━━━━━━━━━━\n"
         message_text += user_messages.MSG_TRIAL_PORTAL_HINT
         
         await callback.message.edit_text(
@@ -881,9 +877,9 @@ async def my_account_handler(callback: types.CallbackQuery):
         latest = max(active_keys, key=lambda k: datetime.fromisoformat(k["expiry_date"]))
         exp = datetime.fromisoformat(latest["expiry_date"])
         text = (
-            f"👤 <b>Ваш аккаунт BenderVPN</b>\n\n"
+            f"📱 <b>Ваш BenderVPN</b>\n\n"
             f"{balance_line}"
-            f"📅 Подписка на панели: до {exp.strftime('%d.%m.%Y')}\n"
+            f"📅 VPN активен до {exp.strftime('%d.%m.%Y')}\n"
             f"👥 Приглашено друзей: {ref_count}"
         )
         await callback.message.edit_text(
@@ -894,9 +890,9 @@ async def my_account_handler(callback: types.CallbackQuery):
     else:
         trial_available = not (user_db_data and user_db_data.get("trial_used"))
         text = (
-            f"👤 <b>Ваш аккаунт BenderVPN</b>\n\n"
+            f"📱 <b>Ваш BenderVPN</b>\n\n"
             f"{balance_line}"
-            f"📅 Активного ключа нет\n"
+            f"📅 Активной подписки нет\n"
             f"👥 Приглашено друзей: {ref_count}"
         )
         await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboards.create_account_no_sub_keyboard(trial_available))
@@ -904,22 +900,31 @@ async def my_account_handler(callback: types.CallbackQuery):
 @user_router.callback_query(F.data == "menu_help")
 async def menu_help_handler(callback: types.CallbackQuery):
     await callback.answer()
+    setup_url = await _wizard_setup_url(callback.from_user.id)
     text = (
         "❓ <b>Помощь</b>\n\n"
-        "Инструкция в Mini App, видео и частые ошибки — ниже. "
-        "Если не получается — напишите в поддержку."
+        "Видео, Mini App и частые ошибки — ниже. "
+        "Настроить VPN по шагам — кнопка «Подключить VPN» в главном меню."
     )
+    if setup_url:
+        text += "\n\nЕсть ключ — «Моя настройка» откроет страницу с QR."
     await callback.message.edit_text(
         text,
         parse_mode="HTML",
-        reply_markup=keyboards.create_help_menu_keyboard(),
+        reply_markup=keyboards.create_help_menu_keyboard(setup_url),
     )
 
 
 @user_router.callback_query(F.data == "contact_support")
 async def contact_support_handler(callback: types.CallbackQuery):
     await callback.answer()
-    await callback.message.answer("💬 <b>Поддержка</b>\n\nНапишите ваш вопрос прямо здесь —\nмы ответим в самое ближайшее время 🙏", parse_mode="HTML")
+    support_user = get_setting("support_user")
+    text = "💬 <b>Поддержка</b>\n\nНажмите кнопку ниже — откроется чат с поддержкой."
+    await callback.message.edit_text(
+        text,
+        parse_mode="HTML",
+        reply_markup=keyboards.create_support_keyboard(support_user),
+    )
 
 @user_router.callback_query(F.data == "invite_friend")
 async def invite_friend_handler(callback: types.CallbackQuery):

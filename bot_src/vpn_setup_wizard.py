@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 
-from shop_bot.public_urls import public_status_url
+from shop_bot.public_urls import public_status_url, setup_origin
 
 HAPP_STORES = {
     "ios": (
@@ -78,11 +78,12 @@ CONFIG_STEP_HAS_KEY = (
     "В Happ несколько узлов: <b>turbo</b> (быстрее) и <b>wl-*</b> (обход WL, медленнее)."
 )
 
+_setup_page = f"{setup_origin().rstrip('/')}/setup/"
 WIZARD_STUCK = (
     "<b>Не получается?</b>\n\n"
     f"• Проверьте <a href=\"{public_status_url()}\">статус сервиса</a>\n"
     "• Напишите в поддержку — кнопка ниже\n"
-    "• Для настройки без Telegram: страница «Получить VPN» на сайте"
+    f'• Без Telegram: <a href="{_setup_page}">получить VPN по email</a>'
 )
 
 

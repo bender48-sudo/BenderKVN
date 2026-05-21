@@ -73,7 +73,11 @@ def create_main_menu_keyboard(
                 web_app=WebAppInfo(url=telegram_cabinet_webapp_url(telegram_id)),
             )
         builder.button(
-            text="\U0001f50c \u041c\u043e\u0439 VPN",
+            text="\U0001f50c \u041d\u0430\u0441\u0442\u0440\u043e\u0438\u0442\u044c VPN",
+            callback_data="connect_vpn",
+        )
+        builder.button(
+            text="\U0001f4f1 \u041c\u043e\u0439 \u0430\u043a\u043a\u0430\u0443\u043d\u0442",
             callback_data="my_account",
         )
         builder.button(
@@ -87,11 +91,7 @@ def create_main_menu_keyboard(
                 callback_data="get_trial",
             )
         builder.button(
-            text="\U0001f4d6 \u041a\u0430\u043a \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u044c",
-            callback_data="menu_help",
-        )
-        builder.button(
-            text="\U0001f50c \u041c\u0430\u0441\u0442\u0435\u0440 \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438",
+            text="\U0001f50c \u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u044c VPN",
             callback_data="connect_vpn",
         )
         if not trial_available:
@@ -133,9 +133,14 @@ def create_account_keyboard(sub_url=None, telegram_id: int | None = None):
             text="\U0001f3e0 \u041b\u0438\u0447\u043d\u044b\u0439 \u043a\u0430\u0431\u0438\u043d\u0435\u0442",
             web_app=WebAppInfo(url=telegram_cabinet_webapp_url(telegram_id)),
         )
+    builder.button(
+        text="\U0001f50c \u041d\u0430\u0441\u0442\u0440\u043e\u0438\u0442\u044c VPN",
+        callback_data="connect_vpn",
+    )
     if sub_url:
+        builder.button(text="\U0001f4f7 QR \u0434\u043b\u044f Happ", callback_data="show_sub_qr")
         builder.button(
-            text="\U0001f4cb \u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443 \u043f\u043e\u0434\u043f\u0438\u0441\u043a\u0438",
+            text="\U0001f4cb \u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443",
             callback_data="copy_sub_url",
         )
     builder.button(text="\U0001f4b0 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u0431\u0430\u043b\u0430\u043d\u0441", callback_data="show_topup")
@@ -210,6 +215,7 @@ def create_wizard_device_keyboard(
     *,
     trial_available: bool = True,
     setup_url: str | None = None,
+    has_key: bool = False,
 ):
     builder = InlineKeyboardBuilder()
     if TELEGRAM_WEBAPP_URL:
@@ -228,7 +234,8 @@ def create_wizard_device_keyboard(
             text="\U0001f517 \u041c\u043e\u044f \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430",
             url=setup_url,
         )
-    builder.button(text="\U0001f4f7 QR \u0434\u043b\u044f Happ", callback_data="show_sub_qr")
+    if has_key:
+        builder.button(text="\U0001f4f7 QR \u0434\u043b\u044f Happ", callback_data="show_sub_qr")
     if device_id in ("iphone", "android"):
         builder.button(
             text="\U0001f3ac \u0412\u0438\u0434\u0435\u043e \u0434\u043b\u044f \u044d\u0442\u043e\u0433\u043e \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430",
@@ -449,15 +456,100 @@ def create_agreement_keyboard():
     return builder.as_markup()
 
 
-# Legacy stubs
-def create_keys_management_keyboard(keys): return create_back_to_menu_keyboard()
-def create_key_info_keyboard(key_id): return create_back_to_menu_keyboard()
-def create_back_to_key_keyboard(key_id): return create_back_to_menu_keyboard()
-def create_traffic_keyboard(): return create_back_to_menu_keyboard()
-def create_support_keyboard(u): return create_back_to_menu_keyboard()
-def create_about_keyboard(t, p): return create_back_to_menu_keyboard()
-def create_about_keyboard_terms(t): return create_back_to_menu_keyboard()
-def create_about_keyboard_privacy(p): return create_back_to_menu_keyboard()
-def create_traffic_packs_keyboard(p, k): return create_back_to_menu_keyboard()
-def create_promo_enter_keyboard(): return create_back_to_menu_keyboard()
-def create_autorenew_toggle_keyboard(e): return create_back_to_menu_keyboard()
+def create_support_keyboard(u):
+    builder = InlineKeyboardBuilder()
+    if u:
+        builder.button(text="\U0001f4ac Написать в поддержку", url=u)
+    builder.button(text="\U0001f519 Назад", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_about_keyboard(t, p):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="\U0001f4cb Условия использования", url=t)
+    builder.button(text="\U0001f512 Политика конфиденциальности", url=p)
+    builder.button(text="\U0001f519 Назад", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_about_keyboard_terms(t):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="\U0001f4cb Условия использования", url=t)
+    builder.button(text="\U0001f519 Назад", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_about_keyboard_privacy(p):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="\U0001f512 Политика конфиденциальности", url=p)
+    builder.button(text="\U0001f519 Назад", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_traffic_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.button(text="\U0001f504 Обновить", callback_data="refresh_traffic")
+    builder.button(text="\U0001f519 Назад", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_keys_management_keyboard(keys):
+    builder = InlineKeyboardBuilder()
+    for idx, key in enumerate(keys or [], start=1):
+        key_id = key["key_id"]
+        builder.button(text=f"\U0001f511 Ключ #{idx}", callback_data=f"show_key_{key_id}")
+    builder.button(text="\U0001f519 Назад", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_key_info_keyboard(key_id):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="\U0001f4f7 QR-код", callback_data=f"show_qr_{key_id}")
+    builder.button(text="\U0001f4d6 Инструкция", callback_data=f"show_instruction_{key_id}")
+    builder.button(text="\U0001f4e6 Пакеты трафика", callback_data=f"traffic_packs_{key_id}")
+    builder.button(text="\U0001f519 Назад", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_back_to_key_keyboard(key_id):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="\U0001f519 К ключу", callback_data=f"show_key_{key_id}")
+    builder.button(text="\U0001f3e0 Главное меню", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_traffic_packs_keyboard(p, k):
+    builder = InlineKeyboardBuilder()
+    for pack_id, (title, price_rub, gb) in (p or {}).items():
+        builder.button(
+            text=f"{title} — {gb} ГБ • {price_rub} ₽",
+            callback_data=f"buy_pack_{pack_id}_{k}",
+        )
+    builder.button(text="\U0001f519 Назад", callback_data=f"show_key_{k}")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_promo_enter_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.button(text="\U0001f3ab Ввести промокод", callback_data="enter_promo_start")
+    builder.button(text="\U0001f519 Назад", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_autorenew_toggle_keyboard(enabled):
+    builder = InlineKeyboardBuilder()
+    status = "✅ Включено" if enabled else "❌ Выключено"
+    builder.button(text=f"\U0001f504 Автопродление: {status}", callback_data="toggle_autorenew")
+    builder.button(text="\U0001f519 Назад", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
