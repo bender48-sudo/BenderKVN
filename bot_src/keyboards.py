@@ -20,10 +20,11 @@ main_reply_keyboard = ReplyKeyboardMarkup(
 
 def _add_portal_link_buttons(builder: InlineKeyboardBuilder, setup_url: str | None = None) -> None:
     """Instruction / browser / video links — use in help submenu, not main menu."""
-    if TELEGRAM_WEBAPP_URL:
+    portal_devices_url = telegram_portal_webapp_url("devices")
+    if portal_devices_url:
         builder.button(
-            text="\U0001f4f1 \u0418\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0438\u044f (Mini App)",
-            web_app=WebAppInfo(url=TELEGRAM_WEBAPP_URL),
+            text="\U0001f4f1 \u041a\u0430\u043a \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u044c VPN",
+            web_app=WebAppInfo(url=portal_devices_url),
         )
     if portal_links.PUBLIC_BOOTSTRAP_URL:
         builder.button(
@@ -44,7 +45,7 @@ def _add_portal_link_buttons(builder: InlineKeyboardBuilder, setup_url: str | No
         )
     if setup_url:
         builder.button(
-            text="\U0001f517 \u041c\u043e\u044f \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430",
+            text="\U0001f517 \u041c\u043e\u044f \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430 VPN",
             url=setup_url,
         )
 

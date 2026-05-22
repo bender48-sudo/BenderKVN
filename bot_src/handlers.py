@@ -941,13 +941,22 @@ async def my_account_handler(callback: types.CallbackQuery):
 async def menu_help_handler(callback: types.CallbackQuery):
     await callback.answer()
     setup_url = await _wizard_setup_url(callback.from_user.id)
-    text = (
-        "❓ <b>Помощь</b>\n\n"
-        "Видео, Mini App и частые ошибки — ниже. "
-        "Настроить VPN по шагам — кнопка «Подключить VPN» в главном меню."
-    )
     if setup_url:
-        text += "\n\nЕсть ключ — «Моя настройка» откроет страницу с QR."
+        text = (
+            "❓ <b>Помощь</b>\n\n"
+            "VPN не работает?\n"
+            "• «Моя настройка VPN» — свежий QR и ссылка для Happ\n"
+            "• «Частые ошибки» — разбор типичных проблем\n"
+            "• Видео — пошаговая установка Happ\n\n"
+            "Ничего не помогло — «Написать нам» в главном меню."
+        )
+    else:
+        text = (
+            "❓ <b>Помощь</b>\n\n"
+            "Ещё не подключали VPN? Нажмите «Подключить VPN» в главном меню — "
+            "пошаговая инструкция для вашего устройства.\n\n"
+            "Видео и частые ошибки — кнопки ниже."
+        )
     await callback.message.edit_text(
         text,
         parse_mode="HTML",

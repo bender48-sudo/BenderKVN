@@ -81,7 +81,8 @@ def telegram_portal_webapp_url(device_id: str | None = None) -> str:
     """Mini App URL; optional #devices or #device=<id> (P3-FLOW-04)."""
     base = TELEGRAM_WEBAPP_URL.rstrip("/")
     if device_id == "devices":
-        return f"{base}#devices"
+        # Query survives TG WebApp better than hash-only (cabinet uses ?tid= likewise).
+        return f"{base}?view=devices"
     if device_id in _PORTAL_DEVICE_IDS:
         return f"{base}#device={device_id}"
     return TELEGRAM_WEBAPP_URL
