@@ -34,6 +34,15 @@ def main() -> int:
     if "telegram_portal_webapp_url" not in config:
         print("VPN_SETUP_WIZARD_FAIL: config missing telegram_portal_webapp_url", file=sys.stderr)
         return 1
+    if "?view=devices" in config:
+        print(
+            "VPN_SETUP_WIZARD_FAIL: WebApp devices must use #devices not ?view= (TG whitelist)",
+            file=sys.stderr,
+        )
+        return 1
+    if 'f"{base}#devices"' not in config:
+        print("VPN_SETUP_WIZARD_FAIL: config must append #devices to TELEGRAM_WEBAPP_URL", file=sys.stderr)
+        return 1
     if "applyRouteFromHash" not in portal_js or "device=(iphone" not in portal_js:
         print("VPN_SETUP_WIZARD_FAIL: portal.js hash routing missing", file=sys.stderr)
         return 1

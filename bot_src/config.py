@@ -78,14 +78,13 @@ _PORTAL_DEVICE_IDS = frozenset({"iphone", "android", "windows", "mac"})
 
 
 def telegram_portal_webapp_url(device_id: str | None = None) -> str:
-    """Mini App URL; optional #devices or #device=<id> (P3-FLOW-04)."""
-    base = TELEGRAM_WEBAPP_URL.rstrip("/")
+    """Mini App URL; deep-link via #hash (must keep BotFather base prefix + trailing /)."""
+    base = TELEGRAM_WEBAPP_URL
     if device_id == "devices":
-        # Query survives TG WebApp better than hash-only (cabinet uses ?tid= likewise).
-        return f"{base}?view=devices"
+        return f"{base}#devices"
     if device_id in _PORTAL_DEVICE_IDS:
         return f"{base}#device={device_id}"
-    return TELEGRAM_WEBAPP_URL
+    return base
 
 
 TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "Bender_KVN_bot").strip().lstrip("@")
