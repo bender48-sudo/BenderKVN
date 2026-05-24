@@ -143,7 +143,7 @@ pytest tests/ -k remnawave -q
 **Изменение:** после Q-VPN-STAB-005/006 — `ops/broadcast_refresh_sub.py` или `subscription_config_notify.py` + jitter (см. Q-VPN-STAB-015).  
 **Verify:** sample 5 users → Happ `count > 0` после refresh.  
 **Зависит от:** Q-VPN-STAB-005  
-**Статус:** **PARTIAL** — gen=2 локально; push AMS с owner PC failed (SSH). Run from AMS.
+**Статус:** **PARTIAL** — gen=2 локально; push падал из‑за legacy `id_ed25519` в скрипте (fix: `bvpn-ams` / `bvpn_ams_ed25519`). Повторить push.
 
 ---
 

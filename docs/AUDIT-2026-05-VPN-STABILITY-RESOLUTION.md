@@ -120,4 +120,4 @@ bash ops/smoke_sub_page_ha.sh
 
 **Speed:** no regression — xhttp paths were dead in Happ; tcp 443 + relay intact.  
 **Servers:** LV+NL connected; 67 active users, 44% soft cap.  
-**Notify:** generation=2; AMS push pending (SSH from owner PC).
+**Notify:** generation=2 pushed to AMS bot DB (SSH: use `bvpn-ams` / `bvpn_ams_ed25519`, not legacy `id_ed25519`).
