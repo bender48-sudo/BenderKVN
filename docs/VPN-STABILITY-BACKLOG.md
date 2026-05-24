@@ -143,7 +143,7 @@ pytest tests/ -k remnawave -q
 **Изменение:** после Q-VPN-STAB-005/006 — `ops/broadcast_refresh_sub.py` или `subscription_config_notify.py` + jitter (см. Q-VPN-STAB-015).  
 **Verify:** sample 5 users → Happ `count > 0` после refresh.  
 **Зависит от:** Q-VPN-STAB-005  
-**Статус:** **PARTIAL** — gen=2 локально; push падал из‑за legacy `id_ed25519` в скрипте (fix: `bvpn-ams` / `bvpn_ams_ed25519`). Повторить push.
+**Статус:** **DONE** — gen=3 на AMS (`patch_burst_observatory` + trim); push через `bvpn-ams`.
 
 ---
 
@@ -155,7 +155,7 @@ pytest tests/ -k remnawave -q
 **Проблема:** пользователь удаляет профиль при flash «0 servers».  
 **Изменение:** copy в `web/portal/content/ru.json` (help.stuck) + бот FAQ: если VPN подключён — игнорировать сообщение; не удалять «BenderVPN Auto»; дождаться 🔄 refresh.  
 **Verify:** ручной проход help.stuck; нет совета «выберите NL».  
-**Статус:** TODO
+**Статус:** **DONE** (portal LV + bot AMS deployed 2026-05-25)
 
 ---
 
@@ -170,7 +170,8 @@ whois 194.221.250.50
 # проверить routing: direct vs proxy для этого IP
 ```
 **Verify:** отчёт в audit resolution; если RU bypass — правка `ru_bypass_routing.py`; если DPI — alt/XHTTP path (Q-VPN-STAB-005).  
-**Статус:** TODO
+**Результат:** destination IP, Vodafone GB CDN — не наш outbound; routing через proxy к приложению (retry). См. resolution § Phase 3.  
+**Статус:** **DONE**
 
 ---
 
@@ -180,7 +181,7 @@ whois 194.221.250.50
 **Проблема:** interval=15s, флап proxy-6/7/8; observatory может пинговать лишние outbounds.  
 **Изменение:** template PATCH: `interval=30s`, `subjectSelector=["proxy"]`, `destination=https://www.gstatic.com/generate_204`. Snapshot → `.secrets/snapshots/`.  
 **Verify:** access_log 30 мин — меньше flap при стабильной сессии.  
-**Статус:** TODO
+**Статус:** **DONE** (`ops/patch_burst_observatory.py --apply`, gen=3 notify)
 
 ---
 
@@ -190,7 +191,8 @@ whois 194.221.250.50
 **Проблема:** access_log только proxy-6/7/8 (LV?); NL sessions 0% — баг или DPI.  
 **Изменение:** панель → sessions NL; `nc -zv 91.90.192.17 9443` с RU; при блоке — Q-VPN-STAB-013.  
 **Verify:** non-zero NL sessions или документированный DPI trim.  
-**Статус:** TODO (SSH NL)
+**Результат:** NL connected, 2 usersOnline; :9443 reachable.  
+**Статус:** **DONE**
 
 ---
 
@@ -201,7 +203,7 @@ whois 194.221.250.50
 **Изменение:** после Q-VPN-STAB-012 — убрать UUID из injectHosts если NL:9443 недоступен.  
 **Verify:** `python ops/transport_mux_audit.py` → working alt only.  
 **Зависит от:** Q-VPN-STAB-012  
-**Статус:** TODO
+**Статус:** **WAIVED** (NL доступен)
 
 ---
 
@@ -210,7 +212,7 @@ whois 194.221.250.50
 **Источник:** Claude Q-VPN-STAB-006.  
 **Проблема:** RAM ~95 MiB free, swap=0 → OOM при sub stampede.  
 **Verify:** `ssh bvpn-ams free -h` → swap 2G.  
-**Статус:** TODO
+**Статус:** **DONE** (2 GiB `/swapfile`)
 
 ---
 
@@ -219,7 +221,7 @@ whois 194.221.250.50
 **Источник:** Claude Q-VPN-STAB-011.  
 **Изменение:** random delay 0–300 s в `subscription_config_notify.py` / broadcast.  
 **Verify:** `python ops/subscription_ha_load_probe.py` — нет 429.  
-**Статус:** TODO
+**Статус:** **DONE** (`subscription_refresh.py`, `broadcast_refresh_sub.py --jitter-max`)
 
 ---
 
@@ -227,7 +229,7 @@ whois 194.221.250.50
 
 **Источник:** Claude Q-VPN-STAB-007/008; drift-q084.  
 **Verify:** `python ops/drift-check.py` → OK.  
-**Статус:** TODO
+**Статус:** **DONE** (balancer/watchdog md5 match repo↔prod)
 
 ---
 
@@ -244,7 +246,7 @@ python ops/diagnose_happ_import.py
 python ops/transport_mux_audit.py
 bash ops/smoke_sub_page_ha.sh
 ```
-**Статус:** TODO
+**Статус:** **DONE**
 
 ---
 
@@ -252,7 +254,7 @@ bash ops/smoke_sub_page_ha.sh
 
 **Источник:** Claude Q-VPN-STAB-014.  
 **Изменение:** обязательный шаг после любого template/sub-page change в `HAPP-MATRIX.md`.  
-**Статус:** TODO
+**Статус:** **DONE**
 
 ---
 
@@ -278,7 +280,7 @@ Trial: LV primary ×3, без NL, без xhttp; observatory interval=60s.
 
 **Источник:** Claude Q-VPN-STAB-016.  
 **Verify:** `probe_subscription.py` → `AMS=0`.  
-**Статус:** TODO
+**Статус:** **DONE** (2026-05-25 probe)
 
 ---
 
@@ -302,20 +304,20 @@ Trial: LV primary ×3, без NL, без xhttp; observatory interval=60s.
 
 ## Done when (release gate)
 
-- [ ] Happ UA: `probe_subscription` → xhttp=0, tcp outbounds ≥16
-- [ ] `diagnose_happ_import.py` → batch-risk LOW
-- [ ] Реальный Happ: `ImportResult(batch2 count > 0)` после auto-update
-- [ ] `Content-Type: application/json` на обоих sub origins
-- [ ] `transport_mux_audit.py` → `TRANSPORT_MUX_OK` + NL warning если 0
-- [ ] `smoke_sub_page_ha.sh` → OK
-- [ ] UX copy deployed (Q-VPN-STAB-009)
-- [ ] AMS swap enabled
-- [ ] 194.221.250.50 идентифицирован (Q-VPN-STAB-010)
+- [x] Happ UA: `probe_subscription` → xhttp=0, tcp outbounds ≥16
+- [x] `diagnose_happ_import.py` → batch-risk LOW
+- [ ] Реальный Happ: `ImportResult(batch2 count > 0)` после auto-update (owner device verify)
+- [x] `Content-Type: application/json` на обоих sub origins
+- [x] `transport_mux_audit.py` → `TRANSPORT_MUX_OK` + NL warning если 0
+- [x] `smoke_sub_page_ha.sh` → OK (:8443 + live probe suffix с LV)
+- [x] UX copy deployed (Q-VPN-STAB-009) — portal LV + bot AMS (2026-05-25)
+- [x] AMS swap enabled
+- [x] 194.221.250.50 идентифицирован (Q-VPN-STAB-010)
 
 ---
 
 ## Рекомендуемый NEXT для агента
 
-**Phase 1 — DONE** (см. [`AUDIT-2026-05-VPN-STABILITY-RESOLUTION.md`](AUDIT-2026-05-VPN-STABILITY-RESOLUTION.md)).
+**Phase 1–3 — DONE** (см. [`AUDIT-2026-05-VPN-STABILITY-RESOLUTION.md`](AUDIT-2026-05-VPN-STABILITY-RESOLUTION.md)).
 
-**Phase 2 NEXT:** **Q-VPN-STAB-008** (push-notify с AMS) → **Q-VPN-STAB-009** (UX copy).
+**P2 NEXT:** **Q-VPN-STAB-020** (recovery xhttp sub URL) или deploy UX copy на prod.

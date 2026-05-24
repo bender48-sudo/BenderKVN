@@ -18,6 +18,7 @@ import argparse
 import csv
 import io
 import json
+import random
 import ssl
 import sys
 import time
@@ -56,6 +57,8 @@ MESSAGE_HTML = (
 
 # Conservative — Telegram allows ~30 msg/s to different chats.
 RATE_PER_SEC = 20
+# Q-VPN-STAB-015: optional spread before mass notify (sub-page stampede).
+DEFAULT_JITTER_MAX_SEC = 300
 
 
 def _ctx() -> ssl.SSLContext:
@@ -112,6 +115,12 @@ def main() -> None:
     group.add_argument("--test-admin", action="store_true", help="Send only to ADMIN_TELEGRAM_ID")
     group.add_argument("--apply", action="store_true", help="Send to every eligible user")
     ap.add_argument("--include-expired", action="store_true", help="Don't filter by status")
+    ap.add_argument(
+        "--jitter-max",
+        type=float,
+        default=DEFAULT_JITTER_MAX_SEC,
+        help="Random sleep 0..N seconds before sending (0=off)",
+    )
     args = ap.parse_args()
 
     print("# message preview ---")
@@ -149,6 +158,11 @@ def main() -> None:
         targets = [{"telegramId": ADMIN_ID, "username": "admin"}]
     else:
         targets = eligible_users
+
+    if args.jitter_max > 0 and (args.test_admin or args.apply):
+        jitter = random.uniform(0, args.jitter_max)
+        print(f"# jitter {jitter:.1f}s before send (Q-VPN-STAB-015)")
+        time.sleep(jitter)
 
     log_dir = ROOT / ".secrets" / "broadcasts"
     log_dir.mkdir(parents=True, exist_ok=True)

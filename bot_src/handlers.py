@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 import uuid
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
@@ -906,7 +906,10 @@ async def menu_help_handler(callback: types.CallbackQuery):
     await callback.answer()
     text = (
         "❓ <b>Помощь</b>\n\n"
-        "Инструкция в Mini App, видео и частые ошибки — ниже. "
+        "Инструкция в Mini App, видео и частые ошибки — ниже.\n\n"
+        "<b>Happ: «0 серверов»</b> — если VPN включён и сайты открываются, это не поломка. "
+        "Не удаляйте профиль «🚀 BenderVPN Auto» — нажмите 🔄 «Обновить подписку». "
+        "Страну выбирать не нужно.\n\n"
         "Если не получается — напишите в поддержку."
     )
     await callback.message.edit_text(

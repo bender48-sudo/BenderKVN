@@ -15,7 +15,27 @@
 
 Оба профиля присутствуют в **одной** Happ‑подписке (пользователь выбирает узел в клиенте). Это **mux на уровне продукта**, не отдельный URL подписки.
 
-**XHTTP (2026):** inbound **VLESS_XHTTP_LV** (`network=xhttp`, порт **8443** на wire) — **третий** транспорт при блоке vision+Reality ([`AUDIT-2026-05-TSPU-REDTEAM-04.md`](AUDIT-2026-05-TSPU-REDTEAM-04.md)). Скрипт **`transport_mux_audit.py`** пока **не** считает XHTTP — см. **Q103**.
+**XHTTP (2026):** inbound **VLESS_XHTTP_LV** (`network=xhttp`, порт **8443** на wire) — **третий** транспорт при блоке vision+Reality ([`AUDIT-2026-05-TSPU-REDTEAM-04.md`](AUDIT-2026-05-TSPU-REDTEAM-04.md)). **`transport_mux_audit.py`** классифицирует xhttp отдельно (Q103 / Q-VPN-STAB-004).
+
+### Happ и xhttp (Q-VPN-STAB-005 / 017)
+
+| Клиент | xhttp в sub | Поведение |
+|--------|-------------|-----------|
+| **Happ** (iOS/Android) | **Нет** — UUID XHTTP убраны из `injectHosts` | batch-import **LOW** risk; ~14–16 tcp outbounds + auto-balance |
+| **v2rayN / Streisand / Hiddify** | **Да** (inbound на нодах жив) | Полная матрица для TSPU / recovery (Q-VPN-STAB-020) |
+
+Fix — **не** удалять xhttp inbound с нод: **`ops/trim_injecthosts_no_xhttp.py --apply`**. Rollback: snapshot в `.secrets/snapshots/`.
+
+**Verify loop после любого PATCH шаблона / sub-page:**
+
+```bash
+python ops/probe_subscription.py
+python ops/diagnose_happ_import.py
+python ops/transport_mux_audit.py
+bash ops/smoke_sub_page_ha.sh
+```
+
+См. также **`docs/HAPP-MATRIX.md`** (чеклист PATCH).
 
 **Не в матрице:** **AMS** prod‑VPN (**drain**, P1-ARCH-AMS-DECOM) — outbounds AMS в подписке не целевые.
 

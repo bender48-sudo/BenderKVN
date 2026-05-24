@@ -120,4 +120,25 @@ bash ops/smoke_sub_page_ha.sh
 
 **Speed:** no regression — xhttp paths were dead in Happ; tcp 443 + relay intact.  
 **Servers:** LV+NL connected; 67 active users, 44% soft cap.  
-**Notify:** generation=2 pushed to AMS bot DB (SSH: use `bvpn-ams` / `bvpn_ams_ed25519`, not legacy `id_ed25519`).
+**Notify:** generation=3 pushed to AMS bot DB (trim xhttp gen=2, observatory gen=3).
+
+---
+
+## Phase 3 applied (2026-05-25)
+
+| Q | Result |
+|---|--------|
+| **009** UX | Portal `help.stuck_steps`, bot `WIZARD_STUCK` / `menu_help`, `MSG_SUB_CONFIG_REFRESH` — «0 серверов» ≠ сломан; 🔄 refresh; без ручного NL |
+| **010** 194.221.250.50 | **Destination**, не outbound. RIPE: Global Network Management Ltd (Vodafone GB). Retry-loop приложения (Instagram/CDN), не infra VPN |
+| **011** observatory | `patch_burst_observatory.py --apply`: interval **30s**, destination **https** generate_204, subjectSelector proxy |
+| **012** NL verify | NL connected, **2** usersOnline; `nc -zv 91.90.192.17 9443` OK с NL |
+| **013** trim NL | **WAIVED** — NL доступен, trim не нужен |
+| **014** AMS swap | **2 GiB** `/swapfile` + fstab |
+| **015** jitter | `subscription_refresh.py` 0–300s; `broadcast_refresh_sub.py --jitter-max` |
+| **016** drift scripts | balancer.sh / watchdog.sh **md5 match** repo↔prod, `bash -n` OK |
+| **017–018** docs | `TRANSPORT-MUX-MATRIX.md` § Happ/xhttp; `HAPP-MATRIX.md` verify loop + observatory script |
+| **021** AMS drain | `probe_subscription` → **AMS=0** |
+
+**Post-Phase-3 probes:** 10360 B, 16 tcp ob, xhttp=0, batch_risk=**LOW**, burstObservatory interval=30s.
+
+**Deploy (2026-05-25):** portal LV (`deploy-user-portal-lv.ps1`), bot AMS (`deploy-bot-handlers-ams.ps1`, `deploy-bot-sub-refresh-ams.ps1`), gen=3, jitter live.

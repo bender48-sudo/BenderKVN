@@ -1,7 +1,9 @@
 """Auto-notify users to refresh VPN subscription after server config changes."""
 from __future__ import annotations
 
+import asyncio
 import logging
+import random
 
 from aiogram import Bot
 from aiogram.enums import ParseMode
@@ -27,6 +29,11 @@ async def run_sub_refresh_notify_batch(bot: Bot) -> tuple[int, int]:
     pending = database.list_users_pending_sub_refresh(current_gen, limit=SUB_REFRESH_BATCH)
     if not pending:
         return 0, 0
+
+    if SUB_REFRESH_JITTER_MAX_SEC > 0:
+        delay = random.uniform(0, SUB_REFRESH_JITTER_MAX_SEC)
+        logger.info("sub refresh notify jitter %.1fs before batch gen=%s", delay, current_gen)
+        await asyncio.sleep(delay)
 
     text = user_messages.MSG_SUB_CONFIG_REFRESH
     ok = fail = 0
