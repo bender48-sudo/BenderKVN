@@ -49,6 +49,8 @@
 # из корня репо, нужен PANEL_TOKEN или .secrets/panel-token.txt
 python ops/transport_mux_audit.py
 python ops/transport_mux_audit.py --json --sample 30
+python ops/diagnose_happ_import.py   # Happ batch-import risk (Q-VPN-STAB-002)
+python ops/probe_subscription.py     # Content-Type + outbound summary
 ```
 
 Exit **0** и строка **`TRANSPORT_MUX_OK`** — матрица на проде согласована.
@@ -65,6 +67,7 @@ Exit **0** и строка **`TRANSPORT_MUX_OK`** — матрица на про
 
 ## 6. Связанные файлы
 
-- **`ops/probe_subscription.py`** — разбор одного пользователя (by transport)
+- **`ops/probe_subscription.py`** — разбор одного пользователя (by transport, Content-Type)
+- **`ops/diagnose_happ_import.py`** — Happ batch-import A/B (xhttp risk)
 - **`ops/probe_users_subs.py`** — LV/NL/AMS по нодам
 - **`docs/RUNBOOK-P6-SUBSCRIPTION-MULTI-ORIGIN.md`** — несколько **HTTP origin** (другое измерение)

@@ -4,20 +4,29 @@ Steps:
 1. List panel users, pick the first active one.
 2. Fetch their Happ subscription URL with a Happ User-Agent.
 3. Decode the response, count outbounds per node IP (LV/AMS/NL/relay).
+4. Validate Content-Type header (Q-VPN-STAB-001).
 """
 from __future__ import annotations
 
-import base64
 import io
 import json
-import ssl
 import sys
-import urllib.error
-import urllib.request
 from collections import Counter
 from pathlib import Path
 
 import site_urls
+from subscription_fetch import (
+    HAPP_UA,
+    AMS_IP,
+    LV_IP,
+    NL_IP,
+    RELAY_IP,
+    decode_subscription,
+    extract_outbounds,
+    fetch_url,
+    outbound_endpoint,
+    outbound_network,
+)
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -27,29 +36,8 @@ TOKEN = (ROOT / ".secrets" / "panel-token.txt").read_text(encoding="ascii").stri
 PANEL = site_urls.PANEL_URL
 SUB = site_urls.SUB_PUBLIC_ORIGIN
 
-LV_IP = "176.126.162.158"
-AMS_IP = "168.100.11.140"
-NL_IP = "91.90.192.17"
-RELAY_IP = site_urls.RU_RELAY_HOST
 
-
-def _ctx() -> ssl.SSLContext:
-    # TLS verification ON: panel uses Let's Encrypt cert; system CA is enough.
-    return ssl.create_default_context()
-
-
-def get(url: str, headers: dict[str, str] | None = None) -> tuple[int, bytes]:
-    req = urllib.request.Request(url)
-    for k, v in (headers or {}).items():
-        req.add_header(k, v)
-    try:
-        with urllib.request.urlopen(req, context=_ctx(), timeout=30) as r:
-            return r.status, r.read()
-    except urllib.error.HTTPError as e:
-        return e.code, e.read()
-
-
-def label(addr: str, port: int) -> str:
+def destination_label(addr: str, port: int) -> str:
     if addr == LV_IP:
         return f"LV:{port}"
     if addr == AMS_IP:
@@ -57,38 +45,28 @@ def label(addr: str, port: int) -> str:
     if addr == NL_IP:
         return f"NL:{port}"
     if addr == RELAY_IP:
-        # Disambiguate relay forwards by port (443=LV, 8443=AMS, 9443=NL)
         port_map = {443: "RELAY→LV", 8443: "RELAY→AMS", 9443: "RELAY→NL"}
         return port_map.get(port, f"RELAY:{port}")
     return f"OTHER {addr}:{port}"
 
 
-def address_of_outbound(o: dict) -> tuple[str | None, int | None]:
-    s = o.get("settings") or {}
-    vnext = s.get("vnext")
-    if isinstance(vnext, list) and vnext:
-        v0 = vnext[0]
-        return v0.get("address"), v0.get("port")
-    servers = s.get("servers")
-    if isinstance(servers, list) and servers:
-        return servers[0].get("address"), servers[0].get("port")
-    return None, None
-
-
-def main() -> None:
-    code, body = get(
+def main() -> int:
+    users_resp = fetch_url(
         f"{PANEL}/api/users?limit=10&start=0",
         headers={"Authorization": f"Bearer {TOKEN}"},
     )
-    if code != 200:
-        sys.exit(f"users HTTP {code}: {body[:300]!r}")
-    users_data = json.loads(body)
+    if users_resp.status != 200:
+        print(f"users HTTP {users_resp.status}: {users_resp.body[:300]!r}", file=sys.stderr)
+        return 1
+    users_data = json.loads(users_resp.body)
     users = users_data.get("response", {}).get("users") or users_data.get("response") or []
     if not isinstance(users, list):
-        sys.exit(f"unexpected users payload: {str(users_data)[:300]}")
+        print(f"unexpected users payload: {str(users_data)[:300]}", file=sys.stderr)
+        return 1
     print(f"users found: {len(users)}")
     if not users:
-        sys.exit("no users to test against")
+        print("no users to test against", file=sys.stderr)
+        return 1
 
     pick = None
     for u in users:
@@ -100,49 +78,39 @@ def main() -> None:
 
     short = pick.get("shortUuid") or pick.get("shortUUID") or pick.get("subscriptionUuid")
     if not short:
-        sys.exit(f"no shortUuid on user: {str(pick)[:200]}")
+        print(f"no shortUuid on user: {str(pick)[:200]}", file=sys.stderr)
+        return 1
     print(f"test user: {pick.get('username') or pick.get('uuid')} (short={short})")
 
     sub_url = f"{SUB}/api/sub/{short}"
     print(f"sub_url: {sub_url}")
 
-    happ_headers = {"User-Agent": "Happ/1.9.4 (iOS)"}
-    code, body = get(sub_url, headers=happ_headers)
-    print(f"Happ GET HTTP {code}, {len(body)} bytes")
-    if code != 200:
-        sys.exit(f"sub HTTP {code}: {body[:300]!r}")
+    sub_resp = fetch_url(sub_url, headers={"User-Agent": HAPP_UA})
+    print(f"Happ GET HTTP {sub_resp.status}, {len(sub_resp.body)} bytes")
+    ct_display = sub_resp.content_type or "(missing)"
+    print(f"Content-Type: {ct_display}")
+    if not sub_resp.content_type_ok:
+        print("WARN: Content-Type is not application/json — may contribute to Happ UnknownContentType")
+    if sub_resp.status != 200:
+        print(f"sub HTTP {sub_resp.status}: {sub_resp.body[:300]!r}", file=sys.stderr)
+        return 1
 
-    text = body.decode("utf-8", errors="replace")
-    try:
-        sub = json.loads(text)
-    except json.JSONDecodeError:
-        try:
-            decoded = base64.b64decode(text)
-            sub = json.loads(decoded.decode("utf-8", errors="replace"))
-        except Exception as e:
-            sys.exit(f"cannot decode sub: {e}; first 200 bytes: {text[:200]!r}")
-
-    # Happ format: JSON array with 1 element = full xray config dict.
-    if isinstance(sub, list) and len(sub) == 1 and isinstance(sub[0], dict):
-        inner = sub[0]
-        outbounds = inner.get("outbounds") or []
+    sub = decode_subscription(sub_resp.body)
+    inner = sub[0] if isinstance(sub, list) and sub else sub
+    outbounds = extract_outbounds(sub)
+    if isinstance(inner, dict):
         print(f"happ-config: remarks={inner.get('remarks')!r}")
-    elif isinstance(sub, list):
-        outbounds = sub
-    elif isinstance(sub, dict):
-        outbounds = sub.get("outbounds") or []
-    else:
-        sys.exit(f"unexpected sub root type: {type(sub).__name__}; sample: {str(sub)[:200]}")
     print(f"outbounds: {len(outbounds)}")
+
     by_label: Counter[str] = Counter()
     by_kind: Counter[str] = Counter()
     for o in outbounds:
-        addr, port = address_of_outbound(o)
-        if not addr:
+        addr, port = outbound_endpoint(o)
+        if not addr or port is None:
             continue
-        by_label[label(addr, port)] += 1
+        by_label[destination_label(str(addr), int(port))] += 1
         proto = o.get("protocol") or ""
-        net = ((o.get("streamSettings") or {}).get("network")) or ""
+        net = outbound_network(o)
         by_kind[f"{proto}/{net}"] += 1
 
     print("by destination:")
@@ -157,6 +125,10 @@ def main() -> None:
     ams_count = by_label.get("AMS:443", 0) + by_label.get("AMS:8443", 0) + by_label.get("RELAY→AMS", 0)
     print(f"summary: LV={lv_count}, NL={nl_count}, AMS={ams_count}")
 
+    if not sub_resp.content_type_ok:
+        return 2
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

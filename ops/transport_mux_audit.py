@@ -75,26 +75,36 @@ def parse_outbounds(raw: bytes) -> list[dict]:
     return []
 
 
-def profiles_in_sub(raw: bytes) -> tuple[set[str], Counter[str]]:
+def _outbound_endpoint(o: dict) -> tuple[str | None, int | None]:
+    s = o.get("settings") or {}
+    vnext = s.get("vnext")
+    if isinstance(vnext, list) and vnext:
+        v0 = vnext[0]
+        return v0.get("address"), v0.get("port")
+    servers = s.get("servers")
+    if isinstance(servers, list) and servers:
+        s0 = servers[0]
+        return s0.get("address"), s0.get("port")
+    return None, None
+
+
+def profiles_in_sub(raw: bytes) -> tuple[set[str], Counter[str], Counter[str]]:
     profiles: set[str] = set()
     ob_by_profile: Counter[str] = Counter()
+    by_node: Counter[str] = Counter()
     for o in parse_outbounds(raw):
         rs = o.get("streamSettings") or {}
         net = (rs.get("network") or "tcp").lower()
-        s = o.get("settings") or {}
-        vnext = s.get("vnext")
-        if not isinstance(vnext, list) or not vnext:
-            continue
-        addr = vnext[0].get("address")
-        port = vnext[0].get("port")
+        addr, port = _outbound_endpoint(o)
         if not addr or port is None:
             continue
         node, p = _node_port_label(str(addr), int(port))
+        by_node[node] += 1
         prof = classify_profile(node, p, net)
         if prof:
             profiles.add(prof)
             ob_by_profile[prof] += 1
-    return profiles, ob_by_profile
+    return profiles, ob_by_profile, by_node
 
 
 def fetch_sub(short: str, ctx: ssl.SSLContext) -> bytes:
@@ -137,13 +147,15 @@ def main() -> int:
     total_ob_primary = 0
     total_ob_alt = 0
     total_ob_xhttp = 0
+    total_by_node: Counter[str] = Counter()
+    nl_zero_users = 0
     errors = 0
 
     for u in sample:
         short = u.get("shortUuid") or u.get("subscriptionUuid")
         try:
             raw = fetch_sub(short, ctx)
-            profs, ob_cnt = profiles_in_sub(raw)
+            profs, ob_cnt, by_node = profiles_in_sub(raw)
         except Exception as e:
             errors += 1
             print(f"warn: sub fetch {short}: {e}", file=sys.stderr)
@@ -154,11 +166,14 @@ def main() -> int:
             has_alt_n += 1
         if "xhttp" in profs:
             has_xhttp_n += 1
+        if by_node.get("NL", 0) == 0:
+            nl_zero_users += 1
         if "primary" in profs and "alt" in profs:
             both += 1
         total_ob_primary += ob_cnt.get("primary", 0)
         total_ob_alt += ob_cnt.get("alt", 0)
         total_ob_xhttp += ob_cnt.get("xhttp", 0)
+        total_by_node.update(by_node)
 
     n = len(sample) - errors
     if n == 0:
@@ -184,6 +199,8 @@ def main() -> int:
         "outbounds_alt": total_ob_alt,
         "has_xhttp_pct": round(100.0 * has_xhttp_n / n, 1),
         "outbounds_xhttp": total_ob_xhttp,
+        "node_outbound_totals": dict(total_by_node),
+        "users_nl_outbound_zero": nl_zero_users,
     }
 
     ok = (
@@ -205,6 +222,16 @@ def main() -> int:
             f"outbounds: primary={total_ob_primary} alt={total_ob_alt} "
             f"xhttp={total_ob_xhttp} has_xhttp={has_xhttp_n}/{n}"
         )
+        print(f"node totals (sample): {dict(total_by_node)}")
+        if total_ob_xhttp > 0:
+            print(
+                f"INFO: xhttp present ({total_ob_xhttp} ob) — Happ batch-import risk; see ops/diagnose_happ_import.py"
+            )
+        if nl_zero_users > 0:
+            print(
+                f"WARN: {nl_zero_users}/{n} users have NL=0 outbounds — check P6-SCALE-NL-VERIFY",
+                file=sys.stderr,
+            )
 
     if not ok:
         print("FAIL: transport mux criteria not met", file=sys.stderr)
