@@ -107,12 +107,7 @@ python ops/diagnose_happ_import.py        # batch-risk LOW
 # реальный Happ: ImportResult batch2 count > 0
 ```
 **Rollback:** restore template snapshot или отключить UA-filter.  
-**Зависит от:** Q-VPN-STAB-003  
-**Статус:** TODO
-
----
-
-### Q-VPN-STAB-006 · Content-Type на `/api/sub/*`
+**Статус:** **DONE** (2026-05-25: `trim_injecthosts_no_xhttp.py --apply`, injectHosts 16→14, batch_risk LOW) · Content-Type на `/api/sub/*`
 
 **Источник:** CodeRabbit Phase 2.  
 **Проблема:** если edge отдаёт `text/plain` / без header — downstream и Happ могут падать иначе, чем на xhttp.  
@@ -123,7 +118,7 @@ curl -sI "https://p4n7q.conntest.xyz:8443/api/sub/<short>" -A "Happ/1.9.4 (iOS)"
 python ops/probe_subscription.py
 bash ops/smoke_sub_page_ha.sh
 ```
-**Статус:** TODO
+**Статус:** **DONE** (waived — Content-Type OK on prod)
 
 ---
 
@@ -137,7 +132,7 @@ bash ops/smoke_sub_page_ha.sh
 python -m py_compile bot_src/remnawave_api.py
 pytest tests/ -k remnawave -q
 ```
-**Статус:** TODO
+**Статус:** **DONE** (code)
 
 ---
 
@@ -148,7 +143,7 @@ pytest tests/ -k remnawave -q
 **Изменение:** после Q-VPN-STAB-005/006 — `ops/broadcast_refresh_sub.py` или `subscription_config_notify.py` + jitter (см. Q-VPN-STAB-015).  
 **Verify:** sample 5 users → Happ `count > 0` после refresh.  
 **Зависит от:** Q-VPN-STAB-005  
-**Статус:** TODO
+**Статус:** **PARTIAL** — gen=2 локально; push AMS с owner PC failed (SSH). Run from AMS.
 
 ---
 
@@ -323,4 +318,4 @@ Trial: LV primary ×3, без NL, без xhttp; observatory interval=60s.
 
 **Phase 1 — DONE** (см. [`AUDIT-2026-05-VPN-STABILITY-RESOLUTION.md`](AUDIT-2026-05-VPN-STABILITY-RESOLUTION.md)).
 
-**Phase 2 NEXT:** **Q-VPN-STAB-005** (Happ UA xhttp filter) → **008** (push-notify).
+**Phase 2 NEXT:** **Q-VPN-STAB-008** (push-notify с AMS) → **Q-VPN-STAB-009** (UX copy).

@@ -77,8 +77,11 @@ async def _fetch_json(session: aiohttp.ClientSession, method: str, path: str, **
                 logger.error(f"Remna API {method} {path} failed {resp.status}: {txt}")
                 return None
             try:
-                return await resp.json()
+                return await resp.json(content_type=None)
             except Exception:
+                ct = resp.headers.get("Content-Type", "")
+                if ct and "json" not in ct.lower():
+                    logger.warning(f"Non-JSON Content-Type from {path}: {ct}")
                 logger.error(f"Failed to parse JSON from {path}: {txt[:200]}")
                 return None
     except Exception as e:

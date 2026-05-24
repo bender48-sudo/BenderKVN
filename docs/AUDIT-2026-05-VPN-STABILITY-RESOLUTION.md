@@ -106,3 +106,18 @@ python ops/diagnose_happ_import.py        # batch_risk=LOW, exit 0
 python ops/transport_mux_audit.py
 bash ops/smoke_sub_page_ha.sh
 ```
+
+---
+
+## Phase 2 applied (2026-05-25)
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Sub size | 11562 B | 10359 B |
+| Outbounds | 18 (2 xhttp) | 16 tcp |
+| batch_risk | HIGH | **LOW** |
+| LV/NL | 8/8 | 7/7 tcp |
+
+**Speed:** no regression — xhttp paths were dead in Happ; tcp 443 + relay intact.  
+**Servers:** LV+NL connected; 67 active users, 44% soft cap.  
+**Notify:** generation=2; AMS push pending (SSH from owner PC).

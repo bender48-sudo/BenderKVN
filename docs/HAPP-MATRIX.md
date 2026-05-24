@@ -19,6 +19,9 @@
 | RU‑bypass / прямые домены | **`ops/ru_bypass_routing.py`** | `.secrets/snapshots/template-before-ru-bypass-*.json` |
 | Заморозка / trimming inject на AMS‑ноду | **`ops/freeze_ams_node.py`** | `.secrets/snapshots/template-before-freeze-*.json` |
 | Hotfix вырожденных `routing.rules` | **`ops/ru_bypass_routing.py --strip-degenerate-only --apply`** | `template-before-strip-degenerate-*.json` |
+| XHTTP из injectHosts (Happ) | **`ops/trim_injecthosts_no_xhttp.py --apply`** | `template-before-trim-xhttp-*.json` |
+
+**Happ / XHTTP:** verify **`ops/diagnose_happ_import.py`** → `batch_risk=LOW`.
 
 Процесс добавления домена в bypass: **`docs/RU-BYPASS.md`**.
 
