@@ -1,4 +1,4 @@
-﻿import logging
+import logging
 import uuid
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
@@ -107,9 +107,9 @@ async def process_topup_payment(
         await bot.send_message(
             chat_id=user_id,
             text=(
-                f"✅ Баланс пополнен на {amount_rub:.0f} ₽\n\n"
-                f"💰 Текущий баланс: {new_balance:.0f} ₽\n"
-                f"📅 Хватит на: ~{days_left} дн. ({DAILY_RATE:.2f} ₽/день)"
+                f"✅ Оплата прошла!\n\n"
+                f"VPN активен ещё ~{days_left} дней.\n"
+                f"Баланс: {new_balance:.0f} ₽"
                 f"{sync_note}"
             ),
             parse_mode="HTML",
@@ -241,14 +241,14 @@ async def show_main_menu(message: types.Message, edit_message: bool = False):
 
     if has_active_sub:
         text = (
-            "🏠 <b>Главное меню</b>\n\n"
-            "Кабинет — баланс и продление. «Мой VPN» — ключ и настройка."
+            "🏠 <b>BenderVPN</b>\n\n"
+            "VPN активен. Выбери что нужно:"
         )
     else:
         text = (
-            "🏠 <b>Главное меню</b>\n\n"
-            "Новичкам: бесплатный доступ или «Как подключить». "
-            "Уже есть ключ — откройте «Мой VPN» после активации."
+            "👋 <b>Привет!</b>\n\n"
+            "Нажми кнопку ниже — за 30 секунд получишь бесплатный VPN на 3 месяца.\n"
+            "Уже есть доступ? Кнопка «Мой VPN» 👇"
         )
     auto_renew = get_auto_renew(user_id) if user_db_data else False
     keyboard = keyboards.create_main_menu_keyboard(
@@ -387,11 +387,12 @@ async def start_handler(message: types.Message, state: FSMContext):
             await message.answer("❗️ Условия использования и политика конфиденциальности не установлены. Пожалуйста, обратитесь к администратору.")
             return
         agreement_text = (
-            "<b>Добро пожаловать!</b>\n\n"
-            "Перед началом использования бота, пожалуйста, ознакомьтесь и примите наши "
-            f"<a href='{terms_url}'>Условия использования</a> и "
-            f"<a href='{privacy_url}'>Политику конфиденциальности</a>.\n\n"
-            "Нажимая кнопку 'Принимаю', вы подтверждаете свое согласие с этими документами."
+            "<b>Привет! 👋</b>\n\n"
+            "BenderVPN — свободный интернет без блокировок. "
+            "Первые 3 месяца бесплатно.\n\n"
+            "Для начала прочитай и прими условия:\n"
+            f"→ <a href='{terms_url}'>Условия использования</a> и "
+            f"<a href='{privacy_url}'>Политика конфиденциальности</a>"
         )
         await message.answer(agreement_text, reply_markup=keyboards.create_agreement_keyboard(), disable_web_page_preview=True)
         await state.set_state(UserAgreement.waiting_for_agreement)
@@ -426,7 +427,7 @@ async def agree_to_terms_handler(callback: types.CallbackQuery, state: FSMContex
         pass
 
     await callback.message.answer(
-        "✅ Спасибо! Приятного использования.",
+        "Отлично! Получи бесплатный VPN на 3 месяца 👇",
         reply_markup=keyboards.main_reply_keyboard,
     )
     if pending_bind:
@@ -798,9 +799,7 @@ async def trial_period_handler(callback: types.CallbackQuery):
     # Устанавливаем флаг использования пробного периода сразу, чтобы предотвратить повторное использование
     set_trial_used(user_id)
     
-    await callback.message.edit_text(
-        f"Отлично! Создаю бесплатную подписку на ~3 месяца ({REMNA_TRIAL_DAYS} дней)…"
-    )
+    await callback.message.edit_text("Создаю твой VPN… ⏳")
     try:
         key_number = get_next_key_number(user_id)
         email = f"user{user_id}-key{key_number}-trial@kitsura.fun"
@@ -817,20 +816,15 @@ async def trial_period_handler(callback: types.CallbackQuery):
         new_key_id = add_new_key(user_id, vless_uuid, email, expiry_ms)
         
         # Показываем созданный ключ пользователю
-        expiry_str = expiry_dt.strftime("%d.%m.%Y %H:%M")
-        message_text = "\u2705 <b>Готово!</b> Сейчас даём <b>бесплатную подписку примерно на 3 месяца</b> "
-        message_text += f"(до <b>{expiry_str}</b>). Дальше — платный доступ.\n\n"
-        message_text += "<b>Ссылка для Happ:</b>\n"
-        message_text += f"<code>{html.quote(sub_url or uri)}</code>\n\n"
-        message_text += "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-        message_text += "\U0001f4f1 Как установить:\n\n"
-        message_text += "1\ufe0f\u20e3 Скачай приложение Happ (кнопка ниже)\n\n"
-        message_text += "2\ufe0f\u20e3 Открой Happ\n\n"
-        message_text += "3\ufe0f\u20e3 Нажми + в правом верхнем углу\n\n"
-        message_text += '4\ufe0f\u20e3 Выбери "Из буфера обмена" или отсканируй QR (кнопка ниже)\n\n'
-        message_text += "5\ufe0f\u20e3 Нажми кнопку питания \u2014 готово! \U0001f389\n"
-        message_text += "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n"
-        message_text += user_messages.MSG_TRIAL_PORTAL_HINT
+        expiry_str = expiry_dt.strftime("%d.%m.%Y")
+        message_text = (
+            f"✅ <b>VPN готов!</b> Бесплатно до <b>{expiry_str}</b>.\n\n"
+            "Три шага — и интернет свободен:\n\n"
+            "1️⃣ Скачай Happ (кнопка ниже)\n"
+            "2️⃣ Нажми «📷 Показать QR-код» ниже → открой камеру → наведи\n"
+            "3️⃣ В Happ нажми Connect — готово 🎉\n\n"
+            "Не получается? Кнопка «❓ Не получается» ниже."
+        )
         
         await callback.message.edit_text(
             message_text,
@@ -867,24 +861,16 @@ async def my_account_handler(callback: types.CallbackQuery):
     now = datetime.now()
     balance = get_balance(user_id)
     days_left = balance_to_days(balance)
-    ref_code = ensure_user_ref_code(user_id)
-    ref_count = count_referrals(ref_code)
     active_keys = [k for k in user_keys if datetime.fromisoformat(k["expiry_date"]) > now]
-    balance_line = (
-        f"💰 <b>Баланс:</b> {balance:.0f} ₽ (~{days_left} дн. при {DAILY_RATE:.2f} ₽/день)\n"
-        if balance > 0
-        else f"💰 <b>Баланс:</b> 0 ₽ — пополните, чтобы продлить доступ\n"
-    )
     sub_url = None
     if active_keys:
         sub_url = await _fetch_subscription_url(user_id)
         latest = max(active_keys, key=lambda k: datetime.fromisoformat(k["expiry_date"]))
         exp = datetime.fromisoformat(latest["expiry_date"])
         text = (
-            f"👤 <b>Ваш аккаунт BenderVPN</b>\n\n"
-            f"{balance_line}"
-            f"📅 Подписка на панели: до {exp.strftime('%d.%m.%Y')}\n"
-            f"👥 Приглашено друзей: {ref_count}"
+            f"🔌 <b>Твой VPN</b>\n\n"
+            f"✅ Активен до {exp.strftime('%d.%m.%Y')}\n"
+            f"💰 Баланс: {balance:.0f} ₽ (~{days_left} дней)"
         )
         await callback.message.edit_text(
             text,
@@ -894,23 +880,21 @@ async def my_account_handler(callback: types.CallbackQuery):
     else:
         trial_available = not (user_db_data and user_db_data.get("trial_used"))
         text = (
-            f"👤 <b>Ваш аккаунт BenderVPN</b>\n\n"
-            f"{balance_line}"
-            f"📅 Активного ключа нет\n"
-            f"👥 Приглашено друзей: {ref_count}"
+            "VPN пока не активен.\n\n"
+            "Получи бесплатный доступ на 3 месяца 👇"
         )
-        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboards.create_account_no_sub_keyboard(trial_available))
+        await callback.message.edit_text(
+            text, parse_mode="HTML", reply_markup=keyboards.create_account_no_sub_keyboard(trial_available)
+        )
 
 @user_router.callback_query(F.data == "menu_help")
 async def menu_help_handler(callback: types.CallbackQuery):
     await callback.answer()
     text = (
         "❓ <b>Помощь</b>\n\n"
-        "Инструкция в Mini App, видео и частые ошибки — ниже.\n\n"
-        "<b>Happ: «0 серверов»</b> — если VPN включён и сайты открываются, это не поломка. "
-        "Не удаляйте профиль «🚀 BenderVPN Auto» — нажмите 🔄 «Обновить подписку». "
-        "Страну выбирать не нужно.\n\n"
-        "Если не получается — напишите в поддержку."
+        "Инструкция по подключению, видео и частые вопросы — кнопки ниже.\n\n"
+        "Если VPN включён, но пишет «0 серверов» — не удаляй профиль.\n"
+        "Нажми 🔄 обновить в Happ — всё появится само."
     )
     await callback.message.edit_text(
         text,
@@ -922,7 +906,11 @@ async def menu_help_handler(callback: types.CallbackQuery):
 @user_router.callback_query(F.data == "contact_support")
 async def contact_support_handler(callback: types.CallbackQuery):
     await callback.answer()
-    await callback.message.answer("💬 <b>Поддержка</b>\n\nНапишите ваш вопрос прямо здесь —\nмы ответим в самое ближайшее время 🙏", parse_mode="HTML")
+    await callback.message.answer(
+        "💬 Напиши свой вопрос — ответим быстро.\n\n"
+        "Если VPN не работает — укажи устройство (iPhone/Android/ПК) и что происходит.",
+        parse_mode="HTML",
+    )
 
 @user_router.callback_query(F.data == "invite_friend")
 async def invite_friend_handler(callback: types.CallbackQuery):
@@ -957,8 +945,7 @@ async def copy_sub_url_handler(callback: types.CallbackQuery):
         sub_url = await _fetch_subscription_url(user_id)
         if sub_url:
             await callback.message.answer(
-                f"\U0001f4cb Твоя ссылка подписки \u2014 нажми чтобы скопировать:\n\n"
-                f"`{sub_url}`",
+                f"Скопируй эту ссылку и вставь в Happ:\n(+ → «Из буфера обмена»)\n\n`{sub_url}`",
                 parse_mode="Markdown",
             )
         else:
@@ -989,9 +976,8 @@ async def show_sub_qr_handler(callback: types.CallbackQuery):
         await callback.message.answer_photo(
             BufferedInputFile(png, filename="happ_sub_qr.png"),
             caption=(
-                "\U0001f4f7 <b>QR для Happ</b>\n\n"
-                "В приложении: <b>+</b> \u2192 сканировать QR.\n"
-                "Та же ссылка подписки, что при «Скопировать»."
+                "Открой камеру телефона → наведи на QR → нажми Connect в Happ.\n\n"
+                "Или скопируй ссылку кнопкой ниже."
             ),
             parse_mode="HTML",
         )
@@ -1303,10 +1289,8 @@ async def show_topup_handler(callback: types.CallbackQuery):
     balance = get_balance(user_id)
     days_left = balance_to_days(balance)
     text = (
-        f"💰 <b>Ваш баланс: {balance:.0f} ₽</b>\n"
-        f"📅 Хватит на: ~{days_left} дн.\n\n"
-        f"Тариф: <b>{DAILY_RATE:.2f} ₽/день</b> (без привязки к месяцу — пополняете на нужную сумму)\n\n"
-        f"Выберите сумму пополнения:"
+        f"💰 <b>Баланс: {balance:.0f} ₽</b> (~{days_left} дней VPN)\n\n"
+        f"Выбери сколько пополнить:"
     )
     await callback.message.edit_text(
         text,
@@ -1334,9 +1318,8 @@ async def topup_select_handler(callback: types.CallbackQuery):
     _name, _price_str, amount = TOPUP_PRESETS[topup_id]
     days = balance_to_days(amount)
     text = (
-        f"💰 Пополнение на <b>{amount:.0f} ₽</b>\n"
-        f"📅 ~{days} дн. по тарифу {DAILY_RATE:.2f} ₽/день\n\n"
-        f"Выберите способ оплаты:"
+        f"Пополнение на <b>{amount:.0f} ₽</b> — это ~{days} дней VPN.\n\n"
+        f"Способ оплаты:"
     )
     await callback.message.edit_text(
         text,

@@ -109,29 +109,21 @@ def create_main_menu_keyboard(
 def create_trial_success_keyboard(sub_url, telegram_id: int | None = None):
     """После trial: QR + кабинет, без лишних ссылок."""
     builder = InlineKeyboardBuilder()
-    if TELEGRAM_WEBAPP_URL and telegram_id:
-        builder.button(
-            text="\U0001f3e0 \u041b\u0438\u0447\u043d\u044b\u0439 \u043a\u0430\u0431\u0438\u043d\u0435\u0442",
-            web_app=WebAppInfo(url=telegram_cabinet_webapp_url(telegram_id)),
-        )
     if sub_url:
-        builder.button(text="\U0001f4f7 QR \u0434\u043b\u044f Happ", callback_data="show_sub_qr")
-    builder.button(text="\U0001f4d6 \u041a\u0430\u043a \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u0438\u0442\u044c", callback_data="connect_vpn")
-    builder.button(text="\U0001f519 \u0413\u043b\u0430\u0432\u043d\u043e\u0435 \u043c\u0435\u043d\u044e", callback_data="back_to_main_menu")
+        builder.button(text="📷 Показать QR-код", callback_data="show_sub_qr")
+    builder.button(text="📋 Скопировать ссылку", callback_data="copy_sub_url")
+    builder.button(text="❓ Не получается", callback_data="menu_help")
+    builder.button(text="🏠 Главное меню", callback_data="back_to_main_menu")
     builder.adjust(1)
     return builder.as_markup()
 
 
 def create_account_keyboard(sub_url=None, telegram_id: int | None = None):
     builder = InlineKeyboardBuilder()
-    if TELEGRAM_WEBAPP_URL and telegram_id:
-        builder.button(
-            text="\U0001f3e0 \u041b\u0438\u0447\u043d\u044b\u0439 \u043a\u0430\u0431\u0438\u043d\u0435\u0442",
-            web_app=WebAppInfo(url=telegram_cabinet_webapp_url(telegram_id)),
-        )
     if sub_url:
+        builder.button(text="📷 Показать QR-код", callback_data="show_sub_qr")
         builder.button(
-            text="\U0001f4cb \u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443 \u043f\u043e\u0434\u043f\u0438\u0441\u043a\u0438",
+            text="📋 Скопировать ссылку",
             callback_data="copy_sub_url",
         )
     builder.button(text="\U0001f4b0 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u0431\u0430\u043b\u0430\u043d\u0441", callback_data="show_topup")
@@ -144,7 +136,7 @@ def create_account_no_sub_keyboard(trial_available):
     builder = InlineKeyboardBuilder()
     if trial_available:
         builder.button(
-            text="🎁 Бесплатно 3 месяца",
+            text="🚀 Получить бесплатный VPN",
             callback_data="get_trial",
         )
     else:
@@ -208,42 +200,18 @@ def create_wizard_device_keyboard(
     setup_url: str | None = None,
 ):
     builder = InlineKeyboardBuilder()
-    if TELEGRAM_WEBAPP_URL:
-        builder.button(
-            text="\U0001f4f1 \u0418\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0438\u044f \u0432 Mini App",
-            web_app=WebAppInfo(url=telegram_portal_webapp_url(device_id)),
-        )
-    builder.button(
-        text="\U0001f4dd \u041f\u043e\u0434\u0441\u043a\u0430\u0437\u043a\u0438 \u0432 \u0447\u0430\u0442\u0435",
-        callback_data=f"wizard_chat_{device_id}",
-    )
-    if trial_available:
-        builder.button(text="\U0001f381 \u0411\u0435\u0441\u043f\u043b\u0430\u0442\u043d\u043e 3 \u043c\u0435\u0441\u044f\u0446\u0430", callback_data="get_trial")
-    if setup_url:
-        builder.button(
-            text="\U0001f517 \u041c\u043e\u044f \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430",
-            url=setup_url,
-        )
-    builder.button(text="\U0001f4f7 QR \u0434\u043b\u044f Happ", callback_data="show_sub_qr")
-    if device_id in ("iphone", "android"):
-        builder.button(
-            text="\U0001f3ac \u0412\u0438\u0434\u0435\u043e \u0434\u043b\u044f \u044d\u0442\u043e\u0433\u043e \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430",
-            url=portal_links.public_guide_url(device_id),
-        )
-    store_key = device_id
+    builder.button(text="📷 Мой QR-код", callback_data="show_sub_qr")
+    builder.button(text="📋 Скопировать ссылку", callback_data="copy_sub_url")
     from shop_bot.vpn_setup_wizard import DEVICES, HAPP_STORES
 
     sk = DEVICES.get(device_id, {}).get("store_key", device_id)
     if sk in HAPP_STORES:
         label, url = HAPP_STORES[sk]
-        builder.button(text=f"\u2193 {label[:40]}", url=url)
-    builder.button(text="\u2753 \u041d\u0435 \u043f\u043e\u043b\u0443\u0447\u0430\u0435\u0442\u0441\u044f", callback_data="wizard_stuck")
-    builder.button(text="\U0001f519 \u041a \u0432\u044b\u0431\u043e\u0440\u0443 \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430", callback_data="connect_vpn")
-    builder.button(text="\U0001f3e0 \u0413\u043b\u0430\u0432\u043d\u043e\u0435 \u043c\u0435\u043d\u044e", callback_data="back_to_main_menu")
+        builder.button(text=f"↓ Скачать {label[:30]}", url=url)
+    builder.button(text="❓ Не получается", callback_data="wizard_stuck")
+    builder.button(text="🔙 К выбору устройства", callback_data="connect_vpn")
     builder.adjust(1)
     return builder.as_markup()
-
-
 def create_wizard_chat_keyboard(device_id: str):
     builder = InlineKeyboardBuilder()
     if TELEGRAM_WEBAPP_URL:
@@ -450,7 +418,12 @@ def create_keys_management_keyboard(keys): return create_back_to_menu_keyboard()
 def create_key_info_keyboard(key_id): return create_back_to_menu_keyboard()
 def create_back_to_key_keyboard(key_id): return create_back_to_menu_keyboard()
 def create_traffic_keyboard(): return create_back_to_menu_keyboard()
-def create_support_keyboard(u): return create_back_to_menu_keyboard()
+def create_support_keyboard(support_user=None):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="💬 Написать в поддержку", callback_data="contact_support")
+    builder.button(text="🏠 Главное меню", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
 def create_about_keyboard(t, p): return create_back_to_menu_keyboard()
 def create_about_keyboard_terms(t): return create_back_to_menu_keyboard()
 def create_about_keyboard_privacy(p): return create_back_to_menu_keyboard()
