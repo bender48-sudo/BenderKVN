@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from shop_bot.admin_auth import is_admin_telegram
-from shop_bot.data_manager.database import get_user, get_user_keys, update_setting
+from shop_bot.data_manager.database import get_setting, get_user, get_user_keys, update_setting
 import re
 
 from aiogram.exceptions import TelegramBadRequest
@@ -69,7 +69,10 @@ async def start_editing_handler(callback: types.CallbackQuery, state: FSMContext
         "about": ("Пришлите новый текст для раздела 'О проекте'.", AdminEdit.waiting_for_about_text),
         "terms": ("Пришлите новую ссылку на Условия использования.", AdminEdit.waiting_for_terms_url),
         "privacy": ("Пришлите новую ссылку на Политику конфиденциальности.", AdminEdit.waiting_for_privacy_url),
-        "support_user": ("Пришлите новую ссылку на поддержку.", AdminEdit.waiting_for_support_user),
+        "support_user": (
+            "Пришлите @username поддержки (например @BenderVPN_support).",
+            AdminEdit.waiting_for_support_user,
+        ),
         "support_text": ("Пришлите новый текст для раздела 'Поддержка'.", AdminEdit.waiting_for_support_text),
     }
 
@@ -122,22 +125,53 @@ async def process_terms_url(message: types.Message, state: FSMContext):
     if is_valid_url(message.text):
         await process_new_content(message, state, "terms_url")
     else:
-        await message.answer("❌ **Ошибка:** Это не похоже на валидную ссылку. Она должна начинаться с `http://` или `https://`. Попробуйте еще раз или нажмите 'Отмена'.")
+        await message.answer(
+            "❌ <b>Ошибка:</b> это не похоже на валидную ссылку. "
+            "Она должна начинаться с <code>http://</code> или <code>https://</code>. "
+            "Попробуйте ещё раз или нажмите «Отмена».",
+            parse_mode="HTML",
+        )
 
 @admin_router.message(AdminEdit.waiting_for_privacy_url)
 async def process_privacy_url(message: types.Message, state: FSMContext):
     if is_valid_url(message.text):
         await process_new_content(message, state, "privacy_url")
     else:
-        await message.answer("❌ **Ошибка:** Это не похоже на валидную ссылку. Она должна начинаться с `http://` или `https://`. Попробуйте еще раз или нажмите 'Отмена'.")
+        await message.answer(
+            "❌ <b>Ошибка:</b> это не похоже на валидную ссылку. "
+            "Она должна начинаться с <code>http://</code> или <code>https://</code>. "
+            "Попробуйте ещё раз или нажмите «Отмена».",
+            parse_mode="HTML",
+        )
+
+def _normalize_support_username(text: str) -> str | None:
+    raw = (text or "").strip()
+    if raw.startswith("https://t.me/") or raw.startswith("http://t.me/"):
+        raw = raw.rstrip("/").split("/")[-1].split("?")[0]
+    if raw.startswith("@"):
+        raw = raw[1:]
+    if re.fullmatch(r"[a-zA-Z][a-zA-Z0-9_]{4,31}", raw):
+        return f"@{raw}"
+    return None
+
 
 @admin_router.message(AdminEdit.waiting_for_support_user)
 async def process_support_user(message: types.Message, state: FSMContext):
     logger.info(f"process_support_user called with text: {message.text}")
-    if is_valid_url(message.text):
-        await process_new_content(message, state, "support_user")
-    else:
-        await message.answer("❌ **Ошибка:** Это не похоже на валидную ссылку. Она должна начинаться с `http://` или `https://`. Попробуйте еще раз или нажмите 'Отмена'.")
+    username = _normalize_support_username(message.text or "")
+    if username:
+        update_setting("support_user", username)
+        await state.clear()
+        await message.answer(
+            "✅ Успешно обновлено!",
+            reply_markup=keyboards.create_admin_keyboard(),
+        )
+        return
+    await message.answer(
+        "❌ <b>Ошибка:</b> укажите @username поддержки (5–32 символа), "
+        "например <code>@BenderVPN_support</code>.",
+        parse_mode="HTML",
+    )
 
 @admin_router.message(AdminEdit.waiting_for_support_text)
 async def process_support_text(message: types.Message, state: FSMContext):

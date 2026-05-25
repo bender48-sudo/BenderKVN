@@ -33,6 +33,19 @@ def main():
 
     database.initialize_db()
     bot_logger.system("DATABASE", "SQLite database initialized", "OK")
+    if os.getenv("BOT_SUPPORT_ENABLED", "1").strip().lower() in ("0", "false", "no", "off"):
+        bot_logger.system(
+            "SUPPORT",
+            "BOT_SUPPORT_ENABLED=0 — users see «Поддержка временно недоступна»",
+            "WARNING",
+        )
+    recovered = database.recover_stale_renewals()
+    if recovered:
+        bot_logger.system(
+            "RENEWAL_RECOVERY",
+            f"Recovered {recovered} stale auto-renew attempt(s)",
+            "WARNING",
+        )
 
     TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
     TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME")

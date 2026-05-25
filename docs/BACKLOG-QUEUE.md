@@ -81,7 +81,7 @@
 6. **Фаза 6** — GTM hardening (**Q086–097**, см. **`AGENT-PHASE6-BACKLOG.md`**)
 7. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** **Q120** (2-й RU relay — **только владелец**, нужен 2-й VPS).
+**NEXT:** нет (фаза 9 **Q142–160** закрыта агентом). **Q120** / **Q032** — только владелец.
 
 | Кому | Документ |
 |------|----------|
@@ -255,27 +255,27 @@
 
 | Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
 |---|-----|--------|-------------------|--------|-----------------|
-| 142 | **P2-RED-BOT-RENEW-IDEM-01** | **NEXT** | `renewal_attempts` + recovery stale pending | `py_compile` + renew audit | `fix: P2-RED-BOT-RENEW-IDEM-01` |
-| 143 | **P2-RED-BOT-MULTIKEY-01** | **TODO** | автопродление всех `vpn_keys` | `py_compile` | `fix: P2-RED-BOT-MULTIKEY-01` |
-| 144 | **P2-RED-BOT-BACKOFF-01** | **TODO** | global Remna circuit breaker 30s | `py_compile` | `fix: P2-RED-BOT-BACKOFF-01` |
-| 145 | **P2-RED-BOT-INBOUND-LOCK-01** | **TODO** | lock на inbound cache refresh | `py_compile` | `fix: P2-RED-BOT-INBOUND-LOCK-01` |
-| 146 | **P2-RED-WEBHOOK-ASYNC-01** | **TODO** | Flask → background asyncio loop | `py_compile` + webhook smoke | `fix: P2-RED-WEBHOOK-ASYNC-01` |
-| 147 | **P2-OPS-DB-INDEX-01** | **TODO** | indexes vpn_keys/referrals/actions + web_trial seq | EXPLAIN hot queries | `chore: P2-OPS-DB-INDEX-01` |
-| 148 | **P2-OPS-DB-MIGRATE-01** | **TODO** | `schema_migrations` vN chain | fresh DB upgrade | `chore: P2-OPS-DB-MIGRATE-01` |
-| 149 | **P2-OPS-WEBTRIAL-POOL-01** | **TODO** | sqlite pool web_trial | `py_compile` | `ops: P2-OPS-WEBTRIAL-POOL-01` |
-| 150 | **P2-RED-BOT-ADMIN-FIX-01** | **TODO** | get_setting import, HTML, mac URL, @support | admin flow step 1 | `fix: P2-RED-BOT-ADMIN-FIX-01` |
-| 151 | **P2-CHORE-KEYBOARD-STUBS-01** | **TODO** | cleanup keyboard stubs | menu grep | `chore: P2-CHORE-KEYBOARD-STUBS-01` |
-| 152 | **P2-RED-SETUP-URL-DEDUP-01** | **TODO** | `setup_url_service.py` | wizard=portal URL | `refactor: P2-RED-SETUP-URL-DEDUP-01` |
-| 153 | **P3-UX-MESSAGES-01** | **TODO** | user_messages consistency | grep | `product: P3-UX-MESSAGES-01` |
-| 154 | **P2-RED-SUB-URL-CACHE-01** | **TODO** | sub URL cache 60s TTL | cache hit log | `perf: P2-RED-SUB-URL-CACHE-01` |
-| 155 | **P2-OPS-SUB-REFRESH-BATCH-01** | **TODO** | batch 50 + TG 429 backoff | batch log | `ops: P2-OPS-SUB-REFRESH-BATCH-01` |
-| 156 | **P2-OPS-SCHED-JITTER-02** | **TODO** | scheduler jitter + backup task | SCHEDULER_CYCLE | `ops: P2-OPS-SCHED-JITTER-02` |
-| 157 | **P3-UX-LEGAL-FALLBACK-01** | **TODO** | terms/privacy fallback onboarding | `py_compile` | `product: P3-UX-LEGAL-FALLBACK-01` |
-| 158 | **P3-UX-WIZARD-FALLBACK-01** | **TODO** | wizard Mini App unavailable text | wizard smoke | `product: P3-UX-WIZARD-FALLBACK-01` |
-| 159 | **P3-RED-SUPPORT-RATELIMIT-PERSIST-01** | **TODO** | DB-backed support rate limit | `py_compile` | `security: P3-RED-SUPPORT-RATELIMIT-PERSIST-01` |
-| 160 | **P3-RED-SUPPORT-SILENT-01** | **TODO** | support unavailable user msg | startup warn | `ops: P3-RED-SUPPORT-SILENT-01` |
+| 142 | **P2-RED-BOT-RENEW-IDEM-01** | **DONE** | `renewal_attempts` + recovery stale pending | **`AUTO_RENEW_BILLING_OK`** | `fix: P2-RED-BOT-RENEW-IDEM-01` |
+| 143 | **P2-RED-BOT-MULTIKEY-01** | **DONE** | автопродление всех `vpn_keys` | `py_compile` | `fix: P2-RED-BOT-MULTIKEY-01` |
+| 144 | **P2-RED-BOT-BACKOFF-01** | **DONE** | global Remna circuit breaker 30s | `py_compile` | `fix: P2-RED-BOT-BACKOFF-01` |
+| 145 | **P2-RED-BOT-INBOUND-LOCK-01** | **DONE** | lock на inbound cache refresh | `py_compile` | `fix: P2-RED-BOT-INBOUND-LOCK-01` |
+| 146 | **P2-RED-WEBHOOK-ASYNC-01** | **DONE** | Flask → background asyncio loop | `py_compile` | `fix: P2-RED-WEBHOOK-ASYNC-01` |
+| 147 | **P2-OPS-DB-INDEX-01** | **DONE** | indexes vpn_keys/referrals/actions + web_trial seq | `py_compile` | `chore: P2-OPS-DB-INDEX-01` |
+| 148 | **P2-OPS-DB-MIGRATE-01** | **DONE** | `schema_migrations` vN chain | `py_compile` | `chore: P2-OPS-DB-MIGRATE-01` |
+| 149 | **P2-OPS-WEBTRIAL-POOL-01** | **DONE** | sqlite pool web_trial | `py_compile` | `ops: P2-OPS-WEBTRIAL-POOL-01` |
+| 150 | **P2-RED-BOT-ADMIN-FIX-01** | **DONE** | get_setting import, HTML, mac URL, @support | `py_compile` | `fix: P2-RED-BOT-ADMIN-FIX-01` |
+| 151 | **P2-CHORE-KEYBOARD-STUBS-01** | **DONE** | cleanup keyboard stubs | menu grep | `chore: P2-CHORE-KEYBOARD-STUBS-01` |
+| 152 | **P2-RED-SETUP-URL-DEDUP-01** | **DONE** | `setup_url_service.py` | wizard smoke | `refactor: P2-RED-SETUP-URL-DEDUP-01` |
+| 153 | **P3-UX-MESSAGES-01** | **DONE** | user_messages consistency | grep | `product: P3-UX-MESSAGES-01` |
+| 154 | **P2-RED-SUB-URL-CACHE-01** | **DONE** | sub URL cache 60s TTL | `py_compile` | `perf: P2-RED-SUB-URL-CACHE-01` |
+| 155 | **P2-OPS-SUB-REFRESH-BATCH-01** | **DONE** | batch 50 + TG 429 backoff | `py_compile` | `ops: P2-OPS-SUB-REFRESH-BATCH-01` |
+| 156 | **P2-OPS-SCHED-JITTER-02** | **DONE** | scheduler jitter + backup task | `py_compile` | `ops: P2-OPS-SCHED-JITTER-02` |
+| 157 | **P3-UX-LEGAL-FALLBACK-01** | **DONE** | terms/privacy fallback onboarding | `py_compile` | `product: P3-UX-LEGAL-FALLBACK-01` |
+| 158 | **P3-UX-WIZARD-FALLBACK-01** | **DONE** | wizard Mini App unavailable text | **`VPN_SETUP_WIZARD_OK`** | `product: P3-UX-WIZARD-FALLBACK-01` |
+| 159 | **P3-RED-SUPPORT-RATELIMIT-PERSIST-01** | **DONE** | DB-backed support rate limit | `py_compile` | `security: P3-RED-SUPPORT-RATELIMIT-PERSIST-01` |
+| 160 | **P3-RED-SUPPORT-SILENT-01** | **DONE** | support unavailable user msg | `py_compile` | `ops: P3-RED-SUPPORT-SILENT-01` |
 
-**NEXT=Q142** (фаза 9). **Параллельно (владелец):** **Q120**, **Q032**.
+**NEXT:** нет. **Параллельно (владелец):** **Q120**, **Q032**.
 
 ---
 

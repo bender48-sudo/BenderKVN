@@ -8,12 +8,26 @@ from aiogram.filters import Command
 from aiogram.exceptions import TelegramBadRequest
 
 from shop_bot.data_manager import database
-from shop_bot.data_manager.database import get_user, register_user_if_not_exists
-from shop_bot.support_auth import is_authorized_support_staff
+from shop_bot.data_manager.database import (
+    cleanup_support_rate_limits,
+    get_user,
+    register_user_if_not_exists,
+    support_rate_limit_check,
+)
 
 logger = logging.getLogger(__name__)
 
 SUPPORT_GROUP_ID = int(os.getenv("SUPPORT_GROUP_ID", "0"))
+BOT_SUPPORT_ENABLED = os.getenv("BOT_SUPPORT_ENABLED", "1").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+    "off",
+)
+if not BOT_SUPPORT_ENABLED:
+    logger.warning(
+        "BOT_SUPPORT_ENABLED=0 — user messages will not reach support group"
+    )
 if os.getenv("BOT_PAYMENTS_LIVE", "").strip() in ("1", "true", "yes") and SUPPORT_GROUP_ID == 0:
     logger.critical(
         "SUPPORT_GROUP_ID is 0 on live bot — support replies from group will not work"
@@ -22,23 +36,28 @@ ADMIN_ID = os.getenv("ADMIN_TELEGRAM_ID")
 SUPPORT_USER_RL_WINDOW = int(os.getenv("SUPPORT_USER_RL_WINDOW", "60"))
 SUPPORT_USER_RL_MAX = int(os.getenv("SUPPORT_USER_RL_MAX", "8"))
 
+MSG_SUPPORT_DISABLED = (
+    "Поддержка временно недоступна. Попробуй позже или напиши на @BenderVPN_support."
+)
+
 
 def _db_path():
     return database.DB_FILE
 
 support_router = Router()
-_user_msg_times: dict[int, list[float]] = {}
+
+
+def _support_disabled_for_user() -> bool:
+    return not BOT_SUPPORT_ENABLED or not SUPPORT_GROUP_ID
 
 
 def _support_rate_limited(user_id: int) -> bool:
-    now = time.time()
-    times = _user_msg_times.setdefault(user_id, [])
-    cutoff = now - SUPPORT_USER_RL_WINDOW
-    times[:] = [t for t in times if t >= cutoff]
-    if len(times) >= SUPPORT_USER_RL_MAX:
-        return True
-    times.append(now)
-    return False
+    cleanup_support_rate_limits(SUPPORT_USER_RL_WINDOW * 2)
+    return support_rate_limit_check(
+        user_id,
+        window_sec=SUPPORT_USER_RL_WINDOW,
+        max_hits=SUPPORT_USER_RL_MAX,
+    )
 
 
 def _get_support_topic(telegram_id: int):
@@ -120,7 +139,8 @@ async def _relay_user_message_to_topic(
 @support_router.message(F.chat.type == "private", ~F.text.startswith("/"), ~F.successful_payment)
 async def user_message_to_support(message: types.Message, bot: Bot):
     """Forward user messages to support group topic."""
-    if not SUPPORT_GROUP_ID:
+    if _support_disabled_for_user():
+        await message.answer(MSG_SUPPORT_DISABLED, parse_mode="HTML")
         return
 
     user_id = message.from_user.id
@@ -130,17 +150,17 @@ async def user_message_to_support(message: types.Message, bot: Bot):
     user_data = get_user(user_id)
     if not user_data or not user_data.get("agreed_to_terms"):
         await message.answer(
-            "Сначала примите <b>Условия использования</b>:\n"
-            "отправьте /start и нажмите кнопку <b>«Принимаю»</b>.\n\n"
-            "Если кнопка «загружается» — закройте чат и снова /start, "
-            "затем нажмите «Принимаю» на <b>новом</b> сообщении.",
+            "Сначала прими <b>Условия использования</b>:\n"
+            "отправь /start и нажми кнопку <b>«Принимаю»</b>.\n\n"
+            "Если кнопка «загружается» — закрой чат и снова /start, "
+            "затем нажми «Принимаю» на <b>новом</b> сообщении.",
             parse_mode="HTML",
         )
         return
 
     if _support_rate_limited(user_id):
         await message.answer(
-            "Слишком много сообщений подряд. Подождите минуту и напишите снова."
+            "Слишком много сообщений подряд. Подожди минуту и напиши снова."
         )
         return
     topic_id = _get_support_topic(user_id)
@@ -183,7 +203,7 @@ async def user_message_to_support(message: types.Message, bot: Bot):
             logger.error("Failed to relay message to topic %s: %s", topic_id, e)
             await message.answer(
                 "\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435 \u0432 \u043f\u043e\u0434\u0434\u0435\u0440\u0436\u043a\u0443. "
-                "\u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u0437\u0436\u0435."
+                "\u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u0437\u0436\u0435."
             )
     except Exception as e:
         logger.error("Failed to relay message to topic %s: %s", topic_id, e)

@@ -75,6 +75,15 @@ _TRANSIENT_HTTP = frozenset({502, 503, 504})
 _shared_session: aiohttp.ClientSession | None = None
 _session_lock = asyncio.Lock()
 
+# P2-RED-BOT-BACKOFF-01: global circuit breaker after consecutive panel failures
+_global_backoff_until: float = 0.0
+_consecutive_failures: int = 0
+_BACKOFF_FAIL_THRESHOLD = 3
+_BACKOFF_PAUSE_SEC = 30
+
+_INBOUND_REFRESH_LOCK = asyncio.Lock()
+_INBOUND_STALE_GRACE_SEC = int(os.getenv("REMNA_INBOUND_STALE_GRACE_SEC", "60"))
+
 
 class RemnaTransientHTTPError(Exception):
     """Retryable panel response (502/503/504)."""
@@ -103,6 +112,36 @@ def _retry_if_transient(exc: BaseException) -> bool:
     if isinstance(exc, aiohttp.ClientResponseError) and exc.status in _TRANSIENT_HTTP:
         return True
     return False
+
+
+def reset_global_backoff() -> None:
+    """Clear circuit breaker (e.g. health_check recovery)."""
+    global _global_backoff_until, _consecutive_failures
+    _global_backoff_until = 0.0
+    _consecutive_failures = 0
+
+
+def _check_backoff() -> bool:
+    """Return True if requests should be skipped (in backoff window)."""
+    return time.time() < _global_backoff_until
+
+
+def _record_api_success() -> None:
+    global _consecutive_failures, _global_backoff_until
+    _consecutive_failures = 0
+    _global_backoff_until = 0.0
+
+
+def _record_api_failure() -> None:
+    global _consecutive_failures, _global_backoff_until
+    _consecutive_failures += 1
+    if _consecutive_failures >= _BACKOFF_FAIL_THRESHOLD:
+        _global_backoff_until = time.time() + _BACKOFF_PAUSE_SEC
+        logger.warning(
+            "Remna global backoff %.0fs after %s consecutive failures",
+            _BACKOFF_PAUSE_SEC,
+            _consecutive_failures,
+        )
 
 
 def _log_remna_retry(retry_state) -> None:
@@ -207,45 +246,96 @@ async def _fetch_json_retrying(
 async def _fetch_json(
     session: aiohttp.ClientSession, method: str, path: str, **kwargs
 ) -> Optional[dict]:
+    if _check_backoff():
+        logger.warning(
+            "Remna API skipped (backoff %.1fs left): %s %s",
+            _global_backoff_until - time.time(),
+            method,
+            path,
+        )
+        return None
     try:
-        return await _fetch_json_retrying(session, method, path, **kwargs)
+        result = await _fetch_json_retrying(session, method, path, **kwargs)
+        if result is not None:
+            _record_api_success()
+        else:
+            _record_api_failure()
+        return result
     except RemnaTransientHTTPError as e:
         logger.error("Remna API %s %s exhausted retries: HTTP %s", e.method, e.path, e.status)
+        _record_api_failure()
         return None
     except Exception as e:
         if _retry_if_transient(e):
             logger.error("Remna API %s %s exhausted retries: %s", method, path, e)
         else:
             logger.error(f"HTTP error {method} {path}: {e}")
+        _record_api_failure()
         return None
 
 _INBOUND_CACHE: Optional[RemnaInbound] = None
 _INBOUND_CACHE_AT: float = 0.0
 
+def _parse_inbound_from_response(data: dict) -> Optional[RemnaInbound]:
+    if not data or "response" not in data:
+        return None
+    inbounds = data["response"].get("inbounds", [])
+    for inbound in inbounds:
+        if INBOUND_UUID and inbound.get("uuid") == INBOUND_UUID:
+            raw = inbound.get("rawInbound", {})
+            return RemnaInbound(
+                inbound["uuid"],
+                inbound["tag"],
+                inbound["port"],
+                inbound["network"],
+                inbound["security"],
+                raw,
+            )
+        if INBOUND_TAG and inbound.get("tag") == INBOUND_TAG:
+            raw = inbound.get("rawInbound", {})
+            return RemnaInbound(
+                inbound["uuid"],
+                inbound["tag"],
+                inbound["port"],
+                inbound["network"],
+                inbound["security"],
+                raw,
+            )
+    return None
+
+
 async def get_inbound(session: aiohttp.ClientSession, force_refresh: bool = False) -> Optional[RemnaInbound]:
     global _INBOUND_CACHE, _INBOUND_CACHE_AT
+    now = time.time()
     if (
         _INBOUND_CACHE
         and not force_refresh
-        and (time.time() - _INBOUND_CACHE_AT) < INBOUND_CACHE_TTL
+        and (now - _INBOUND_CACHE_AT) < INBOUND_CACHE_TTL
     ):
+        return _INBOUND_CACHE
+    if (
+        _INBOUND_CACHE
+        and not force_refresh
+        and _INBOUND_REFRESH_LOCK.locked()
+        and (now - _INBOUND_CACHE_AT) < INBOUND_CACHE_TTL + _INBOUND_STALE_GRACE_SEC
+    ):
+        logger.debug("inbound cache stale-within-grace during refresh")
         return _INBOUND_CACHE
     if not BASE_URL or not get_api_token():
         logger.error("Remna config incomplete: BASE_URL or API_TOKEN missing")
         return None
-    data = await _fetch_json(session, 'GET', '/api/config-profiles/inbounds')
-    if not data or 'response' not in data:
-        return None
-    inbounds = data['response'].get('inbounds', [])
-    for inbound in inbounds:
-        if INBOUND_UUID and inbound.get('uuid') == INBOUND_UUID:
-            raw = inbound.get('rawInbound', {})
-            _INBOUND_CACHE = RemnaInbound(inbound['uuid'], inbound['tag'], inbound['port'], inbound['network'], inbound['security'], raw)
-            _INBOUND_CACHE_AT = time.time()
+    async with _INBOUND_REFRESH_LOCK:
+        now = time.time()
+        if (
+            _INBOUND_CACHE
+            and not force_refresh
+            and (now - _INBOUND_CACHE_AT) < INBOUND_CACHE_TTL
+        ):
             return _INBOUND_CACHE
-        if INBOUND_TAG and inbound.get('tag') == INBOUND_TAG:
-            raw = inbound.get('rawInbound', {})
-            _INBOUND_CACHE = RemnaInbound(inbound['uuid'], inbound['tag'], inbound['port'], inbound['network'], inbound['security'], raw)
+        data = await _fetch_json(session, "GET", "/api/config-profiles/inbounds")
+        inbound = _parse_inbound_from_response(data) if data else None
+        if inbound:
+            _INBOUND_CACHE = inbound
             _INBOUND_CACHE_AT = time.time()
             return _INBOUND_CACHE
     logger.error("Desired inbound not found (tag/uuid)")

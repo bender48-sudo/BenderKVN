@@ -1,6 +1,8 @@
 import asyncio
 import logging
+import random
 import time as _time
+import uuid
 from datetime import datetime, timezone
 import shutil
 from pathlib import Path
@@ -21,6 +23,229 @@ THRESHOLDS = [50, 80, 90, 100]
 
 BACKUP_INTERVAL_HOURS = 6  # Продакшн значение - бэкап каждые 6 часов
 BACKUP_CHECK_INTERVAL_SECONDS = 3600  # не решать «пора ли бэкап» каждые 5 мин
+
+
+async def _renew_single_key(
+    bot: Bot,
+    user_id: int,
+    key: dict,
+    days_left: int,
+) -> dict | None:
+    """Renew one vpn_keys row; returns summary dict on success, None if skipped/failed."""
+    from shop_bot.data_manager.database import (
+        RENEWAL_STATUS_FAILED,
+        RENEWAL_STATUS_REFUNDED,
+        RENEWAL_STATUS_SUCCESS,
+        add_balance,
+        complete_renewal_attempt,
+        create_renewal_attempt,
+        get_balance,
+        has_pending_renewal_attempt,
+        log_action,
+        mark_renewal_balance_deducted,
+        try_deduct_balance,
+        update_key_info,
+        update_user_stats,
+    )
+
+    key_id = int(key["key_id"])
+    key_email = key["key_email"]
+    if has_pending_renewal_attempt(user_id, key_id):
+        logger.info(
+            "auto_renew skip user=%s key=%s: pending attempt exists",
+            user_id,
+            key_id,
+        )
+        return None
+
+    plan = key.get("subscription_plan") or "buy_1_month"
+    cost_rub, months, extend_days = plan_renew_cost(plan)
+    bal = get_balance(user_id)
+    if not balance_covers_renew(bal, cost_rub):
+        log_action(
+            user_id,
+            "auto_renew_skip",
+            f"key:{key_id}:insufficient:{bal:.2f}:{cost_rub:.2f}",
+        )
+        logger.info(
+            "auto_renew skip user=%s key=%s balance=%.2f need=%.2f",
+            user_id,
+            key_id,
+            bal,
+            cost_rub,
+        )
+        return {"skipped": "insufficient", "bal": bal, "cost_rub": cost_rub, "months": months}
+
+    attempt_id = str(uuid.uuid4())
+    if not create_renewal_attempt(attempt_id, user_id, key_id, cost_rub, plan):
+        log_action(user_id, "auto_renew_skip", f"pending_exists:{key_id}")
+        return None
+
+    if not try_deduct_balance(user_id, cost_rub):
+        complete_renewal_attempt(attempt_id, RENEWAL_STATUS_FAILED)
+        log_action(user_id, "auto_renew_skip", f"deduct_race:{key_id}")
+        return None
+
+    mark_renewal_balance_deducted(attempt_id)
+    logger.info(
+        "auto_renew trigger user=%s key=%s attempt=%s days_left=%s plan=%s",
+        user_id,
+        key_id,
+        attempt_id,
+        days_left,
+        plan,
+    )
+    uri, new_expire_iso, new_uuid = await remnawave_api.provision_key(
+        key_email,
+        days=extend_days,
+        telegram_id=str(user_id),
+    )
+    if uri and new_expire_iso and new_uuid:
+        new_dt = datetime.fromisoformat(new_expire_iso.replace("Z", "+00:00"))
+        update_key_info(key_id, new_uuid, int(new_dt.timestamp() * 1000))
+        update_user_stats(user_id, cost_rub, months)
+        complete_renewal_attempt(attempt_id, RENEWAL_STATUS_SUCCESS)
+        log_action(
+            user_id,
+            "auto_renew_success",
+            f"{attempt_id}:{key_id}:{months}:{cost_rub:.2f}",
+        )
+        from shop_bot.subscription_cache import invalidate_subscription_url_cache
+
+        invalidate_subscription_url_cache(user_id)
+        return {
+            "key_id": key_id,
+            "key_email": key_email,
+            "months": months,
+            "cost_rub": cost_rub,
+            "expire_dt": new_dt,
+        }
+
+    add_balance(user_id, cost_rub)
+    complete_renewal_attempt(attempt_id, RENEWAL_STATUS_REFUNDED)
+    log_action(user_id, "auto_renew_fail", f"{attempt_id}:{key_id}")
+    try:
+        await bot.send_message(
+            user_id,
+            (
+                f"⚠️ Автопродление ключа <code>{key_email}</code>: списание отменено — "
+                "сервер не ответил. Баланс возвращён."
+            ),
+            parse_mode="HTML",
+        )
+    except Exception:
+        pass
+    return None
+
+
+async def _run_auto_renew_for_user(
+    bot: Bot,
+    user_id: int,
+    user_keys: list[dict],
+    days_left: int,
+) -> int:
+    """Auto-renew each key (P2-RED-BOT-MULTIKEY-01). Returns 0."""
+    if not user_keys:
+        return 0
+
+    renewed: list[dict] = []
+    insufficient_notified = False
+
+    for key in user_keys:
+        try:
+            outcome = await _renew_single_key(bot, user_id, key, days_left)
+        except Exception as e:
+            bot_logger.error(
+                f"Auto renew error user={user_id} key={key.get('key_id')}: {e}",
+                exc_info=True,
+            )
+            continue
+        if not outcome:
+            continue
+        if outcome.get("skipped") == "insufficient":
+            if not insufficient_notified:
+                insufficient_notified = True
+                bal = outcome["bal"]
+                cost_rub = outcome["cost_rub"]
+                months = outcome["months"]
+                try:
+                    from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+                    kb = InlineKeyboardMarkup(
+                        inline_keyboard=[
+                            [
+                                InlineKeyboardButton(
+                                    text="💰 Пополнить баланс",
+                                    callback_data="show_topup",
+                                )
+                            ]
+                        ]
+                    )
+                    await bot.send_message(
+                        user_id,
+                        (
+                            "⚠️ <b>Автопродление не выполнено</b>\n\n"
+                            f"На балансе: {bal:.0f} ₽\n"
+                            f"Нужно от {cost_rub:.0f} ₽ за ключ ({months} мес.)\n\n"
+                            "Пополните баланс — продление включится при следующей проверке."
+                        ),
+                        parse_mode="HTML",
+                        reply_markup=kb,
+                    )
+                    bot_logger.vpn_action(
+                        user_id,
+                        "AUTO_RENEW_SKIP",
+                        f"balance {bal:.0f} < {cost_rub:.0f}",
+                    )
+                except Exception:
+                    pass
+            continue
+        renewed.append(outcome)
+
+    if not renewed:
+        return 0
+
+    database.clear_expiry_hour_notified(user_id)
+    total_cost = sum(r["cost_rub"] for r in renewed)
+
+    if len(renewed) == 1:
+        r = renewed[0]
+        try:
+            await bot.send_message(
+                user_id,
+                (
+                    f"🔁 Подписка <code>{r['key_email']}</code> продлена на {r['months']} мес. "
+                    f"до {r['expire_dt'].strftime('%d.%m.%Y %H:%M')}\n\n"
+                    f"Списано с баланса: {r['cost_rub']:.0f} ₽"
+                ),
+                parse_mode="HTML",
+            )
+            bot_logger.vpn_action(user_id, "AUTO_RENEW", f"{r['months']} months key={r['key_id']}")
+        except Exception:
+            pass
+    else:
+        lines = [
+            f"🔁 <b>Автопродление: {len(renewed)} ключей</b>\n",
+            f"Списано с баланса: {total_cost:.0f} ₽\n",
+        ]
+        for r in renewed:
+            lines.append(
+                f"• <code>{r['key_email']}</code> — {r['months']} мес. "
+                f"до {r['expire_dt'].strftime('%d.%m.%Y')}"
+            )
+        try:
+            await bot.send_message(user_id, "\n".join(lines), parse_mode="HTML")
+            bot_logger.vpn_action(
+                user_id,
+                "AUTO_RENEW",
+                f"{len(renewed)} keys {total_cost:.0f} rub",
+            )
+        except Exception:
+            pass
+
+    return 0
+
+
 async def _poll_vpn_user(bot: Bot, session, user_entry: dict) -> tuple[int, bool]:
     """Poll one VPN user; returns (notifications_sent, had_error)."""
     notifications_sent = 0
@@ -137,131 +362,7 @@ async def _poll_vpn_user(bot: Bot, session, user_entry: dict) -> tuple[int, bool
                 break
 
         if auto_renew and BOT_PAYMENTS_LIVE and days_left <= 0 and user_keys:
-            key = user_keys[0]
-            from shop_bot.data_manager.database import (
-                add_balance,
-                get_balance,
-                log_action,
-                try_deduct_balance,
-                update_key_info,
-                update_user_stats,
-            )
-
-            try:
-                plan = key.get("subscription_plan") or "buy_1_month"
-                cost_rub, months, extend_days = plan_renew_cost(plan)
-                bal = get_balance(user_id)
-                if not balance_covers_renew(bal, cost_rub):
-                    log_action(
-                        user_id,
-                        "auto_renew_skip",
-                        f"insufficient:{bal:.2f}:{cost_rub:.2f}",
-                    )
-                    logger.info(
-                        "auto_renew skip user=%s days_left=%s balance=%.2f need=%.2f",
-                        user_id,
-                        days_left,
-                        bal,
-                        cost_rub,
-                    )
-                    try:
-                        from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
-                        kb = InlineKeyboardMarkup(
-                            inline_keyboard=[
-                                [
-                                    InlineKeyboardButton(
-                                        text="💰 Пополнить баланс",
-                                        callback_data="show_topup",
-                                    )
-                                ]
-                            ]
-                        )
-                        await bot.send_message(
-                            user_id,
-                            (
-                                "⚠️ <b>Автопродление не выполнено</b>\n\n"
-                                f"На балансе: {bal:.0f} ₽\n"
-                                f"Нужно: {cost_rub:.0f} ₽ ({months} мес.)\n\n"
-                                "Пополните баланс — продление включится при следующей проверке."
-                            ),
-                            parse_mode="HTML",
-                            reply_markup=kb,
-                        )
-                        bot_logger.vpn_action(
-                            user_id,
-                            "AUTO_RENEW_SKIP",
-                            f"balance {bal:.0f} < {cost_rub:.0f}",
-                        )
-                    except Exception:
-                        pass
-                elif try_deduct_balance(user_id, cost_rub):
-                    key_email = key["key_email"]
-                    logger.info(
-                        "auto_renew trigger user=%s days_left=%s plan=%s",
-                        user_id,
-                        days_left,
-                        plan,
-                    )
-                    uri, new_expire_iso, new_uuid = await remnawave_api.provision_key(
-                        key_email,
-                        days=extend_days,
-                        telegram_id=str(user_id),
-                    )
-                    if uri and new_expire_iso and new_uuid:
-                        new_dt = datetime.fromisoformat(
-                            new_expire_iso.replace("Z", "+00:00")
-                        )
-                        for user_key in user_keys:
-                            update_key_info(
-                                user_key["key_id"],
-                                new_uuid,
-                                int(new_dt.timestamp() * 1000),
-                            )
-                        update_user_stats(user_id, cost_rub, months)
-                        log_action(
-                            user_id,
-                            "auto_renew_success",
-                            f"{key['key_id']}:{months}:{cost_rub:.2f}",
-                        )
-                        database.clear_expiry_hour_notified(user_id)
-                        try:
-                            await bot.send_message(
-                                user_id,
-                                (
-                                    f"🔁 Подписка автоматически продлена на {months} мес. "
-                                    f"до {new_dt.strftime('%d.%m.%Y %H:%M')}\n\n"
-                                    f"Списано с баланса: {cost_rub:.0f} ₽"
-                                ),
-                            )
-                            bot_logger.vpn_action(
-                                user_id, "AUTO_RENEW", f"{months} months"
-                            )
-                        except Exception:
-                            pass
-                    else:
-                        add_balance(user_id, cost_rub)
-                        log_action(user_id, "auto_renew_fail", str(key["key_id"]))
-                        try:
-                            await bot.send_message(
-                                user_id,
-                                "⚠️ Автопродление: оплата списана, но сервер не ответил. "
-                                "Баланс возвращён — напишите в поддержку.",
-                            )
-                            bot_logger.vpn_action(
-                                user_id,
-                                "AUTO_RENEW_FAILED",
-                                "provision failed, refunded",
-                            )
-                        except Exception:
-                            pass
-                else:
-                    log_action(user_id, "auto_renew_skip", "deduct_race")
-            except Exception as e:
-                bot_logger.error(
-                    f"💥 Auto renew error for user {user_id}: {e}",
-                    exc_info=True,
-                )
+            await _run_auto_renew_for_user(bot, user_id, user_keys, days_left)
 
         if remote and user_keys:
             first_key_email = user_keys[0]["key_email"]
@@ -296,9 +397,91 @@ async def _poll_vpn_user(bot: Bot, session, user_entry: dict) -> tuple[int, bool
     return notifications_sent, False
 
 
+async def _backup_monitor_loop(bot: Bot) -> None:
+    """Scheduled DB backup — separate task (P2-OPS-SCHED-JITTER-02)."""
+    last_backup_decision_at = 0.0
+    while True:
+        await asyncio.sleep(BACKUP_CHECK_INTERVAL_SECONDS)
+        try:
+            import os
+
+            now_mono = _time.monotonic()
+            last_backup_decision_at = now_mono
+            now = datetime.now(timezone.utc)
+            last_backup_iso = database.get_last_backup_timestamp()
+            should_backup = not last_backup_iso
+
+            if last_backup_iso:
+                try:
+                    raw = last_backup_iso.replace("Z", "+00:00")
+                    last_backup_dt = datetime.fromisoformat(raw)
+                    if last_backup_dt.tzinfo is None:
+                        last_backup_dt = last_backup_dt.replace(tzinfo=timezone.utc)
+                    hours_since_backup = (now - last_backup_dt).total_seconds() / 3600
+                    if hours_since_backup < 1:
+                        time_str = f"{int(hours_since_backup * 60)} мин"
+                    elif hours_since_backup < 24:
+                        time_str = f"{hours_since_backup:.1f} ч"
+                    else:
+                        time_str = f"{hours_since_backup / 24:.1f} дн"
+                    should_backup = hours_since_backup >= BACKUP_INTERVAL_HOURS
+                    if should_backup:
+                        bot_logger.backup(
+                            "SCHEDULED", f"Time for backup (last: {time_str} ago)"
+                        )
+                except ValueError:
+                    bot_logger.backup(
+                        "PARSE_ERROR",
+                        f"Invalid timestamp (skip run): {last_backup_iso}",
+                        "ERROR",
+                    )
+                    should_backup = False
+            else:
+                bot_logger.backup("FIRST_BACKUP", "No previous backup found")
+
+            if should_backup:
+                from shop_bot.bot.handlers import create_backup_and_send
+
+                admin_id = os.getenv("ADMIN_TELEGRAM_ID")
+                if admin_id:
+                    success = await create_backup_and_send(bot, admin_id, is_auto=True)
+                    if success:
+                        bot_logger.backup(
+                            "AUTO_COMPLETE", "Backup saved on disk (silent)", "OK"
+                        )
+                    else:
+                        bot_logger.backup(
+                            "AUTO_FAILED", "Failed to create backup", "ERROR"
+                        )
+                else:
+                    bot_logger.backup(
+                        "NO_ADMIN", "ADMIN_TELEGRAM_ID not configured", "WARNING"
+                    )
+
+                backups_dir = Path(database.DB_FILE.parent) / "backups"
+                if backups_dir.exists():
+                    archives = sorted(backups_dir.glob("backup_*.tar.gz"))
+                    if len(archives) > 20:
+                        cleaned_count = 0
+                        for old in archives[:-20]:
+                            try:
+                                old.unlink()
+                                cleaned_count += 1
+                            except Exception as exc:
+                                logger.warning("backup prune failed %s: %s", old, exc)
+                        if cleaned_count > 0:
+                            bot_logger.backup(
+                                "CLEANUP",
+                                f"Pruned {cleaned_count} old backup_*.tar.gz archives",
+                                "OK",
+                            )
+        except Exception as e:
+            bot_logger.backup("SYSTEM_ERROR", str(e), "ERROR")
+
+
 async def start_subscription_monitor(bot: Bot):
     bot_logger.system("MONITOR", "Subscription monitor started", "OK")
-    last_backup_decision_at = 0.0
+    asyncio.create_task(_backup_monitor_loop(bot))
     while True:
         try:
             sub_ok, sub_fail = await run_sub_refresh_notify_batch(bot)
@@ -316,7 +499,9 @@ async def start_subscription_monitor(bot: Bot):
                     f"sub_ok={sub_ok} sub_fail={sub_fail} vpn_users=0 interval={CHECK_INTERVAL_SECONDS}s",
                     "OK",
                 )
-                await asyncio.sleep(CHECK_INTERVAL_SECONDS)
+                await asyncio.sleep(
+                    CHECK_INTERVAL_SECONDS + random.uniform(0, 30)
+                )
                 continue
             async with remna_client_session() as session:
                 users_processed = len(vpn_users)
@@ -365,85 +550,4 @@ async def start_subscription_monitor(bot: Bot):
         except Exception as e:
             bot_logger.error(f"Monitor loop critical error: {e}", exc_info=True)
 
-        # 💾 Автоматический бэкап (решение раз в час, не каждые 5 мин)
-        try:
-            import os
-            import time as _time
-
-            now_mono = _time.monotonic()
-            if now_mono - last_backup_decision_at >= BACKUP_CHECK_INTERVAL_SECONDS:
-                last_backup_decision_at = now_mono
-                now = datetime.now(timezone.utc)
-                last_backup_iso = database.get_last_backup_timestamp()
-                should_backup = not last_backup_iso
-
-                if last_backup_iso:
-                    try:
-                        raw = last_backup_iso.replace("Z", "+00:00")
-                        last_backup_dt = datetime.fromisoformat(raw)
-                        if last_backup_dt.tzinfo is None:
-                            last_backup_dt = last_backup_dt.replace(tzinfo=timezone.utc)
-                        hours_since_backup = (now - last_backup_dt).total_seconds() / 3600
-                        if hours_since_backup < 1:
-                            time_str = f"{int(hours_since_backup * 60)} мин"
-                        elif hours_since_backup < 24:
-                            time_str = f"{hours_since_backup:.1f} ч"
-                        else:
-                            time_str = f"{hours_since_backup / 24:.1f} дн"
-                        should_backup = hours_since_backup >= BACKUP_INTERVAL_HOURS
-                        if should_backup:
-                            bot_logger.backup(
-                                "SCHEDULED", f"Time for backup (last: {time_str} ago)"
-                            )
-                    except ValueError:
-                        bot_logger.backup(
-                            "PARSE_ERROR",
-                            f"Invalid timestamp (skip run): {last_backup_iso}",
-                            "ERROR",
-                        )
-                        should_backup = False
-                else:
-                    bot_logger.backup("FIRST_BACKUP", "No previous backup found")
-
-                if should_backup:
-                    from shop_bot.bot.handlers import create_backup_and_send
-
-                    admin_id = os.getenv("ADMIN_TELEGRAM_ID")
-                    if admin_id:
-                        success = await create_backup_and_send(
-                            bot, admin_id, is_auto=True
-                        )
-                        if success:
-                            bot_logger.backup(
-                                "AUTO_COMPLETE", "Backup saved on disk (silent)", "OK"
-                            )
-                        else:
-                            bot_logger.backup(
-                                "AUTO_FAILED", "Failed to create backup", "ERROR"
-                            )
-                    else:
-                        bot_logger.backup(
-                            "NO_ADMIN", "ADMIN_TELEGRAM_ID not configured", "WARNING"
-                        )
-
-                    backups_dir = Path(database.DB_FILE.parent) / "backups"
-                    if backups_dir.exists():
-                        archives = sorted(backups_dir.glob("backup_*.tar.gz"))
-                        if len(archives) > 20:
-                            cleaned_count = 0
-                            for old in archives[:-20]:
-                                try:
-                                    old.unlink()
-                                    cleaned_count += 1
-                                except Exception as exc:
-                                    logger.warning("backup prune failed %s: %s", old, exc)
-                            if cleaned_count > 0:
-                                bot_logger.backup(
-                                    "CLEANUP",
-                                    f"Pruned {cleaned_count} old backup_*.tar.gz archives",
-                                    "OK",
-                                )
-        except Exception as e:
-            bot_logger.backup("SYSTEM_ERROR", str(e), "ERROR")
-        
-        await asyncio.sleep(CHECK_INTERVAL_SECONDS)
+        await asyncio.sleep(CHECK_INTERVAL_SECONDS + random.uniform(0, 30))

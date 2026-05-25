@@ -93,6 +93,17 @@ def initialize_db():
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
+                CREATE TABLE IF NOT EXISTS renewal_attempts (
+                    attempt_id TEXT PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    key_id INTEGER NOT NULL,
+                    status TEXT NOT NULL,
+                    cost_rub REAL NOT NULL,
+                    plan TEXT,
+                    balance_deducted INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    completed_at TIMESTAMP
+                );
             ''')
             default_settings = {
                 "about_text": ABOUT_TEXT,
@@ -105,44 +116,9 @@ def initialize_db():
             if not cursor.execute("SELECT COUNT(*) FROM bot_settings").fetchone()[0]:
                 for key, value in default_settings.items():
                     cursor.execute("INSERT OR REPLACE INTO bot_settings (key, value) VALUES (?, ?)", (key, value))
-            try:
-                cursor.execute("ALTER TABLE users ADD COLUMN balance REAL DEFAULT 0")
-            except sqlite3.OperationalError:
-                pass
-            try:
-                cursor.execute(
-                    "ALTER TABLE users ADD COLUMN sub_refresh_notified_generation INTEGER DEFAULT 0"
-                )
-            except sqlite3.OperationalError:
-                pass
-            for col, typedef in (
-                ("support_topic_id", "INTEGER"),
-                ("support_last_user_at", "INTEGER"),
-                ("support_last_staff_at", "INTEGER"),
-            ):
-                try:
-                    cursor.execute(f"ALTER TABLE users ADD COLUMN {col} {typedef}")
-                except sqlite3.OperationalError:
-                    pass
-            for col, typedef in (
-                ("claimed_at", "TEXT"),
-                ("bind_token", "TEXT"),
-                ("telegram_id", "INTEGER"),
-                ("bound_at", "TEXT"),
-            ):
-                try:
-                    cursor.execute(
-                        f"ALTER TABLE web_trial_claims ADD COLUMN {col} {typedef}"
-                    )
-                except sqlite3.OperationalError:
-                    pass
-            try:
-                cursor.execute(
-                    "CREATE UNIQUE INDEX IF NOT EXISTS idx_web_trial_bind_token "
-                    "ON web_trial_claims(bind_token) WHERE bind_token IS NOT NULL"
-                )
-            except sqlite3.OperationalError:
-                pass
+            from shop_bot.schema_migrations import run_schema_migrations
+
+            run_schema_migrations(conn)
             conn.commit()
             logging.info("Database with 'created_date' column initialized successfully.")
     except sqlite3.Error as e:
@@ -627,6 +603,70 @@ def log_action(user_id: int, action: str, meta: str | None = None):
     except sqlite3.Error as e:
         logging.error(f"Failed to log action {action} for {user_id}: {e}")
 
+
+# -------------------- Support rate limits (persisted, P3-RED-SUPPORT-RATELIMIT-PERSIST-01) --------------------
+def cleanup_support_rate_limits(older_than_sec: int = 7200) -> None:
+    """Drop stale rate-limit rows (TTL cleanup)."""
+    try:
+        import time
+
+        cutoff = time.time() - older_than_sec
+        with sqlite3.connect(DB_FILE) as conn:
+            conn.execute(
+                "DELETE FROM support_rate_limits WHERE window_start < ?",
+                (cutoff,),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error("cleanup_support_rate_limits: %s", e)
+
+
+def support_rate_limit_check(
+    user_id: int,
+    *,
+    window_sec: int,
+    max_hits: int,
+) -> bool:
+    """Return True if user exceeded limit (should block)."""
+    import time
+
+    now = time.time()
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            row = conn.execute(
+                "SELECT window_start, hit_count FROM support_rate_limits WHERE user_id = ?",
+                (user_id,),
+            ).fetchone()
+            if not row:
+                conn.execute(
+                    "INSERT INTO support_rate_limits (user_id, window_start, hit_count) "
+                    "VALUES (?, ?, 1)",
+                    (user_id, now),
+                )
+                conn.commit()
+                return False
+            window_start, hit_count = float(row[0]), int(row[1])
+            if now - window_start >= window_sec:
+                conn.execute(
+                    "UPDATE support_rate_limits SET window_start = ?, hit_count = 1 "
+                    "WHERE user_id = ?",
+                    (now, user_id),
+                )
+                conn.commit()
+                return False
+            if hit_count >= max_hits:
+                return True
+            conn.execute(
+                "UPDATE support_rate_limits SET hit_count = hit_count + 1 "
+                "WHERE user_id = ?",
+                (user_id,),
+            )
+            conn.commit()
+            return False
+    except sqlite3.Error as e:
+        logging.error("support_rate_limit_check user=%s: %s", user_id, e)
+        return False
+
 def add_traffic_extra(key_id: int, gb: int):
     try:
         with sqlite3.connect(DB_FILE) as conn:
@@ -891,3 +931,126 @@ def try_deduct_balance(telegram_id: int, amount: float) -> bool:
     except sqlite3.Error as e:
         logging.error(f"Failed to deduct balance {amount} for {telegram_id}: {e}")
         return False
+
+
+RENEWAL_STATUS_PENDING = "pending"
+RENEWAL_STATUS_SUCCESS = "success"
+RENEWAL_STATUS_REFUNDED = "refunded"
+RENEWAL_STATUS_FAILED = "failed"
+
+
+def has_pending_renewal_attempt(user_id: int, key_id: int) -> bool:
+    """True if an incomplete renewal attempt exists for this user/key."""
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            row = conn.execute(
+                "SELECT 1 FROM renewal_attempts "
+                "WHERE user_id = ? AND key_id = ? AND status = ? LIMIT 1",
+                (user_id, key_id, RENEWAL_STATUS_PENDING),
+            ).fetchone()
+            return row is not None
+    except sqlite3.Error as e:
+        logging.error(
+            "has_pending_renewal_attempt user=%s key=%s: %s", user_id, key_id, e
+        )
+        return True
+
+
+def create_renewal_attempt(
+    attempt_id: str,
+    user_id: int,
+    key_id: int,
+    cost_rub: float,
+    plan: str,
+) -> bool:
+    """Insert pending attempt before balance deduct (P2-RED-BOT-RENEW-IDEM-01)."""
+    if has_pending_renewal_attempt(user_id, key_id):
+        return False
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            conn.execute(
+                "INSERT INTO renewal_attempts "
+                "(attempt_id, user_id, key_id, status, cost_rub, plan, balance_deducted) "
+                "VALUES (?, ?, ?, ?, ?, ?, 0)",
+                (attempt_id, user_id, key_id, RENEWAL_STATUS_PENDING, cost_rub, plan),
+            )
+            conn.commit()
+            return True
+    except sqlite3.Error as e:
+        logging.error("create_renewal_attempt %s: %s", attempt_id, e)
+        return False
+
+
+def mark_renewal_balance_deducted(attempt_id: str) -> None:
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            conn.execute(
+                "UPDATE renewal_attempts SET balance_deducted = 1 WHERE attempt_id = ?",
+                (attempt_id,),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error("mark_renewal_balance_deducted %s: %s", attempt_id, e)
+
+
+def complete_renewal_attempt(attempt_id: str, status: str) -> None:
+    """Terminal status: success, refunded, or failed."""
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            conn.execute(
+                "UPDATE renewal_attempts SET status = ?, completed_at = CURRENT_TIMESTAMP "
+                "WHERE attempt_id = ?",
+                (status, attempt_id),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error("complete_renewal_attempt %s -> %s: %s", attempt_id, status, e)
+
+
+def list_stale_pending_renewals(older_than_minutes: int = 5) -> list[dict]:
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT attempt_id, user_id, key_id, cost_rub, plan, balance_deducted "
+                "FROM renewal_attempts "
+                "WHERE status = ? AND created_at <= datetime('now', ?)",
+                (RENEWAL_STATUS_PENDING, f"-{int(older_than_minutes)} minutes"),
+            ).fetchall()
+            return [dict(r) for r in rows]
+    except sqlite3.Error as e:
+        logging.error("list_stale_pending_renewals: %s", e)
+        return []
+
+
+def recover_stale_renewals(older_than_minutes: int = 5) -> int:
+    """On startup: refund deducted stale pending; close others as failed."""
+    recovered = 0
+    for row in list_stale_pending_renewals(older_than_minutes):
+        attempt_id = row["attempt_id"]
+        user_id = int(row["user_id"])
+        cost_rub = float(row["cost_rub"])
+        if row["balance_deducted"]:
+            add_balance(user_id, cost_rub)
+            complete_renewal_attempt(attempt_id, RENEWAL_STATUS_REFUNDED)
+            log_action(
+                user_id,
+                "auto_renew_recovery",
+                f"refunded:{attempt_id}:{cost_rub:.2f}",
+            )
+            logging.warning(
+                "renewal recovery: refunded user=%s attempt=%s %.2f rub",
+                user_id,
+                attempt_id,
+                cost_rub,
+            )
+        else:
+            complete_renewal_attempt(attempt_id, RENEWAL_STATUS_FAILED)
+            log_action(user_id, "auto_renew_recovery", f"failed:{attempt_id}")
+            logging.warning(
+                "renewal recovery: closed pending attempt=%s user=%s (no deduct)",
+                attempt_id,
+                user_id,
+            )
+        recovered += 1
+    return recovered

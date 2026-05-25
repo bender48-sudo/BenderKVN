@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import logging
 
-from shop_bot.bot import portal_links
-from shop_bot.subscription_resolve import resolve_subscription_url, subscription_unavailable
+from shop_bot.setup_url_service import get_setup_url_for_user
+from shop_bot.subscription_resolve import subscription_unavailable
 from shop_bot.web_trial_db import is_web_surrogate_id
 
 logger = logging.getLogger(__name__)
@@ -24,22 +24,23 @@ async def telegram_setup_for_user(telegram_id: int) -> dict:
         }
 
     try:
-        sub_url = await resolve_subscription_url(tid)
+        setup_page_url, reason = await get_setup_url_for_user(tid)
     except Exception as exc:
         logger.exception("telegram_setup failed tid=%s", tid)
         return {"ok": False, "error": "upstream_failed", "detail": str(exc)[:120]}
 
-    if not sub_url:
-        return {"ok": False, **subscription_unavailable(tid)}
-
-    setup_page_url = portal_links.setup_url_for_sub(sub_url)
     if not setup_page_url:
+        if reason == "no_subscription":
+            return {"ok": False, **subscription_unavailable(tid)}
         return {
             "ok": False,
-            "error": "token_failed",
-            "message": "Не удалось подготовить страницу настройки. Напишите в поддержку.",
+            "error": reason or "token_failed",
+            "message": "Не удалось подготовить страницу настройки. Напиши в поддержку.",
         }
 
+    from shop_bot.subscription_cache import get_subscription_url_cached
+
+    sub_url = await get_subscription_url_cached(tid)
     return {
         "ok": True,
         "setup_page_url": setup_page_url,

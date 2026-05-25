@@ -37,9 +37,9 @@
 | **6** | 086–097 | **Закрыта** | GTM security + discovery + polish |
 | **7** | 098–121 | **Закрыта** | TSPU раунд 2, SNI live, selfsteal, MUX docs |
 | **8** | 122–141 | **Закрыта** | Bot reliability → VPN speed → observability |
-| **9** | 142–160 | **В работе** | CodeRabbit bot: renew idempotency, DB, cache, UX |
+| **9** | 142–160 | **Закрыта** | CodeRabbit bot: renew idempotency, DB, cache, UX |
 
-**Сейчас:** **NEXT=Q142** (фаза 9). Аудит: **`AUDIT-2026-05-BOT-CODERABBIT.md`**. Владелец: **Q120**, **Q032**.
+**Сейчас:** очередь агента **пуста** (Q001–160 кроме owner). Владелец: **Q120**, **Q032**. Аудит: **`AUDIT-2026-05-BOT-CODERABBIT.md`**.
 
 ---
 

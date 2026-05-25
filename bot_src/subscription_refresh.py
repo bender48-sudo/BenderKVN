@@ -4,9 +4,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
+import time
 
 from aiogram import Bot
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramRetryAfter
 
 from shop_bot.bot import user_messages
 from shop_bot.config import SUB_REFRESH_JITTER_MAX_SEC
@@ -14,8 +16,25 @@ from shop_bot.data_manager import database
 
 logger = logging.getLogger(__name__)
 
-# Telegram ~30 msg/s; stay conservative inside the 5-minute monitor cycle.
-SUB_REFRESH_BATCH = 15
+SUB_REFRESH_BATCH = 50
+SUB_REFRESH_SEND_INTERVAL_SEC = 0.035
+
+
+async def _send_with_rate_limit(bot: Bot, user_id: int, text: str) -> None:
+    """Send one notify; honor Telegram 429 with backoff."""
+    while True:
+        try:
+            await bot.send_message(
+                chat_id=user_id,
+                text=text,
+                parse_mode=ParseMode.HTML,
+                disable_web_page_preview=True,
+            )
+            return
+        except TelegramRetryAfter as e:
+            wait = float(getattr(e, "retry_after", 1)) + 0.5
+            logger.warning("sub refresh 429 user=%s sleep %.1fs", user_id, wait)
+            await asyncio.sleep(wait)
 
 
 async def run_sub_refresh_notify_batch(bot: Bot) -> tuple[int, int]:
@@ -36,28 +55,27 @@ async def run_sub_refresh_notify_batch(bot: Bot) -> tuple[int, int]:
         logger.info("sub refresh notify jitter %.1fs before batch gen=%s", delay, current_gen)
         await asyncio.sleep(delay)
 
-    text = user_messages.MSG_SUB_CONFIG_REFRESH
+    profile = (database.get_setting("vpn_profile_name") or "").strip()
+    text = user_messages.msg_sub_config_refresh(profile or "🚀 BenderVPN Auto")
     ok = fail = 0
+    batch_t0 = time.monotonic()
     for user_id in pending:
         try:
-            await bot.send_message(
-                chat_id=user_id,
-                text=text,
-                parse_mode=ParseMode.HTML,
-                disable_web_page_preview=True,
-            )
+            await _send_with_rate_limit(bot, user_id, text)
             database.update_sub_refresh_notified_generation(user_id, current_gen)
             ok += 1
         except Exception as e:
             logger.warning("sub refresh notify failed for %s: %s", user_id, e)
             fail += 1
+        await asyncio.sleep(SUB_REFRESH_SEND_INTERVAL_SEC)
 
     if ok or fail:
+        elapsed = time.monotonic() - batch_t0
         logger.info(
-            "sub refresh notify batch gen=%s ok=%s fail=%s pending_left=%s",
+            "sub refresh notify batch gen=%s ok=%s fail=%s elapsed=%.1fs",
             current_gen,
             ok,
             fail,
-            max(0, len(pending) - ok),
+            elapsed,
         )
     return ok, fail

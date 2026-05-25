@@ -112,6 +112,27 @@ ABOUT_TEXT = "Настройки не установлены. Установит
 TERMS_URL = "Ссылка на условия использования не установлена. Установите её в админ-панели."
 PRIVACY_URL = "Ссылка на политику конфиденциальности не установлена. Установите её в админ-панели."
 SUPPORT_USER = "Ссылка на поддержку не установлена. Установите её в админ-панели."
+
+# P3-UX-LEGAL-FALLBACK-01: env overrides when bot_settings empty or placeholder
+DEFAULT_TERMS_URL = os.getenv("DEFAULT_TERMS_URL", "").strip()
+DEFAULT_PRIVACY_URL = os.getenv("DEFAULT_PRIVACY_URL", "").strip()
+DEFAULT_SUPPORT_USERNAME = os.getenv("DEFAULT_SUPPORT_USERNAME", "@BenderVPN_support").strip()
+
+
+def _is_http_url(value: str | None) -> bool:
+    u = (value or "").strip()
+    return u.startswith("http://") or u.startswith("https://")
+
+
+def effective_legal_url(db_value: str | None, default_env: str, placeholder: str) -> str | None:
+    raw = (db_value or "").strip()
+    if _is_http_url(raw):
+        return raw
+    if _is_http_url(default_env):
+        return default_env
+    if raw and raw != placeholder:
+        return raw if _is_http_url(raw) else None
+    return None
 CHANNEL_URL = "Ссылка на канал не установлена. Установите её в админ-панели."
 SUPPORT_TEXT = "Текст поддержки не установлен. Установите его в админ-панели."
 

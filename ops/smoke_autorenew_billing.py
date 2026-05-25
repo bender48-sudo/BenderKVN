@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 import sys
+import types
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -19,20 +20,37 @@ def main() -> int:
         "auto_renew_skip",
         "balance_covers_renew",
         "plan_renew_cost",
+        "create_renewal_attempt",
+        "complete_renewal_attempt",
+        "mark_renewal_balance_deducted",
+        "_renew_single_key",
+        "for key in user_keys",
     ):
         if needle not in scheduler:
             print(f"AUTO_RENEW_BILLING_FAIL: scheduler missing {needle!r}", file=sys.stderr)
             return 1
 
+    if "renewal_attempts" not in db_py or "def recover_stale_renewals" not in db_py:
+        print("AUTO_RENEW_BILLING_FAIL: renewal_attempts ledger missing", file=sys.stderr)
+        return 1
+
     if "def try_deduct_balance" not in db_py:
         print("AUTO_RENEW_BILLING_FAIL: database.try_deduct_balance missing", file=sys.stderr)
         return 1
 
-    idx_deduct = scheduler.find("try_deduct_balance")
+    main_py = (BOT / "main.py").read_text(encoding="utf-8")
+    if "recover_stale_renewals" not in main_py:
+        print("AUTO_RENEW_BILLING_FAIL: startup recovery missing", file=sys.stderr)
+        return 1
+
+    idx_create = scheduler.find("create_renewal_attempt")
+    idx_deduct = scheduler.find("try_deduct_balance", idx_create)
     idx_prov = scheduler.find("provision_key", idx_deduct)
-    if idx_deduct < 0 or idx_prov < 0 or idx_deduct > idx_prov:
+    if idx_create < 0 or idx_deduct < 0 or idx_prov < 0 or not (
+        idx_create < idx_deduct < idx_prov
+    ):
         print(
-            "AUTO_RENEW_BILLING_FAIL: try_deduct_balance must appear before provision_key",
+            "AUTO_RENEW_BILLING_FAIL: create_renewal_attempt -> deduct -> provision order",
             file=sys.stderr,
         )
         return 1
@@ -43,6 +61,17 @@ def main() -> int:
 
     import importlib.util
 
+    # Mock public_urls before config import (portal URL helpers)
+    pub = types.ModuleType("shop_bot.public_urls")
+    pub.telegram_webapp_url = lambda: "https://example.test/portal/"
+    pub.portal_origin = lambda: "https://example.test"
+    pub.normalize_subscription_url = lambda u: u
+    pub.public_bootstrap_url = lambda: ""
+    pub.public_guide_url = lambda: ""
+    pub.public_errors_url = lambda: ""
+    pub.public_status_url = lambda: ""
+    pub.setup_origin = lambda: "https://example.test"
+
     spec = importlib.util.spec_from_file_location(
         "auto_renew_billing", BOT / "auto_renew_billing.py"
     )
@@ -51,11 +80,12 @@ def main() -> int:
     cfg_spec = importlib.util.spec_from_file_location("config", BOT / "config.py")
     cfg = importlib.util.module_from_spec(cfg_spec)
     assert cfg_spec and cfg_spec.loader
-    cfg_spec.loader.exec_module(cfg)
     import sys as _sys
 
-    _sys.modules["shop_bot"] = type(_sys)("shop_bot")
+    _sys.modules["shop_bot"] = types.ModuleType("shop_bot")
+    _sys.modules["shop_bot.public_urls"] = pub
     _sys.modules["shop_bot.config"] = cfg
+    cfg_spec.loader.exec_module(cfg)
     spec.loader.exec_module(arb)
 
     cost, months, days = arb.plan_renew_cost("buy_1_month")

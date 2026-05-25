@@ -57,6 +57,8 @@ from shop_bot.config import (
     get_key_info_text, CHOOSE_PAYMENT_METHOD_MESSAGE, get_purchase_success_text, ABOUT_TEXT, TERMS_URL, PRIVACY_URL, SUPPORT_USER, SUPPORT_TEXT,
     REMNA_TRIAL_DAYS, DAILY_RATE, TOPUP_PRESETS, CUSTOM_AMOUNT_UNAVAILABLE, KEY_EMAIL_DOMAIN,
     balance_to_days,
+    DEFAULT_TERMS_URL, DEFAULT_PRIVACY_URL, DEFAULT_SUPPORT_USERNAME,
+    effective_legal_url,
 )
 from shop_bot.config import TRAFFIC_PACKS
 from shop_bot.modules.remnawave_api import add_extra_traffic
@@ -140,6 +142,9 @@ async def sync_panel_access_from_balance(user_id: int, balance: float) -> bool:
         update_key_info(keys[0]["key_id"], vless_uuid, expiry_ms)
     else:
         add_new_key(user_id, vless_uuid, email, expiry_ms)
+    from shop_bot.subscription_cache import invalidate_subscription_url_cache
+
+    invalidate_subscription_url_cache(user_id)
     return True
 
 async def notify_backup_failure(
@@ -286,26 +291,19 @@ class VpnSetupWizard(StatesGroup):
 
 
 async def _fetch_subscription_url(user_id: int) -> str | None:
-    from shop_bot.subscription_resolve import resolve_subscription_url
+    from shop_bot.subscription_cache import get_subscription_url_cached
 
     try:
-        return await resolve_subscription_url(user_id)
+        return await get_subscription_url_cached(user_id)
     except Exception as exc:
         logger.warning("fetch_subscription_url: %s", exc)
     return None
 
 
-async def _wizard_setup_url(user_id: int) -> str | None:
-    from shop_bot.bot import portal_links
+async def _wizard_setup_url(user_id: int) -> tuple[str | None, str | None]:
+    from shop_bot.setup_url_service import get_setup_url_for_user
 
-    sub_url = await _fetch_subscription_url(user_id)
-    if not sub_url:
-        return None
-    try:
-        return portal_links.setup_url_for_sub(sub_url)
-    except Exception as exc:
-        logger.warning("wizard setup_url: %s", exc)
-        return None
+    return await get_setup_url_for_user(user_id)
 
 async def _apply_web_bind(message: types.Message, bind_token: str) -> bool:
     """Bind web trial to this Telegram chat. Returns True if bind attempted."""
@@ -381,10 +379,27 @@ async def start_handler(message: types.Message, state: FSMContext):
         )
         await show_main_menu(message)
     else:
-        terms_url = get_setting("terms_url")
-        privacy_url = get_setting("privacy_url")
+        terms_url = effective_legal_url(
+            get_setting("terms_url"), DEFAULT_TERMS_URL, TERMS_URL
+        )
+        privacy_url = effective_legal_url(
+            get_setting("privacy_url"), DEFAULT_PRIVACY_URL, PRIVACY_URL
+        )
         if not terms_url or not privacy_url:
-            await message.answer("❗️ Условия использования и политика конфиденциальности не установлены. Пожалуйста, обратитесь к администратору.")
+            logger.warning(
+                "Legal URLs missing for user %s (terms=%s privacy=%s)",
+                user_id,
+                bool(terms_url),
+                bool(privacy_url),
+            )
+            support = (get_setting("support_user") or DEFAULT_SUPPORT_USERNAME).strip()
+            await message.answer(
+                "<b>Привет! 👋</b>\n\n"
+                "BenderVPN — свободный интернет без блокировок.\n\n"
+                "Сейчас ссылки на условия временно недоступны. "
+                f"Напиши в поддержку {html.bold(support)} — пришлём документы и поможем начать.",
+                parse_mode="HTML",
+            )
             return
         agreement_text = (
             "<b>Привет! 👋</b>\n\n"
@@ -448,11 +463,18 @@ async def _ensure_terms_or_prompt(message: types.Message, state: FSMContext) -> 
     user_data = get_user(user_id)
     if user_data and user_data.get("agreed_to_terms"):
         return True
-    terms_url = get_setting("terms_url")
-    privacy_url = get_setting("privacy_url")
+    terms_url = effective_legal_url(
+        get_setting("terms_url"), DEFAULT_TERMS_URL, TERMS_URL
+    )
+    privacy_url = effective_legal_url(
+        get_setting("privacy_url"), DEFAULT_PRIVACY_URL, PRIVACY_URL
+    )
     if not terms_url or not privacy_url:
+        support = (get_setting("support_user") or DEFAULT_SUPPORT_USERNAME).strip()
         await message.answer(
-            "❗️ Условия и политика конфиденциальности не настроены. Напишите в поддержку."
+            "❗️ Условия и политика временно недоступны. "
+            f"Напиши в поддержку {html.bold(support)}.",
+            parse_mode="HTML",
         )
         return False
     agreement_text = (
@@ -513,10 +535,14 @@ async def connect_vpn_wizard_device(callback: types.CallbackQuery, state: FSMCon
     user_id = callback.from_user.id
     user_db = get_user(user_id)
     trial_available = not (user_db and user_db.get("trial_used"))
-    setup_url = await _wizard_setup_url(user_id)
+    setup_url, setup_reason = await _wizard_setup_url(user_id)
+    lead = format_device_lead(device_id)
+    if not setup_url:
+        lead += "\n\n" + user_messages.MSG_WIZARD_SETUP_UNAVAILABLE
+        log_action(user_id, "wizard_setup_unavailable", setup_reason or "unknown")
     log_action(user_id, "wizard_device", device_id)
     await callback.message.edit_text(
-        format_device_lead(device_id),
+        lead,
         reply_markup=keyboards.create_wizard_device_keyboard(
             device_id,
             trial_available=trial_available,
@@ -814,7 +840,10 @@ async def trial_period_handler(callback: types.CallbackQuery):
         expiry_dt = datetime.fromisoformat(expire_iso.replace('Z', '+00:00'))
         expiry_ms = int(expiry_dt.timestamp() * 1000)
         new_key_id = add_new_key(user_id, vless_uuid, email, expiry_ms)
-        
+        from shop_bot.subscription_cache import invalidate_subscription_url_cache
+
+        invalidate_subscription_url_cache(user_id)
+
         # Показываем созданный ключ пользователю
         expiry_str = expiry_dt.strftime("%d.%m.%Y")
         message_text = (
@@ -906,6 +935,14 @@ async def menu_help_handler(callback: types.CallbackQuery):
 @user_router.callback_query(F.data == "contact_support")
 async def contact_support_handler(callback: types.CallbackQuery):
     await callback.answer()
+    from shop_bot.bot import support_handler
+
+    if support_handler._support_disabled_for_user():
+        await callback.message.answer(
+            support_handler.MSG_SUPPORT_DISABLED,
+            parse_mode="HTML",
+        )
+        return
     await callback.message.answer(
         "💬 Напиши свой вопрос — ответим быстро.\n\n"
         "Если VPN не работает — укажи устройство (iPhone/Android/ПК) и что происходит.",
@@ -1794,6 +1831,9 @@ async def process_successful_payment(bot: Bot, metadata: dict):
                 from shop_bot.data_manager.database import set_key_plan
                 set_key_plan(key_id, plan_id_meta)
         update_user_stats(user_id, price, months)
+        from shop_bot.subscription_cache import invalidate_subscription_url_cache
+
+        invalidate_subscription_url_cache(user_id)
         if promo_code:
             log_action(user_id, 'purchase_with_promo', f"{promo_code}:{price}:{months}")
         else:

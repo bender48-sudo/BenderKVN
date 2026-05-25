@@ -413,20 +413,47 @@ def create_agreement_keyboard():
     return builder.as_markup()
 
 
-# Legacy stubs
-def create_keys_management_keyboard(keys): return create_back_to_menu_keyboard()
-def create_key_info_keyboard(key_id): return create_back_to_menu_keyboard()
-def create_back_to_key_keyboard(key_id): return create_back_to_menu_keyboard()
-def create_traffic_keyboard(): return create_back_to_menu_keyboard()
+# Legacy stubs (P2-CHORE-KEYBOARD-STUBS-01): only «Назад» — callers keep stable imports.
+# Callbacks on parent screens remain valid; no orphan inline buttons.
+def create_keys_management_keyboard(keys):
+    return create_back_to_menu_keyboard()
+
+
+def create_key_info_keyboard(key_id):
+    return create_back_to_menu_keyboard()
+
+
+def create_back_to_key_keyboard(key_id):
+    return create_back_to_menu_keyboard()
+
+
+def create_traffic_keyboard():
+    return create_back_to_menu_keyboard()
 def create_support_keyboard(support_user=None):
     builder = InlineKeyboardBuilder()
     builder.button(text="💬 Написать в поддержку", callback_data="contact_support")
     builder.button(text="🏠 Главное меню", callback_data="back_to_main_menu")
     builder.adjust(1)
     return builder.as_markup()
-def create_about_keyboard(t, p): return create_back_to_menu_keyboard()
-def create_about_keyboard_terms(t): return create_back_to_menu_keyboard()
-def create_about_keyboard_privacy(p): return create_back_to_menu_keyboard()
-def create_traffic_packs_keyboard(p, k): return create_back_to_menu_keyboard()
-def create_promo_enter_keyboard(): return create_back_to_menu_keyboard()
-def create_autorenew_toggle_keyboard(e): return create_back_to_menu_keyboard()
+def create_about_keyboard(t, p):
+    return create_back_to_menu_keyboard()
+
+
+def create_about_keyboard_terms(t):
+    return create_back_to_menu_keyboard()
+
+
+def create_about_keyboard_privacy(p):
+    return create_back_to_menu_keyboard()
+
+
+def create_traffic_packs_keyboard(p, k):
+    return create_back_to_menu_keyboard()
+
+
+def create_promo_enter_keyboard():
+    return create_back_to_menu_keyboard()
+
+
+def create_autorenew_toggle_keyboard(e):
+    return create_back_to_menu_keyboard()

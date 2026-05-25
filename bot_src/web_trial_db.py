@@ -3,9 +3,12 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import queue
 import re
 import secrets
 import sqlite3
+import threading
+from contextlib import contextmanager
 from datetime import datetime, timezone
 
 from shop_bot.data_manager.database import DB_FILE
@@ -15,9 +18,37 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 _SCHEMA_READY = False
 _BIND_COLS_READY = False
 
+_POOL_SIZE = max(3, min(5, int(__import__("os").getenv("WEB_TRIAL_DB_POOL_SIZE", "4"))))
+_pool: queue.Queue[sqlite3.Connection] | None = None
+_pool_lock = threading.Lock()
 
-def _conn() -> sqlite3.Connection:
-    return sqlite3.connect(DB_FILE)
+
+def _new_connection() -> sqlite3.Connection:
+    conn = sqlite3.connect(DB_FILE, check_same_thread=False)
+    conn.execute("PRAGMA busy_timeout=5000")
+    return conn
+
+
+def _init_pool() -> None:
+    global _pool
+    with _pool_lock:
+        if _pool is not None:
+            return
+        _pool = queue.Queue(maxsize=_POOL_SIZE)
+        for _ in range(_POOL_SIZE):
+            _pool.put(_new_connection())
+
+
+@contextmanager
+def _conn():
+    """Thread-safe checkout from sqlite connection pool (P2-OPS-WEBTRIAL-POOL-01)."""
+    _init_pool()
+    assert _pool is not None
+    conn = _pool.get()
+    try:
+        yield conn
+    finally:
+        _pool.put(conn)
 
 
 def ensure_web_trial_schema() -> None:
@@ -37,7 +68,8 @@ def ensure_web_trial_schema() -> None:
                 )
                 """
             )
-        _ensure_bind_columns(conn)
+            _ensure_bind_columns(conn)
+            conn.commit()
         _SCHEMA_READY = True
     except Exception as exc:
         logger.error("ensure_web_trial_schema failed: %s", exc)
@@ -48,22 +80,9 @@ def _ensure_bind_columns(conn: sqlite3.Connection) -> None:
     global _BIND_COLS_READY
     if _BIND_COLS_READY:
         return
-    for ddl in (
-        "ALTER TABLE web_trial_claims ADD COLUMN bind_token TEXT",
-        "ALTER TABLE web_trial_claims ADD COLUMN telegram_id INTEGER",
-        "ALTER TABLE web_trial_claims ADD COLUMN bound_at TEXT",
-    ):
-        try:
-            conn.execute(ddl)
-        except sqlite3.OperationalError:
-            pass
-    try:
-        conn.execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS idx_web_trial_bind_token "
-            "ON web_trial_claims(bind_token) WHERE bind_token IS NOT NULL"
-        )
-    except sqlite3.OperationalError:
-        pass
+    from shop_bot.schema_migrations import run_schema_migrations
+
+    run_schema_migrations(conn)
     _BIND_COLS_READY = True
 
 
@@ -86,9 +105,13 @@ def web_user_id_from_email(contact_email: str) -> int:
     return -int(n or 1)
 
 
+def customer_seq_from_web_user_id(web_user_id: int) -> int:
+    return abs(int(web_user_id)) % 100_000_000
+
+
 def format_customer_id(web_user_id: int) -> str:
     """Public ID for support / self-service (no email in UI)."""
-    return f"BVPN-{abs(int(web_user_id)) % 100_000_000:08d}"
+    return f"BVPN-{customer_seq_from_web_user_id(web_user_id):08d}"
 
 
 def _claim_row_to_dict(row) -> dict:
@@ -101,11 +124,12 @@ def _claim_row_to_dict(row) -> dict:
         "bind_token": row[5] if len(row) > 5 else "",
         "telegram_id": int(row[6]) if len(row) > 6 and row[6] is not None else None,
         "bound_at": row[7] if len(row) > 7 else "",
+        "customer_seq": int(row[8]) if len(row) > 8 and row[8] is not None else None,
     }
 
 
 _CLAIM_SELECT = """SELECT contact_email, web_user_id, panel_email, contact_phone, claimed_at,
-                          bind_token, telegram_id, bound_at
+                          bind_token, telegram_id, bound_at, customer_seq
                    FROM web_trial_claims"""
 
 
@@ -143,14 +167,20 @@ def get_claim_by_customer_id(customer_id: str) -> dict | None:
     cid = (customer_id or "").strip().upper()
     if not cid.startswith("BVPN-"):
         return None
+    try:
+        seq = int(cid.split("-", 1)[1])
+    except (IndexError, ValueError):
+        return None
     ensure_web_trial_schema()
     try:
         with _conn() as conn:
-            rows = conn.execute(_CLAIM_SELECT).fetchall()
-        for row in rows:
-            claim = _claim_row_to_dict(row)
-            if format_customer_id(claim["web_user_id"]).upper() == cid:
-                return claim
+            row = conn.execute(
+                f"{_CLAIM_SELECT} WHERE customer_seq = ?",
+                (seq,),
+            ).fetchone()
+        if not row:
+            return None
+        return _claim_row_to_dict(row)
     except Exception as exc:
         logger.error("get_claim_by_customer_id failed: %s", exc)
     return None
@@ -187,6 +217,7 @@ def ensure_bind_token(web_user_id: int) -> str:
                 "UPDATE web_trial_claims SET bind_token = ? WHERE web_user_id = ?",
                 (token, int(web_user_id)),
             )
+            conn.commit()
         return token
     except Exception as exc:
         logger.error("ensure_bind_token failed: %s", exc)
@@ -204,6 +235,7 @@ def mark_web_claim_bound(web_user_id: int, telegram_id: int) -> None:
                    WHERE web_user_id = ?""",
                 (int(telegram_id), now, int(web_user_id)),
             )
+            conn.commit()
     except Exception as exc:
         logger.error("mark_web_claim_bound failed: %s", exc)
 
@@ -228,13 +260,14 @@ def reserve_web_trial_email(contact_email: str, web_user_id: int) -> bool:
     ensure_web_trial_schema()
     em = normalize_contact_email(contact_email)
     now = datetime.now(timezone.utc).isoformat()
+    seq = customer_seq_from_web_user_id(web_user_id)
     try:
         with _conn() as conn:
             conn.execute(
                 """INSERT INTO web_trial_claims
-                   (contact_email, web_user_id, panel_email, contact_phone, claimed_at)
-                   VALUES (?, ?, '', '', ?)""",
-                (em, int(web_user_id), now),
+                   (contact_email, web_user_id, panel_email, contact_phone, claimed_at, customer_seq)
+                   VALUES (?, ?, '', '', ?, ?)""",
+                (em, int(web_user_id), now, seq),
             )
             conn.commit()
         return True
@@ -269,20 +302,21 @@ def record_web_trial_claim(
     ensure_web_trial_schema()
     em = normalize_contact_email(contact_email)
     now = datetime.now(timezone.utc).isoformat()
+    seq = customer_seq_from_web_user_id(web_user_id)
     try:
         with _conn() as conn:
             cur = conn.execute(
                 """UPDATE web_trial_claims
-                   SET panel_email = ?, contact_phone = ?, claimed_at = ?
+                   SET panel_email = ?, contact_phone = ?, claimed_at = ?, customer_seq = ?
                    WHERE contact_email = ?""",
-                (panel_email, contact_phone or "", now, em),
+                (panel_email, contact_phone or "", now, seq, em),
             )
             if cur.rowcount == 0:
                 conn.execute(
                     """INSERT INTO web_trial_claims
-                       (contact_email, web_user_id, panel_email, contact_phone, claimed_at)
-                       VALUES (?, ?, ?, ?, ?)""",
-                    (em, web_user_id, panel_email, contact_phone or "", now),
+                       (contact_email, web_user_id, panel_email, contact_phone, claimed_at, customer_seq)
+                       VALUES (?, ?, ?, ?, ?, ?)""",
+                    (em, web_user_id, panel_email, contact_phone or "", now, seq),
                 )
             conn.commit()
         ensure_bind_token(web_user_id)

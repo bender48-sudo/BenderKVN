@@ -32,6 +32,14 @@ def create_webhook_app(bot, payment_processor):
             pay_queue = PaymentWebhookQueue(bot, payment_processor, loop)
         return pay_queue
 
+    def _run_async(coro, timeout: float = 30):
+        """Run coroutine on bot EVENT_LOOP (P2-RED-WEBHOOK-ASYNC-01)."""
+        loop = flask_app.config.get("EVENT_LOOP")
+        if loop is None:
+            raise RuntimeError("EVENT_LOOP not configured on webhook app")
+        fut = asyncio.run_coroutine_threadsafe(coro, loop)
+        return fut.result(timeout=timeout)
+
     def _reject_auth() -> tuple[str, int]:
         return "forbidden", 403
 
@@ -90,7 +98,7 @@ def create_webhook_app(bot, payment_processor):
         try:
             from shop_bot.portal_web_trial import issue_web_trial
 
-            result = asyncio.run(issue_web_trial(email, phone))
+            result = _run_async(issue_web_trial(email, phone))
             code = 200 if result.get("ok") else 400
             if result.get("error") == "trial_already_claimed":
                 code = 409
@@ -109,7 +117,7 @@ def create_webhook_app(bot, payment_processor):
         try:
             from shop_bot.portal_web_trial import recover_web_trial
 
-            result = asyncio.run(recover_web_trial(email))
+            result = _run_async(recover_web_trial(email))
             code = 200 if result.get("ok") else 404
             if result.get("error") == "invalid_email":
                 code = 400
@@ -164,7 +172,7 @@ def create_webhook_app(bot, payment_processor):
                 return jsonify({"ok": False, "error": "missing_telegram_id"}), 400
             from shop_bot.portal_telegram_setup import telegram_setup_for_user
 
-            result = asyncio.run(telegram_setup_for_user(tid))
+            result = _run_async(telegram_setup_for_user(tid))
             code = 200 if result.get("ok") else 404
             if result.get("error") in ("invalid_telegram", "missing_telegram_id"):
                 code = 400
@@ -206,8 +214,13 @@ def create_webhook_app(bot, payment_processor):
         import sqlite3
 
         from shop_bot.data_manager.database import DB_FILE
-        from shop_bot.modules.remnawave_api import _fetch_json, remna_client_session
+        from shop_bot.modules.remnawave_api import (
+            _fetch_json,
+            remna_client_session,
+            reset_global_backoff,
+        )
 
+        reset_global_backoff()
         started = time.perf_counter()
         checks: dict[str, str] = {}
         panel_ms: int | None = None
@@ -227,7 +240,7 @@ def create_webhook_app(bot, payment_processor):
 
         try:
             t_panel = time.perf_counter()
-            panel_data = asyncio.run(_panel_probe())
+            panel_data = _run_async(_panel_probe())
             panel_ms = int((time.perf_counter() - t_panel) * 1000)
             if panel_data is None:
                 checks["panel"] = "unreachable"
@@ -260,7 +273,7 @@ def create_webhook_app(bot, payment_processor):
                 telegram_id = int(raw_tid)
             from shop_bot.portal_browser_resolve import resolve_browser_setup
 
-            doc = asyncio.run(
+            doc = _run_async(
                 resolve_browser_setup(username=username, telegram_id=telegram_id)
             )
             code = 200 if doc.get("ok") else 404
