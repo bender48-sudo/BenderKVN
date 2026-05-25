@@ -91,6 +91,10 @@
 | Контрабанда локальных правил Claude в Git | Коммит **`.claude/settings.local.json`** содержит пути и не должен быть публичным | **`.gitignore`**, раздел KNOWLEDGE-BASE §2 |
 | Crash loop **`remnawave`**, Prisma **P1000**, **502** на панели/sub | Накат **`panel.env`** из vault: **`DATABASE_URL`** не совпадает с живым **`remnawave-db`** | Откат **`/opt/remnawave/.env`** с прода-бэка + **`python ops/extract_vault.py`** |
 | **502** на sub, **401** у subscription-page к панели | Рендер **`sub/docker-compose.yml`**: неверный **`REMNA_API_TOKEN`** | Откат compose с бэкапа; **`RUNBOOK-REMNA-API-TOKEN`** |
+| VPN мёртвый в RU / `closed pipe` на connect | **`burstObservatory`** + урезанный injectHosts без Relay; «stable» снимок с observatory | **`docs/VPN-INCIDENT-LESSONS-2026-05-25.md`**, **`ops/patch_restore_14_relay_no_obs.py`** |
+| IG/TG открываются, но **очень медленно** | Routing → VPN + balancer **`random`** на 14 proxy (часто RELAY) | Не откатывать routing leak; отдельный patch Direct-first / tuned leastLoad (§4 lessons) |
+| Пуши «обновите подписку» не идут | **`SUB_REFRESH_JITTER_MAX_SEC`** не определена → monitor loop падает | **`bot_src/subscription_refresh.py`**, **`deploy-bot-sub-refresh-ams.ps1`** |
+| Happ «0 servers» / UnknownContentType | Virtual Host = один JSON-профиль | Не PATCH шаблон; Append custom, обновить sub |
 
 ---
 

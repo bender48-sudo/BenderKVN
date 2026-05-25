@@ -38,7 +38,8 @@ DEFAULT_TEMPLATE_UUID = site_urls.REMNA_TEMPLATE_UUID
 
 TARGET_INTERVAL = "30s"
 TARGET_SELECTOR = ["proxy"]
-TARGET_DESTINATION = "https://www.gstatic.com/generate_204"
+TARGET_TIMEOUT = "10s"
+TARGET_DESTINATION = "http://connectivitycheck.platform.hicloud.com/generate_204"
 
 
 def fetch_template(c: PanelClient, template_uuid: str) -> dict:
@@ -55,6 +56,7 @@ def apply_observatory_tuning(doc: dict) -> tuple[bool, dict]:
     obs = doc[obs_key]
     ping = obs.setdefault("pingConfig", {})
     ping["interval"] = TARGET_INTERVAL
+    ping["timeout"] = TARGET_TIMEOUT
     ping["destination"] = TARGET_DESTINATION
     obs["subjectSelector"] = list(TARGET_SELECTOR)
 
