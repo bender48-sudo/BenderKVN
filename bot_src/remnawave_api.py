@@ -1,13 +1,26 @@
+import asyncio
 import os
 import logging
 import base64
 import time
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 
 import aiohttp
+from tenacity import (
+    retry,
+    retry_if_exception,
+    stop_after_attempt,
+    wait_exponential,
+)
 
-from shop_bot.config import REMNA_API_CONNECT_TIMEOUT, REMNA_API_TIMEOUT
+from shop_bot.config import (
+    REMNA_API_CONNECT_TIMEOUT,
+    REMNA_API_RETRY_ATTEMPTS,
+    REMNA_API_TIMEOUT,
+    REMNA_HTTP_CONN_LIMIT,
+)
 
 try:
     from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
@@ -58,9 +71,103 @@ def remna_client_timeout() -> aiohttp.ClientTimeout:
     )
 
 
-def remna_client_session(**kwargs) -> aiohttp.ClientSession:
-    timeout = kwargs.pop("timeout", None) or remna_client_timeout()
-    return aiohttp.ClientSession(timeout=timeout, **kwargs)
+_TRANSIENT_HTTP = frozenset({502, 503, 504})
+_shared_session: aiohttp.ClientSession | None = None
+_session_lock = asyncio.Lock()
+
+
+class RemnaTransientHTTPError(Exception):
+    """Retryable panel response (502/503/504)."""
+
+    def __init__(self, status: int, method: str, path: str, body: str = ""):
+        self.status = status
+        self.method = method
+        self.path = path
+        self.body = body
+        super().__init__(f"{method} {path} -> HTTP {status}")
+
+
+def _retry_if_transient(exc: BaseException) -> bool:
+    if isinstance(exc, RemnaTransientHTTPError):
+        return True
+    if isinstance(
+        exc,
+        (
+            aiohttp.ClientConnectorError,
+            aiohttp.ServerDisconnectedError,
+            aiohttp.ClientOSError,
+            asyncio.TimeoutError,
+        ),
+    ):
+        return True
+    if isinstance(exc, aiohttp.ClientResponseError) and exc.status in _TRANSIENT_HTTP:
+        return True
+    return False
+
+
+def _log_remna_retry(retry_state) -> None:
+    exc = retry_state.outcome.exception() if retry_state.outcome else None
+    logger.warning(
+        "Remna API retry attempt %s/%s after %s: %s",
+        retry_state.attempt_number,
+        REMNA_API_RETRY_ATTEMPTS,
+        getattr(retry_state, "seconds_since_start", 0),
+        exc,
+    )
+
+
+async def get_remna_session() -> aiohttp.ClientSession:
+    """P2-RED-BOT-POOL-01: one shared session for monitor/scheduler."""
+    global _shared_session
+    async with _session_lock:
+        if _shared_session is None or _shared_session.closed:
+            connector = aiohttp.TCPConnector(limit=REMNA_HTTP_CONN_LIMIT)
+            _shared_session = aiohttp.ClientSession(
+                timeout=remna_client_timeout(),
+                connector=connector,
+            )
+        return _shared_session
+
+
+async def close_remna_session() -> None:
+    global _shared_session
+    async with _session_lock:
+        if _shared_session and not _shared_session.closed:
+            await _shared_session.close()
+        _shared_session = None
+
+
+@asynccontextmanager
+async def remna_client_session(**kwargs):
+    """Yield shared session; does not close on exit (use close_remna_session on shutdown)."""
+    if kwargs:
+        timeout = kwargs.pop("timeout", None) or remna_client_timeout()
+        async with aiohttp.ClientSession(timeout=timeout, **kwargs) as session:
+            yield session
+        return
+    yield await get_remna_session()
+
+
+async def _fetch_json_once(
+    session: aiohttp.ClientSession, method: str, path: str, **kwargs
+) -> Optional[dict]:
+    url = f"{BASE_URL}{path}"
+    async with session.request(method, url, headers=_request_headers(), **kwargs) as resp:
+        txt = await resp.text()
+        if resp.status in _TRANSIENT_HTTP:
+            raise RemnaTransientHTTPError(resp.status, method, path, txt[:200])
+        if resp.status >= 400:
+            logger.error(f"Remna API {method} {path} failed {resp.status}: {txt}")
+            return None
+        try:
+            data = await resp.json(content_type=None)
+        except Exception:
+            ct = resp.headers.get("Content-Type", "")
+            if ct and "json" not in ct.lower():
+                logger.warning(f"Non-JSON Content-Type from {path}: {ct}")
+            logger.error(f"Failed to parse JSON from {path}: {txt[:200]}")
+            return None
+        return data
 
 
 def _request_headers() -> dict[str, str]:
@@ -84,24 +191,32 @@ class RemnaInbound:
 def _iso_expiry(days: int) -> str:
     return (datetime.now(timezone.utc) + timedelta(days=days)).replace(microsecond=0).isoformat().replace('+00:00', 'Z')
 
-async def _fetch_json(session: aiohttp.ClientSession, method: str, path: str, **kwargs) -> Optional[dict]:
-    url = f"{BASE_URL}{path}"
+@retry(
+    retry=retry_if_exception(_retry_if_transient),
+    stop=stop_after_attempt(REMNA_API_RETRY_ATTEMPTS),
+    wait=wait_exponential(multiplier=1, min=1, max=8),
+    before_sleep=_log_remna_retry,
+    reraise=True,
+)
+async def _fetch_json_retrying(
+    session: aiohttp.ClientSession, method: str, path: str, **kwargs
+) -> Optional[dict]:
+    return await _fetch_json_once(session, method, path, **kwargs)
+
+
+async def _fetch_json(
+    session: aiohttp.ClientSession, method: str, path: str, **kwargs
+) -> Optional[dict]:
     try:
-        async with session.request(method, url, headers=_request_headers(), **kwargs) as resp:
-            txt = await resp.text()
-            if resp.status >= 400:
-                logger.error(f"Remna API {method} {path} failed {resp.status}: {txt}")
-                return None
-            try:
-                return await resp.json(content_type=None)
-            except Exception:
-                ct = resp.headers.get("Content-Type", "")
-                if ct and "json" not in ct.lower():
-                    logger.warning(f"Non-JSON Content-Type from {path}: {ct}")
-                logger.error(f"Failed to parse JSON from {path}: {txt[:200]}")
-                return None
+        return await _fetch_json_retrying(session, method, path, **kwargs)
+    except RemnaTransientHTTPError as e:
+        logger.error("Remna API %s %s exhausted retries: HTTP %s", e.method, e.path, e.status)
+        return None
     except Exception as e:
-        logger.error(f"HTTP error {method} {path}: {e}")
+        if _retry_if_transient(e):
+            logger.error("Remna API %s %s exhausted retries: %s", method, path, e)
+        else:
+            logger.error(f"HTTP error {method} {path}: {e}")
         return None
 
 _INBOUND_CACHE: Optional[RemnaInbound] = None
@@ -267,6 +382,7 @@ def build_vless_uri(inbound: RemnaInbound, vless_uuid: str, email: str) -> Optio
 
 async def provision_key(email: str, days: int | None = None, telegram_id: str = None) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
     days = days or DEFAULT_DAYS
+    t0 = time.perf_counter()
     async with remna_client_session() as session:
         inbound = await get_inbound(session)
         if not inbound:
@@ -275,6 +391,16 @@ async def provision_key(email: str, days: int | None = None, telegram_id: str = 
         if not vless_uuid:
             return None, None, None, None
         uri = build_vless_uri(inbound, vless_uuid, email)
+        elapsed = time.perf_counter() - t0
+        if elapsed > 5.0:
+            logger.warning(
+                "provision_key slow %.2fs email=%s telegram_id=%s",
+                elapsed,
+                email,
+                telegram_id,
+            )
+        else:
+            logger.debug("provision_key %.2fs email=%s", elapsed, email)
         return uri, expire_iso, vless_uuid, sub_url
 
 async def add_extra_traffic(email: str, extra_gb: int, telegram_id: str = None) -> bool:

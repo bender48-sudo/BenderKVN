@@ -9,14 +9,13 @@ from aiogram import Bot
 from aiogram.enums import ParseMode
 
 from shop_bot.bot import user_messages
+from shop_bot.config import SUB_REFRESH_JITTER_MAX_SEC
 from shop_bot.data_manager import database
 
 logger = logging.getLogger(__name__)
 
 # Telegram ~30 msg/s; stay conservative inside the 5-minute monitor cycle.
 SUB_REFRESH_BATCH = 15
-# Q-VPN-STAB-015: spread notify batch (must be defined — prod crashed without it).
-SUB_REFRESH_JITTER_MAX_SEC = 300
 
 
 async def run_sub_refresh_notify_batch(bot: Bot) -> tuple[int, int]:

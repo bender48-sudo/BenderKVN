@@ -198,6 +198,54 @@ def create_webhook_app(bot, payment_processor):
             logger.error("portal-cabinet: %s", e, exc_info=True)
             return jsonify({"ok": False, "error": "server_error"}), 500
 
+    @flask_app.route("/health", methods=["GET"])
+    def health_handler():
+        """P2-OPS-BOT-HEALTH-01: liveness + DB + Remna panel API."""
+        import time
+
+        import sqlite3
+
+        from shop_bot.data_manager.database import DB_FILE
+        from shop_bot.modules.remnawave_api import _fetch_json, remna_client_session
+
+        started = time.perf_counter()
+        checks: dict[str, str] = {}
+        panel_ms: int | None = None
+        ok = True
+
+        try:
+            with sqlite3.connect(DB_FILE, timeout=2) as conn:
+                conn.execute("SELECT 1")
+            checks["db"] = "ok"
+        except Exception as exc:
+            checks["db"] = str(exc)
+            ok = False
+
+        async def _panel_probe():
+            async with remna_client_session() as session:
+                return await _fetch_json(session, "GET", "/api/users?limit=1&start=0")
+
+        try:
+            t_panel = time.perf_counter()
+            panel_data = asyncio.run(_panel_probe())
+            panel_ms = int((time.perf_counter() - t_panel) * 1000)
+            if panel_data is None:
+                checks["panel"] = "unreachable"
+                ok = False
+            else:
+                checks["panel"] = "ok"
+        except Exception as exc:
+            checks["panel"] = str(exc)
+            ok = False
+
+        body = {
+            "ok": ok,
+            "checks": checks,
+            "panel_ms": panel_ms,
+            "elapsed_ms": int((time.perf_counter() - started) * 1000),
+        }
+        return jsonify(body), 200 if ok else 503
+
     @flask_app.route("/portal-setup-resolve", methods=["POST"])
     def portal_setup_resolve_handler():
         """Browser setup: resolve @username / telegram id → subscription URL."""

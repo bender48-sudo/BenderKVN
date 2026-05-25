@@ -7,6 +7,13 @@ server_name = os.getenv("SERVER_NAME")
 # Remna panel HTTP (aiohttp ClientTimeout: connect + total seconds).
 REMNA_API_CONNECT_TIMEOUT = int(os.getenv("REMNA_API_CONNECT_TIMEOUT", "5"))
 REMNA_API_TIMEOUT = int(os.getenv("REMNA_API_TIMEOUT", "30"))
+REMNA_API_RETRY_ATTEMPTS = int(os.getenv("REMNA_API_RETRY_ATTEMPTS", "4"))
+REMNA_HTTP_CONN_LIMIT = int(os.getenv("REMNA_HTTP_CONN_LIMIT", "20"))
+
+# Sub refresh notify jitter (seconds); must match prod env / subscription_refresh.py.
+SUB_REFRESH_JITTER_MAX_SEC = int(os.getenv("SUB_REFRESH_JITTER_MAX_SEC", "300"))
+
+SCHEDULER_CONCURRENT_API_CALLS = int(os.getenv("SCHEDULER_CONCURRENT_API_CALLS", "10"))
 
 # Новый пробный период (дней с момента первой выдачи ключа через бота).
 # Совпадает с REMNA_TRIAL_DAYS / TRIAL_DAYS в docker env.

@@ -226,27 +226,27 @@
 | Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
 |---|-----|--------|-------------------|--------|-----------------|
 | 122 | **P2-RED-BOT-TIMEOUT-01** | **DONE** | `ClientTimeout` на все Remna HTTP в боте | **`REMNA_API_TIMEOUT_OK`** §12 | `fix: P2-RED-BOT-TIMEOUT-01` |
-| 123 | **P2-RED-BOT-RETRY-01** | **NEXT** | tenacity: transient 502/503/504 + connect | `py_compile`; retry log | `fix: P2-RED-BOT-RETRY-01` |
-| 124 | **P2-RED-BOT-JITTER-01** | **TODO** | Jitter в `config.py`; grep undefined | `_verify_sub_refresh_deploy.py` | `chore: P2-RED-BOT-JITTER-01` |
-| 125 | **P2-OPS-BACKUP-GLOB-01** | **TODO** | Prune `backup_*.tar.gz` not `shop_bot_*.db` | `py_compile` | `fix: P2-OPS-BACKUP-GLOB-01` |
-| 126 | **P2-RED-BOT-POOL-01** | **TODO** | Shared aiohttp session + shutdown | monitor 1 cycle | `fix: P2-RED-BOT-POOL-01` |
-| 127 | **P2-OPS-SCHED-CONCURRENT-01** | **TODO** | `gather` + semaphore poll users | batch duration log | `fix: P2-OPS-SCHED-CONCURRENT-01` |
-| 128 | **P2-OPS-SQLITE-WAL-01** | **TODO** | WAL + busy_timeout | `py_compile`; backup note | `fix: P2-OPS-SQLITE-WAL-01` |
-| 129 | **P2-RED-BOT-AUTORENEW-01** | **TODO** | `days_left <= 0` | `py_compile` | `fix: P2-RED-BOT-AUTORENEW-01` |
-| 130 | **P2-RED-MUX-XHTTP-AUDIT-01** | **TODO** | xHTTP в transport_mux_audit | **TRANSPORT_MUX_OK** | `ops: P2-RED-MUX-XHTTP-AUDIT-01` |
-| 131 | **P2-OPS-TRANSPORT-HEALTH-01** | **TODO** | `transport_profile_health.py` | script exit 0 | `ops: P2-OPS-TRANSPORT-HEALTH-01` |
-| 132 | **P1-PRO-VPN-SPEED-01** | **TODO** | Direct-first balancer intl apps (не откат routing) | `probe_subscription` + access_log | `product: P1-PRO-VPN-SPEED-01` |
-| 133 | **P2-RED-BOT-EXPIRY-HOUR-01** | **TODO** | Notify `hours_left <= 6` | `py_compile` | `fix: P2-RED-BOT-EXPIRY-HOUR-01` |
-| 134 | **P2-OPS-BOT-HEALTH-01** | **TODO** | `/health` panel+DB | curl health JSON | `ops: P2-OPS-BOT-HEALTH-01` |
-| 135 | **P2-OPS-SCHED-METRICS-01** | **TODO** | Cycle metrics в scheduler | log summary | `ops: P2-OPS-SCHED-METRICS-01` |
-| 136 | **P2-RED-TSPU-ALERT-01** | **TODO** | TG alert tspu_block_probe | probe dry-run | `ops: P2-RED-TSPU-ALERT-01` |
-| 137 | **P2-OPS-SUB-LATENCY-01** | **TODO** | p95 provision_key | log slow >5s | `ops: P2-OPS-SUB-LATENCY-01` |
-| 138 | **P2-DOC-SNI-MIGRATION-01** | **TODO** | Runbook SNI migration | doc review | `docs: P2-DOC-SNI-MIGRATION-01` |
-| 139 | **P2-DOC-RU-RELAY-02-01** | **TODO** | Runbook 2-го relay | doc + Q120 link | `docs: P2-DOC-RU-RELAY-02-01` |
-| 140 | **P2-DOC-BOOTSTRAP-FALLBACK-01** | **TODO** | Backup bootstrap runbook | doc review | `docs: P2-DOC-BOOTSTRAP-FALLBACK-01` |
-| 141 | **P2-DOC-MONITORING-01** | **TODO** | `MONITORING.md` | doc review | `docs: P2-DOC-MONITORING-01` |
+| 123 | **P2-RED-BOT-RETRY-01** | **DONE** | tenacity: transient 502/503/504 + connect | **`REMNA_API_RETRY_OK`** §12 | `fix: P2-RED-BOT-RETRY-01` |
+| 124 | **P2-RED-BOT-JITTER-01** | **DONE** | Jitter в `config.py`; grep undefined | config **300** | `chore: P2-RED-BOT-JITTER-01` |
+| 125 | **P2-OPS-BACKUP-GLOB-01** | **DONE** | Prune `backup_*.tar.gz` not `shop_bot_*.db` | `py_compile` | `fix: P2-OPS-BACKUP-GLOB-01` |
+| 126 | **P2-RED-BOT-POOL-01** | **DONE** | Shared aiohttp session + shutdown | `py_compile` + deploy | `fix: P2-RED-BOT-POOL-01` |
+| 127 | **P2-OPS-SCHED-CONCURRENT-01** | **DONE** | `gather` + semaphore poll users | batch duration log | `fix: P2-OPS-SCHED-CONCURRENT-01` |
+| 128 | **P2-OPS-SQLITE-WAL-01** | **DONE** | WAL + busy_timeout | `py_compile` | `fix: P2-OPS-SQLITE-WAL-01` |
+| 129 | **P2-RED-BOT-AUTORENEW-01** | **DONE** | `days_left <= 0` | `py_compile` | `fix: P2-RED-BOT-AUTORENEW-01` |
+| 130 | **P2-RED-MUX-XHTTP-AUDIT-01** | **DONE** | xHTTP в transport_mux_audit | **TRANSPORT_MUX_OK** (has_xhttp in JSON) | `ops: P2-RED-MUX-XHTTP-AUDIT-01` |
+| 131 | **P2-OPS-TRANSPORT-HEALTH-01** | **DONE** | `transport_profile_health.py` | script in repo | `ops: P2-OPS-TRANSPORT-HEALTH-01` |
+| 132 | **P1-PRO-VPN-SPEED-01** | **DONE** | `patch_balancer_direct_first_intl.py` (apply отдельно) | dry-run + apply gate §0 | `product: P1-PRO-VPN-SPEED-01` |
+| 133 | **P2-RED-BOT-EXPIRY-HOUR-01** | **DONE** | Notify `hours_left <= 6` | `py_compile` + deploy | `fix: P2-RED-BOT-EXPIRY-HOUR-01` |
+| 134 | **P2-OPS-BOT-HEALTH-01** | **DONE** | `/health` panel+DB | `curl :1488/health` AMS | `ops: P2-OPS-BOT-HEALTH-01` |
+| 135 | **P2-OPS-SCHED-METRICS-01** | **DONE** | Cycle metrics в scheduler | **SCHEDULER_CYCLE** log | `ops: P2-OPS-SCHED-METRICS-01` |
+| 136 | **P2-RED-TSPU-ALERT-01** | **DONE** | TG alert tspu_block_probe | `tspu_block_probe_alert.py` | `ops: P2-RED-TSPU-ALERT-01` |
+| 137 | **P2-OPS-SUB-LATENCY-01** | **DONE** | p95 provision_key | slow >5s log | `ops: P2-OPS-SUB-LATENCY-01` |
+| 138 | **P2-DOC-SNI-MIGRATION-01** | **DONE** | Runbook SNI migration | **`RUNBOOK-SNI-MIGRATION.md`** | `docs: P2-DOC-SNI-MIGRATION-01` |
+| 139 | **P2-DOC-RU-RELAY-02-01** | **DONE** | Runbook 2-го relay | **`RUNBOOK-RU-RELAY-EXPANSION.md`** | `docs: P2-DOC-RU-RELAY-02-01` |
+| 140 | **P2-DOC-BOOTSTRAP-FALLBACK-01** | **DONE** | Backup bootstrap runbook | **`RUNBOOK-BACKUP-BOOTSTRAP-FALLBACK.md`** | `docs: P2-DOC-BOOTSTRAP-FALLBACK-01` |
+| 141 | **P2-DOC-MONITORING-01** | **DONE** | `MONITORING.md` | doc review | `docs: P2-DOC-MONITORING-01` |
 
-**NEXT=Q123** (агент). **Q120** — владелец, параллельно.
+**NEXT=—** (фаза 8 Q122–141 закрыта агентом). **Q120** / **Q032** — владелец.
 
 ---
 
@@ -404,6 +404,8 @@
 | 2026-05-20 | **Q102–121** (агент) | **NEXT=Q120** (владелец: 2-й RU VPS) |
 | 2026-05-25 | **Q120** owner | **Фаза 8** Q122–141; **NEXT=Q122** (`AGENT-PHASE8-RELIABILITY-BACKLOG`) |
 | 2026-05-25 | **Q122** P2-RED-BOT-TIMEOUT-01 | **Q123** P2-RED-BOT-RETRY-01 |
+| 2026-05-25 | **Q123–129, Q133** phase8 bot reliability | **Q134** P2-OPS-BOT-HEALTH-01 |
+| 2026-05-25 | **Q134–141** phase8 health/ops/docs + Q132 patch | — (фаза 8 агент закрыт) |
 | 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |
 | 2026-05-18 | **Q079** P2-OPS-DEPLOY-BOT-SEC-01 | **Q080** P2-OPS-DEPLOY-EDGE-01 |
 | 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy |

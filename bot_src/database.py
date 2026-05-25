@@ -21,6 +21,8 @@ def initialize_db():
     try:
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA busy_timeout=5000")
             cursor.executescript('''
                 CREATE TABLE IF NOT EXISTS users (
                     telegram_id INTEGER PRIMARY KEY,
@@ -786,6 +788,51 @@ def get_last_backup_timestamp() -> str | None:
             row = c.fetchone(); return row[0] if row else None
     except sqlite3.Error as e:
         logging.error(f"Failed to get last backup timestamp: {e}"); return None
+
+
+def _expiry_hour_setting_key(telegram_id: int) -> str:
+    return f"expiry_6h_notified:{int(telegram_id)}"
+
+
+def was_expiry_hour_notified(telegram_id: int) -> bool:
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            c = conn.cursor()
+            c.execute(
+                "SELECT value FROM bot_settings WHERE key = ?",
+                (_expiry_hour_setting_key(telegram_id),),
+            )
+            row = c.fetchone()
+            return bool(row and row[0] == "1")
+    except sqlite3.Error as e:
+        logging.error(f"Failed expiry hour flag for {telegram_id}: {e}")
+        return False
+
+
+def mark_expiry_hour_notified(telegram_id: int) -> None:
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            c = conn.cursor()
+            c.execute(
+                "INSERT OR REPLACE INTO bot_settings (key, value) VALUES (?, '1')",
+                (_expiry_hour_setting_key(telegram_id),),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error(f"Failed set expiry hour flag for {telegram_id}: {e}")
+
+
+def clear_expiry_hour_notified(telegram_id: int) -> None:
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            c = conn.cursor()
+            c.execute(
+                "DELETE FROM bot_settings WHERE key = ?",
+                (_expiry_hour_setting_key(telegram_id),),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error(f"Failed clear expiry hour flag for {telegram_id}: {e}")
 
 
 def get_balance(telegram_id: int) -> float:

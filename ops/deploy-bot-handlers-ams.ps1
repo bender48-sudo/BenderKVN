@@ -47,7 +47,7 @@ python -c @"
 import ast
 from pathlib import Path
 root = Path(r'$RepoRoot')
-for name in ('handlers.py', 'user_messages.py', 'scheduler.py', 'keyboards.py', 'main.py', 'config.py', 'portal_links.py', 'portal_web_trial.py', 'subscription_qr.py', 'auto_renew_billing.py', 'database.py'):
+for name in ('handlers.py', 'user_messages.py', 'scheduler.py', 'keyboards.py', 'main.py', 'config.py', 'portal_links.py', 'portal_web_trial.py', 'subscription_refresh.py', 'subscription_qr.py', 'auto_renew_billing.py', 'database.py', 'remnawave_api.py'):
     ast.parse((root / 'bot_src' / name).read_text(encoding='utf-8'))
 ast.parse((root / 'bot_src/webhook_server/app_ams_with_portal_trial.py').read_text(encoding='utf-8'))
 "@
@@ -192,6 +192,7 @@ docker cp /tmp/webhook_payment_queue.py remna-shop-bot:/app/src/shop_bot/webhook
 docker cp /tmp/webhook_payment_amount_verify.py remna-shop-bot:/app/src/shop_bot/webhook_server/payment_amount_verify.py
 docker cp /tmp/webhook_payload_redact.py remna-shop-bot:/app/src/shop_bot/webhook_server/payload_redact.py
 docker cp /tmp/main.py remna-shop-bot:/app/src/shop_bot/main.py
+docker exec remna-shop-bot pip install -q 'tenacity>=8.2,<10'
 cd /opt/remna-shop && docker compose restart remna-shop-bot
 echo "Remote md5:"
 md5sum "$BT/handlers.py" "$BT/user_messages.py" "$BT/keyboards.py" "$CFG" /opt/remna-shop/src/shop_bot/main.py "$DM/scheduler.py"

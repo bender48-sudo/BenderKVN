@@ -144,7 +144,12 @@ def main():
                 )
 
         bot_logger.system("TELEGRAM", "Bot polling started", "OK")
-        await dp.start_polling(bot)
+        try:
+            await dp.start_polling(bot)
+        finally:
+            from shop_bot.modules.remnawave_api import close_remna_session
+
+            await close_remna_session()
 
     try:
         asyncio.run(start_all())

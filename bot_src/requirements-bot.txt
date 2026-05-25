@@ -1,0 +1,2 @@
+# AMS remna-shop-bot image / hot-patch pip (see ops/deploy-bot-handlers-ams.ps1)
+tenacity>=8.2,<10
