@@ -95,6 +95,13 @@
       .replace("://k9x2m1.conntest.xyz:2053", "://k9x2m1.conntest.xyz:8443");
   }
 
+  /** Happ deep link for one-tap subscription import (iOS/Android). */
+  function buildHappDeepLink(subUrl) {
+    var u = normalizeSubUrl(subUrl);
+    if (!u) return u;
+    return "happ://add/" + u;
+  }
+
   function isBrowserFlow() {
     return !getTelegramWebApp() && !token;
   }
@@ -277,7 +284,11 @@
     var norm = normalizeSubUrl(url);
     var linkEl = $("setup-link");
     if (linkEl) linkEl.textContent = norm;
-    $("btn-open-happ").href = norm;
+    var openBtn = $("btn-open-happ");
+    if (openBtn) {
+      openBtn.href = buildHappDeepLink(norm);
+      bindExternalLink(openBtn);
+    }
     renderQr(norm);
     try {
       localStorage.setItem("bvpn_subscription_url", norm);
