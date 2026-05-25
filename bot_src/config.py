@@ -4,6 +4,10 @@ from shop_bot.public_urls import telegram_webapp_url
 
 server_name = os.getenv("SERVER_NAME")
 
+# Remna panel HTTP (aiohttp ClientTimeout: connect + total seconds).
+REMNA_API_CONNECT_TIMEOUT = int(os.getenv("REMNA_API_CONNECT_TIMEOUT", "5"))
+REMNA_API_TIMEOUT = int(os.getenv("REMNA_API_TIMEOUT", "30"))
+
 # Новый пробный период (дней с момента первой выдачи ключа через бота).
 # Совпадает с REMNA_TRIAL_DAYS / TRIAL_DAYS в docker env.
 REMNA_TRIAL_DAYS = int(

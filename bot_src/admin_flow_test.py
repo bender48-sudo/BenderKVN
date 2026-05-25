@@ -5,8 +5,6 @@ import os
 from datetime import datetime
 from typing import Any
 
-import aiohttp
-
 from shop_bot.config import TELEGRAM_WEBAPP_URL, WEB_TRIAL_DAYS, telegram_cabinet_webapp_url
 from shop_bot.data_manager.database import get_setting, get_user, get_user_keys
 from shop_bot.public_urls import portal_origin, public_bootstrap_url, setup_origin
@@ -42,7 +40,7 @@ async def _probe_panel_api() -> dict[str, Any]:
     token = (api.API_TOKEN or os.getenv("REMNA_API_TOKEN") or "").strip()
     if not base or not token:
         return _check("Remna API (BASE_URL)", False, "BASE_URL или токен пусто")
-    async with aiohttp.ClientSession() as session:
+    async with api.remna_client_session() as session:
         data = await api._fetch_json(session, "GET", "/api/config-profiles/inbounds")
     ok = bool(data and isinstance(data.get("response"), (dict, list)))
     return _check("Remna API (inbounds)", ok, base if ok else "401 или пустой ответ")

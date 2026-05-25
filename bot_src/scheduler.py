@@ -6,11 +6,11 @@ from pathlib import Path
 from aiogram import Bot
 from shop_bot.data_manager import database
 from shop_bot.modules import remnawave_api
+from shop_bot.modules.remnawave_api import remna_client_session
 from shop_bot.config import BOT_PAYMENTS_LIVE, DAILY_RATE
 from shop_bot.auto_renew_billing import balance_covers_renew, plan_renew_cost
 from shop_bot.utils.logger import bot_logger
 from shop_bot.bot.subscription_refresh import run_sub_refresh_notify_batch
-import aiohttp
 
 CHECK_INTERVAL_SECONDS = 300
 EXPIRY_NOTIFY_DAYS = [7, 3, 1, 0]
@@ -38,7 +38,7 @@ async def start_subscription_monitor(bot: Bot):
             if not vpn_users:
                 await asyncio.sleep(CHECK_INTERVAL_SECONDS)
                 continue
-            async with aiohttp.ClientSession() as session:
+            async with remna_client_session() as session:
                 users_processed = 0
                 notifications_sent = 0
                 errors_count = 0

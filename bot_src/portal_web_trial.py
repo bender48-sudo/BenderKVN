@@ -30,8 +30,12 @@ from shop_bot.web_trial_db import (
     reserve_web_trial_email,
     web_user_id_from_email,
 )
-from shop_bot.modules import remnawave_api
-import aiohttp
+from shop_bot.modules.remnawave_api import (
+    get_user_by_email,
+    get_user_by_telegram_id,
+    provision_key,
+    remna_client_session,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +72,7 @@ async def issue_web_trial(
     panel_email = f"web{abs(web_uid)}-key{key_number}-trial@{KEY_EMAIL_DOMAIN}"
 
     try:
-        uri, expire_iso, vless_uuid, sub_url = await remnawave_api.provision_key(
+        uri, expire_iso, vless_uuid, sub_url = await provision_key(
             panel_email,
             days=WEB_TRIAL_DAYS,
             telegram_id=None,
@@ -126,10 +130,10 @@ async def recover_web_trial(contact_email: str) -> dict:
 
     now = datetime.now(timezone.utc)
     try:
-        async with aiohttp.ClientSession() as session:
-            user = await remnawave_api.get_user_by_email(session, panel_email)
+        async with remna_client_session() as session:
+            user = await get_user_by_email(session, panel_email)
             if not user:
-                user = await remnawave_api.get_user_by_telegram_id(session, str(web_uid))
+                user = await get_user_by_telegram_id(session, str(web_uid))
 
             if user:
                 sub_url = (user.get("subscriptionUrl") or "").strip()

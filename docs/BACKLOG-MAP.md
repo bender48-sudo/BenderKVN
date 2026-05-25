@@ -37,7 +37,7 @@
 | **7** | 098–121 | **Закрыта** | TSPU раунд 2, SNI live, selfsteal, MUX docs |
 | **8** | 122–141 | **В работе** | Bot reliability → scale → VPN speed → observability |
 
-**Сейчас:** **NEXT=Q122** (bot HTTP timeouts). Контекст: **`AGENT-PHASE8-RELIABILITY-BACKLOG.md`**, уроки **`VPN-INCIDENT-LESSONS-2026-05-25.md`**. Владелец параллельно: **Q120** (2-й RU relay), **Q032** (оферта).
+**Сейчас:** **NEXT=Q123** (Remna API retry/backoff). Контекст: **`AGENT-PHASE8-RELIABILITY-BACKLOG.md`**, уроки **`VPN-INCIDENT-LESSONS-2026-05-25.md`**. Владелец параллельно: **Q120** (2-й RU relay), **Q032** (оферта).
 
 ---
 

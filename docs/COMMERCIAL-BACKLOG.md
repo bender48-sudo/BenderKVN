@@ -344,6 +344,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-25 | **Q122 P2-RED-BOT-TIMEOUT-01 — DONE:** `REMNA_API_CONNECT_TIMEOUT`/`REMNA_API_TIMEOUT` в `config.py`; `remna_client_session()` на все Remna HTTP; smoke **`REMNA_API_TIMEOUT_OK`**; AMS deploy **`deploy-bot-handlers-ams`**, monitor grep **MONITOR_OK**. **NEXT=Q123.** |
 | 2026-05-20 | **Q102–121 (агент) — DONE** кроме **Q120** (2-й RU relay — владелец): security batch, HSTS **lv:9443**, `public_urls`, web_trial schema, **TLS_CLIENT_STACK_AUDIT_OK**. **Открыто:** **Q120**, **Q032**. |
 | 2026-05-20 | **Q102–111, Q113, Q116–119 — DONE:** firewall 3010/3011, bind token, **LIVE_SUB_SNI_OK**, k9 `@blocked_k9`, payments, portal resolve, trial atomic, MUX xhttp, selfsteal yandex :9443. |
 | 2026-05-19 | **P2-RED-CODERABBIT-02 — DONE (Q101):** **`docs/AUDIT-2026-05-SECURITY-02.md`** + merge с **TSPU-REDTEAM-04**; очередь **Q102–121** (15 security + 5 ТСПУ). GTM **conditional**; P0: **3010 bind**, bind token, **live github SNI**. **NEXT=Q102.** |

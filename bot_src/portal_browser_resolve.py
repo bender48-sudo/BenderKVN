@@ -8,10 +8,8 @@ import logging
 import re
 import sys
 
-import aiohttp
-
 from shop_bot.data_manager.database import lookup_telegram_ids_by_hint
-from shop_bot.modules import remnawave_api
+from shop_bot.modules.remnawave_api import get_user_by_telegram_id, remna_client_session
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +17,8 @@ _NUMERIC_RE = re.compile(r"^\d{5,15}$")
 
 
 async def _panel_sub_url(telegram_id: int) -> str | None:
-    async with aiohttp.ClientSession() as session:
-        user_data = await remnawave_api.get_user_by_telegram_id(session, str(telegram_id))
+    async with remna_client_session() as session:
+        user_data = await get_user_by_telegram_id(session, str(telegram_id))
         if not user_data:
             return None
         return (user_data.get("subscriptionUrl") or "").strip() or None

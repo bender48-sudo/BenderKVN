@@ -225,8 +225,8 @@
 
 | Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
 |---|-----|--------|-------------------|--------|-----------------|
-| 122 | **P2-RED-BOT-TIMEOUT-01** | **NEXT** | `ClientTimeout` на все Remna HTTP в боте | `py_compile`; post-deploy monitor OK | `fix: P2-RED-BOT-TIMEOUT-01` |
-| 123 | **P2-RED-BOT-RETRY-01** | **TODO** | tenacity: transient 502/503/504 + connect | `py_compile`; retry log | `fix: P2-RED-BOT-RETRY-01` |
+| 122 | **P2-RED-BOT-TIMEOUT-01** | **DONE** | `ClientTimeout` на все Remna HTTP в боте | **`REMNA_API_TIMEOUT_OK`** §12 | `fix: P2-RED-BOT-TIMEOUT-01` |
+| 123 | **P2-RED-BOT-RETRY-01** | **NEXT** | tenacity: transient 502/503/504 + connect | `py_compile`; retry log | `fix: P2-RED-BOT-RETRY-01` |
 | 124 | **P2-RED-BOT-JITTER-01** | **TODO** | Jitter в `config.py`; grep undefined | `_verify_sub_refresh_deploy.py` | `chore: P2-RED-BOT-JITTER-01` |
 | 125 | **P2-OPS-BACKUP-GLOB-01** | **TODO** | Prune `backup_*.tar.gz` not `shop_bot_*.db` | `py_compile` | `fix: P2-OPS-BACKUP-GLOB-01` |
 | 126 | **P2-RED-BOT-POOL-01** | **TODO** | Shared aiohttp session + shutdown | monitor 1 cycle | `fix: P2-RED-BOT-POOL-01` |
@@ -246,7 +246,7 @@
 | 140 | **P2-DOC-BOOTSTRAP-FALLBACK-01** | **TODO** | Backup bootstrap runbook | doc review | `docs: P2-DOC-BOOTSTRAP-FALLBACK-01` |
 | 141 | **P2-DOC-MONITORING-01** | **TODO** | `MONITORING.md` | doc review | `docs: P2-DOC-MONITORING-01` |
 
-**NEXT=Q122** (агент). **Q120** — владелец, параллельно.
+**NEXT=Q123** (агент). **Q120** — владелец, параллельно.
 
 ---
 
@@ -403,6 +403,7 @@
 | 2026-05-19 | **Q087–097** (непрерывный режим) | **NEXT** пусто, фаза 6 закрыта |
 | 2026-05-20 | **Q102–121** (агент) | **NEXT=Q120** (владелец: 2-й RU VPS) |
 | 2026-05-25 | **Q120** owner | **Фаза 8** Q122–141; **NEXT=Q122** (`AGENT-PHASE8-RELIABILITY-BACKLOG`) |
+| 2026-05-25 | **Q122** P2-RED-BOT-TIMEOUT-01 | **Q123** P2-RED-BOT-RETRY-01 |
 | 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |
 | 2026-05-18 | **Q079** P2-OPS-DEPLOY-BOT-SEC-01 | **Q080** P2-OPS-DEPLOY-EDGE-01 |
 | 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy |

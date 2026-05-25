@@ -6,6 +6,9 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 
 import aiohttp
+
+from shop_bot.config import REMNA_API_CONNECT_TIMEOUT, REMNA_API_TIMEOUT
+
 try:
     from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
     _HAS_CRYPTO = True
@@ -45,6 +48,19 @@ UTLS_FP = os.getenv("REMNA_FP") or os.getenv("FP")  # reuse old var if present
 def get_api_token() -> str | None:
     """Read token at call time so rotation does not require bot restart (P5-ENG-03)."""
     return (os.getenv("REMNA_API_TOKEN") or "").strip() or None
+
+
+def remna_client_timeout() -> aiohttp.ClientTimeout:
+    """P2-RED-BOT-TIMEOUT-01: avoid hung monitor/scheduler on slow panel."""
+    return aiohttp.ClientTimeout(
+        connect=REMNA_API_CONNECT_TIMEOUT,
+        total=REMNA_API_TIMEOUT,
+    )
+
+
+def remna_client_session(**kwargs) -> aiohttp.ClientSession:
+    timeout = kwargs.pop("timeout", None) or remna_client_timeout()
+    return aiohttp.ClientSession(timeout=timeout, **kwargs)
 
 
 def _request_headers() -> dict[str, str]:
@@ -251,7 +267,7 @@ def build_vless_uri(inbound: RemnaInbound, vless_uuid: str, email: str) -> Optio
 
 async def provision_key(email: str, days: int | None = None, telegram_id: str = None) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
     days = days or DEFAULT_DAYS
-    async with aiohttp.ClientSession() as session:
+    async with remna_client_session() as session:
         inbound = await get_inbound(session)
         if not inbound:
             return None, None, None, None
@@ -265,7 +281,7 @@ async def add_extra_traffic(email: str, extra_gb: int, telegram_id: str = None) 
     """Увеличивает лимит трафика пользователю на extra_gb (ГБ) на сервере.
     Возвращает True при успехе."""
     bytes_add = extra_gb * 1024 * 1024 * 1024
-    async with aiohttp.ClientSession() as session:
+    async with remna_client_session() as session:
         user = None
         if telegram_id:
             user = await get_user_by_telegram_id(session, telegram_id)
@@ -300,7 +316,7 @@ class RemnaWaveAPI:
         }
         if self.cookie:
             headers["Cookie"] = self.cookie
-        async with aiohttp.ClientSession() as session:
+        async with remna_client_session() as session:
             async with session.get(url, headers=headers) as response:
                 if response.status == 404:
                     raise Exception(f"Remna API GET {endpoint} failed 404: {await response.text()}")

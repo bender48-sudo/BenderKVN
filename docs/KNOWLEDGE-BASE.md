@@ -58,7 +58,7 @@
 | Пик подписки / edge (rate limit, тест нагрузки) | **`docs/RUNBOOK-P6-SUBSCRIPTION-EDGE.md`** |
 | Git / ветки / что в репо | **`docs/VCS-WHERE-IS-GIT.md`** |
 | FAQ для пользователя | **`docs/FAQ.md`** |
-| Очередь агента (сейчас) | **`docs/BACKLOG-QUEUE.md`** → **NEXT=Q122** |
+| Очередь агента (сейчас) | **`docs/BACKLOG-QUEUE.md`** → **NEXT=Q123** |
 | Phase 8: reliability / speed / TSPU | **`docs/AGENT-PHASE8-RELIABILITY-BACKLOG.md`** |
 | Уроки инцидента VPN 2026-05-25 | **`docs/VPN-INCIDENT-LESSONS-2026-05-25.md`** |
 

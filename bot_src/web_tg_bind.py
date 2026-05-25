@@ -4,10 +4,12 @@ from __future__ import annotations
 import logging
 import sqlite3
 
-import aiohttp
-
 from shop_bot.data_manager.database import DB_FILE, get_user, get_user_keys, register_user_if_not_exists
-from shop_bot.modules import remnawave_api
+from shop_bot.modules.remnawave_api import (
+    _fetch_json,
+    get_user_by_email,
+    remna_client_session,
+)
 from shop_bot.web_trial_db import (
     format_customer_id,
     get_claim_by_bind_token,
@@ -93,15 +95,15 @@ async def sync_panel_telegram_id(panel_email: str, telegram_id: int) -> bool:
     if not panel_email:
         return True
     try:
-        async with aiohttp.ClientSession() as session:
-            user = await remnawave_api.get_user_by_email(session, panel_email)
+        async with remna_client_session() as session:
+            user = await get_user_by_email(session, panel_email)
             if not user:
                 return True
             uuid = user.get("uuid")
             if not uuid:
                 return False
             body = {"uuid": uuid, "telegramId": int(telegram_id)}
-            updated = await remnawave_api._fetch_json(session, "PATCH", "/api/users", json=body)
+            updated = await _fetch_json(session, "PATCH", "/api/users", json=body)
             return bool(updated and updated.get("response"))
     except Exception as exc:
         logger.warning("sync_panel_telegram_id failed %s: %s", panel_email, exc)

@@ -73,8 +73,8 @@ python ops/transport_mux_audit.py          # если template/MUX
 
 | Приор. | Q | ID | Фаза CR | Статус очереди | Суть |
 |--------|---|-----|---------|----------------|------|
-| **P0** | 122 | **P2-RED-BOT-TIMEOUT-01** | CR-1 | **NEXT** | HTTP timeout на все Remna API (aiohttp) |
-| **P0** | 123 | **P2-RED-BOT-RETRY-01** | CR-1 | TODO | Retry + backoff (502/503/504, connection) |
+| **P0** | 122 | **P2-RED-BOT-TIMEOUT-01** | CR-1 | **DONE** | HTTP timeout на все Remna API (aiohttp) |
+| **P0** | 123 | **P2-RED-BOT-RETRY-01** | CR-1 | **NEXT** | Retry + backoff (502/503/504, connection) |
 | **P0** | 125 | **P2-OPS-BACKUP-GLOB-01** | CR-1 | TODO | Cleanup `backup_*.tar.gz` (не `shop_bot_*.db`) |
 | **P0** | 126 | **P2-RED-BOT-POOL-01** | CR-1 | TODO | Shared `ClientSession` + shutdown hook |
 | **P1** | 124 | **P2-RED-BOT-JITTER-01** | CR-1 | TODO | `SUB_REFRESH_JITTER_MAX_SEC` в `config.py` + grep констант |
@@ -109,7 +109,7 @@ python ops/transport_mux_audit.py          # если template/MUX
 
 ## 3. Done when / Verify / Regression guard (по задачам)
 
-### Q122 — P2-RED-BOT-TIMEOUT-01 (NEXT)
+### Q122 — P2-RED-BOT-TIMEOUT-01 (DONE)
 
 | | |
 |--|--|

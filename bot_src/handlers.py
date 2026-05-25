@@ -640,7 +640,7 @@ async def traffic_status_handler(callback: types.CallbackQuery):
         return
     from shop_bot.modules.remnawave_api import get_user_by_telegram_id
     from shop_bot.config import build_progress_bar
-    async with aiohttp.ClientSession() as session:
+    async with remnawave_api.remna_client_session() as session:
         lines = ["<b>📊 Использование трафика</b>"]
         
         # Получаем общую информацию о пользователе (теперь все ключи в одном профиле)
@@ -1207,7 +1207,7 @@ async def show_key_handler(callback: types.CallbackQuery):
         # We cannot re-build original without inbound each time; fetch inbound once
         from shop_bot.modules.remnawave_api import get_inbound, build_vless_uri
         import aiohttp
-        async with aiohttp.ClientSession() as session:
+        async with remnawave_api.remna_client_session() as session:
             inbound = await get_inbound(session)
             if not inbound:
                 await callback.message.edit_text("❌ " + user_messages.ERR_INBOUND)
@@ -1238,7 +1238,7 @@ async def show_qr_handler(callback: types.CallbackQuery):
     try:
         from shop_bot.modules.remnawave_api import get_inbound, build_vless_uri
         import aiohttp
-        async with aiohttp.ClientSession() as session:
+        async with remnawave_api.remna_client_session() as session:
             inbound = await get_inbound(session)
             if not inbound: return
             connection_string = build_vless_uri(inbound, key_data['vless_uuid'], key_data['key_email'])
@@ -1492,7 +1492,7 @@ async def create_crypto_payment_handler(callback: types.CallbackQuery, state: FS
         else:
             description = f"Оплата подписки на {months} месяцев"
             
-        async with aiohttp.ClientSession() as session:
+        async with remnawave_api.remna_client_session() as session:
             # 1. Формируем payload со всеми необходимыми полями
             data_state = await state.get_data()
             promo_code = data_state.get('promo_code')

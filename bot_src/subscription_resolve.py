@@ -5,10 +5,12 @@ import logging
 import os
 from datetime import datetime
 
-import aiohttp
-
 from shop_bot.data_manager.database import get_user, get_user_keys
-from shop_bot.modules import remnawave_api
+from shop_bot.modules.remnawave_api import (
+    get_user_by_email,
+    get_user_by_telegram_id,
+    remna_client_session,
+)
 from shop_bot.public_urls import normalize_subscription_url
 
 logger = logging.getLogger(__name__)
@@ -22,8 +24,8 @@ def _bot_open_url() -> str:
 async def resolve_subscription_url(telegram_id: int) -> str | None:
     """Panel lookup by telegram_id, then by vpn_keys.key_email."""
     tid = int(telegram_id)
-    async with aiohttp.ClientSession() as session:
-        remote = await remnawave_api.get_user_by_telegram_id(session, str(tid))
+    async with remna_client_session() as session:
+        remote = await get_user_by_telegram_id(session, str(tid))
         sub = normalize_subscription_url((remote or {}).get("subscriptionUrl") or "")
         if sub:
             return sub
@@ -41,7 +43,7 @@ async def resolve_subscription_url(telegram_id: int) -> str | None:
                 continue
             seen.add(em)
             try:
-                panel_user = await remnawave_api.get_user_by_email(session, em)
+                panel_user = await get_user_by_email(session, em)
             except Exception as exc:
                 logger.warning("resolve sub by email %s: %s", em, exc)
                 continue
