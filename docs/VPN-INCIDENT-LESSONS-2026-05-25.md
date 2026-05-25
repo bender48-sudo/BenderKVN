@@ -73,9 +73,11 @@
 
 **Не откатывать** routing leak-fix ради скорости — вернутся «не пускает в приложения».
 
+**Q132 footgun (2026-05-25):** нельзя менять `selector` у **`Super_Balancer`**, если на нём же висит catch-all **`network: tcp,udp`** — весь VPN (и пинг в Happ) начинает **random** по 8 Direct/NL (~×3 latency). Исправление: отдельный **`Intl_Direct`** для TG/IG/domain rules; **`Super_Balancer`** оставить **`["proxy"]`**.
+
 **Следующий безопасный шаг (отдельная задача, не в панике):**
 
-1. Два уровня: balancer только на **8 Direct** для правил geosite:instagram/telegram/…; **fallback** outbound / второе правило на RELAY при недоступности direct (или отдельный тег).
+1. Два уровня: **`Intl_Direct`** только на **8 Direct** для geosite:instagram/telegram/…; **`Super_Balancer`** = `["proxy"]` на catch-all; RELAY — вручную из списка 14 или отдельный fallback-тег.
 2. Либо вернуть **`leastLoad`** только с observatory: **gstatic/204**, timeout **10s**, interval **30s** — и проверить Happ **`error_log`** на `closed pipe` **до** prod.
 3. Замер: Happ access_log — доля `RELAY` vs `LV:443 Direct` для доменов instagram.com / telegram.org у RU-клиента.
 

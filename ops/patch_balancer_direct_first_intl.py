@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""P1-PRO-VPN-SPEED-01: intl apps via Super_Balancer on LV/NL :443 Direct first (not Relay).
+"""P1-PRO-VPN-SPEED-01: intl apps via Intl_Direct balancer (8× LV/NL Direct, no Relay).
 
-Keeps 14 injectHosts (RELAY stays in sub). Narrows Super_Balancer selector to 8 Direct
-outbound tags (proxy … proxy-11) so IG/TG/Google avoid RU relay hop.
+Keeps 14 injectHosts. **Super_Balancer** stays on catch-all `network: tcp,udp` with
+selector `["proxy"]` only (stable ping). Intl/TG IP rules use **Intl_Direct** so IG/TG
+avoid relay without randomizing default VPN across 8 nodes.
 
 Usage:
     python ops/patch_balancer_direct_first_intl.py
@@ -37,10 +38,12 @@ from subscription_config_notify import after_template_patch  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
 DEFAULT_TEMPLATE_UUID = site_urls.REMNA_TEMPLATE_UUID
-BALANCER_TAG = "Super_Balancer"
+CATCHALL_BALANCER_TAG = "Super_Balancer"
+INTL_BALANCER_TAG = "Intl_Direct"
+CATCHALL_SELECTOR = ["proxy"]
 
-# Live sub outbounds (gen=20, 14 proxy): LV×4 + RELAY:443×3 + NL×4 + RELAY:9443×3
-DIRECT_OUTBOUND_TAGS = [
+# Live sub outbounds (14 proxy): LV×4 + RELAY:443×3 + NL×4 + RELAY:9443×3
+INTL_DIRECT_TAGS = [
     "proxy",
     "proxy-2",
     "proxy-3",
@@ -57,24 +60,94 @@ def fetch_template(c: PanelClient, template_uuid: str) -> dict:
     return c.get_or_raise(f"/api/subscription-templates/{template_uuid}")["response"]
 
 
-def _dedupe_balancer_domain_rules(rules: list[dict]) -> int:
-    """Keep one Super_Balancer+domain rule with full intl matcher list."""
+def _is_catchall_balancer_rule(rule: dict) -> bool:
+    return (
+        rule.get("balancerTag") in (CATCHALL_BALANCER_TAG, INTL_BALANCER_TAG)
+        and bool(rule.get("network"))
+        and not rule.get("domain")
+        and not rule.get("ip")
+    )
+
+
+def _is_intl_specific_rule(rule: dict) -> bool:
+    """TG/IG/Google rules — not the default tcp,udp catch-all."""
+    tag = rule.get("balancerTag")
+    if tag not in (CATCHALL_BALANCER_TAG, INTL_BALANCER_TAG):
+        return False
+    if _is_catchall_balancer_rule(rule):
+        return False
+    return bool(rule.get("domain") or rule.get("ip"))
+
+
+def _dedupe_intl_domain_rules(rules: list[dict]) -> int:
+    """One Intl_Direct+domain rule with full matcher list."""
     kept_idx = None
     removed = 0
     intl_key = json.dumps(INTL_DOMAINS, sort_keys=True)
     for i, r in enumerate(rules):
-        if r.get("balancerTag") != BALANCER_TAG or not r.get("domain"):
+        if r.get("balancerTag") not in (CATCHALL_BALANCER_TAG, INTL_BALANCER_TAG) or not r.get(
+            "domain"
+        ):
             continue
         if kept_idx is None:
             kept_idx = i
+            rules[i]["balancerTag"] = INTL_BALANCER_TAG
             rules[i]["domain"] = list(INTL_DOMAINS)
         else:
             rules.pop(i)
             removed += 1
-            return removed + _dedupe_balancer_domain_rules(rules)
-    if kept_idx is not None and json.dumps(rules[kept_idx].get("domain"), sort_keys=True) != intl_key:
-        rules[kept_idx]["domain"] = list(INTL_DOMAINS)
+            return removed + _dedupe_intl_domain_rules(rules)
+    if kept_idx is not None:
+        if rules[kept_idx].get("balancerTag") != INTL_BALANCER_TAG:
+            rules[kept_idx]["balancerTag"] = INTL_BALANCER_TAG
+        if json.dumps(rules[kept_idx].get("domain"), sort_keys=True) != intl_key:
+            rules[kept_idx]["domain"] = list(INTL_DOMAINS)
     return removed
+
+
+def _migrate_intl_rules_to_intl_balancer(rules: list[dict]) -> int:
+    n = 0
+    for r in rules:
+        if not _is_intl_specific_rule(r):
+            continue
+        if r.get("balancerTag") != INTL_BALANCER_TAG:
+            r["balancerTag"] = INTL_BALANCER_TAG
+            n += 1
+    return n
+
+
+def _ensure_balancer(
+    balancers: list[dict],
+    tag: str,
+    selector: list[str],
+) -> tuple[bool, list[str]]:
+    log: list[str] = []
+    changed = False
+    found = False
+    for b in balancers:
+        if b.get("tag") != tag:
+            continue
+        found = True
+        if list(b.get("selector") or []) != selector:
+            b["selector"] = list(selector)
+            log.append(f"{tag} selector -> {selector}")
+            changed = True
+        b.pop("fallbackTag", None)
+        if b.get("strategy", {}).get("type") != "random":
+            b["strategy"] = {"type": "random"}
+            log.append(f"{tag} strategy -> random")
+            changed = True
+    if not found:
+        balancers.append(
+            {
+                "tag": tag,
+                "selector": list(selector),
+                "strategy": {"type": "random"},
+            }
+        )
+        log.append(f"added balancer {tag} selector={selector}")
+        changed = True
+    return changed, log
 
 
 def apply_patch(doc: dict) -> tuple[bool, list[str]]:
@@ -86,27 +159,30 @@ def apply_patch(doc: dict) -> tuple[bool, list[str]]:
     log.extend(r_log)
     changed |= r_changed
 
-    n = _dedupe_balancer_domain_rules(rules)
-    if n:
-        log.append(f"deduped {n} duplicate Super_Balancer domain rule(s)")
+    migrated = _migrate_intl_rules_to_intl_balancer(rules)
+    if migrated:
+        log.append(f"migrated {migrated} intl rule(s) -> {INTL_BALANCER_TAG}")
         changed = True
 
+    n = _dedupe_intl_domain_rules(rules)
+    if n:
+        log.append(f"deduped {n} duplicate intl domain rule(s)")
+        changed = True
+
+    for r in rules:
+        if _is_catchall_balancer_rule(r) and r.get("balancerTag") != CATCHALL_BALANCER_TAG:
+            r["balancerTag"] = CATCHALL_BALANCER_TAG
+            log.append("catch-all rule -> Super_Balancer")
+            changed = True
+
     balancers = doc.setdefault("routing", {}).setdefault("balancers", [])
-    for b in balancers:
-        if b.get("tag") != BALANCER_TAG:
-            continue
-        current = list(b.get("selector") or [])
-        if current != DIRECT_OUTBOUND_TAGS:
-            b["selector"] = list(DIRECT_OUTBOUND_TAGS)
-            log.append(
-                f"{BALANCER_TAG} selector -> {len(DIRECT_OUTBOUND_TAGS)} Direct outbounds (intl speed)"
-            )
-            changed = True
-        b.pop("fallbackTag", None)
-        if b.get("strategy", {}).get("type") != "random":
-            b["strategy"] = {"type": "random"}
-            log.append(f"{BALANCER_TAG} strategy -> random")
-            changed = True
+    c_changed, c_log = _ensure_balancer(balancers, CATCHALL_BALANCER_TAG, CATCHALL_SELECTOR)
+    log.extend(c_log)
+    changed |= c_changed
+
+    i_changed, i_log = _ensure_balancer(balancers, INTL_BALANCER_TAG, INTL_DIRECT_TAGS)
+    log.extend(i_log)
+    changed |= i_changed
 
     for key in ("burstObservatory", "observatory"):
         if key in doc:
@@ -139,13 +215,13 @@ def main() -> int:
     for line in log:
         print(line)
     if not changed:
-        print("OK: direct-first balancer already applied")
+        print("OK: Intl_Direct + Super_Balancer catch-all already correct")
         return 0
     if not args.apply:
         print("\nDry-run. Apply: python ops/patch_balancer_direct_first_intl.py --apply")
         return 0
 
-    snap = SNAPSHOT_DIR / f"template-before-direct-first-intl-{time.strftime('%Y%m%d_%H%M%S')}.json"
+    snap = SNAPSHOT_DIR / f"template-before-intl-direct-split-{time.strftime('%Y%m%d_%H%M%S')}.json"
     snap.parent.mkdir(parents=True, exist_ok=True)
     snap.write_text(json.dumps(tpl, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Snapshot: {snap}")
@@ -153,7 +229,7 @@ def main() -> int:
     tpl["templateJson"] = doc
     patch_template(c, tpl, args.template_uuid)
     after_template_patch("patch_balancer_direct_first_intl")
-    print("Applied direct-first intl balancer (gen+1 via notify)")
+    print("Applied Intl_Direct (intl apps) + Super_Balancer catch-all [proxy] (gen+1)")
     return 0
 
 
