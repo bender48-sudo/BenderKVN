@@ -81,7 +81,7 @@ python ops/transport_mux_audit.py          # если template/MUX
 | **P1** | 128 | **P2-OPS-SQLITE-WAL-01** | CR-2 | TODO | WAL + `busy_timeout` в `initialize_db` |
 | **P1** | 127 | **P2-OPS-SCHED-CONCURRENT-01** | CR-2 | TODO | `gather` + semaphore для poll users |
 | **P1** | 129 | **P2-RED-BOT-AUTORENEW-01** | CR-2 | TODO | `days_left <= 0` (+ опц. pre-renew day 1) |
-| **P1** | 132 | **P1-PRO-VPN-SPEED-01** | VPN | TODO | Direct-first balancer для IG/TG/Google (**не** откат routing) |
+| **P1** | 132 | **P1-PRO-VPN-SPEED-01** | VPN | DONE | Direct-first balancer для IG/TG/Google (**не** откат routing); live gen=21 |
 | **P2** | 130 | **P2-RED-MUX-XHTTP-AUDIT-01** | CR-3 | TODO | xHTTP в `transport_mux_audit.py` |
 | **P2** | 131 | **P2-OPS-TRANSPORT-HEALTH-01** | CR-3 | TODO | `transport_profile_health.py` + алерт |
 | **P2** | 133 | **P2-RED-BOT-EXPIRY-HOUR-01** | CR-4 | TODO | Уведомление при `hours_left <= 6` |
@@ -185,7 +185,7 @@ python ops/transport_mux_audit.py          # если template/MUX
 
 | | |
 |--|--|
-| **Done when** | Новый patch (напр. `patch_balancer_direct_first_intl.py`): правила geosite IG/TG/… → balancer только на **8 Direct** outbounds; RELAY — отдельное fallback-правило **ниже**; gen+1 |
+| **Done when** | `patch_balancer_direct_first_intl.py`: geosite IG/TG/… → `Super_Balancer` selector только **8 Direct** outbounds; RELAY остаётся в injectHosts/sub; gen+1 |
 | **Verify** | `probe_subscription.py` (14 proxy, RELAY still in sub); Happ access_log: IG/TG чаще `LV:443 Direct`; **нет** `closed pipe`; пользовательский smoke «открывается + быстрее» |
 | **Regression guard** | **§0 полностью**; dry-run → apply → notify; откат: `patch_restore_14_relay_no_obs.py` |
 | **Commit** | `product: P1-PRO-VPN-SPEED-01 — direct-first balancer intl apps` |

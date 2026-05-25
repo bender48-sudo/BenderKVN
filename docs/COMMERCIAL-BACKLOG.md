@@ -344,7 +344,8 @@
 
 | Дата | Что сделано |
 |------|-------------|
-| 2026-05-25 | **Фаза 8 Q123–141 (агент) — DONE:** tenacity retry, jitter config, backup tar.gz prune, shared aiohttp pool, scheduler gather+metrics, WAL, autorenew `days_left<=0`, expiry 6h, `/health`, transport health script, `patch_balancer_direct_first_intl.py`, TSPU TG alert, provision_key slow log, runbooks SNI/relay/bootstrap/monitoring. **Q132 apply на panel:** `python ops/patch_balancer_direct_first_intl.py --apply` + product smoke. **Владелец:** **Q120**, **Q032**. |
+| 2026-05-25 | **Q132 P1-PRO-VPN-SPEED-01 — LIVE:** `patch_balancer_direct_first_intl.py --apply` → **gen=21**; `Super_Balancer` selector **8 Direct** (proxy…proxy-11); sub **200** **10637 B**, 14 vless + RELAY×6, no observatory; **`PRODUCT_BACKLOG_STATIC_OK`**, **`TRANSPORT_MUX_OK`**, **`AMS_SAFE_DEPLOY_OK`**, 14-relay guard OK. |
+| 2026-05-25 | **Фаза 8 Q123–141 (агент) — DONE:** tenacity retry, jitter config, backup tar.gz prune, shared aiohttp pool, scheduler gather+metrics, WAL, autorenew `days_left<=0`, expiry 6h, `/health`, transport health script, TSPU TG alert, provision_key slow log, runbooks SNI/relay/bootstrap/monitoring. **Владелец:** **Q120**, **Q032**. |
 | 2026-05-25 | **Q122 P2-RED-BOT-TIMEOUT-01 — DONE:** `REMNA_API_CONNECT_TIMEOUT`/`REMNA_API_TIMEOUT` в `config.py`; `remna_client_session()` на все Remna HTTP; smoke **`REMNA_API_TIMEOUT_OK`**; AMS deploy **`deploy-bot-handlers-ams`**, monitor grep **MONITOR_OK**. **NEXT=Q123.** |
 | 2026-05-20 | **Q102–121 (агент) — DONE** кроме **Q120** (2-й RU relay — владелец): security batch, HSTS **lv:9443**, `public_urls`, web_trial schema, **TLS_CLIENT_STACK_AUDIT_OK**. **Открыто:** **Q120**, **Q032**. |
 | 2026-05-20 | **Q102–111, Q113, Q116–119 — DONE:** firewall 3010/3011, bind token, **LIVE_SUB_SNI_OK**, k9 `@blocked_k9`, payments, portal resolve, trial atomic, MUX xhttp, selfsteal yandex :9443. |
