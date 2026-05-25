@@ -10,8 +10,8 @@ alwaysApply: true
 ## Обязательный цикл
 
 1. Прочитать **`docs/BACKLOG-QUEUE.md`** — взять только **`NEXT`**.
-2. Выполнить задачу по runbook / **Done when** в **`docs/COMMERCIAL-BACKLOG.md`**.
-3. Проверка из колонки **Verify** (bash -n, py_compile, probe, smoke — что применимо).
+2. Выполнить задачу по **Done when** в **`docs/AGENT-PHASE8-RELIABILITY-BACKLOG.md`** (фаза 8) или **`docs/COMMERCIAL-BACKLOG.md`** / runbook.
+3. Проверка: колонка **Verify** + gate §1 phase8 (после деплоя — полный smoke продукта; template — **`VPN-INCIDENT-LESSONS`** §0).
 4. Обновить **`BACKLOG-QUEUE.md`**: текущая → **DONE**, следующая → **NEXT**; при необходимости **`COMMERCIAL-BACKLOG.md` §12**.
 5. **Один commit** в `main` (шаблон **Commit** в очереди). **Push** — если владелец просит или действует **`commit-after-verify.mdc`**.
 6. **Остановиться.** Не начинать следующий **Q** в этом же чате, если владелец не написал явно «продолжай очередь» / «следующая задача».
@@ -25,7 +25,8 @@ alwaysApply: true
 ## Ссылки
 
 - Детали задач: **`docs/COMMERCIAL-BACKLOG.md`**
-- **Фаза 4 — прод (Q079–084, сейчас):** **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`**, **`prod-deploy-backlog.mdc`**
+- **Фаза 8 — сейчас (Q122–141):** **`docs/AGENT-PHASE8-RELIABILITY-BACKLOG.md`**, **`docs/VPN-INCIDENT-LESSONS-2026-05-25.md`**
+- **Фаза 4 — прод (Q079–084, закрыта):** **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`**
 - **Владелец:** **`docs/MANUAL-OWNER-CHECKLIST.md`** (Q032, BotFather, …)
 - Репо закрыто: security / product / flow backlogs (Q063–050)
 - Приоритеты продукта: **`docs/POLICY-BACKLOG-ORDER.md`**

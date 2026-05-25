@@ -212,11 +212,41 @@
 | 117 | **P2-RED-MUX-XHTTP-01** | **DONE** | MUX + XHTTP-first incident/FAQ | transport audit | `product: P2-RED-MUX-XHTTP-01` |
 | 118 | **P2-RED-SELFSTEAL-SNI-01** | **DONE** | Убрать github :9443 selfsteal | Caddy | `ops: selfsteal SNI` |
 | 119 | **P2-RED-WHITELIST-L3-01** | **DONE** | Runbook whitelist (черновик есть) | doc | `docs: whitelist L3` |
-| 120 | **P2-RED-TSPU-PROBE-MULTI-01** | **TODO** | 2-й RU relay | 2× probe | `ops: multi RU probe` |
+| 120 | **P2-OPS-RU-RELAY-02-VPS-01** | **TODO** | 2-й RU relay VPS (владелец) | 2× `tspu_block_probe` | OWNER — **`RUNBOOK-RU-RELAY-EXPANSION`** (Q139) |
 | 121 | **P2-RED-TLS-JA3-01** | **DONE** | TLS client stack audit | **TLS_CLIENT_STACK_AUDIT_OK** | `ops: JA3 audit` |
 
 **Аудиты:** [`AUDIT-2026-05-SECURITY-02.md`](AUDIT-2026-05-SECURITY-02.md) (Q101), [`AUDIT-2026-05-TSPU-REDTEAM-04.md`](AUDIT-2026-05-TSPU-REDTEAM-04.md) (ТСПУ **5/10**).  
-**Открыто:** **Q120** (2-й RU relay) + **Q032** (оферта). **NEXT=Q120** — **владелец**.
+**Параллельно (владелец, не NEXT):** **Q120**, **Q032** (оферта).
+
+### Фаза 8 — Reliability · скорость · TSPU (CodeRabbit + инцидент 2026-05-25)
+
+**Контекст:** [`docs/AGENT-PHASE8-RELIABILITY-BACKLOG.md`](AGENT-PHASE8-RELIABILITY-BACKLOG.md), [`docs/VPN-INCIDENT-LESSONS-2026-05-25.md`](VPN-INCIDENT-LESSONS-2026-05-25.md).  
+**Правило:** один Q → verify gate §1 phase8 doc → полный smoke продукта после деплоя → коммит → стоп. **Не ломать gen=20** (14 relay, no observatory panic).
+
+| Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
+|---|-----|--------|-------------------|--------|-----------------|
+| 122 | **P2-RED-BOT-TIMEOUT-01** | **NEXT** | `ClientTimeout` на все Remna HTTP в боте | `py_compile`; post-deploy monitor OK | `fix: P2-RED-BOT-TIMEOUT-01` |
+| 123 | **P2-RED-BOT-RETRY-01** | **TODO** | tenacity: transient 502/503/504 + connect | `py_compile`; retry log | `fix: P2-RED-BOT-RETRY-01` |
+| 124 | **P2-RED-BOT-JITTER-01** | **TODO** | Jitter в `config.py`; grep undefined | `_verify_sub_refresh_deploy.py` | `chore: P2-RED-BOT-JITTER-01` |
+| 125 | **P2-OPS-BACKUP-GLOB-01** | **TODO** | Prune `backup_*.tar.gz` not `shop_bot_*.db` | `py_compile` | `fix: P2-OPS-BACKUP-GLOB-01` |
+| 126 | **P2-RED-BOT-POOL-01** | **TODO** | Shared aiohttp session + shutdown | monitor 1 cycle | `fix: P2-RED-BOT-POOL-01` |
+| 127 | **P2-OPS-SCHED-CONCURRENT-01** | **TODO** | `gather` + semaphore poll users | batch duration log | `fix: P2-OPS-SCHED-CONCURRENT-01` |
+| 128 | **P2-OPS-SQLITE-WAL-01** | **TODO** | WAL + busy_timeout | `py_compile`; backup note | `fix: P2-OPS-SQLITE-WAL-01` |
+| 129 | **P2-RED-BOT-AUTORENEW-01** | **TODO** | `days_left <= 0` | `py_compile` | `fix: P2-RED-BOT-AUTORENEW-01` |
+| 130 | **P2-RED-MUX-XHTTP-AUDIT-01** | **TODO** | xHTTP в transport_mux_audit | **TRANSPORT_MUX_OK** | `ops: P2-RED-MUX-XHTTP-AUDIT-01` |
+| 131 | **P2-OPS-TRANSPORT-HEALTH-01** | **TODO** | `transport_profile_health.py` | script exit 0 | `ops: P2-OPS-TRANSPORT-HEALTH-01` |
+| 132 | **P1-PRO-VPN-SPEED-01** | **TODO** | Direct-first balancer intl apps (не откат routing) | `probe_subscription` + access_log | `product: P1-PRO-VPN-SPEED-01` |
+| 133 | **P2-RED-BOT-EXPIRY-HOUR-01** | **TODO** | Notify `hours_left <= 6` | `py_compile` | `fix: P2-RED-BOT-EXPIRY-HOUR-01` |
+| 134 | **P2-OPS-BOT-HEALTH-01** | **TODO** | `/health` panel+DB | curl health JSON | `ops: P2-OPS-BOT-HEALTH-01` |
+| 135 | **P2-OPS-SCHED-METRICS-01** | **TODO** | Cycle metrics в scheduler | log summary | `ops: P2-OPS-SCHED-METRICS-01` |
+| 136 | **P2-RED-TSPU-ALERT-01** | **TODO** | TG alert tspu_block_probe | probe dry-run | `ops: P2-RED-TSPU-ALERT-01` |
+| 137 | **P2-OPS-SUB-LATENCY-01** | **TODO** | p95 provision_key | log slow >5s | `ops: P2-OPS-SUB-LATENCY-01` |
+| 138 | **P2-DOC-SNI-MIGRATION-01** | **TODO** | Runbook SNI migration | doc review | `docs: P2-DOC-SNI-MIGRATION-01` |
+| 139 | **P2-DOC-RU-RELAY-02-01** | **TODO** | Runbook 2-го relay | doc + Q120 link | `docs: P2-DOC-RU-RELAY-02-01` |
+| 140 | **P2-DOC-BOOTSTRAP-FALLBACK-01** | **TODO** | Backup bootstrap runbook | doc review | `docs: P2-DOC-BOOTSTRAP-FALLBACK-01` |
+| 141 | **P2-DOC-MONITORING-01** | **TODO** | `MONITORING.md` | doc review | `docs: P2-DOC-MONITORING-01` |
+
+**NEXT=Q122** (агент). **Q120** — владелец, параллельно.
 
 ---
 
@@ -372,6 +402,7 @@
 | 2026-05-19 | **Q086** P3-RED-ADMIN-FSM-01 | **NEXT=Q087** |
 | 2026-05-19 | **Q087–097** (непрерывный режим) | **NEXT** пусто, фаза 6 закрыта |
 | 2026-05-20 | **Q102–121** (агент) | **NEXT=Q120** (владелец: 2-й RU VPS) |
+| 2026-05-25 | **Q120** owner | **Фаза 8** Q122–141; **NEXT=Q122** (`AGENT-PHASE8-RELIABILITY-BACKLOG`) |
 | 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |
 | 2026-05-18 | **Q079** P2-OPS-DEPLOY-BOT-SEC-01 | **Q080** P2-OPS-DEPLOY-EDGE-01 |
 | 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy |

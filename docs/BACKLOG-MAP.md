@@ -11,7 +11,8 @@
 | **1. Исполнение** | **`docs/BACKLOG-QUEUE.md`** | Линейная очередь **Q001…**; единственный **`NEXT`** |
 | **2. Задачи и журнал** | **`docs/COMMERCIAL-BACKLOG.md`** | ID, Done when, §7.1 P3-FLOW, **§12** прогресс на проде |
 | **3. Флоу (продукт)** | **`docs/USER-FLOW-BACKLOG.md`** | Принципы, MVP/Comfort, бабушка-тест |
-| **4. Агент — сейчас** | **`docs/AGENT-PHASE6-BACKLOG.md`** | Q086–097 GTM hardening |
+| **4. Агент — сейчас** | **`docs/AGENT-PHASE8-RELIABILITY-BACKLOG.md`** | Q122–141 reliability/TSPU/speed |
+| **4c. GTM (закрыто)** | **`docs/AGENT-PHASE6-BACKLOG.md`** | Q086–097 |
 | **4a. Прод (закрыто)** | **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`** | Q079–084 |
 | **4b. Владелец** | **`docs/MANUAL-OWNER-CHECKLIST.md`** | Q032, BotFather, DNSSEC, видео |
 | Закрыто (репо) | AUDIT / PRODUCT / FLOW backlogs | Q063–050 |
@@ -33,9 +34,10 @@
 | **4** | 079–084 | **Закрыта** | Накат LV/AMS (агент + SSH) |
 | **5** | 085 | **Закрыта** | ТСПУ red-team отчёт |
 | **6** | 086–097 | **Закрыта** | GTM security + discovery + polish |
-| **7** | 098–101 | **В работе** | TSPU раунд 2, RU relay, docs, CodeRabbit |
+| **7** | 098–121 | **Закрыта** | TSPU раунд 2, SNI live, selfsteal, MUX docs |
+| **8** | 122–141 | **В работе** | Bot reliability → scale → VPN speed → observability |
 
-**Сейчас:** **NEXT=Q099** (RU relay SSH). **Q098** отчёт **`AUDIT-2026-05-TSPU-REDTEAM-03.md`**. CodeRabbit: **`CODERABBIT-AUDIT-PROMPT-2026-05-PHASE7.md`**. Владелец: **Q032** (позже).
+**Сейчас:** **NEXT=Q122** (bot HTTP timeouts). Контекст: **`AGENT-PHASE8-RELIABILITY-BACKLOG.md`**, уроки **`VPN-INCIDENT-LESSONS-2026-05-25.md`**. Владелец параллельно: **Q120** (2-й RU relay), **Q032** (оферта).
 
 ---
 
@@ -46,7 +48,9 @@
 [DONE]      Q079–084  prod deploy (агент+SSH)
 [DONE]      Q085      TSPU red-team audit
 [OWNER]     Q032 + MANUAL-OWNER-CHECKLIST
-[PENDING]   Q086+     из AUDIT-2026-05-TSPU-REDTEAM.md
+[DONE]      Q086–097  GTM hardening
+[ACTIVE]    Q122–141  Phase 8 reliability (CodeRabbit + VPN incident)
+[OWNER]     Q120      2-й RU relay VPS
 ```
 
 **Gate:** накат AMS — **`RUNBOOK-AMS-SAFE-DEPLOY`** (не Q).
