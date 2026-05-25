@@ -248,6 +248,35 @@
 
 **NEXT=—** (фаза 8 Q122–141 закрыта агентом). **Q120** / **Q032** — владелец.
 
+### Фаза 9 — Bot CodeRabbit (2026-05-25)
+
+**Контекст:** [`docs/AUDIT-2026-05-BOT-CODERABBIT.md`](AUDIT-2026-05-BOT-CODERABBIT.md), [`docs/AGENT-PHASE9-BOT-CODERABBIT-BACKLOG.md`](AGENT-PHASE9-BOT-CODERABBIT-BACKLOG.md).  
+**Правило:** один Q → verify gate phase9 doc → deploy бота при изменении `bot_src` → коммит → стоп.
+
+| Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
+|---|-----|--------|-------------------|--------|-----------------|
+| 142 | **P2-RED-BOT-RENEW-IDEM-01** | **NEXT** | `renewal_attempts` + recovery stale pending | `py_compile` + renew audit | `fix: P2-RED-BOT-RENEW-IDEM-01` |
+| 143 | **P2-RED-BOT-MULTIKEY-01** | **TODO** | автопродление всех `vpn_keys` | `py_compile` | `fix: P2-RED-BOT-MULTIKEY-01` |
+| 144 | **P2-RED-BOT-BACKOFF-01** | **TODO** | global Remna circuit breaker 30s | `py_compile` | `fix: P2-RED-BOT-BACKOFF-01` |
+| 145 | **P2-RED-BOT-INBOUND-LOCK-01** | **TODO** | lock на inbound cache refresh | `py_compile` | `fix: P2-RED-BOT-INBOUND-LOCK-01` |
+| 146 | **P2-RED-WEBHOOK-ASYNC-01** | **TODO** | Flask → background asyncio loop | `py_compile` + webhook smoke | `fix: P2-RED-WEBHOOK-ASYNC-01` |
+| 147 | **P2-OPS-DB-INDEX-01** | **TODO** | indexes vpn_keys/referrals/actions + web_trial seq | EXPLAIN hot queries | `chore: P2-OPS-DB-INDEX-01` |
+| 148 | **P2-OPS-DB-MIGRATE-01** | **TODO** | `schema_migrations` vN chain | fresh DB upgrade | `chore: P2-OPS-DB-MIGRATE-01` |
+| 149 | **P2-OPS-WEBTRIAL-POOL-01** | **TODO** | sqlite pool web_trial | `py_compile` | `ops: P2-OPS-WEBTRIAL-POOL-01` |
+| 150 | **P2-RED-BOT-ADMIN-FIX-01** | **TODO** | get_setting import, HTML, mac URL, @support | admin flow step 1 | `fix: P2-RED-BOT-ADMIN-FIX-01` |
+| 151 | **P2-CHORE-KEYBOARD-STUBS-01** | **TODO** | cleanup keyboard stubs | menu grep | `chore: P2-CHORE-KEYBOARD-STUBS-01` |
+| 152 | **P2-RED-SETUP-URL-DEDUP-01** | **TODO** | `setup_url_service.py` | wizard=portal URL | `refactor: P2-RED-SETUP-URL-DEDUP-01` |
+| 153 | **P3-UX-MESSAGES-01** | **TODO** | user_messages consistency | grep | `product: P3-UX-MESSAGES-01` |
+| 154 | **P2-RED-SUB-URL-CACHE-01** | **TODO** | sub URL cache 60s TTL | cache hit log | `perf: P2-RED-SUB-URL-CACHE-01` |
+| 155 | **P2-OPS-SUB-REFRESH-BATCH-01** | **TODO** | batch 50 + TG 429 backoff | batch log | `ops: P2-OPS-SUB-REFRESH-BATCH-01` |
+| 156 | **P2-OPS-SCHED-JITTER-02** | **TODO** | scheduler jitter + backup task | SCHEDULER_CYCLE | `ops: P2-OPS-SCHED-JITTER-02` |
+| 157 | **P3-UX-LEGAL-FALLBACK-01** | **TODO** | terms/privacy fallback onboarding | `py_compile` | `product: P3-UX-LEGAL-FALLBACK-01` |
+| 158 | **P3-UX-WIZARD-FALLBACK-01** | **TODO** | wizard Mini App unavailable text | wizard smoke | `product: P3-UX-WIZARD-FALLBACK-01` |
+| 159 | **P3-RED-SUPPORT-RATELIMIT-PERSIST-01** | **TODO** | DB-backed support rate limit | `py_compile` | `security: P3-RED-SUPPORT-RATELIMIT-PERSIST-01` |
+| 160 | **P3-RED-SUPPORT-SILENT-01** | **TODO** | support unavailable user msg | startup warn | `ops: P3-RED-SUPPORT-SILENT-01` |
+
+**NEXT=Q142** (фаза 9). **Параллельно (владелец):** **Q120**, **Q032**.
+
 ---
 
 ## Шаблоны коммитов

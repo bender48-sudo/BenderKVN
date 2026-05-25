@@ -11,7 +11,8 @@
 | **1. Исполнение** | **`docs/BACKLOG-QUEUE.md`** | Линейная очередь **Q001…**; единственный **`NEXT`** |
 | **2. Задачи и журнал** | **`docs/COMMERCIAL-BACKLOG.md`** | ID, Done when, §7.1 P3-FLOW, **§12** прогресс на проде |
 | **3. Флоу (продукт)** | **`docs/USER-FLOW-BACKLOG.md`** | Принципы, MVP/Comfort, бабушка-тест |
-| **4. Агент — сейчас** | **`docs/AGENT-PHASE8-RELIABILITY-BACKLOG.md`** | Q122–141 reliability/TSPU/speed |
+| **4. Агент — сейчас** | **`docs/AGENT-PHASE9-BOT-CODERABBIT-BACKLOG.md`** | Q142–160 bot CodeRabbit |
+| **4 (закрыто)** | **`docs/AGENT-PHASE8-RELIABILITY-BACKLOG.md`** | Q122–141 reliability/TSPU/speed |
 | **4c. GTM (закрыто)** | **`docs/AGENT-PHASE6-BACKLOG.md`** | Q086–097 |
 | **4a. Прод (закрыто)** | **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`** | Q079–084 |
 | **4b. Владелец** | **`docs/MANUAL-OWNER-CHECKLIST.md`** | Q032, BotFather, DNSSEC, видео |
@@ -35,9 +36,10 @@
 | **5** | 085 | **Закрыта** | ТСПУ red-team отчёт |
 | **6** | 086–097 | **Закрыта** | GTM security + discovery + polish |
 | **7** | 098–121 | **Закрыта** | TSPU раунд 2, SNI live, selfsteal, MUX docs |
-| **8** | 122–141 | **В работе** | Bot reliability → scale → VPN speed → observability |
+| **8** | 122–141 | **Закрыта** | Bot reliability → VPN speed → observability |
+| **9** | 142–160 | **В работе** | CodeRabbit bot: renew idempotency, DB, cache, UX |
 
-**Сейчас:** фаза 8 **Q122–141** закрыта (репо + **Q132** на panel, gen=21). Владелец: **Q120** (2-й RU relay), **Q032** (оферта).
+**Сейчас:** **NEXT=Q142** (фаза 9). Аудит: **`AUDIT-2026-05-BOT-CODERABBIT.md`**. Владелец: **Q120**, **Q032**.
 
 ---
 

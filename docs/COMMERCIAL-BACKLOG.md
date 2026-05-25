@@ -326,7 +326,7 @@
 
 **Закрыто:** **P0–P2**, **P6** (фаза 1), **P1/P3-RED** + **P5-COM-01** (фаза 2), **P3-FLOW-00, 14, 01, 02, 12, 03** (Q033–038).
 
-**Сейчас (агент):** фаза 4 **Q079–Q084** ✅. **NEXT** нет — повторный аудит / GTM после **Q032**.
+**Сейчас (агент):** фаза 9 **Q142–160** — bot CodeRabbit ([`AUDIT-2026-05-BOT-CODERABBIT.md`](AUDIT-2026-05-BOT-CODERABBIT.md)). **NEXT=Q142**. Фаза 8 ✅.
 
 **Владелец:** **Q032** оферта; **BotFather :8443**; **CryptoBot POST**; DNSSEC — **`docs/MANUAL-OWNER-CHECKLIST.md`**.
 
@@ -344,6 +344,7 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-05-25 | **CodeRabbit bot audit → фаза 9:** [`AUDIT-2026-05-BOT-CODERABBIT.md`](AUDIT-2026-05-BOT-CODERABBIT.md); очередь **Q142–160** (19 задач: renew idempotency, multi-key, circuit breaker, DB indexes/migrations, sub URL cache, UX). **NEXT=Q142.** |
 | 2026-05-25 | **Q132 hotfix ping:** split **`Intl_Direct`** (8 Direct, TG/IG rules) vs **`Super_Balancer`** catch-all **`["proxy"]`** only — gen=22; иначе пинг ×3 (random NL на весь VPN). |
 | 2026-05-25 | **Q132 P1-PRO-VPN-SPEED-01 — LIVE:** gen=21→22; sub **200**, 14 vless + RELAY×6; intl via **Intl_Direct**. |
 | 2026-05-25 | **Фаза 8 Q123–141 (агент) — DONE:** tenacity retry, jitter config, backup tar.gz prune, shared aiohttp pool, scheduler gather+metrics, WAL, autorenew `days_left<=0`, expiry 6h, `/health`, transport health script, TSPU TG alert, provision_key slow log, runbooks SNI/relay/bootstrap/monitoring. **Владелец:** **Q120**, **Q032**. |
