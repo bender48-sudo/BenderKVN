@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""P1-PRO-VPN-SPEED-01: intl apps via Intl_Direct balancer (8× LV/NL Direct, no Relay).
+"""P1-PRO-VPN-SPEED-01: intl apps via Intl_Direct (RU: RELAY→LV only for TG/IG).
 
-Keeps 14 injectHosts. **Super_Balancer** stays on catch-all `network: tcp,udp` with
-selector `["proxy"]` only (stable ping). Intl/TG IP rules use **Intl_Direct** so IG/TG
-avoid relay without randomizing default VPN across 8 nodes.
+Keeps 14 injectHosts. **Super_Balancer** catch-all stays `["proxy"]` (stable ping).
+**Intl_Direct** uses proxy-5..7 (RELAY→LV :443) — from RU Direct/NL to 149.154.x is slow;
+access_log showed TG on proxy-14/NL Direct. Do not put NL or RELAY-NL in Intl selector.
 
 Usage:
     python ops/patch_balancer_direct_first_intl.py
@@ -42,16 +42,11 @@ CATCHALL_BALANCER_TAG = "Super_Balancer"
 INTL_BALANCER_TAG = "Intl_Direct"
 CATCHALL_SELECTOR = ["proxy"]
 
-# Live sub outbounds (14 proxy): LV×4 + RELAY:443×3 + NL×4 + RELAY:9443×3
+# injectHosts order: proxy..4 LV Direct, proxy-5..7 RELAY→LV :443, proxy-8..11 NL, 12..14 RELAY→NL
 INTL_DIRECT_TAGS = [
-    "proxy",
-    "proxy-2",
-    "proxy-3",
-    "proxy-4",
-    "proxy-8",
-    "proxy-9",
-    "proxy-10",
-    "proxy-11",
+    "proxy-5",
+    "proxy-6",
+    "proxy-7",
 ]
 INTL_DOMAINS = proxy_rule_domains()
 

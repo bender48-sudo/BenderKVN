@@ -77,7 +77,7 @@
 
 **Следующий безопасный шаг (отдельная задача, не в панике):**
 
-1. Два уровня: **`Intl_Direct`** только на **8 Direct** для geosite:instagram/telegram/…; **`Super_Balancer`** = `["proxy"]` на catch-all; RELAY — вручную из списка 14 или отдельный fallback-тег.
+1. Два уровня: **`Intl_Direct`** для TG/IG — с РФ только **`proxy-5..7` (RELAY→LV)**, не NL Direct и не `proxy-12..14`; **`Super_Balancer`** = `["proxy"]` на catch-all.
 2. Либо вернуть **`leastLoad`** только с observatory: **gstatic/204**, timeout **10s**, interval **30s** — и проверить Happ **`error_log`** на `closed pipe` **до** prod.
 3. Замер: Happ access_log — доля `RELAY` vs `LV:443 Direct` для доменов instagram.com / telegram.org у RU-клиента.
 
