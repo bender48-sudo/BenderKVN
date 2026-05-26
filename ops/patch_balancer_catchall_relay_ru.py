@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""P1-PRO-VPN-SPEED-01: intl apps via Intl_Direct (RU: RELAY→LV only for TG/IG).
+"""P1-PRO-VPN-STAB-02: catch-all traffic via RELAY→LV (proxy-5..7), not LV Direct.
 
-Keeps 14 injectHosts. **Super_Balancer** catch-all uses proxy-5..7 (RELAY→LV), same as
-**Intl_Direct** — from RU LV Direct :443 is unstable; see ``patch_balancer_catchall_relay_ru.py``.
-**Intl_Direct** uses proxy-5..7 (RELAY→LV :443) — from RU Direct/NL to 149.154.x is slow;
-access_log showed TG on proxy-14/NL Direct. Do not put NL or RELAY-NL in Intl selector.
+From RU, Super_Balancer selector ``["proxy"]`` (176.126.162.158:443 direct) is often
+unstable (games, ERR_CONNECTION_CLOSED). Intl apps already use Intl_Direct relay;
+this aligns default tcp,udp with the same three RELAY inbounds — not random 14 hosts
+(Q132 footgun).
+
+Also relaxes policy uplinkOnly/downlinkOnly for bursty UDP (games).
 
 Usage:
-    python ops/patch_balancer_direct_first_intl.py
-    python ops/patch_balancer_direct_first_intl.py --apply
+    python ops/patch_balancer_catchall_relay_ru.py
+    python ops/patch_balancer_catchall_relay_ru.py --apply
+    python ops/patch_balancer_catchall_relay_ru.py --verify-only
 """
 from __future__ import annotations
 
@@ -30,26 +33,19 @@ if str(_OPS) not in sys.path:
     sys.path.insert(0, str(_OPS))
 
 from panel_client import PanelClient  # noqa: E402
-from patch_routing_category_ru_leak import (  # noqa: E402
-    apply_patch as apply_routing_leak_patch,
-    proxy_rule_domains,
-)
 from subscription_config_notify import after_template_patch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
 DEFAULT_TEMPLATE_UUID = site_urls.REMNA_TEMPLATE_UUID
+
 CATCHALL_BALANCER_TAG = "Super_Balancer"
 INTL_BALANCER_TAG = "Intl_Direct"
-CATCHALL_SELECTOR = ["proxy-5", "proxy-6", "proxy-7"]
+CATCHALL_RELAY_SELECTOR = ["proxy-5", "proxy-6", "proxy-7"]
+INTL_DIRECT_TAGS = list(CATCHALL_RELAY_SELECTOR)
 
-# injectHosts order: proxy..4 LV Direct, proxy-5..7 RELAY→LV :443, proxy-8..11 NL, 12..14 RELAY→NL
-INTL_DIRECT_TAGS = [
-    "proxy-5",
-    "proxy-6",
-    "proxy-7",
-]
-INTL_DOMAINS = proxy_rule_domains()
+POLICY_UPLINK_ONLY = 30
+POLICY_DOWNLINK_ONLY = 30
 
 
 def fetch_template(c: PanelClient, template_uuid: str) -> dict:
@@ -63,53 +59,6 @@ def _is_catchall_balancer_rule(rule: dict) -> bool:
         and not rule.get("domain")
         and not rule.get("ip")
     )
-
-
-def _is_intl_specific_rule(rule: dict) -> bool:
-    """TG/IG/Google rules — not the default tcp,udp catch-all."""
-    tag = rule.get("balancerTag")
-    if tag not in (CATCHALL_BALANCER_TAG, INTL_BALANCER_TAG):
-        return False
-    if _is_catchall_balancer_rule(rule):
-        return False
-    return bool(rule.get("domain") or rule.get("ip"))
-
-
-def _dedupe_intl_domain_rules(rules: list[dict]) -> int:
-    """One Intl_Direct+domain rule with full matcher list."""
-    kept_idx = None
-    removed = 0
-    intl_key = json.dumps(INTL_DOMAINS, sort_keys=True)
-    for i, r in enumerate(rules):
-        if r.get("balancerTag") not in (CATCHALL_BALANCER_TAG, INTL_BALANCER_TAG) or not r.get(
-            "domain"
-        ):
-            continue
-        if kept_idx is None:
-            kept_idx = i
-            rules[i]["balancerTag"] = INTL_BALANCER_TAG
-            rules[i]["domain"] = list(INTL_DOMAINS)
-        else:
-            rules.pop(i)
-            removed += 1
-            return removed + _dedupe_intl_domain_rules(rules)
-    if kept_idx is not None:
-        if rules[kept_idx].get("balancerTag") != INTL_BALANCER_TAG:
-            rules[kept_idx]["balancerTag"] = INTL_BALANCER_TAG
-        if json.dumps(rules[kept_idx].get("domain"), sort_keys=True) != intl_key:
-            rules[kept_idx]["domain"] = list(INTL_DOMAINS)
-    return removed
-
-
-def _migrate_intl_rules_to_intl_balancer(rules: list[dict]) -> int:
-    n = 0
-    for r in rules:
-        if not _is_intl_specific_rule(r):
-            continue
-        if r.get("balancerTag") != INTL_BALANCER_TAG:
-            r["balancerTag"] = INTL_BALANCER_TAG
-            n += 1
-    return n
 
 
 def _ensure_balancer(
@@ -146,25 +95,27 @@ def _ensure_balancer(
     return changed, log
 
 
+def _relax_policy(doc: dict) -> tuple[bool, list[str]]:
+    log: list[str] = []
+    levels = doc.setdefault("policy", {}).setdefault("levels", {})
+    lv0 = levels.setdefault("0", {})
+    changed = False
+    if lv0.get("uplinkOnly") != POLICY_UPLINK_ONLY:
+        lv0["uplinkOnly"] = POLICY_UPLINK_ONLY
+        log.append(f"policy uplinkOnly -> {POLICY_UPLINK_ONLY}")
+        changed = True
+    if lv0.get("downlinkOnly") != POLICY_DOWNLINK_ONLY:
+        lv0["downlinkOnly"] = POLICY_DOWNLINK_ONLY
+        log.append(f"policy downlinkOnly -> {POLICY_DOWNLINK_ONLY}")
+        changed = True
+    return changed, log
+
+
 def apply_patch(doc: dict) -> tuple[bool, list[str]]:
     log: list[str] = []
     changed = False
 
-    rules = doc.setdefault("routing", {}).setdefault("rules", [])
-    r_changed, r_log = apply_routing_leak_patch(rules)
-    log.extend(r_log)
-    changed |= r_changed
-
-    migrated = _migrate_intl_rules_to_intl_balancer(rules)
-    if migrated:
-        log.append(f"migrated {migrated} intl rule(s) -> {INTL_BALANCER_TAG}")
-        changed = True
-
-    n = _dedupe_intl_domain_rules(rules)
-    if n:
-        log.append(f"deduped {n} duplicate intl domain rule(s)")
-        changed = True
-
+    rules = doc.get("routing", {}).get("rules") or []
     for r in rules:
         if _is_catchall_balancer_rule(r) and r.get("balancerTag") != CATCHALL_BALANCER_TAG:
             r["balancerTag"] = CATCHALL_BALANCER_TAG
@@ -172,7 +123,9 @@ def apply_patch(doc: dict) -> tuple[bool, list[str]]:
             changed = True
 
     balancers = doc.setdefault("routing", {}).setdefault("balancers", [])
-    c_changed, c_log = _ensure_balancer(balancers, CATCHALL_BALANCER_TAG, CATCHALL_SELECTOR)
+    c_changed, c_log = _ensure_balancer(
+        balancers, CATCHALL_BALANCER_TAG, CATCHALL_RELAY_SELECTOR
+    )
     log.extend(c_log)
     changed |= c_changed
 
@@ -180,10 +133,40 @@ def apply_patch(doc: dict) -> tuple[bool, list[str]]:
     log.extend(i_log)
     changed |= i_changed
 
+    p_changed, p_log = _relax_policy(doc)
+    log.extend(p_log)
+    changed |= p_changed
+
     for key in ("burstObservatory", "observatory"):
         if key in doc:
             log.append(f"WARN: {key} present — run patch_restore_14_relay_no_obs first")
     return changed, log
+
+
+def verify_template_json(doc: dict) -> list[str]:
+    errors: list[str] = []
+    balancers = {b.get("tag"): b for b in doc.get("routing", {}).get("balancers") or []}
+    sb = balancers.get(CATCHALL_BALANCER_TAG)
+    if not sb:
+        errors.append(f"missing balancer {CATCHALL_BALANCER_TAG}")
+    elif list(sb.get("selector") or []) != CATCHALL_RELAY_SELECTOR:
+        errors.append(
+            f"{CATCHALL_BALANCER_TAG} selector={sb.get('selector')!r}, "
+            f"want {CATCHALL_RELAY_SELECTOR}"
+        )
+    idb = balancers.get(INTL_BALANCER_TAG)
+    if not idb:
+        errors.append(f"missing balancer {INTL_BALANCER_TAG}")
+    elif list(idb.get("selector") or []) != INTL_DIRECT_TAGS:
+        errors.append(f"{INTL_BALANCER_TAG} selector mismatch")
+    if doc.get("burstObservatory") or doc.get("observatory"):
+        errors.append("observatory must be absent")
+    lv0 = (doc.get("policy") or {}).get("levels", {}).get("0") or {}
+    if lv0.get("uplinkOnly") != POLICY_UPLINK_ONLY:
+        errors.append(f"uplinkOnly={lv0.get('uplinkOnly')}")
+    if lv0.get("downlinkOnly") != POLICY_DOWNLINK_ONLY:
+        errors.append(f"downlinkOnly={lv0.get('downlinkOnly')}")
+    return errors
 
 
 def patch_template(c: PanelClient, tpl: dict, template_uuid: str) -> None:
@@ -201,31 +184,50 @@ def patch_template(c: PanelClient, tpl: dict, template_uuid: str) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--verify-only", action="store_true")
     ap.add_argument("--template-uuid", default=DEFAULT_TEMPLATE_UUID)
     args = ap.parse_args()
 
     c = PanelClient(timeout=120)
     tpl = fetch_template(c, args.template_uuid)
-    doc = copy.deepcopy(tpl["templateJson"])
-    changed, log = apply_patch(doc)
+    doc = tpl["templateJson"]
+
+    if args.verify_only:
+        errs = verify_template_json(doc)
+        if errs:
+            print("FAIL:", "; ".join(errs))
+            return 1
+        print("OK: template matches catch-all RELAY profile")
+        return 0
+
+    changed, log = apply_patch(copy.deepcopy(doc))
     for line in log:
         print(line)
     if not changed:
-        print("OK: Intl_Direct + Super_Balancer catch-all already correct")
+        errs = verify_template_json(doc)
+        if errs:
+            print("WARN: no patch needed but verify failed:", errs)
+            return 1
+        print("OK: already on catch-all RELAY profile")
         return 0
     if not args.apply:
-        print("\nDry-run. Apply: python ops/patch_balancer_direct_first_intl.py --apply")
+        print("\nDry-run. Apply: python ops/patch_balancer_catchall_relay_ru.py --apply")
         return 0
 
-    snap = SNAPSHOT_DIR / f"template-before-intl-direct-split-{time.strftime('%Y%m%d_%H%M%S')}.json"
+    snap = SNAPSHOT_DIR / f"template-before-catchall-relay-{time.strftime('%Y%m%d_%H%M%S')}.json"
     snap.parent.mkdir(parents=True, exist_ok=True)
     snap.write_text(json.dumps(tpl, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Snapshot: {snap}")
 
-    tpl["templateJson"] = doc
+    apply_patch(tpl["templateJson"])
+    errs = verify_template_json(tpl["templateJson"])
+    if errs:
+        print("FAIL post-patch (not sending):", errs, file=sys.stderr)
+        return 1
+
     patch_template(c, tpl, args.template_uuid)
-    after_template_patch("patch_balancer_direct_first_intl")
-    print("Applied Intl_Direct + Super_Balancer catch-all [proxy-5..7 RELAY] (gen+1)")
+    after_template_patch("patch_balancer_catchall_relay_ru")
+    print("Applied: Super_Balancer catch-all -> RELAY proxy-5..7; policy 30/30")
     return 0
 
 
