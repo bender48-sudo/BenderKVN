@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""P1-PRO-VPN-SPEED-01: intl apps via Intl_Direct (RU: RELAY→LV only for TG/IG).
+"""P1-PRO-VPN-SPEED-01: Intl_Direct + Super_Balancer RU multipath (11 outbounds).
 
-Keeps 14 injectHosts. **Super_Balancer** catch-all uses proxy-5..7 (RELAY→LV), same as
-**Intl_Direct** — from RU LV Direct :443 is unstable; see ``patch_balancer_catchall_relay_ru.py``.
-**Intl_Direct** uses proxy-5..7 (RELAY→LV :443) — from RU Direct/NL to 149.154.x is slow;
-access_log showed TG on proxy-14/NL Direct. Do not put NL or RELAY-NL in Intl selector.
+Both balancers use ``RU_MULTIPATH_SELECTOR`` (LV Direct + RELAY→LV + NL Direct).
+Excludes relay-only proxy-5..7 SPOF and Q132 footgun ``["proxy"]`` all-14 hosts.
+RELAY→NL (proxy-12..14) excluded — 9443 DPI / TG history.
 
 Usage:
     python ops/patch_balancer_direct_first_intl.py
@@ -29,6 +28,7 @@ _OPS = Path(__file__).resolve().parent
 if str(_OPS) not in sys.path:
     sys.path.insert(0, str(_OPS))
 
+from balancer_selectors import RU_MULTIPATH_SELECTOR  # noqa: E402
 from panel_client import PanelClient  # noqa: E402
 from patch_routing_category_ru_leak import (  # noqa: E402
     apply_patch as apply_routing_leak_patch,
@@ -41,24 +41,8 @@ SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
 DEFAULT_TEMPLATE_UUID = site_urls.REMNA_TEMPLATE_UUID
 CATCHALL_BALANCER_TAG = "Super_Balancer"
 INTL_BALANCER_TAG = "Intl_Direct"
-CATCHALL_SELECTOR = ["proxy-5", "proxy-6", "proxy-7"]
-
-# injectHosts order: proxy..4 LV Direct, proxy-5..7 RELAY→LV :443, proxy-8..11 NL, 12..14 RELAY→NL
-# Intl apps (IG/TG/…): multi-path — RU relay TLS flaps every ~5–10 min (ru-monitor);
-# relay-only (2026-05-25) caused «то грузит, то нет» for Instagram. Catch-all stays relay-only.
-INTL_DIRECT_TAGS = [
-    "proxy",
-    "proxy-2",
-    "proxy-3",
-    "proxy-4",
-    "proxy-5",
-    "proxy-6",
-    "proxy-7",
-    "proxy-8",
-    "proxy-9",
-    "proxy-10",
-    "proxy-11",
-]
+CATCHALL_SELECTOR = list(RU_MULTIPATH_SELECTOR)
+INTL_DIRECT_TAGS = list(RU_MULTIPATH_SELECTOR)
 INTL_DOMAINS = proxy_rule_domains()
 
 
@@ -236,8 +220,8 @@ def main() -> int:
     patch_template(c, tpl, args.template_uuid)
     after_template_patch("patch_balancer_direct_first_intl")
     print(
-        "Applied Intl_Direct multi-path (LV+RELAY+NL) + "
-        "Super_Balancer catch-all [proxy-5..7 RELAY] (gen+1)"
+        "Applied Intl_Direct + Super_Balancer RU multipath "
+        f"({len(RU_MULTIPATH_SELECTOR)} outbounds, gen+1)"
     )
     return 0
 

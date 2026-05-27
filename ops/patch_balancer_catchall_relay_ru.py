@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""P1-PRO-VPN-STAB-02: catch-all traffic via RELAY→LV (proxy-5..7), not LV Direct.
+"""P1-PRO-VPN-STAB-02: catch-all + policy for RU multipath profile.
 
-From RU, Super_Balancer selector ``["proxy"]`` (176.126.162.158:443 direct) is often
-unstable (games, ERR_CONNECTION_CLOSED). Intl apps already use Intl_Direct relay;
-this aligns default tcp,udp with the same three RELAY inbounds — not random 14 hosts
-(Q132 footgun).
+Sets **Super_Balancer** to ``RU_MULTIPATH_SELECTOR`` (not relay-only SPOF).
+Policy uplinkOnly/downlinkOnly 30/30 for bursty UDP. Intl_Direct owned by
+``patch_balancer_direct_first_intl.py``.
 
-Also relaxes policy uplinkOnly/downlinkOnly for bursty UDP (games).
+Observatory intentionally absent (closed-pipe risk on RU — see incident lessons).
 
 Usage:
     python ops/patch_balancer_catchall_relay_ru.py
@@ -32,6 +31,12 @@ _OPS = Path(__file__).resolve().parent
 if str(_OPS) not in sys.path:
     sys.path.insert(0, str(_OPS))
 
+from balancer_selectors import (  # noqa: E402
+    POLICY_DOWNLINK_ONLY,
+    POLICY_UPLINK_ONLY,
+    RU_MULTIPATH_SELECTOR,
+    verify_ru_multipath_profile,
+)
 from panel_client import PanelClient  # noqa: E402
 from subscription_config_notify import after_template_patch  # noqa: E402
 
@@ -41,11 +46,7 @@ DEFAULT_TEMPLATE_UUID = site_urls.REMNA_TEMPLATE_UUID
 
 CATCHALL_BALANCER_TAG = "Super_Balancer"
 INTL_BALANCER_TAG = "Intl_Direct"
-CATCHALL_RELAY_SELECTOR = ["proxy-5", "proxy-6", "proxy-7"]
-# Intl_Direct is owned by patch_balancer_direct_first_intl.py (multi-path for IG/TG).
-
-POLICY_UPLINK_ONLY = 30
-POLICY_DOWNLINK_ONLY = 30
+CATCHALL_SELECTOR = list(RU_MULTIPATH_SELECTOR)
 
 
 def fetch_template(c: PanelClient, template_uuid: str) -> dict:
@@ -75,7 +76,7 @@ def _ensure_balancer(
         found = True
         if list(b.get("selector") or []) != selector:
             b["selector"] = list(selector)
-            log.append(f"{tag} selector -> {selector}")
+            log.append(f"{tag} selector -> {len(selector)} paths")
             changed = True
         b.pop("fallbackTag", None)
         if b.get("strategy", {}).get("type") != "random":
@@ -90,7 +91,7 @@ def _ensure_balancer(
                 "strategy": {"type": "random"},
             }
         )
-        log.append(f"added balancer {tag} selector={selector}")
+        log.append(f"added balancer {tag} selector={len(selector)} paths")
         changed = True
     return changed, log
 
@@ -124,7 +125,7 @@ def apply_patch(doc: dict) -> tuple[bool, list[str]]:
 
     balancers = doc.setdefault("routing", {}).setdefault("balancers", [])
     c_changed, c_log = _ensure_balancer(
-        balancers, CATCHALL_BALANCER_TAG, CATCHALL_RELAY_SELECTOR
+        balancers, CATCHALL_BALANCER_TAG, CATCHALL_SELECTOR
     )
     log.extend(c_log)
     changed |= c_changed
@@ -135,29 +136,12 @@ def apply_patch(doc: dict) -> tuple[bool, list[str]]:
 
     for key in ("burstObservatory", "observatory"):
         if key in doc:
-            log.append(f"WARN: {key} present — run patch_restore_14_relay_no_obs first")
+            log.append(f"WARN: {key} present — run patch_remove_observatory if unintended")
     return changed, log
 
 
 def verify_template_json(doc: dict) -> list[str]:
-    errors: list[str] = []
-    balancers = {b.get("tag"): b for b in doc.get("routing", {}).get("balancers") or []}
-    sb = balancers.get(CATCHALL_BALANCER_TAG)
-    if not sb:
-        errors.append(f"missing balancer {CATCHALL_BALANCER_TAG}")
-    elif list(sb.get("selector") or []) != CATCHALL_RELAY_SELECTOR:
-        errors.append(
-            f"{CATCHALL_BALANCER_TAG} selector={sb.get('selector')!r}, "
-            f"want {CATCHALL_RELAY_SELECTOR}"
-        )
-    if doc.get("burstObservatory") or doc.get("observatory"):
-        errors.append("observatory must be absent")
-    lv0 = (doc.get("policy") or {}).get("levels", {}).get("0") or {}
-    if lv0.get("uplinkOnly") != POLICY_UPLINK_ONLY:
-        errors.append(f"uplinkOnly={lv0.get('uplinkOnly')}")
-    if lv0.get("downlinkOnly") != POLICY_DOWNLINK_ONLY:
-        errors.append(f"downlinkOnly={lv0.get('downlinkOnly')}")
-    return errors
+    return verify_ru_multipath_profile(doc)
 
 
 def patch_template(c: PanelClient, tpl: dict, template_uuid: str) -> None:
@@ -188,7 +172,7 @@ def main() -> int:
         if errs:
             print("FAIL:", "; ".join(errs))
             return 1
-        print("OK: template matches catch-all RELAY profile")
+        print("OK: template matches RU multipath profile")
         return 0
 
     changed, log = apply_patch(copy.deepcopy(doc))
@@ -199,13 +183,13 @@ def main() -> int:
         if errs:
             print("WARN: no patch needed but verify failed:", errs)
             return 1
-        print("OK: already on catch-all RELAY profile")
+        print("OK: already on RU multipath profile")
         return 0
     if not args.apply:
         print("\nDry-run. Apply: python ops/patch_balancer_catchall_relay_ru.py --apply")
         return 0
 
-    snap = SNAPSHOT_DIR / f"template-before-catchall-relay-{time.strftime('%Y%m%d_%H%M%S')}.json"
+    snap = SNAPSHOT_DIR / f"template-before-catchall-multipath-{time.strftime('%Y%m%d_%H%M%S')}.json"
     snap.parent.mkdir(parents=True, exist_ok=True)
     snap.write_text(json.dumps(tpl, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Snapshot: {snap}")
@@ -218,7 +202,9 @@ def main() -> int:
 
     patch_template(c, tpl, args.template_uuid)
     after_template_patch("patch_balancer_catchall_relay_ru")
-    print("Applied: Super_Balancer catch-all -> RELAY proxy-5..7; policy 30/30")
+    print(
+        f"Applied: Super_Balancer multipath ({len(CATCHALL_SELECTOR)} paths); policy 30/30"
+    )
     return 0
 
 
