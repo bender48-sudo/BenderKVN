@@ -193,7 +193,12 @@ VPN-AUD-101 (gate script)
 | Дата | ID | Статус | Примечание |
 |------|-----|--------|------------|
 | 2026-05-28 | VPN-AUD-000…011 | DONE | gen=26, commits d38a77e, 82a9808, a7b2a69 |
-| | VPN-AUD-101+ | TODO | — |
+| 2026-05-28 | VPN-AUD-101 | DONE | `ops/vpn_verify_gate.py` → VPN_VERIFY_GATE_OK |
+| 2026-05-28 | VPN-AUD-102 | DONE | broadcast 56/57 OK; test-admin; gen≥27 |
+| 2026-05-28 | VPN-AUD-110 | DONE | bufferSize 128; gen=27 |
+| 2026-05-28 | VPN-AUD-120,121 | DONE | Intl IP 15 CIDR (TG/Meta/OpenAI); gen=28 |
+| 2026-05-28 | VPN-AUD-130 | DONE | customRemarks: auto server, без «выберите LV/NL» |
+| | VPN-AUD-103,140,150+ | TODO | owner smoke; docker events; drift |
 
 ---
 
