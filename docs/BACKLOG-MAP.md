@@ -11,7 +11,9 @@
 | **1. Исполнение** | **`docs/BACKLOG-QUEUE.md`** | Линейная очередь **Q001…**; единственный **`NEXT`** |
 | **2. Задачи и журнал** | **`docs/COMMERCIAL-BACKLOG.md`** | ID, Done when, §7.1 P3-FLOW, **§12** прогресс на проде |
 | **3. Флоу (продукт)** | **`docs/USER-FLOW-BACKLOG.md`** | Принципы, MVP/Comfort, бабушка-тест |
-| **4. Агент — сейчас** | **`docs/AGENT-PHASE9-BOT-CODERABBIT-BACKLOG.md`** | Q142–160 bot CodeRabbit |
+| **4. Агент — VPN аудит** | **`docs/BACKLOG-VPN-FULL-AUDIT-2026-05-28.md`** | Полный бэклог Claude 28.05 + gate |
+| **4. Агент — сейчас** | **`docs/AGENT-PHASE10-BOT-CODERABBIT-BACKLOG.md`** | Q161–166 bot CodeRabbit раунд 2 |
+| **4 (закрыто)** | **`docs/AGENT-PHASE9-BOT-CODERABBIT-BACKLOG.md`** | Q142–160 bot CodeRabbit |
 | **4 (закрыто)** | **`docs/AGENT-PHASE8-RELIABILITY-BACKLOG.md`** | Q122–141 reliability/TSPU/speed |
 | **4c. GTM (закрыто)** | **`docs/AGENT-PHASE6-BACKLOG.md`** | Q086–097 |
 | **4a. Прод (закрыто)** | **`docs/AGENT-PROD-DEPLOY-BACKLOG.md`** | Q079–084 |
@@ -38,8 +40,11 @@
 | **7** | 098–121 | **Закрыта** | TSPU раунд 2, SNI live, selfsteal, MUX docs |
 | **8** | 122–141 | **Закрыта** | Bot reliability → VPN speed → observability |
 | **9** | 142–160 | **Закрыта** | CodeRabbit bot: renew idempotency, DB, cache, UX |
+| **10** | 161–166 | **Активна** | CodeRabbit bot раунд 2: env, integrity, renew, sec, schema, polish |
 
-**Сейчас:** очередь агента **пуста** (Q001–160 кроме owner). Владелец: **Q120**, **Q032**. Аудит: **`AUDIT-2026-05-BOT-CODERABBIT.md`**.
+**Сейчас:** **VPN полный аудит** — [`BACKLOG-VPN-FULL-AUDIT-2026-05-28.md`](BACKLOG-VPN-FULL-AUDIT-2026-05-28.md) (Phase 1+). Параллельно bot: **Q161**. Владелец: **Q120**, **Q032**, **O-VPN-002/003**.
+
+**Gate после каждой VPN-правки:** `python ops/vpn_verify_gate.py`
 
 ---
 
