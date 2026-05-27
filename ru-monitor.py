@@ -451,7 +451,7 @@ def main():
                     else (prev.get("last_change", now_ts) if prev else now_ts)
                 ),
                 "fail_count": (
-                    (prev.get("fail_count", 0) + 1) if status == "fail" else 0
+                    ((prev or {}).get("fail_count", 0) + 1) if status == "fail" else 0
                 ),
                 "last_cert_fp": cert_fp,
                 "last_error": r.get("error"),
