@@ -14,6 +14,7 @@ from shop_bot.data_manager.database import (
     register_user_if_not_exists,
     support_rate_limit_check,
 )
+from shop_bot.support_auth import is_authorized_support_staff
 
 logger = logging.getLogger(__name__)
 

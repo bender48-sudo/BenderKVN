@@ -13,6 +13,13 @@ def main() -> int:
     sh = (BOT / "support_handler.py").read_text(encoding="utf-8")
     sa = (BOT / "support_auth.py").read_text(encoding="utf-8")
 
+    if "from shop_bot.support_auth import is_authorized_support_staff" not in sh:
+        print(
+            "SUPPORT_REPLY_AUTHZ_FAIL: support_handler must import is_authorized_support_staff",
+            file=sys.stderr,
+        )
+        return 1
+
     for needle in (
         "is_authorized_support_staff",
         "SUPPORT_STAFF_IDS",
