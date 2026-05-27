@@ -42,7 +42,7 @@ DEFAULT_TEMPLATE_UUID = site_urls.REMNA_TEMPLATE_UUID
 CATCHALL_BALANCER_TAG = "Super_Balancer"
 INTL_BALANCER_TAG = "Intl_Direct"
 CATCHALL_RELAY_SELECTOR = ["proxy-5", "proxy-6", "proxy-7"]
-INTL_DIRECT_TAGS = list(CATCHALL_RELAY_SELECTOR)
+# Intl_Direct is owned by patch_balancer_direct_first_intl.py (multi-path for IG/TG).
 
 POLICY_UPLINK_ONLY = 30
 POLICY_DOWNLINK_ONLY = 30
@@ -129,10 +129,6 @@ def apply_patch(doc: dict) -> tuple[bool, list[str]]:
     log.extend(c_log)
     changed |= c_changed
 
-    i_changed, i_log = _ensure_balancer(balancers, INTL_BALANCER_TAG, INTL_DIRECT_TAGS)
-    log.extend(i_log)
-    changed |= i_changed
-
     p_changed, p_log = _relax_policy(doc)
     log.extend(p_log)
     changed |= p_changed
@@ -154,11 +150,6 @@ def verify_template_json(doc: dict) -> list[str]:
             f"{CATCHALL_BALANCER_TAG} selector={sb.get('selector')!r}, "
             f"want {CATCHALL_RELAY_SELECTOR}"
         )
-    idb = balancers.get(INTL_BALANCER_TAG)
-    if not idb:
-        errors.append(f"missing balancer {INTL_BALANCER_TAG}")
-    elif list(idb.get("selector") or []) != INTL_DIRECT_TAGS:
-        errors.append(f"{INTL_BALANCER_TAG} selector mismatch")
     if doc.get("burstObservatory") or doc.get("observatory"):
         errors.append("observatory must be absent")
     lv0 = (doc.get("policy") or {}).get("levels", {}).get("0") or {}

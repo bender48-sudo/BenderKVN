@@ -12,7 +12,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 # --- Constants ---
 VIRTUAL_HOST_UUID = "305ccacd-ab74-42a4-b1a2-f80cdde69a25"
@@ -31,6 +31,10 @@ LOCK_FILE = "/tmp/bvpn-ru-monitor.lock"
 # P6-SCALE-06: cron */5 → cycle must stay <300s; jitter capped (was 120).
 JITTER_MAX = 60
 CYCLE_WARN_SEC = 240  # log WARNING if total cycle exceeds this
+# Anti-flap (same idea as monitor.sh): avoid TG spam when relay TLS flaps.
+DEFAULT_FAIL_STREAK = 3  # */5 cron → ~15 min sustained fail before DOWN
+DEFAULT_OK_STREAK = 2  # ~10 min sustained OK before RECOVERED
+DEFAULT_RE_ALERT_COOLDOWN_SEC = 900
 
 
 def acquire_lock():
@@ -319,6 +323,59 @@ def format_alert_recovered(r, prev):
     )
 
 
+def format_batch_down(items):
+    n = len(items)
+    lines = [
+        f"\U0001f6a8 <b>RU MONITOR: SNI failures</b> ({n} target{'s' if n != 1 else ''})\n",
+        "<b>Checked from:</b> Russia Relay (72.56.0.145)\n",
+    ]
+    for r in items:
+        tcp = r.get("tcp_connect_ms")
+        tcp_text = f"{tcp}ms" if tcp is not None else "?"
+        err = r.get("error") or "timeout"
+        lines.append(
+            f"• <b>{r['sni']}</b> @ {r['address']}:{r['port']} "
+            f"— TLS failed ({err}), TCP {tcp_text}"
+        )
+    lines.append(
+        "\nВозможные причины:\n"
+        "- ТСПУ блокирует SNI/IP из РФ (частый флап — не обязательно падение нод)\n"
+        "- Нода отвалилась (проверь monitor.sh)\n"
+        "- Промежуточная сеть лежит"
+    )
+    return "\n".join(lines)
+
+
+def format_batch_recovered(items):
+    n = len(items)
+    lines = [
+        f"\u2705 <b>RU MONITOR: recovered</b> ({n} target{'s' if n != 1 else ''})\n",
+        "<b>Checked from:</b> Russia Relay (72.56.0.145)\n",
+    ]
+    for r, prev in items:
+        down_for = humanize_since(prev.get("last_change", "unknown"))
+        tls = r.get("tls_handshake_ms", "?")
+        lines.append(
+            f"• <b>{r['sni']}</b> @ {r['address']}:{r['port']} "
+            f"— OK ({tls}ms), was down ~{down_for}"
+        )
+    return "\n".join(lines)
+
+
+def cooldown_allows(prev, cooldown_sec):
+    """True if we may open a new DOWN after a recent RECOVERED."""
+    if not prev:
+        return True
+    until = prev.get("cooldown_until")
+    if not until:
+        return True
+    try:
+        end = datetime.fromisoformat(until.replace("Z", "+00:00"))
+        return datetime.now(timezone.utc) >= end
+    except (ValueError, TypeError):
+        return True
+
+
 def format_alert_cert_changed(r, old_fp, new_fp):
     return (
         f"\u26a0\ufe0f <b>RU MONITOR: certificate changed</b>\n\n"
@@ -360,6 +417,15 @@ def main():
         relay_key = monitor_env.get("RELAY_SSH_KEY", "/root/.ssh/id_ed25519")
         bot_token = balancer_env.get("BOT_TOKEN")
         chat_id = balancer_env.get("ADMIN_CHAT_ID", "924498094")
+        fail_streak_need = int(
+            monitor_env.get("RU_FAIL_STREAK_THRESHOLD", DEFAULT_FAIL_STREAK)
+        )
+        ok_streak_need = int(
+            monitor_env.get("RU_OK_STREAK_THRESHOLD", DEFAULT_OK_STREAK)
+        )
+        re_alert_cooldown_sec = int(
+            monitor_env.get("RU_RE_ALERT_COOLDOWN_SEC", DEFAULT_RE_ALERT_COOLDOWN_SEC)
+        )
 
         if not api_token:
             log("FATAL: REMNA_API_TOKEN not found in /etc/bvpn/ru-monitor.env")
@@ -393,11 +459,13 @@ def main():
         prev_state = load_state()
         is_first_run = len(prev_state) == 0
 
-        # Process results, detect transitions
+        # Process results with streak anti-flap (monitor.sh-style).
         new_state = {}
         ok_count = 0
         fail_count = 0
         transitions = 0
+        pending_down = []
+        pending_recovered = []
 
         for r in results:
             key = make_target_key(r)
@@ -405,59 +473,90 @@ def main():
             status = "ok" if is_ok else "fail"
             cert_fp = r.get("cert_fingerprint")
 
-            prev = prev_state.get(key)
-            prev_status = prev.get("status") if prev else None
-            prev_cert = prev.get("last_cert_fp") if prev else None
+            prev = prev_state.get(key) or {}
+            prev_status = prev.get("status")
+            prev_cert = prev.get("last_cert_fp")
+            alerting = bool(prev.get("alerting"))
+            fail_streak = int(prev.get("fail_streak", prev.get("fail_count", 0)))
+            ok_streak = int(prev.get("ok_streak", 0))
+            last_change = prev.get("last_change", now_ts)
+            cooldown_until = prev.get("cooldown_until")
 
             if is_ok:
                 ok_count += 1
+                fail_streak = 0
+                ok_streak = ok_streak + 1
             else:
                 fail_count += 1
+                ok_streak = 0
+                fail_streak = fail_streak + 1
 
-            # Detect transition
-            transition = None
-            if prev_status == "ok" and status == "fail":
-                transition = "down"
-            elif prev_status == "fail" and status == "ok":
-                transition = "recovered"
-            elif prev_status is None and status == "fail" and not is_first_run:
-                transition = "down"
-            elif (prev_status == "ok" and status == "ok"
-                  and prev_cert and cert_fp and prev_cert != cert_fp):
-                transition = "cert_changed"
+            cert_transition = (
+                prev_status == "ok" and status == "ok"
+                and prev_cert and cert_fp and prev_cert != cert_fp
+            )
 
-            if transition:
-                transitions += 1
-                if transition == "down" and antispam_check(key, "down"):
-                    msg = format_alert_down(r, prev)
-                    send_telegram(bot_token, chat_id, msg)
-                    log(f"ALERT DOWN: {key} -- {r.get('error')}")
-                elif transition == "recovered":
-                    msg = format_alert_recovered(r, prev)
-                    send_telegram(bot_token, chat_id, msg)
-                    log(f"ALERT RECOVERED: {key}")
+            opened_down = False
+            closed_down = False
+            new_cooldown_until = prev.get("cooldown_until")
+            last_change = prev.get("last_change", now_ts)
+
+            if not is_ok and not alerting and not is_first_run:
+                if (
+                    fail_streak >= fail_streak_need
+                    and cooldown_allows(prev, re_alert_cooldown_sec)
+                    and antispam_check(key, "down")
+                ):
+                    pending_down.append(r)
+                    alerting = True
+                    opened_down = True
+                    last_change = now_ts
+                    transitions += 1
+                    log(
+                        f"ALERT DOWN queued: {key} streak={fail_streak} "
+                        f"-- {r.get('error')}"
+                    )
+            elif is_ok and alerting:
+                if ok_streak >= ok_streak_need:
+                    pending_recovered.append((r, prev))
+                    alerting = False
+                    closed_down = True
+                    transitions += 1
+                    new_cooldown_until = (
+                        datetime.now(timezone.utc)
+                        + timedelta(seconds=re_alert_cooldown_sec)
+                    ).strftime("%Y-%m-%dT%H:%M:%SZ")
                     antispam_clear(key, "down")
-                elif transition == "cert_changed" and antispam_check(key, "cert"):
-                    msg = format_alert_cert_changed(r, prev_cert, cert_fp)
-                    send_telegram(bot_token, chat_id, msg)
-                    log(f"ALERT CERT CHANGED: {key} {prev_cert} -> {cert_fp}")
+                    log(f"ALERT RECOVERED queued: {key} streak={ok_streak}")
+            elif prev_status and prev_status != status:
+                last_change = now_ts
 
-            # Build new state entry
+            if cert_transition and antispam_check(key, "cert"):
+                msg = format_alert_cert_changed(r, prev_cert, cert_fp)
+                send_telegram(bot_token, chat_id, msg)
+                transitions += 1
+                log(f"ALERT CERT CHANGED: {key} {prev_cert} -> {cert_fp}")
+
             new_state[key] = {
                 "status": status,
+                "alerting": alerting,
+                "fail_streak": fail_streak,
+                "ok_streak": ok_streak,
                 "last_check": now_ts,
-                "last_change": (
-                    now_ts if transition
-                    else (prev.get("last_change", now_ts) if prev else now_ts)
-                ),
-                "fail_count": (
-                    ((prev or {}).get("fail_count", 0) + 1) if status == "fail" else 0
-                ),
+                "last_change": last_change,
+                "cooldown_until": new_cooldown_until,
                 "last_cert_fp": cert_fp,
                 "last_error": r.get("error"),
                 "tcp_connect_ms": r.get("tcp_connect_ms"),
                 "tls_handshake_ms": r.get("tls_handshake_ms"),
             }
+
+        if pending_down:
+            send_telegram(bot_token, chat_id, format_batch_down(pending_down))
+        if pending_recovered:
+            send_telegram(
+                bot_token, chat_id, format_batch_recovered(pending_recovered)
+            )
 
         # Save state atomically
         save_state(new_state)

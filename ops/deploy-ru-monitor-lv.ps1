@@ -8,7 +8,11 @@ if (-not (Test-Path $F)) { throw "ru-monitor.py not found: $F" }
 
 $HostLv = "176.126.162.158"
 $Port = 3333
-$Key = Join-Path $env:USERPROFILE ".ssh\id_ed25519"
+$Key = if (Test-Path (Join-Path $env:USERPROFILE ".ssh\bvpn_lv_ed25519")) {
+    Join-Path $env:USERPROFILE ".ssh\bvpn_lv_ed25519"
+} else {
+    Join-Path $env:USERPROFILE ".ssh\id_ed25519"
+}
 $Common = @("-i", $Key, "-o", "BatchMode=yes", "-o", "ConnectTimeout=25", "-o", "StrictHostKeyChecking=accept-new", "-o", "GSSAPIAuthentication=no", "-o", "PreferredAuthentications=publickey")
 
 Write-Host "[deploy-ru-monitor-lv] scp..."

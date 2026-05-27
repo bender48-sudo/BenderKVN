@@ -44,10 +44,20 @@ INTL_BALANCER_TAG = "Intl_Direct"
 CATCHALL_SELECTOR = ["proxy-5", "proxy-6", "proxy-7"]
 
 # injectHosts order: proxy..4 LV Direct, proxy-5..7 RELAY→LV :443, proxy-8..11 NL, 12..14 RELAY→NL
+# Intl apps (IG/TG/…): multi-path — RU relay TLS flaps every ~5–10 min (ru-monitor);
+# relay-only (2026-05-25) caused «то грузит, то нет» for Instagram. Catch-all stays relay-only.
 INTL_DIRECT_TAGS = [
+    "proxy",
+    "proxy-2",
+    "proxy-3",
+    "proxy-4",
     "proxy-5",
     "proxy-6",
     "proxy-7",
+    "proxy-8",
+    "proxy-9",
+    "proxy-10",
+    "proxy-11",
 ]
 INTL_DOMAINS = proxy_rule_domains()
 
@@ -225,7 +235,10 @@ def main() -> int:
     tpl["templateJson"] = doc
     patch_template(c, tpl, args.template_uuid)
     after_template_patch("patch_balancer_direct_first_intl")
-    print("Applied Intl_Direct + Super_Balancer catch-all [proxy-5..7 RELAY] (gen+1)")
+    print(
+        "Applied Intl_Direct multi-path (LV+RELAY+NL) + "
+        "Super_Balancer catch-all [proxy-5..7 RELAY] (gen+1)"
+    )
     return 0
 
 
