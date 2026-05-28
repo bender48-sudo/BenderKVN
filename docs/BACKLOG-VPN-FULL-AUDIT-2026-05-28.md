@@ -201,7 +201,10 @@ VPN-AUD-101 (gate script)
 | 2026-05-28 | VPN-AUD-111 | DONE | `audit_policy_latency.py` + gate; handshake=4, connIdle=300 |
 | 2026-05-28 | VPN-AUD-140 | DONE | `docker_events_tg.py` on LV + cron */5; dry-run OK |
 | 2026-05-28 | VPN-AUD-151 | DONE | ru-monitor.env prod = tmpl (8443, relay vars) |
-| | VPN-AUD-103,150+ | TODO | owner smoke; drift waive |
+| 2026-05-28 | VPN-AUD-150 | DONE | drift 20/28 + 8 waived; `drift_waives.json`, `VPN-DRIFT-WAIVE-2026-05-28.md` |
+| 2026-05-28 | VPN-AUD-240 | DONE | load probe :8443 120×200 p50=1.7s p95=4.5s (baseline §12) |
+| 2026-05-28 | VPN-AUD-250 | DONE | `transport_mux_audit.py` → TRANSPORT_MUX_OK (gate) |
+| | VPN-AUD-103,160,201+ | TODO | owner smoke; hide relay-NL; 2nd relay |
 
 ---
 

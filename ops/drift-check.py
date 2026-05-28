@@ -201,9 +201,41 @@ print("-" * 145)
 for status, kind, repo, host, path, l, r in results:
     print(f"{status:8s}  {kind:4s}  {repo:50s}  {host:10s}  {path:40s}  {l[:8]}     {r[:8]}")
 
+def _load_waives() -> set[tuple[str, str]]:
+    """VPN-AUD-150: optional waive list (host, remote path)."""
+    waive_file = ROOT / "ops" / "drift_waives.json"
+    if not waive_file.is_file():
+        return set()
+    import json
+
+    data = json.loads(waive_file.read_text(encoding="utf-8"))
+    out: set[tuple[str, str]] = set()
+    for row in data.get("waives") or []:
+        host = row.get("host")
+        path = row.get("path")
+        if host and path:
+            out.add((str(host), str(path)))
+    return out
+
+
+WAIVED_KEYS = _load_waives()
 bad = [r for r in results if r[0] != "OK"]
+waived = [r for r in bad if (r[3], r[4]) in WAIVED_KEYS]
+real_bad = [r for r in bad if (r[3], r[4]) not in WAIVED_KEYS]
+
 print()
-print(f"Total: {len(results)}, OK: {len(results) - len(bad)}, problems: {len(bad)}")
+print(
+    f"Total: {len(results)}, OK: {len(results) - len(bad)}, "
+    f"DRIFT: {len(bad)}, waived: {len(waived)}, actionable: {len(real_bad)}"
+)
+if waived:
+    print("Waived (see ops/drift_waives.json + docs/VPN-DRIFT-WAIVE-2026-05-28.md):")
+    for status, kind, repo, host, path, *_ in waived:
+        print(f"  WAIVE  {host}  {path}  ({repo})")
+if real_bad:
+    print("Actionable drift:", file=sys.stderr)
+    for status, kind, repo, host, path, *_ in real_bad:
+        print(f"  {status}  {host}  {path}  ({repo})", file=sys.stderr)
 if missing_vault:
     print(f"[note] vault missing values for: {sorted(missing_vault)}", file=sys.stderr)
-sys.exit(0 if not bad else 1)
+sys.exit(0 if not real_bad else 1)

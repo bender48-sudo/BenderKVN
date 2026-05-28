@@ -1,0 +1,46 @@
+{
+  "updated": "2026-05-28",
+  "note": "VPN-AUD-150: intentional prod≠rendered-tmpl drift. Do NOT blind-sync bot.env / panel secrets.",
+  "waives": [
+    {
+      "host": "bvpn-lv",
+      "path": "/opt/adguard/docker-compose.yml",
+      "reason": "AdGuard optional; prod compose hand-tuned, not on critical path"
+    },
+    {
+      "host": "bvpn-ams",
+      "path": "/opt/adguard/docker-compose.yml",
+      "reason": "AdGuard optional; same as LV"
+    },
+    {
+      "host": "bvpn-ams",
+      "path": "/opt/remnawave/docker-compose.yml",
+      "reason": "AMS panel compose: prod image pin / ops edits; sync only via RUNBOOK-AMS-SAFE-DEPLOY"
+    },
+    {
+      "host": "bvpn-ams",
+      "path": "/opt/remnawave/.env",
+      "reason": "panel.env: live FRONT_END_DOMAIN/JWT on prod; render for diff only"
+    },
+    {
+      "host": "bvpn-ams",
+      "path": "/opt/remna-shop/docker-compose.yml",
+      "reason": "Shop compose: deploy via remna-shop runbook, not drift auto-sync"
+    },
+    {
+      "host": "bvpn-ams",
+      "path": "/opt/remna-shop/.env",
+      "reason": "Shop bot secrets live on AMS; never overwrite from local vault in agent session"
+    },
+    {
+      "host": "bvpn-lv",
+      "path": "/etc/bvpn/balancer.env",
+      "reason": "LV env: md5 differs (vault render vs prod tokens); scripts md5 OK, ru-monitor 8443 verified"
+    },
+    {
+      "host": "bvpn-lv",
+      "path": "/etc/bvpn/ru-monitor.env",
+      "reason": "ru-monitor env: token hash drift only; prod REMNA_API_URL :8443 verified 2026-05-28"
+    }
+  ]
+}

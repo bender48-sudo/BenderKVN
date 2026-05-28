@@ -25,6 +25,7 @@ def run(cmd: list[str], label: str) -> int:
 def main() -> int:
     py = sys.executable
     steps = [
+        ([py, str(OPS / "audit_sub_public_origin.py")], "sub origin port audit"),
         ([py, str(OPS / "verify_vpn_balancer_profile.py")], "balancer profile"),
         ([py, str(OPS / "audit_policy_latency.py")], "policy latency audit"),
         ([py, str(OPS / "probe_subscription.py")], "probe subscription"),
