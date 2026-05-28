@@ -84,6 +84,8 @@ python ops/drift-check.py                    # целевой: problems → 0 и
 | **VPN-AUD-140** | P1 | Агент | **docker events → TG** (die/oom remnanode/panel) | cron LV или AMS | тест `docker kill` staging |
 | **VPN-AUD-150** | P1 | Агент | **Drift 8→0** или waive doc: compose adguard, panel.env, shop, ru-monitor tmpl | drift-check + RUNBOOK | 28/28 OK или список waive |
 | **VPN-AUD-151** | P1 | Агент | **Синхрон ru-monitor.env** с tmpl (без смены токена) | render + diff; только REMNA_API_URL/comments | ru-monitor цикл OK |
+| **VPN-AUD-152** | P1 | Агент | **Caddy upstream health-check** sub-page :3010/:3011 — `health_poll` на `/` | 502 при падении одного контейнера → Caddy failover на второй | curl AMS:3010/3011 |
+| **VPN-AUD-153** | P1 | Агент | **Sub-page cache TTL 5–10 min** — Caddy `cache` directive или Redis-кэш в sub-page; инвалидация при bump gen | p95 < 2s @ 120 rps (baseline: 4.5s, VPN-AUD-240) | load probe до/после |
 | **VPN-AUD-160** | P2 | Агент | **Disable isHidden** relay-NL hosts в панели (proxy-12..14) если 0% 30d | panel API / freeze | probe: меньше мёртвых UUID в sub |
 
 ---
@@ -204,7 +206,10 @@ VPN-AUD-101 (gate script)
 | 2026-05-28 | VPN-AUD-150 | DONE | drift 20/28 + 8 waived; `drift_waives.json`, `VPN-DRIFT-WAIVE-2026-05-28.md` |
 | 2026-05-28 | VPN-AUD-240 | DONE | load probe :8443 120×200 p50=1.7s p95=4.5s (baseline §12) |
 | 2026-05-28 | VPN-AUD-250 | DONE | `transport_mux_audit.py` → TRANSPORT_MUX_OK (gate) |
-| | VPN-AUD-103,160,201+ | TODO | owner smoke; hide relay-NL; 2nd relay |
+| 2026-05-28 | VPN-AUD-160 (RELAY-NL trim) | DONE | gen=29: trim RELAY-NL :9443 из injectHosts 14→11; `patch_trim_injecthosts_relay_nl.py`; `a82c4f7` |
+| 2026-05-28 | DNS :53 direct | DONE | gen=30: port 53 → direct; `patch_dns_port53_direct.py`; `a82c4f7` |
+| 2026-05-28 | Post-gen=30 audit | DONE | `AUDIT-2026-05-28-VPN-POST-GEN30-CLAUDE.md`; N-003 → VPN-AUD-152; S-001 → VPN-AUD-153 |
+| | VPN-AUD-103,152,153,160,201+ | TODO | owner smoke; Caddy HC; sub cache; hide relay-NL; 2nd relay |
 
 ---
 
