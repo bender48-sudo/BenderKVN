@@ -26,6 +26,7 @@ def main() -> int:
     py = sys.executable
     steps = [
         ([py, str(OPS / "verify_vpn_balancer_profile.py")], "balancer profile"),
+        ([py, str(OPS / "audit_policy_latency.py")], "policy latency audit"),
         ([py, str(OPS / "probe_subscription.py")], "probe subscription"),
         ([py, str(OPS / "diagnose_happ_import.py")], "happ import"),
         ([py, str(OPS / "transport_mux_audit.py")], "transport mux"),

@@ -198,7 +198,10 @@ VPN-AUD-101 (gate script)
 | 2026-05-28 | VPN-AUD-110 | DONE | bufferSize 128; gen=27 |
 | 2026-05-28 | VPN-AUD-120,121 | DONE | Intl IP 15 CIDR (TG/Meta/OpenAI); gen=28 |
 | 2026-05-28 | VPN-AUD-130 | DONE | customRemarks: auto server, без «выберите LV/NL» |
-| | VPN-AUD-103,140,150+ | TODO | owner smoke; docker events; drift |
+| 2026-05-28 | VPN-AUD-111 | DONE | `audit_policy_latency.py` + gate; handshake=4, connIdle=300 |
+| 2026-05-28 | VPN-AUD-140 | DONE | `docker_events_tg.py` on LV + cron */5; dry-run OK |
+| 2026-05-28 | VPN-AUD-151 | DONE | ru-monitor.env prod = tmpl (8443, relay vars) |
+| | VPN-AUD-103,150+ | TODO | owner smoke; drift waive |
 
 ---
 
