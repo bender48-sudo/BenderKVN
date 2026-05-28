@@ -131,11 +131,18 @@ def check_routing_rules(doc: dict, issues: list, info: list) -> None:
         issues.append("WARN: no catch-all balancer rule found — unmatched traffic may go default outbound")
 
     if cloudflare_in_intl:
-        info.append(
-            "NOTE: 104.18-19/16 (Cloudflare) in Intl_Direct IP rule. "
-            "Since Intl_Direct selector == Super_Balancer selector, routing result is identical. "
-            "Performance impact: none, but the label 'OpenAI' in the comment is wrong."
-        )
+        bmap = _balancer_map(doc)
+        super_sel = set(bmap.get("Super_Balancer", {}).get("selector") or [])
+        intl_sel = set(bmap.get("Intl_Direct", {}).get("selector") or [])
+        if super_sel == intl_sel:
+            note = "Intl_Direct selector == Super_Balancer selector, routing result identical. No speed impact."
+        else:
+            extra = intl_sel - super_sel
+            note = (
+                f"Intl_Direct has extra paths vs Super_Balancer: {sorted(extra)}. "
+                f"speedtest.net/fast.com will use these extra paths — if they are slow, speed tests fail."
+            )
+        issues[issues.index(next(x for x in issues if "Cloudflare ranges" in x))] += f" | {note}"
 
 
 def check_observatory(doc: dict, issues: list, info: list) -> None:
@@ -174,8 +181,10 @@ def check_sub_size(tpl: dict, issues: list, info: list) -> None:
     info.append(f"template JSON size: {size} bytes")
     if size > 20_000:
         issues.append(f"WARN: template JSON {size}B is large — Happ parse may be slow")
-    elif size < 5_000:
-        issues.append(f"WARN: template JSON only {size}B — may be missing outbounds")
+    elif size < 1_500:
+        # injectHosts outbounds are injected at delivery time by Remnawave,
+        # so the template JSON only contains routing/policy/balancers (~3-4KB is normal).
+        issues.append(f"WARN: template JSON only {size}B — routing config may be missing")
 
 
 def main() -> int:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""VPN-AUD-120/121: refresh Intl_Direct IP-CIDR rule (TG/Meta/OpenAI edge).
+"""VPN-AUD-120/121: refresh Intl_Direct IP-CIDR rule (TG/Meta edge).
 
 Updates existing rule with balancerTag Intl_Direct and ip= list.
 
@@ -49,9 +49,9 @@ INTL_IP_CIDRS = [
     "173.252.64.0/18",
     "179.60.192.0/22",
     "194.221.0.0/16",
-    # OpenAI / ChatGPT (common egress; domain rule covers desktop sniff)
-    "104.18.0.0/16",
-    "104.19.0.0/16",
+    # NOTE: 104.18.0.0/16 and 104.19.0.0/16 removed — these are Cloudflare,
+    # not OpenAI. They caused speedtest.net to route through Intl_Direct+NL.
+    # ChatGPT should be covered by domain rules, not coarse /16 Cloudflare blocks.
 ]
 
 
