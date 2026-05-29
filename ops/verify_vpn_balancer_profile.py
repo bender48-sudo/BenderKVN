@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -15,7 +16,14 @@ if str(_OPS) not in sys.path:
     sys.path.insert(0, str(_OPS))
 
 import site_urls  # noqa: E402
-from balancer_selectors import verify_ru_multipath_profile  # noqa: E402
+from balancer_selectors import (  # noqa: E402
+    INTL_RELAY_NL_SELECTOR,
+    RELAY1_SELECTOR,
+    RELAY2_SELECTOR,
+    RELAY6_SELECTOR,
+    verify_ru_multipath_profile,
+)
+from dns_split_config import verify_dns_split_config  # noqa: E402
 from subscription_fetch import (  # noqa: E402
     HAPP_UA,
     decode_subscription,
@@ -33,11 +41,16 @@ TOKEN_PATH = ROOT / ".secrets" / "panel-token.txt"
 
 
 def main() -> int:
-    if not TOKEN_PATH.is_file():
-        print(f"FAIL: missing {TOKEN_PATH}", file=sys.stderr)
+    token = os.environ.get("PANEL_TOKEN") or os.environ.get("REMNA_API_TOKEN")
+    if not token and not TOKEN_PATH.is_file():
+        print(
+            "FAIL: set PANEL_TOKEN/REMNA_API_TOKEN or create .secrets/panel-token.txt",
+            file=sys.stderr,
+        )
         return 1
 
-    token = TOKEN_PATH.read_text(encoding="ascii").strip()
+    if not token:
+        token = TOKEN_PATH.read_text(encoding="ascii").strip()
     panel = site_urls.PANEL_URL
     sub_origin = site_urls.SUB_PUBLIC_ORIGIN
 
@@ -68,6 +81,13 @@ def main() -> int:
 
     cfg = xray_config_root(decode_subscription(sub_resp.body))
     errs = verify_ru_multipath_profile(cfg)
+    dns_warn = verify_dns_split_config(cfg)
+    if dns_warn:
+        for w in dns_warn:
+            if "geosite" in w:
+                print(f"FAIL: {w}", file=sys.stderr)
+                return 1
+            print(f"INFO: dns note: {w}")
     if errs:
         print("FAIL:", "; ".join(errs), file=sys.stderr)
         return 1
@@ -91,9 +111,34 @@ def main() -> int:
         print(f"FAIL: xhttp={xhttp} batch_fail={bad}", file=sys.stderr)
         return 1
 
+    balancers = {
+        b.get("tag"): b for b in (cfg.get("routing") or {}).get("balancers") or []
+    }
+    super_len = len((balancers.get("Super_Balancer") or {}).get("selector") or [])
+    intl_len = len((balancers.get("Intl_Direct") or {}).get("selector") or [])
+    intl_sel = list((balancers.get("Intl_Direct") or {}).get("selector") or [])
+    if super_len == 4 and intl_len == 6:
+        mode = "split Super=LV×4 Intl=relay×6"
+    elif super_len == 0 and intl_sel == list(RELAY6_SELECTOR):
+        mode = "relay-only×6"
+    elif super_len == 0 and intl_sel == list(RELAY1_SELECTOR):
+        mode = "relay-only×3 (relay1 fast path)"
+    elif super_len == 0 and intl_sel == list(RELAY2_SELECTOR):
+        mode = "relay-only×3 (relay2 fast path)"
+    elif super_len == 0 and intl_sel == list(INTL_RELAY_NL_SELECTOR):
+        mode = "relay×6+NL×4 Intl (VPN-AUD-220)"
+    elif super_len == 0 and intl_len >= 3:
+        mode = f"relay-only×{intl_len}"
+    elif super_len == 7 and intl_len == 11:
+        mode = "split Super=7 Intl=11"
+    else:
+        mode = f"Super={super_len} Intl={intl_len}"
+    has_dns = bool(cfg.get("dns"))
+    dns_ok = not dns_warn
+    dns_label = "no" if not has_dns else ("yes" if dns_ok else "BROKEN")
     print(
-        f"OK: sub HTTP 200, Super+Intl multipath (11), policy 30/30, "
-        f"no observatory, vless_proxy={proxy_n}"
+        f"OK: sub HTTP 200, Super+Intl multipath ({mode}), policy 30/30, "
+        f"no observatory, vless_proxy={proxy_n}, dns={dns_label}"
     )
     print("VPN_BALANCER_PROFILE_OK")
     return 0

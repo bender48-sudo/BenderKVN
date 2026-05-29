@@ -27,6 +27,8 @@ if str(_OPS) not in sys.path:
 
 from panel_client import PanelClient  # noqa: E402
 
+from dns_split_config import verify_dns_split_config, _has_geosite_in_dns  # noqa: E402
+
 # Known Cloudflare ranges added in gen=28 (labeled "OpenAI" — wrong)
 _CLOUDFLARE_RANGES = {"104.18.0.0/16", "104.19.0.0/16"}
 
@@ -161,6 +163,25 @@ def check_observatory(doc: dict, issues: list, info: list) -> None:
         )
 
 
+def check_dns(doc: dict, issues: list, info: list) -> None:
+    dns = doc.get("dns")
+    if not dns:
+        info.append("dns: not configured — Super catch-all (Happ-safe default)")
+        return
+    if _has_geosite_in_dns(dns):
+        issues.append(
+            "CRIT dns: geosite: in dns.servers — Happ core crash (missing RU in geosite.dat); "
+            "run patch_remove_dns_split.py --apply"
+        )
+    dns_errs = verify_dns_split_config(doc)
+    if dns_errs:
+        for e in dns_errs:
+            issues.append(f"WARN dns: {e}")
+    else:
+        servers = dns.get("servers") or []
+        info.append(f"OK: split DNS configured ({len(servers)} servers, queryStrategy={dns.get('queryStrategy')})")
+
+
 def check_injecthosts(doc: dict, issues: list, info: list) -> None:
     rw = doc.get("remnawave") or {}
     inject = rw.get("injectHosts") or []
@@ -204,6 +225,7 @@ def main() -> int:
     check_policy(doc, issues, info)
     check_balancers(doc, issues, info)
     check_routing_rules(doc, issues, info)
+    check_dns(doc, issues, info)
     check_observatory(doc, issues, info)
     check_injecthosts(doc, issues, info)
 

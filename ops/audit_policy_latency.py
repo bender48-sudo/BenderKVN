@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -39,6 +40,8 @@ CANONICAL = {
     "uplinkOnly": POLICY_UPLINK_ONLY,
     "downlinkOnly": POLICY_DOWNLINK_ONLY,
 }
+# Mobile latency experiment — not prod default without A/B (audit finding).
+RECOMMENDED_MOBILE = {"bufferSize": 64}
 FORBIDDEN = {12: "handshake=12 (fast-connect regression)"}
 
 
@@ -55,9 +58,11 @@ def audit_policy(lv0: dict) -> list[str]:
 
 
 def fetch_live_policy() -> tuple[dict, str]:
-    if not TOKEN_PATH.is_file():
-        raise SystemExit(f"missing {TOKEN_PATH}")
-    token = TOKEN_PATH.read_text(encoding="ascii").strip()
+    token = os.environ.get("PANEL_TOKEN") or os.environ.get("REMNA_API_TOKEN")
+    if not token and TOKEN_PATH.is_file():
+        token = TOKEN_PATH.read_text(encoding="ascii").strip()
+    if not token:
+        raise SystemExit("set PANEL_TOKEN/REMNA_API_TOKEN or create .secrets/panel-token.txt")
     panel = site_urls.PANEL_URL
     sub_origin = site_urls.SUB_PUBLIC_ORIGIN
 
@@ -106,6 +111,8 @@ def main() -> int:
 
     print(f"sub_url: {sub_url}")
     print("policy.levels.0:", json.dumps(lv0, ensure_ascii=False))
+    if lv0.get("bufferSize") == CANONICAL["bufferSize"]:
+        print(f"INFO: bufferSize={lv0.get('bufferSize')} (canonical prod); mobile alt={RECOMMENDED_MOBILE['bufferSize']}KB — A/B only")
     if errors:
         for e in errors:
             print(f"FAIL: {e}", file=sys.stderr)

@@ -10,6 +10,7 @@
 | Amsterdam ops | `bvpn-ams` | `~/.ssh/bvpn_ams_ed25519` | `/root/.ssh/authorized_keys` |
 | Netherlands node | `bvpn-nl` | `~/.ssh/bvpn_nl` | `/root/.ssh/authorized_keys` |
 | Selectel relay | `bvpn-relay` | `~/.ssh/selectel_relay` | relay `authorized_keys` |
+| Timeweb relay #2 | `bvpn-relay2` | `~/.ssh/timeweb_relay` | relay#2 root `authorized_keys` |
 
 **Запрещено:** один `id_ed25519` в `authorized_keys` на **LV и AMS** одновременно (legacy).
 
@@ -19,7 +20,8 @@
 
 | Ключ на хосте | Назначение | Куда | Ограничение |
 |---------------|------------|------|-------------|
-| `/root/.ssh/id_ed25519` (LV) | ru-monitor, daily-report → relay/AMS | relay, AMS | Только с LV; не дублировать на NL |
+| `/root/.ssh/id_ed25519` (LV) | ru-monitor, daily-report → relay#1 | relay#1 | Только с LV; `from=176.126.162.158`, `command=` |
+| `/root/.ssh/id_ed25519_relay2` (LV) | tspu_block_probe / ru-monitor → relay#2 | relay#2 | Отдельный ключ (Q120); те же `from=`/`command=` |
 | `/root/.ssh/lv_watchdog` (NL) | NL→LV probe | LV | `command=` в authorized_keys |
 | `bvpncheck` (relay) | RU bypass probe | relay | `from=`, `command=` |
 

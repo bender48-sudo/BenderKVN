@@ -15,6 +15,7 @@ def main() -> int:
         "tspu_block_probe_ru.py",
         "run_tspu_block_probe_ru.sh",
         "install_tspu_ru_probe_cron.sh",
+        "install_ru_relay2_probe.sh",
     ):
         p = OPS / name
         if not p.is_file():
@@ -24,6 +25,9 @@ def main() -> int:
     ast.parse(py)
     if "check.py" not in py and "json.dumps(targets)" not in py:
         print("TSPU_BLOCK_PROBE_RU_FAIL: must use relay check.py stdin", file=sys.stderr)
+        return 1
+    if "RELAY2_HOST" not in py:
+        print("TSPU_BLOCK_PROBE_RU_FAIL: missing RELAY2 dual-relay support", file=sys.stderr)
         return 1
     if "python3 tspu_block_probe" in (OPS / "run_tspu_block_probe_ru.sh").read_text():
         print("TSPU_BLOCK_PROBE_RU_FAIL: shell must not remote-exec tspu_block_probe", file=sys.stderr)

@@ -42,10 +42,15 @@ DEFAULT_TIMEOUT = 30
 def _load_token(explicit: str | None) -> str:
     if explicit:
         return explicit.strip()
-    env = os.environ.get("PANEL_TOKEN")
-    if env:
-        return env.strip()
-    return DEFAULT_TOKEN_FILE.read_text(encoding="ascii").strip()
+    for key in ("PANEL_TOKEN", "REMNA_API_TOKEN"):
+        env = os.environ.get(key)
+        if env:
+            return env.strip()
+    if DEFAULT_TOKEN_FILE.is_file():
+        return DEFAULT_TOKEN_FILE.read_text(encoding="ascii").strip()
+    raise FileNotFoundError(
+        f"panel token: set PANEL_TOKEN/REMNA_API_TOKEN or create {DEFAULT_TOKEN_FILE}"
+    )
 
 
 class PanelError(RuntimeError):

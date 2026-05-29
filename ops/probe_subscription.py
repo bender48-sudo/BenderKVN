@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import sys
 from collections import Counter
 from pathlib import Path
@@ -32,7 +33,12 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 ROOT = Path(__file__).resolve().parent.parent
-TOKEN = (ROOT / ".secrets" / "panel-token.txt").read_text(encoding="ascii").strip()
+_token_path = ROOT / ".secrets" / "panel-token.txt"
+TOKEN = (os.environ.get("PANEL_TOKEN") or os.environ.get("REMNA_API_TOKEN") or "").strip()
+if not TOKEN and _token_path.is_file():
+    TOKEN = _token_path.read_text(encoding="ascii").strip()
+if not TOKEN:
+    raise SystemExit("set PANEL_TOKEN/REMNA_API_TOKEN or create .secrets/panel-token.txt")
 PANEL = site_urls.PANEL_URL
 SUB = site_urls.SUB_PUBLIC_ORIGIN
 
