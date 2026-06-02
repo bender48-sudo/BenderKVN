@@ -209,7 +209,15 @@ VPN-AUD-101 (gate script)
 | 2026-05-28 | VPN-AUD-160 (RELAY-NL trim) | DONE | gen=29: trim RELAY-NL :9443 из injectHosts 14→11; `patch_trim_injecthosts_relay_nl.py`; `a82c4f7` |
 | 2026-05-28 | DNS :53 direct | DONE | gen=30: port 53 → direct; `patch_dns_port53_direct.py`; `a82c4f7` |
 | 2026-05-28 | Post-gen=30 audit | DONE | `AUDIT-2026-05-28-VPN-POST-GEN30-CLAUDE.md`; N-003 → VPN-AUD-152; S-001 → VPN-AUD-153 |
-| | VPN-AUD-103,152,153,160,201+ | TODO | owner smoke; Caddy HC; sub cache; hide relay-NL; 2nd relay |
+| 2026-05-28 | VPN-AUD-152 | DONE | p4n7q dual :3010+:3011 + health_uri; failover smoke 3010/3011 down → 200 |
+| 2026-05-28 | VPN-AUD-153 | DONE | Caddy cache-handler Souin ttl=8m; GET hit ~180ms; load 60×15 p50=1.6s p95=3.8s |
+| 2026-06-02 | **VPN-AUD-103** | **PARTIAL** | owner smoke: 2 relay лучше 1 relay; IG/TG ещё не «супер стабильно» |
+| 2026-06-02 | **VPN-AUD-201** | **DONE** | Q120 relay#2 live; ru-monitor 2 targets |
+| 2026-06-02 | **VPN-AUD-202** | **SUPERSEDED** | gen≥47: `latency_selector_autotrim` (+ stealth Intl_Stealth sync); `relay_failover` NO-GO LV-direct |
+| 2026-06-02 | **VPN-AUD-310b** | **DONE** | autotrim patches Intl_Stealth on failover (TG/Meta same pool as Intl_Direct) |
+| 2026-06-02 | **VPN-AUD-230** | **DONE** | split DNS DoH intl + localhost RU; gate+PROBE_DNS_LEAK_OK; live dns=yes |
+| 2026-06-02 | **deploy** | **DONE** | `deploy_lv_vpn_ops.ps1` → LV /opt/scripts; autotrim cron |
+| | VPN-AUD-210,220+ | TODO | geosite.ru routing, NL :443 — Phase 2 (owner go/no-go on regexp) |
 
 ---
 

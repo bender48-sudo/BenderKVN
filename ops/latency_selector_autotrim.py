@@ -35,6 +35,7 @@ if str(_OPS) not in sys.path:
 from balancer_selectors import (  # noqa: E402
     INTL_BALANCER_TAG,
     INTL_RELAY_NL_SELECTOR,
+    INTL_STEALTH_BALANCER_TAG,
     NL_DIRECT_SELECTOR,
     RELAY1_SELECTOR,
     RELAY2_SELECTOR,
@@ -42,6 +43,7 @@ from balancer_selectors import (  # noqa: E402
     allowed_relay_only_selectors,
     is_relay_nl_intl_profile,
     is_relay_only_profile,
+    is_stealth_split_profile,
 )
 from nl_reachability_probe_ru import NL_IP, probe_nl_from_ru  # noqa: E402
 from panel_client import PanelClient  # noqa: E402
@@ -230,7 +232,14 @@ def _allowed_target_selector(target_sel: list[str]) -> bool:
     return relay_tags in (list(RELAY1_SELECTOR), list(RELAY2_SELECTOR), list(RELAY6_SELECTOR))
 
 
-def _apply_selector(doc: dict, target_sel: list[str]) -> tuple[bool, list[str]]:
+def _stealth_relay_selector(relay_mode: str) -> list[str]:
+    """TG/Meta (Intl_Stealth): same relay pool as autotrim, never NL."""
+    return _relay_part(relay_mode)
+
+
+def _apply_selector(
+    doc: dict, target_sel: list[str], *, stealth_relay_sel: list[str] | None = None
+) -> tuple[bool, list[str]]:
     log: list[str] = []
     if len(target_sel) < MIN_PATHS:
         log.append(f"refuse: selector len {len(target_sel)} < {MIN_PATHS}")
@@ -239,18 +248,43 @@ def _apply_selector(doc: dict, target_sel: list[str]) -> tuple[bool, list[str]]:
         log.append(f"refuse: selector not allowed: {target_sel}")
         return False, log
 
+    changed = False
     intl_b = next((b for b in (doc.get("routing") or {}).get("balancers") or [] if b.get("tag") == INTL_TAG), None)
     if not intl_b:
         log.append(f"missing {INTL_TAG}")
         return False, log
 
     old = list(intl_b.get("selector") or [])
-    if old == target_sel:
+    if old != target_sel:
+        intl_b["selector"] = list(target_sel)
+        log.append(f"{INTL_TAG}: {len(old)} paths → {len(target_sel)} paths")
+        changed = True
+    else:
         log.append(f"OK {INTL_TAG}: already {len(target_sel)} paths")
-        return False, log
-    intl_b["selector"] = list(target_sel)
-    log.append(f"{INTL_TAG}: {len(old)} paths → {len(target_sel)} paths")
-    return True, log
+
+    if stealth_relay_sel is not None:
+        stealth_b = next(
+            (b for b in (doc.get("routing") or {}).get("balancers") or [] if b.get("tag") == INTL_STEALTH_BALANCER_TAG),
+            None,
+        )
+        if not stealth_b:
+            log.append(f"missing {INTL_STEALTH_BALANCER_TAG}")
+            return False, log
+        if len(stealth_relay_sel) < MIN_PATHS:
+            log.append(f"refuse: {INTL_STEALTH_BALANCER_TAG} len {len(stealth_relay_sel)} < {MIN_PATHS}")
+            return False, log
+        if stealth_relay_sel not in allowed_relay_only_selectors():
+            log.append(f"refuse: stealth selector not allowed: {stealth_relay_sel}")
+            return False, log
+        old_s = list(stealth_b.get("selector") or [])
+        if old_s != stealth_relay_sel:
+            stealth_b["selector"] = list(stealth_relay_sel)
+            log.append(f"{INTL_STEALTH_BALANCER_TAG}: {len(old_s)} → {len(stealth_relay_sel)} paths (TG/Meta)")
+            changed = True
+        else:
+            log.append(f"OK {INTL_STEALTH_BALANCER_TAG}: already {len(stealth_relay_sel)} paths")
+
+    return changed, log
 
 
 def _verify_profile() -> bool:
@@ -283,7 +317,7 @@ def main() -> int:
     tpl = c.get_or_raise(f"/api/subscription-templates/{args.template_uuid}")["response"]
     doc = tpl["templateJson"]
 
-    if not is_relay_only_profile(doc) and not is_relay_nl_intl_profile(doc):
+    if not is_relay_only_profile(doc) and not is_relay_nl_intl_profile(doc) and not is_stealth_split_profile(doc):
         print("ABORT: not relay gen>=47 profile", file=sys.stderr)
         return 1
 
@@ -348,10 +382,18 @@ def main() -> int:
     state["nl_in_selector"] = include_nl
 
     target_sel = _build_target(relay_mode, include_nl, doc)
-    print(f"target selector: {len(target_sel)} paths (relay={relay_mode} nl={include_nl})")
+    stealth_sel: list[str] | None = None
+    if is_stealth_split_profile(doc):
+        stealth_sel = _stealth_relay_selector(relay_mode)
+        print(
+            f"target selector: {len(target_sel)} paths (relay={relay_mode} nl={include_nl}); "
+            f"stealth relay×{len(stealth_sel)}"
+        )
+    else:
+        print(f"target selector: {len(target_sel)} paths (relay={relay_mode} nl={include_nl})")
 
     patched = copy.deepcopy(doc)
-    changed, patch_log = _apply_selector(patched, target_sel)
+    changed, patch_log = _apply_selector(patched, target_sel, stealth_relay_sel=stealth_sel)
     for line in patch_log:
         print(line)
     _save_state(state)

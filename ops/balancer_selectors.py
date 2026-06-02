@@ -80,6 +80,7 @@ def relay_n_selector(n: int) -> list[str]:
 
 DNS_RELAY_BALANCER_TAG = "RELAY_DNS"
 INTL_BALANCER_TAG = "Intl_Direct"
+INTL_STEALTH_BALANCER_TAG = "Intl_Stealth"
 DNS_LV_BALANCER_TAG = "DNS_LV"
 
 POLICY_UPLINK_ONLY = 30
@@ -112,6 +113,8 @@ def is_relay_only_profile(doc: dict) -> bool:
 
 
 def is_relay_nl_intl_profile(doc: dict) -> bool:
+    if is_stealth_split_profile(doc):
+        return False
     balancers = {b.get("tag"): b for b in (doc.get("routing") or {}).get("balancers") or []}
     intl_b = balancers.get(INTL_BALANCER_TAG)
     if not intl_b or balancers.get("Super_Balancer") or balancers.get(DNS_LV_BALANCER_TAG):
@@ -126,6 +129,44 @@ def is_relay_nl_intl_profile(doc: dict) -> bool:
         for r in (doc.get("routing") or {}).get("rules") or []
     )
     return catch_intl
+
+
+def _intl_media_rules_use_stealth(rules: list[dict]) -> bool:
+    """TG/Meta IP-CIDR + geosite rules must point at Intl_Stealth."""
+    ip_ok = domain_ok = False
+    for r in rules:
+        tag = r.get("balancerTag")
+        if tag != INTL_STEALTH_BALANCER_TAG:
+            continue
+        if r.get("ip"):
+            ip_ok = True
+        if r.get("domain"):
+            domain_ok = True
+    return ip_ok and domain_ok
+
+
+def is_stealth_split_profile(doc: dict) -> bool:
+    balancers = {b.get("tag"): b for b in (doc.get("routing") or {}).get("balancers") or []}
+    stealth_b = balancers.get(INTL_STEALTH_BALANCER_TAG)
+    intl_b = balancers.get(INTL_BALANCER_TAG)
+    if not stealth_b or not intl_b:
+        return False
+    if balancers.get("Super_Balancer") or balancers.get(DNS_LV_BALANCER_TAG):
+        return False
+    stealth_sel = list(stealth_b.get("selector") or [])
+    intl_sel = list(intl_b.get("selector") or [])
+    if stealth_sel not in allowed_relay_only_selectors():
+        return False
+    if intl_sel not in allowed_intl_relay_selectors():
+        return False
+    rules = (doc.get("routing") or {}).get("rules") or []
+    catch_fast = any(
+        r.get("network") == "tcp,udp"
+        and r.get("balancerTag") == INTL_BALANCER_TAG
+        and not r.get("port")
+        for r in rules
+    )
+    return catch_fast and _intl_media_rules_use_stealth(rules)
 
 
 def _accepted_traffic_selectors() -> tuple[list[str], ...]:
@@ -154,6 +195,7 @@ def verify_ru_multipath_profile(doc: dict) -> list[str]:
     # Relay-only injectHosts (gen>=47): Happ ping = relay RTT only.
     relay_only_ok = False
     relay_nl_ok = False
+    stealth_split_ok = False
     if intl_b and not super_b:
         intl_sel = list(intl_b.get("selector") or [])
         catch_intl = any(
@@ -171,13 +213,15 @@ def verify_ru_multipath_profile(doc: dict) -> list[str]:
             relay_only_ok = True
         if is_relay_nl_intl_profile(doc):
             relay_nl_ok = True
+        if is_stealth_split_profile(doc):
+            stealth_split_ok = True
 
-    if not super_b and not relay_only_ok and not relay_nl_ok:
+    if not super_b and not relay_only_ok and not relay_nl_ok and not stealth_split_ok:
         errors.append("missing balancer Super_Balancer")
 
     # Split profile (gen>=45): Super=LV direct (DNS); Intl=relay×2 (TG/IG).
     # Split profile (gen>=46): catch-all→Intl (ping); DNS:53→DNS_LV.
-    split_ok = relay_only_ok or relay_nl_ok
+    split_ok = relay_only_ok or relay_nl_ok or stealth_split_ok
     if super_b and intl_b:
         super_sel = list(super_b.get("selector") or [])
         intl_sel = list(intl_b.get("selector") or [])

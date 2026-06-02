@@ -11,6 +11,7 @@ Layers:
 """
 from __future__ import annotations
 
+import os
 import platform
 import subprocess
 import sys
@@ -34,10 +35,27 @@ def run(cmd: list[str], label: str, *, optional: bool = False) -> int:
 
 
 def _on_lv() -> bool:
-    return RU_MONITOR_ENV.is_file() or bool(__import__("os").environ.get("VPN_VERIFY_ON_LV"))
+    return RU_MONITOR_ENV.is_file() or bool(os.environ.get("VPN_VERIFY_ON_LV"))
+
+
+def _load_lv_panel_env() -> None:
+    """Same token source as run_latency_selector_autotrim.sh on bvpn-lv."""
+    if not RU_MONITOR_ENV.is_file():
+        return
+    for line in RU_MONITOR_ENV.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, val = line.partition("=")
+        key = key.strip()
+        val = val.strip().strip('"').strip("'")
+        if key in ("PANEL_TOKEN", "REMNA_API_TOKEN") and val and not os.environ.get(key):
+            os.environ[key] = val
 
 
 def main() -> int:
+    if _on_lv():
+        _load_lv_panel_env()
     py = sys.executable
     steps: list[tuple[list[str], str, bool]] = [
         ([py, str(OPS / "verify_vpn_balancer_profile.py")], "balancer profile", False),

@@ -5,7 +5,7 @@ Symptom: speedtest ~77ms via relay catch-all, but Happ shows 400–988ms because
 it TCP-pings every outbound in the sub — including LV direct (×4) and NL (×4)
 that are not used for catch-all/TG anymore.
 
-After patch (gen+1):
+After patch (gen+1) — **legacy gen 47 only** (NO-GO on stealth split gen>=48):
   - injectHosts: 6 relay hosts only (relay#1 ×3 + relay#2 ×3)
   - Intl_Direct + catch-all: proxy..proxy-6 (all relay)
   - Remove DNS_LV / Super_Balancer / port-53 rule (Happ uses DoH; relay blocks :53)
@@ -33,6 +33,7 @@ _OPS = Path(__file__).resolve().parent
 if str(_OPS) not in sys.path:
     sys.path.insert(0, str(_OPS))
 
+from balancer_selectors import is_stealth_split_profile  # noqa: E402
 from panel_client import PanelClient  # noqa: E402
 from subscription_config_notify import after_template_patch  # noqa: E402
 
@@ -176,6 +177,13 @@ def main() -> int:
 
     c = PanelClient(timeout=120)
     tpl = c.get_or_raise(f"/api/subscription-templates/{args.template_uuid}")["response"]
+    if is_stealth_split_profile(tpl["templateJson"]):
+        print(
+            "ABORT: stealth split profile (gen>=48). Do NOT apply relay-only injectHosts trim.\n"
+            "  TG/Meta use Intl_Stealth; use latency_selector_autotrim.py on LV instead.",
+            file=sys.stderr,
+        )
+        return 1
     inject_vals = [
         str(x) for x in tpl["templateJson"]["remnawave"]["injectHosts"][0]["selector"].get("values") or []
     ]

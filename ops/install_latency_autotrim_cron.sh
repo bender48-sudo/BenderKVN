@@ -12,7 +12,7 @@ if [[ "$(readlink -f "$_run_src" 2>/dev/null || echo "$_run_src")" != "$(readlin
 else
   chmod 755 "$_run_dst"
 fi
-for f in relay_latency_probe.py nl_reachability_probe_ru.py latency_selector_autotrim.py patch_add_nl_intl_gated.py balancer_selectors.py panel_client.py site_urls.py verify_vpn_balancer_profile.py subscription_fetch.py dns_split_config.py subscription_config_notify.py vpn_verify_gate.py; do
+for f in relay_latency_probe.py nl_reachability_probe_ru.py latency_selector_autotrim.py patch_add_nl_intl_gated.py patch_intl_stealth_split.py patch_dns_split_config.py probe_dns_leak.py patch_trim_injecthosts_relay_only.py relay_failover_template.py balancer_selectors.py panel_client.py site_urls.py load_env_file.py verify_vpn_balancer_profile.py subscription_fetch.py dns_split_config.py subscription_config_notify.py vpn_verify_gate.py diagnose_throughput.py audit_bbr_congestion.py audit_policy_latency.py probe_subscription.py diagnose_happ_import.py transport_mux_audit.py; do
   src="${OPS}/${f}"
   dst="${TARGET}/${f}"
   if [[ "$(readlink -f "$src" 2>/dev/null || echo "$src")" != "$(readlink -f "$dst" 2>/dev/null || echo "$dst")" ]]; then
