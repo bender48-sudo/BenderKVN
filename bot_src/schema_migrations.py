@@ -6,10 +6,34 @@ import sqlite3
 
 logger = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 6
+
+
+def _table_has_column(conn: sqlite3.Connection, table: str, column: str) -> bool:
+    rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+    return any(r[1] == column for r in rows)
 
 
 def _current_version(conn: sqlite3.Connection) -> int:
+    if _table_has_column(conn, "schema_version", "id"):
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS schema_version (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                version INTEGER NOT NULL
+            )
+            """
+        )
+        row = conn.execute(
+            "SELECT version FROM schema_version WHERE id = 1"
+        ).fetchone()
+        if row is None:
+            conn.execute(
+                "INSERT INTO schema_version (id, version) VALUES (1, 0)"
+            )
+            return 0
+        return int(row[0])
+
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS schema_version (
@@ -20,14 +44,22 @@ def _current_version(conn: sqlite3.Connection) -> int:
     row = conn.execute("SELECT version FROM schema_version LIMIT 1").fetchone()
     if row is None:
         conn.execute("INSERT INTO schema_version (version) VALUES (0)")
-        conn.commit()
         return 0
     return int(row[0])
 
 
 def _set_version(conn: sqlite3.Connection, version: int) -> None:
-    conn.execute("UPDATE schema_version SET version = ?", (version,))
-    conn.commit()
+    if _table_has_column(conn, "schema_version", "id"):
+        conn.execute(
+            "UPDATE schema_version SET version = ? WHERE id = 1", (version,)
+        )
+        if conn.total_changes == 0:
+            conn.execute(
+                "INSERT OR REPLACE INTO schema_version (id, version) VALUES (1, ?)",
+                (version,),
+            )
+    else:
+        conn.execute("UPDATE schema_version SET version = ?", (version,))
 
 
 def _migrate_v1(conn: sqlite3.Connection) -> None:
@@ -52,7 +84,22 @@ def _migrate_v1(conn: sqlite3.Connection) -> None:
 
 
 def _migrate_v2(conn: sqlite3.Connection) -> None:
-    """Support rate limits + user/support columns formerly via silent ALTER."""
+    """Support rate limits + user/support columns; renewal_attempts guard (P2-OPS-SCHEMA-02)."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS renewal_attempts (
+            attempt_id TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            key_id INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            cost_rub REAL NOT NULL,
+            plan TEXT,
+            balance_deducted INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            completed_at TIMESTAMP
+        )
+        """
+    )
     for col, typedef in (
         ("balance", "REAL DEFAULT 0"),
         ("sub_refresh_notified_generation", "INTEGER DEFAULT 0"),
@@ -115,10 +162,59 @@ def _migrate_v3(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_v4(conn: sqlite3.Connection) -> None:
+    """schema_version single-row PK (P2-OPS-SCHEMA-02)."""
+    if _table_has_column(conn, "schema_version", "id"):
+        return
+    row = conn.execute("SELECT version FROM schema_version LIMIT 1").fetchone()
+    ver = int(row[0]) if row else 0
+    conn.execute("DROP TABLE schema_version")
+    conn.execute(
+        """
+        CREATE TABLE schema_version (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            version INTEGER NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        "INSERT INTO schema_version (id, version) VALUES (1, ?)", (ver,)
+    )
+
+
+def _migrate_v5(conn: sqlite3.Connection) -> None:
+    """Bind token TTL column (P2-RED-BOT-SEC-02)."""
+    try:
+        conn.execute(
+            "ALTER TABLE web_trial_claims ADD COLUMN bind_token_expires_at TEXT"
+        )
+    except sqlite3.OperationalError as exc:
+        if "duplicate column" not in str(exc).lower():
+            raise
+
+
+def _migrate_v6(conn: sqlite3.Connection) -> None:
+    """YooKassa card autopay columns (P2-COM-YK-AUTOPAY-01)."""
+    for col, typedef in (
+        ("yookassa_payment_method_id", "TEXT"),
+        ("yookassa_autopay_enabled", "INTEGER DEFAULT 0"),
+        ("yookassa_autopay_next_at", "TEXT"),
+        ("yookassa_autopay_last_error", "TEXT"),
+    ):
+        try:
+            conn.execute(f"ALTER TABLE users ADD COLUMN {col} {typedef}")
+        except sqlite3.OperationalError as exc:
+            if "duplicate column" not in str(exc).lower():
+                raise
+
+
 _MIGRATORS = {
     1: _migrate_v1,
     2: _migrate_v2,
     3: _migrate_v3,
+    4: _migrate_v4,
+    5: _migrate_v5,
+    6: _migrate_v6,
 }
 
 
@@ -126,9 +222,10 @@ def run_schema_migrations(conn: sqlite3.Connection | None = None) -> int:
     """Apply pending migrations; returns new schema version."""
     own_conn = conn is None
     if own_conn:
-        from shop_bot.data_manager.database import DB_FILE
+        from shop_bot.data_manager.database import db_connection
 
-        conn = sqlite3.connect(DB_FILE)
+        with db_connection() as conn:
+            return run_schema_migrations(conn)
     try:
         current = _current_version(conn)
         while current < SCHEMA_VERSION:
@@ -141,5 +238,5 @@ def run_schema_migrations(conn: sqlite3.Connection | None = None) -> int:
             current = next_v
         return current
     finally:
-        if own_conn and conn is not None:
-            conn.close()
+        if own_conn:
+            pass

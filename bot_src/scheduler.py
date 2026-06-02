@@ -9,6 +9,7 @@ from pathlib import Path
 from aiogram import Bot
 from shop_bot.data_manager import database
 from shop_bot.modules import remnawave_api
+from shop_bot.background_tasks import create_background_task
 from shop_bot.modules.remnawave_api import remna_client_session
 from shop_bot.config import BOT_PAYMENTS_LIVE, DAILY_RATE, SCHEDULER_CONCURRENT_API_CALLS
 from shop_bot.auto_renew_billing import balance_covers_renew, plan_renew_cost
@@ -208,15 +209,20 @@ async def _run_auto_renew_for_user(
     database.clear_expiry_hour_notified(user_id)
     total_cost = sum(r["cost_rub"] for r in renewed)
 
+    from shop_bot.bot import user_messages
+
+    early = days_left > 0
     if len(renewed) == 1:
         r = renewed[0]
         try:
             await bot.send_message(
                 user_id,
-                (
-                    f"🔁 Подписка <code>{r['key_email']}</code> продлена на {r['months']} мес. "
-                    f"до {r['expire_dt'].strftime('%d.%m.%Y %H:%M')}\n\n"
-                    f"Списано с баланса: {r['cost_rub']:.0f} ₽"
+                user_messages.msg_auto_renew_success(
+                    r["key_email"],
+                    r["months"],
+                    r["expire_dt"],
+                    r["cost_rub"],
+                    early=early,
                 ),
                 parse_mode="HTML",
             )
@@ -225,16 +231,18 @@ async def _run_auto_renew_for_user(
             pass
     else:
         lines = [
-            f"🔁 <b>Автопродление: {len(renewed)} ключей</b>\n",
-            f"Списано с баланса: {total_cost:.0f} ₽\n",
+            f"• <code>{r['key_email']}</code> — {r['months']} мес. "
+            f"до {r['expire_dt'].strftime('%d.%m.%Y')}"
+            for r in renewed
         ]
-        for r in renewed:
-            lines.append(
-                f"• <code>{r['key_email']}</code> — {r['months']} мес. "
-                f"до {r['expire_dt'].strftime('%d.%m.%Y')}"
-            )
         try:
-            await bot.send_message(user_id, "\n".join(lines), parse_mode="HTML")
+            await bot.send_message(
+                user_id,
+                user_messages.msg_auto_renew_multi_success(
+                    lines, total_cost, early=early
+                ),
+                parse_mode="HTML",
+            )
             bot_logger.vpn_action(
                 user_id,
                 "AUTO_RENEW",
@@ -265,6 +273,14 @@ async def _poll_vpn_user(bot: Bot, session, user_entry: dict) -> tuple[int, bool
     if not expire_iso:
         return 0, False
 
+    if BOT_PAYMENTS_LIVE:
+        from shop_bot.balance_billing import process_daily_balance_user
+
+        try:
+            await process_daily_balance_user(user_id, panel_expire_iso=expire_iso)
+        except Exception as exc:
+            logger.warning("daily balance user=%s: %s", user_id, exc)
+
     try:
         remote_dt = datetime.fromisoformat(expire_iso.replace("Z", "+00:00"))
         remote_ms = int(remote_dt.timestamp() * 1000)
@@ -289,12 +305,29 @@ async def _poll_vpn_user(bot: Bot, session, user_entry: dict) -> tuple[int, bool
         if remote_dt.tzinfo is None:
             remote_dt = remote_dt.replace(tzinfo=timezone.utc)
         now_utc = datetime.now(timezone.utc)
-        days_left = (remote_dt - now_utc).days
+        panel_days_left_val = (remote_dt - now_utc).days
         hours_left = (remote_dt - now_utc).total_seconds() / 3600
+        bal = database.get_balance(user_id)
+        from shop_bot.subscription_profile import days_left_for_notifications
+
+        days_left, access_kind = days_left_for_notifications(
+            user_id, user_keys, user_profile, expire_iso
+        )
         last_days_notified = database.get_last_expiry_notified_days(user_id)
 
-        if (
-            0 < hours_left <= 6
+        if days_left is None:
+            if last_days_notified < max(EXPIRY_NOTIFY_DAYS):
+                database.update_last_expiry_notified_days(
+                    user_id, max(EXPIRY_NOTIFY_DAYS)
+                )
+        elif days_left > max(EXPIRY_NOTIFY_DAYS):
+            if last_days_notified < max(EXPIRY_NOTIFY_DAYS):
+                database.update_last_expiry_notified_days(
+                    user_id, max(EXPIRY_NOTIFY_DAYS)
+                )
+        elif (
+            access_kind == "trial"
+            and 0 < hours_left <= 6
             and not database.was_expiry_hour_notified(user_id)
         ):
             try:
@@ -310,58 +343,91 @@ async def _poll_vpn_user(bot: Bot, session, user_entry: dict) -> tuple[int, bool
                 bot_logger.notification(user_id, "EXPIRY_6H", False)
             database.mark_expiry_hour_notified(user_id)
 
-        for mark in EXPIRY_NOTIFY_DAYS:
-            if days_left <= mark and last_days_notified > mark:
-                try:
-                    if BOT_PAYMENTS_LIVE:
-                        from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+        notify_mark = None
+        if days_left is not None:
+            if days_left <= 0:
+                if last_days_notified > 0:
+                    notify_mark = 0
+            else:
+                for mark in EXPIRY_NOTIFY_DAYS:
+                    if mark == 0:
+                        continue
+                    if days_left <= mark and last_days_notified > mark:
+                        notify_mark = mark
+                        break
 
-                        kb = InlineKeyboardMarkup(
-                            inline_keyboard=[
-                                [
-                                    InlineKeyboardButton(
-                                        text="💰 Пополнить баланс",
-                                        callback_data="show_topup",
-                                    )
-                                ]
+        if notify_mark is not None:
+            try:
+                from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+                kb = None
+                if access_kind in ("wallet", "trial") and BOT_PAYMENTS_LIVE:
+                    kb = InlineKeyboardMarkup(
+                        inline_keyboard=[
+                            [
+                                InlineKeyboardButton(
+                                    text="💰 Пополнить баланс",
+                                    callback_data="show_topup",
+                                )
                             ]
+                        ]
+                    )
+                if access_kind == "wallet" and BOT_PAYMENTS_LIVE:
+                    if notify_mark > 0:
+                        txt = (
+                            f"⏰ Доступ заканчивается через {days_left} дн.\n\n"
+                            f"💰 Баланс: {bal:.0f} ₽\n\n"
+                            f"Пополните баланс ({DAILY_RATE:.2f} ₽/день), "
+                            f"чтобы не остаться без VPN 👇"
                         )
-                        bal = database.get_balance(user_id)
-                        if mark > 0:
-                            txt = (
-                                f"⏰ Доступ заканчивается через {mark} дн.\n\n"
-                                f"💰 Баланс: {bal:.0f} ₽\n\n"
-                                f"Пополните баланс ({DAILY_RATE:.2f} ₽/день), "
-                                f"чтобы не остаться без VPN 👇"
-                            )
-                        else:
-                            txt = (
-                                "❗️ Срок доступа истёк.\n\n"
-                                f"💰 Баланс: {bal:.0f} ₽\n\n"
-                                "Пополните баланс, чтобы продолжить пользоваться BenderVPN 👇"
-                            )
-                        await bot.send_message(user_id, txt, reply_markup=kb)
                     else:
-                        if mark > 0:
-                            txt = (
-                                f"⏰ Бесплатный доступ по пробному тарифу заканчивается через {mark} дн.\n\n"
-                                "Оплата через бота пока подключается. Напишите сюда в чат поддержки — поможем с продлением."
-                            )
-                        else:
-                            txt = (
-                                "❗️ Истёк срок бесплатного пробного доступа.\n\n"
-                                "Оплата через бота пока недоступна. Напишите в этот чат — согласуем продление."
-                            )
-                        await bot.send_message(user_id, txt)
-                    tag = "EXPIRED" if mark == 0 else f"EXPIRY_{mark}D"
-                    bot_logger.notification(user_id, tag, True)
-                    notifications_sent += 1
-                except Exception:
-                    bot_logger.notification(user_id, f"EXPIRY_{mark}D", False)
-                database.update_last_expiry_notified_days(user_id, mark)
-                break
+                        txt = (
+                            "❗️ Срок доступа истёк.\n\n"
+                            f"💰 Баланс: {bal:.0f} ₽\n\n"
+                            "Пополните баланс, чтобы продолжить пользоваться BenderVPN 👇"
+                        )
+                elif access_kind == "trial":
+                    if notify_mark > 0:
+                        txt = (
+                            f"⏰ Бесплатный trial заканчивается через {days_left} дн.\n\n"
+                            "Чтобы продолжить VPN после окончания trial, "
+                            "пополните баланс в боте 👇"
+                        )
+                    else:
+                        txt = (
+                            "❗️ Бесплатный trial закончился.\n\n"
+                            "Пополните баланс, чтобы пользоваться VPN дальше 👇"
+                        )
+                else:
+                    if notify_mark > 0:
+                        txt = (
+                            f"⏰ Доступ заканчивается через {days_left} дн.\n\n"
+                            "Напишите в поддержку, если нужна помощь."
+                        )
+                    else:
+                        txt = "❗️ Срок доступа истёк. Напишите в поддержку."
+                await bot.send_message(
+                    user_id, txt, reply_markup=kb, parse_mode="HTML"
+                )
+                tag = "EXPIRED" if notify_mark == 0 else f"EXPIRY_{notify_mark}D"
+                bot_logger.notification(user_id, tag, True)
+                notifications_sent += 1
+            except Exception:
+                bot_logger.notification(
+                    user_id,
+                    f"EXPIRY_{notify_mark}D" if notify_mark else "EXPIRY",
+                    False,
+                )
+            database.update_last_expiry_notified_days(user_id, notify_mark)
 
-        if auto_renew and BOT_PAYMENTS_LIVE and days_left <= 0 and user_keys:
+        legacy_plan = any(k.get("subscription_plan") for k in user_keys)
+        if (
+            auto_renew
+            and BOT_PAYMENTS_LIVE
+            and legacy_plan
+            and days_left <= 1
+            and user_keys
+        ):
             await _run_auto_renew_for_user(bot, user_id, user_keys, days_left)
 
         if remote and user_keys:
@@ -399,14 +465,10 @@ async def _poll_vpn_user(bot: Bot, session, user_entry: dict) -> tuple[int, bool
 
 async def _backup_monitor_loop(bot: Bot) -> None:
     """Scheduled DB backup — separate task (P2-OPS-SCHED-JITTER-02)."""
-    last_backup_decision_at = 0.0
     while True:
-        await asyncio.sleep(BACKUP_CHECK_INTERVAL_SECONDS)
         try:
             import os
 
-            now_mono = _time.monotonic()
-            last_backup_decision_at = now_mono
             now = datetime.now(timezone.utc)
             last_backup_iso = database.get_last_backup_timestamp()
             should_backup = not last_backup_iso
@@ -477,11 +539,27 @@ async def _backup_monitor_loop(bot: Bot) -> None:
                             )
         except Exception as e:
             bot_logger.backup("SYSTEM_ERROR", str(e), "ERROR")
+        await asyncio.sleep(BACKUP_CHECK_INTERVAL_SECONDS)
+
+
+async def _yookassa_autopay_loop(bot: Bot) -> None:
+    while True:
+        await asyncio.sleep(3600)
+        try:
+            from shop_bot.yookassa_autopay_scheduler import run_yookassa_autopay_batch
+
+            n = await run_yookassa_autopay_batch(bot)
+            if n:
+                bot_logger.system("YK_AUTOPAY", f"started {n} recurring charge(s)", "OK")
+        except Exception as exc:
+            logger.warning("yookassa autopay loop: %s", exc)
 
 
 async def start_subscription_monitor(bot: Bot):
     bot_logger.system("MONITOR", "Subscription monitor started", "OK")
-    asyncio.create_task(_backup_monitor_loop(bot))
+    create_background_task(_backup_monitor_loop(bot))
+    if BOT_PAYMENTS_LIVE:
+        create_background_task(_yookassa_autopay_loop(bot))
     while True:
         try:
             sub_ok, sub_fail = await run_sub_refresh_notify_batch(bot)

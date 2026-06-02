@@ -1,7 +1,8 @@
 import hashlib
 import re
 import sqlite3
-from datetime import datetime
+from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 import logging
 import os
 from pathlib import Path
@@ -17,9 +18,24 @@ DATA_DIR = PROJECT_ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)  # Создаем директорию если не существует
 DB_FILE = DATA_DIR / "shop_bot.db"
 
+
+@contextmanager
+def db_connection(timeout: float = 5.0):
+    """SQLite connection with busy_timeout (P2-RED-BOT-ENV-01)."""
+    conn = sqlite3.connect(DB_FILE, timeout=timeout)
+    try:
+        conn.execute("PRAGMA busy_timeout=5000")
+        yield conn
+    finally:
+        conn.close()
+
+
+get_db_connection = db_connection
+
+
 def initialize_db():
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("PRAGMA journal_mode=WAL")
             cursor.execute("PRAGMA busy_timeout=5000")
@@ -126,7 +142,7 @@ def initialize_db():
 
 def get_setting(key: str) -> str | None:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT value FROM bot_settings WHERE key = ?", (key,))
             result = cursor.fetchone()
@@ -137,7 +153,7 @@ def get_setting(key: str) -> str | None:
 
 def update_setting(key: str, value: str):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("UPDATE bot_settings SET value = ? WHERE key = ?", (value, key))
             conn.commit()
@@ -147,7 +163,7 @@ def update_setting(key: str, value: str):
 
 def upsert_setting(key: str, value: str):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT OR REPLACE INTO bot_settings (key, value) VALUES (?, ?)",
@@ -171,7 +187,7 @@ def set_sub_config_generation(generation: int, reason: str = "") -> None:
 
 def get_sub_refresh_notified_generation(user_id: int) -> int:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "SELECT sub_refresh_notified_generation FROM users WHERE telegram_id = ?",
@@ -185,7 +201,7 @@ def get_sub_refresh_notified_generation(user_id: int) -> int:
 
 def update_sub_refresh_notified_generation(user_id: int, generation: int) -> None:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "UPDATE users SET sub_refresh_notified_generation = ? WHERE telegram_id = ?",
@@ -197,10 +213,34 @@ def update_sub_refresh_notified_generation(user_id: int, generation: int) -> Non
             f"Failed to update sub_refresh_notified_generation for {user_id}: {e}"
         )
 
+def mark_all_sub_refresh_notified(generation: int | None = None) -> tuple[int, int]:
+    """Set sub_refresh_notified_generation for all users with VPN keys. Returns (updated, gen)."""
+    gen = int(generation if generation is not None else get_sub_config_generation())
+    if gen <= 0:
+        return 0, gen
+    try:
+        with db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE users
+                SET sub_refresh_notified_generation = ?
+                WHERE telegram_id IN (SELECT DISTINCT user_id FROM vpn_keys)
+                  AND COALESCE(sub_refresh_notified_generation, 0) < ?
+                """,
+                (gen, gen),
+            )
+            conn.commit()
+            return int(cursor.rowcount), gen
+    except sqlite3.Error as e:
+        logging.error(f"mark_all_sub_refresh_notified failed: {e}")
+        return 0, gen
+
+
 def list_users_pending_sub_refresh(current_generation: int, limit: int = 15) -> list[int]:
     """Distinct vpn_keys.user_id with telegram account behind current_generation."""
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
@@ -236,7 +276,7 @@ def web_user_id_from_email(contact_email: str) -> int:
 def web_trial_contact_claimed(contact_email: str) -> bool:
     try:
         em = normalize_contact_email(contact_email)
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cur = conn.cursor()
             cur.execute(
                 "SELECT 1 FROM web_trial_claims WHERE contact_email = ?",
@@ -256,7 +296,7 @@ def record_web_trial_claim(
 ) -> None:
     try:
         em = normalize_contact_email(contact_email)
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.execute(
                 """INSERT INTO web_trial_claims
                    (contact_email, web_user_id, panel_email, contact_phone)
@@ -270,7 +310,7 @@ def record_web_trial_claim(
 
 def register_user_if_not_exists(telegram_id: int, username: str):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT telegram_id FROM users WHERE telegram_id = ?", (telegram_id,))
             if not cursor.fetchone():
@@ -283,7 +323,7 @@ def register_user_if_not_exists(telegram_id: int, username: str):
 
 def get_user(telegram_id: int):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM users WHERE telegram_id = ?", (telegram_id,))
@@ -300,7 +340,7 @@ def lookup_telegram_ids_by_hint(hint: str, *, limit: int = 5) -> list[dict]:
     if not raw:
         return []
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             if raw.lstrip("@").isdigit():
@@ -328,7 +368,7 @@ def lookup_telegram_ids_by_hint(hint: str, *, limit: int = 5) -> list[dict]:
 
 def set_terms_agreed(telegram_id: int):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "UPDATE users SET agreed_to_terms = 1 WHERE telegram_id = ?",
@@ -346,7 +386,7 @@ def set_terms_agreed(telegram_id: int):
 
 def update_user_stats(telegram_id: int, amount_spent: float, months_purchased: int):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("UPDATE users SET total_spent = total_spent + ?, total_months = total_months + ? WHERE telegram_id = ?", (amount_spent, months_purchased, telegram_id))
             conn.commit()
@@ -355,7 +395,7 @@ def update_user_stats(telegram_id: int, amount_spent: float, months_purchased: i
 
 def set_trial_used(telegram_id: int):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("UPDATE users SET trial_used = 1 WHERE telegram_id = ?", (telegram_id,))
             conn.commit()
@@ -365,7 +405,7 @@ def set_trial_used(telegram_id: int):
 
 def reset_trial_used(telegram_id: int):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("UPDATE users SET trial_used = 0 WHERE telegram_id = ?", (telegram_id,))
             conn.commit()
@@ -375,7 +415,7 @@ def reset_trial_used(telegram_id: int):
 
 def add_new_key(user_id: int, vless_uuid: str, key_email: str, expiry_timestamp_ms: int):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             # Конвертируем UTC timestamp в локальное время корректно
             from datetime import timezone
@@ -394,7 +434,7 @@ def add_new_key(user_id: int, vless_uuid: str, key_email: str, expiry_timestamp_
 
 def get_user_keys(user_id: int):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM vpn_keys WHERE user_id = ? ORDER BY key_id", (user_id,))
@@ -406,7 +446,7 @@ def get_user_keys(user_id: int):
 
 def get_key_by_id(key_id: int):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM vpn_keys WHERE key_id = ?", (key_id,))
@@ -418,7 +458,7 @@ def get_key_by_id(key_id: int):
 
 def update_key_info(key_id: int, new_vless_uuid: str, new_expiry_ms: int):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             # Конвертируем UTC timestamp в локальное время корректно
             from datetime import timezone
@@ -434,7 +474,7 @@ def get_next_key_number(user_id: int) -> int:
 
 def get_all_vpn_users():
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("SELECT DISTINCT user_id FROM vpn_keys")
@@ -446,7 +486,7 @@ def get_all_vpn_users():
 
 def update_key_status_from_server(key_email: str, remote_user):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             if remote_user:
                 # Конвертируем UTC timestamp в локальное время корректно
@@ -461,7 +501,7 @@ def update_key_status_from_server(key_email: str, remote_user):
 
 def update_key_last_notified_percent(key_email: str, percent: int):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("UPDATE vpn_keys SET last_notified_percent = ? WHERE key_email = ?", (percent, key_email))
             conn.commit()
@@ -470,7 +510,7 @@ def update_key_last_notified_percent(key_email: str, percent: int):
 
 def get_key_last_notified_percent(key_email: str) -> int:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT last_notified_percent FROM vpn_keys WHERE key_email = ?", (key_email,))
             row = cursor.fetchone()
@@ -482,7 +522,7 @@ def get_key_last_notified_percent(key_email: str) -> int:
 # -------------------- Promo codes --------------------
 def create_promo(code: str, discount_percent: int, free_days: int, uses_limit: int) -> bool:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor()
             c.execute("INSERT OR REPLACE INTO promo_codes (code, discount_percent, free_days, uses_limit, uses_count, active) VALUES (?, ?, ?, ?, COALESCE((SELECT uses_count FROM promo_codes WHERE code = ?),0), 1)", (code, discount_percent, free_days, uses_limit, code))
             conn.commit(); return True
@@ -491,7 +531,7 @@ def create_promo(code: str, discount_percent: int, free_days: int, uses_limit: i
 
 def get_promo(code: str):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.row_factory = sqlite3.Row; c = conn.cursor()
             c.execute("SELECT * FROM promo_codes WHERE code = ? AND active = 1", (code,))
             r = c.fetchone(); return dict(r) if r else None
@@ -500,7 +540,7 @@ def get_promo(code: str):
 
 def apply_promo_usage(code: str):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor()
             c.execute("UPDATE promo_codes SET uses_count = uses_count + 1 WHERE code = ?", (code,))
             c.execute("UPDATE promo_codes SET active = 0 WHERE code = ? AND uses_limit > 0 AND uses_count >= uses_limit", (code,))
@@ -510,7 +550,7 @@ def apply_promo_usage(code: str):
 
 def get_all_promos():
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.row_factory = sqlite3.Row
             c = conn.cursor(); c.execute("SELECT * FROM promo_codes ORDER BY code")
             rows = c.fetchall(); return [dict(r) for r in rows]
@@ -519,7 +559,7 @@ def get_all_promos():
 
 def set_promo_active(code: str, active: bool) -> bool:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor(); c.execute("UPDATE promo_codes SET active = ? WHERE code = ?", (1 if active else 0, code)); conn.commit(); return c.rowcount > 0
     except sqlite3.Error as e:
         logging.error(f"Failed to set promo {code} active={active}: {e}"); return False
@@ -528,7 +568,7 @@ def set_promo_active(code: str, active: bool) -> bool:
 def ensure_user_ref_code(telegram_id: int) -> str:
     import secrets
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor(); c.execute("SELECT ref_code FROM users WHERE telegram_id = ?", (telegram_id,))
             row = c.fetchone()
             if row and row[0]:
@@ -541,7 +581,7 @@ def ensure_user_ref_code(telegram_id: int) -> str:
 
 def link_referral(ref_code: str, new_user_id: int):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor()
             c.execute("SELECT telegram_id FROM users WHERE ref_code = ?", (ref_code,))
             owner = c.fetchone()
@@ -560,7 +600,7 @@ def link_referral(ref_code: str, new_user_id: int):
 
 def count_referrals(ref_code: str) -> int:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor(); c.execute("SELECT COUNT(*) FROM referrals WHERE referrer_code = ?", (ref_code,))
             return c.fetchone()[0]
     except sqlite3.Error as e:
@@ -568,29 +608,151 @@ def count_referrals(ref_code: str) -> int:
 
 # -------------------- Auto renew & expiry notifications --------------------
 def set_auto_renew(user_id: int, enabled: bool):
-    try:
-        with sqlite3.connect(DB_FILE) as conn:
-            c = conn.cursor(); c.execute("UPDATE users SET auto_renew = ? WHERE telegram_id = ?", (1 if enabled else 0, user_id)); conn.commit()
-    except sqlite3.Error as e:
-        logging.error(f"Failed to set auto_renew for {user_id}: {e}")
+    set_yookassa_autopay_enabled(user_id, enabled)
 
 def get_auto_renew(user_id: int) -> bool:
+    """UI flag: YooKassa card autopay enabled (legacy column auto_renew kept in sync)."""
+    return get_yookassa_autopay_enabled(user_id)
+
+
+def get_yookassa_autopay_enabled(user_id: int) -> bool:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
-            c = conn.cursor(); c.execute("SELECT auto_renew FROM users WHERE telegram_id = ?", (user_id,)); row = c.fetchone(); return bool(row and row[0])
+        with db_connection() as conn:
+            row = conn.execute(
+                "SELECT yookassa_autopay_enabled FROM users WHERE telegram_id = ?",
+                (user_id,),
+            ).fetchone()
+            return bool(row and row[0])
     except sqlite3.Error as e:
-        logging.error(f"Failed to get auto_renew for {user_id}: {e}"); return False
+        logging.error("get_yookassa_autopay_enabled %s: %s", user_id, e)
+        return False
+
+
+def set_yookassa_autopay_enabled(user_id: int, enabled: bool) -> None:
+    try:
+        with db_connection() as conn:
+            conn.execute(
+                "UPDATE users SET yookassa_autopay_enabled = ?, auto_renew = ? "
+                "WHERE telegram_id = ?",
+                (1 if enabled else 0, 1 if enabled else 0, user_id),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error("set_yookassa_autopay_enabled %s: %s", user_id, e)
+
+
+def get_yookassa_payment_method_id(user_id: int) -> str | None:
+    try:
+        with db_connection() as conn:
+            row = conn.execute(
+                "SELECT yookassa_payment_method_id FROM users WHERE telegram_id = ?",
+                (user_id,),
+            ).fetchone()
+            if row and row[0]:
+                return str(row[0]).strip()
+    except sqlite3.Error as e:
+        logging.error("get_yookassa_payment_method_id %s: %s", user_id, e)
+    return None
+
+
+def set_yookassa_payment_method(user_id: int, payment_method_id: str) -> None:
+    try:
+        with db_connection() as conn:
+            conn.execute(
+                "UPDATE users SET yookassa_payment_method_id = ? WHERE telegram_id = ?",
+                (payment_method_id.strip(), user_id),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error("set_yookassa_payment_method %s: %s", user_id, e)
+
+
+def schedule_yookassa_autopay_next(user_id: int, days: int) -> None:
+    nxt = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
+    try:
+        with db_connection() as conn:
+            conn.execute(
+                "UPDATE users SET yookassa_autopay_next_at = ? WHERE telegram_id = ?",
+                (nxt, user_id),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error("schedule_yookassa_autopay_next %s: %s", user_id, e)
+
+
+def clear_yookassa_autopay_error(user_id: int) -> None:
+    try:
+        with db_connection() as conn:
+            conn.execute(
+                "UPDATE users SET yookassa_autopay_last_error = NULL WHERE telegram_id = ?",
+                (user_id,),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error("clear_yookassa_autopay_error %s: %s", user_id, e)
+
+
+def set_yookassa_autopay_error(user_id: int, message: str) -> None:
+    try:
+        with db_connection() as conn:
+            conn.execute(
+                "UPDATE users SET yookassa_autopay_last_error = ? WHERE telegram_id = ?",
+                (message[:500], user_id),
+            )
+            conn.commit()
+    except sqlite3.Error as e:
+        logging.error("set_yookassa_autopay_error %s: %s", user_id, e)
+
+
+def list_yookassa_autopay_due(limit: int = 20) -> list[int]:
+    """Users with card autopay enabled and next charge time passed."""
+    now = datetime.now(timezone.utc).isoformat()
+    try:
+        with db_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT telegram_id FROM users
+                WHERE yookassa_autopay_enabled = 1
+                  AND yookassa_payment_method_id IS NOT NULL
+                  AND TRIM(yookassa_payment_method_id) != ''
+                  AND (yookassa_autopay_next_at IS NULL OR yookassa_autopay_next_at <= ?)
+                LIMIT ?
+                """,
+                (now, limit),
+            ).fetchall()
+            return [int(r[0]) for r in rows]
+    except sqlite3.Error as e:
+        logging.error("list_yookassa_autopay_due: %s", e)
+        return []
+
+
+def get_yookassa_autopay(user_id: int) -> dict:
+    try:
+        with db_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute(
+                """SELECT yookassa_autopay_enabled, yookassa_payment_method_id,
+                          yookassa_autopay_next_at, yookassa_autopay_last_error
+                   FROM users WHERE telegram_id = ?""",
+                (user_id,),
+            ).fetchone()
+            if not row:
+                return {}
+            return dict(row)
+    except sqlite3.Error as e:
+        logging.error("get_yookassa_autopay %s: %s", user_id, e)
+        return {}
 
 def get_last_expiry_notified_days(user_id: int) -> int:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor(); c.execute("SELECT last_expiry_notified_days FROM users WHERE telegram_id = ?", (user_id,)); row = c.fetchone(); return row[0] if row else 999
     except sqlite3.Error as e:
         logging.error(f"Failed to get last_expiry_notified_days for {user_id}: {e}"); return 999
 
 def update_last_expiry_notified_days(user_id: int, days: int):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor(); c.execute("UPDATE users SET last_expiry_notified_days = ? WHERE telegram_id = ?", (days, user_id)); conn.commit()
     except sqlite3.Error as e:
         logging.error(f"Failed to update last_expiry_notified_days for {user_id}: {e}")
@@ -598,7 +760,7 @@ def update_last_expiry_notified_days(user_id: int, days: int):
 # -------------------- Actions log --------------------
 def log_action(user_id: int, action: str, meta: str | None = None):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor(); c.execute("INSERT INTO user_actions (user_id, action, meta) VALUES (?, ?, ?)", (user_id, action, meta)); conn.commit()
     except sqlite3.Error as e:
         logging.error(f"Failed to log action {action} for {user_id}: {e}")
@@ -611,7 +773,7 @@ def cleanup_support_rate_limits(older_than_sec: int = 7200) -> None:
         import time
 
         cutoff = time.time() - older_than_sec
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.execute(
                 "DELETE FROM support_rate_limits WHERE window_start < ?",
                 (cutoff,),
@@ -632,7 +794,7 @@ def support_rate_limit_check(
 
     now = time.time()
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             row = conn.execute(
                 "SELECT window_start, hit_count FROM support_rate_limits WHERE user_id = ?",
                 (user_id,),
@@ -669,30 +831,58 @@ def support_rate_limit_check(
 
 def add_traffic_extra(key_id: int, gb: int):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor(); c.execute("UPDATE vpn_keys SET traffic_extra_bytes = traffic_extra_bytes + ? WHERE key_id = ?", (gb * 1024 * 1024 * 1024, key_id)); conn.commit()
     except sqlite3.Error as e:
         logging.error(f"Failed to add extra traffic for key {key_id}: {e}")
 
 def set_key_plan(key_id: int, plan_id: str):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor(); c.execute("UPDATE vpn_keys SET subscription_plan = ? WHERE key_id = ?", (plan_id, key_id)); conn.commit()
     except sqlite3.Error as e:
         logging.error(f"Failed to set plan {plan_id} for key {key_id}: {e}")
 
 def has_action(user_id: int, action: str) -> bool:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor(); c.execute("SELECT 1 FROM user_actions WHERE user_id = ? AND action = ? LIMIT 1", (user_id, action)); return c.fetchone() is not None
     except sqlite3.Error as e:
         logging.error(f"Failed to check action {action} for {user_id}: {e}"); return False
+
+
+def try_acquire_topup_idempotency(user_id: int, idempotency_key: str) -> bool:
+    """Atomically claim topup idempotency before balance change (P2-RED-BOT-INTEGRITY-01)."""
+    key = (idempotency_key or "").strip()
+    if not key:
+        return True
+    try:
+        with db_connection() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT 1 FROM user_actions WHERE user_id = ? AND action = ? LIMIT 1",
+                (user_id, key),
+            )
+            if cur.fetchone():
+                conn.rollback()
+                return False
+            cur.execute(
+                "INSERT INTO user_actions (user_id, action, meta) VALUES (?, ?, ?)",
+                (user_id, key, "topup"),
+            )
+            conn.commit()
+            return True
+    except sqlite3.Error as e:
+        logging.error("try_acquire_topup_idempotency %s user=%s: %s", key, user_id, e)
+        return False
+
 
 # -------------------- Webhook idempotency / DLQ (P6-RED-PAY-01) --------------------
 def claim_webhook_delivery(idempotency_key: str, source: str, payload_json: str) -> str:
     """new | duplicate | in_progress | retry"""
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor()
             c.execute(
                 "SELECT status FROM webhook_deliveries WHERE idempotency_key = ?",
@@ -728,7 +918,7 @@ def claim_webhook_delivery(idempotency_key: str, source: str, payload_json: str)
 
 def mark_webhook_processing(idempotency_key: str) -> None:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor()
             c.execute(
                 """UPDATE webhook_deliveries
@@ -742,7 +932,7 @@ def mark_webhook_processing(idempotency_key: str) -> None:
 
 def mark_webhook_done(idempotency_key: str) -> None:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor()
             c.execute(
                 """UPDATE webhook_deliveries
@@ -756,7 +946,7 @@ def mark_webhook_done(idempotency_key: str) -> None:
 
 def mark_webhook_failed(idempotency_key: str, error: str) -> None:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor()
             c.execute(
                 """UPDATE webhook_deliveries
@@ -770,7 +960,7 @@ def mark_webhook_failed(idempotency_key: str, error: str) -> None:
 
 def count_webhook_dlq() -> int:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor()
             c.execute("SELECT COUNT(*) FROM webhook_deliveries WHERE status = 'failed'")
             return int(c.fetchone()[0])
@@ -780,7 +970,7 @@ def count_webhook_dlq() -> int:
 
 def get_user_by_ref_code(ref_code: str):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.row_factory = sqlite3.Row
             c = conn.cursor(); c.execute("SELECT * FROM users WHERE ref_code = ?", (ref_code,)); row = c.fetchone(); return dict(row) if row else None
     except sqlite3.Error as e:
@@ -789,7 +979,7 @@ def get_user_by_ref_code(ref_code: str):
 # -------------------- Admin stats --------------------
 def get_admin_stats():
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor()
             c.execute("SELECT COUNT(*), COALESCE(SUM(total_spent),0), COALESCE(SUM(total_months),0) FROM users")
             users_count, total_spent, total_months = c.fetchone()
@@ -816,14 +1006,14 @@ def get_admin_stats():
 
 def set_last_backup_timestamp(ts_iso: str):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor(); c.execute("INSERT OR REPLACE INTO bot_settings (key, value) VALUES ('last_backup_iso', ?)", (ts_iso,)); conn.commit()
     except sqlite3.Error as e:
         logging.error(f"Failed to set last backup timestamp: {e}")
 
 def get_last_backup_timestamp() -> str | None:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor(); c.execute("SELECT value FROM bot_settings WHERE key = 'last_backup_iso'")
             row = c.fetchone(); return row[0] if row else None
     except sqlite3.Error as e:
@@ -836,7 +1026,7 @@ def _expiry_hour_setting_key(telegram_id: int) -> str:
 
 def was_expiry_hour_notified(telegram_id: int) -> bool:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor()
             c.execute(
                 "SELECT value FROM bot_settings WHERE key = ?",
@@ -851,20 +1041,52 @@ def was_expiry_hour_notified(telegram_id: int) -> bool:
 
 def mark_expiry_hour_notified(telegram_id: int) -> None:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        ts = datetime.now(timezone.utc).isoformat()
+        with db_connection() as conn:
             c = conn.cursor()
             c.execute(
-                "INSERT OR REPLACE INTO bot_settings (key, value) VALUES (?, '1')",
-                (_expiry_hour_setting_key(telegram_id),),
+                "INSERT OR REPLACE INTO bot_settings (key, value) VALUES (?, ?)",
+                (_expiry_hour_setting_key(telegram_id), ts),
             )
             conn.commit()
     except sqlite3.Error as e:
         logging.error(f"Failed set expiry hour flag for {telegram_id}: {e}")
 
 
+def prune_stale_expiry_notification_flags(older_than_days: int = 30) -> int:
+    """Remove expiry_*_notified:* bot_settings older than N days (P3-UX-BOT-POLISH-02)."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=older_than_days)).isoformat()
+    try:
+        with db_connection() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                DELETE FROM bot_settings
+                WHERE key LIKE 'expiry_%_notified:%'
+                  AND value IS NOT NULL
+                  AND value != '1'
+                  AND value < ?
+                """,
+                (cutoff,),
+            )
+            deleted = cur.rowcount
+            cur.execute(
+                """
+                DELETE FROM bot_settings
+                WHERE key LIKE 'expiry_%_notified:%' AND value = '1'
+                """
+            )
+            deleted += cur.rowcount
+            conn.commit()
+            return deleted
+    except sqlite3.Error as e:
+        logging.error("prune_stale_expiry_notification_flags: %s", e)
+        return 0
+
+
 def clear_expiry_hour_notified(telegram_id: int) -> None:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             c = conn.cursor()
             c.execute(
                 "DELETE FROM bot_settings WHERE key = ?",
@@ -877,7 +1099,7 @@ def clear_expiry_hour_notified(telegram_id: int) -> None:
 
 def get_balance(telegram_id: int) -> float:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
             cur.execute("SELECT balance FROM users WHERE telegram_id = ?", (telegram_id,))
@@ -891,7 +1113,7 @@ def get_balance(telegram_id: int) -> float:
 def set_balance(telegram_id: int, amount: float) -> None:
     """Set wallet balance (admin / support correction)."""
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.execute(
                 "UPDATE users SET balance = ? WHERE telegram_id = ?",
                 (float(amount), telegram_id),
@@ -903,7 +1125,7 @@ def set_balance(telegram_id: int, amount: float) -> None:
 
 def add_balance(telegram_id: int, amount: float):
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "UPDATE users SET balance = COALESCE(balance, 0) + ? WHERE telegram_id = ?",
@@ -919,7 +1141,7 @@ def try_deduct_balance(telegram_id: int, amount: float) -> bool:
     if amount <= 0:
         return True
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             cur = conn.cursor()
             cur.execute(
                 "UPDATE users SET balance = COALESCE(balance, 0) - ? "
@@ -942,7 +1164,7 @@ RENEWAL_STATUS_FAILED = "failed"
 def has_pending_renewal_attempt(user_id: int, key_id: int) -> bool:
     """True if an incomplete renewal attempt exists for this user/key."""
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             row = conn.execute(
                 "SELECT 1 FROM renewal_attempts "
                 "WHERE user_id = ? AND key_id = ? AND status = ? LIMIT 1",
@@ -967,7 +1189,7 @@ def create_renewal_attempt(
     if has_pending_renewal_attempt(user_id, key_id):
         return False
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.execute(
                 "INSERT INTO renewal_attempts "
                 "(attempt_id, user_id, key_id, status, cost_rub, plan, balance_deducted) "
@@ -983,7 +1205,7 @@ def create_renewal_attempt(
 
 def mark_renewal_balance_deducted(attempt_id: str) -> None:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.execute(
                 "UPDATE renewal_attempts SET balance_deducted = 1 WHERE attempt_id = ?",
                 (attempt_id,),
@@ -996,7 +1218,7 @@ def mark_renewal_balance_deducted(attempt_id: str) -> None:
 def complete_renewal_attempt(attempt_id: str, status: str) -> None:
     """Terminal status: success, refunded, or failed."""
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.execute(
                 "UPDATE renewal_attempts SET status = ?, completed_at = CURRENT_TIMESTAMP "
                 "WHERE attempt_id = ?",
@@ -1009,7 +1231,7 @@ def complete_renewal_attempt(attempt_id: str, status: str) -> None:
 
 def list_stale_pending_renewals(older_than_minutes: int = 5) -> list[dict]:
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        with db_connection() as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 "SELECT attempt_id, user_id, key_id, cost_rub, plan, balance_deducted "

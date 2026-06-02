@@ -63,6 +63,7 @@ def create_main_menu_keyboard(
     is_admin=False,
     telegram_id: int | None = None,
     for_simulation: bool = False,
+    auto_renew: bool = False,
     **kwargs,
 ):
     builder = InlineKeyboardBuilder()
@@ -80,6 +81,12 @@ def create_main_menu_keyboard(
             text="\ud83d\udcb0 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c",
             callback_data="show_topup",
         )
+        renew_label = (
+            "\ud83d\udcb3 \u0410\u0432\u0442\u043e\u043f\u043b\u0430\u0442\u0451\u0436 \u043a\u0430\u0440\u0442\u043e\u0439: \u0432\u043a\u043b"
+            if auto_renew
+            else "\ud83d\udcb3 \u0410\u0432\u0442\u043e\u043f\u043b\u0430\u0442\u0451\u0436 \u043a\u0430\u0440\u0442\u043e\u0439: \u0432\u044b\u043a\u043b"
+        )
+        builder.button(text=renew_label, callback_data="toggle_autorenew")
     else:
         if trial_available:
             builder.button(
@@ -156,9 +163,13 @@ def create_topup_keyboard():
     return builder.as_markup()
 
 
-def create_topup_payment_keyboard(topup_id: str):
+def create_topup_payment_keyboard(topup_id: str, payment_methods: dict | None = None):
     builder = InlineKeyboardBuilder()
-    builder.button(text="\u2b50 Telegram Stars", callback_data=f"pay_stars_topup_{topup_id}")
+    pm = payment_methods or {}
+    if pm.get("stars"):
+        builder.button(text="\u2b50 Telegram Stars", callback_data=f"pay_stars_topup_{topup_id}")
+    if pm.get("yookassa"):
+        builder.button(text="\U0001f4b3 \u0411\u0430\u043d\u043a\u043e\u0432\u0441\u043a\u0430\u044f \u043a\u0430\u0440\u0442\u0430", callback_data=f"pay_yookassa_topup_{topup_id}")
     builder.button(text="\U0001f519 \u041d\u0430\u0437\u0430\u0434", callback_data="show_topup")
     builder.adjust(1)
     return builder.as_markup()
@@ -455,5 +466,14 @@ def create_promo_enter_keyboard():
     return create_back_to_menu_keyboard()
 
 
-def create_autorenew_toggle_keyboard(e):
-    return create_back_to_menu_keyboard()
+def create_autorenew_toggle_keyboard(enabled: bool):
+    builder = InlineKeyboardBuilder()
+    label = (
+        "\ud83d\udd04 \u0410\u0432\u0442\u043e\u043f\u0440\u043e\u0434\u043b\u0435\u043d\u0438\u0435: \u0432\u043a\u043b"
+        if enabled
+        else "\ud83d\udd04 \u0410\u0432\u0442\u043e\u043f\u0440\u043e\u0434\u043b\u0435\u043d\u0438\u0435: \u0432\u044b\u043a\u043b"
+    )
+    builder.button(text=label, callback_data="toggle_autorenew")
+    builder.button(text="\U0001f519 \u041d\u0430\u0437\u0430\u0434", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()

@@ -52,7 +52,9 @@ def merge_web_user_to_telegram(web_uid: int, tg_id: int, username: str) -> dict:
     tg_user = get_user(tg_id)
 
     try:
-        with sqlite3.connect(DB_FILE) as conn:
+        from shop_bot.data_manager.database import db_connection
+
+        with db_connection() as conn:
             conn.execute("UPDATE vpn_keys SET user_id = ? WHERE user_id = ?", (tg_id, web_uid))
             conn.execute("UPDATE user_actions SET user_id = ? WHERE user_id = ?", (tg_id, web_uid))
 

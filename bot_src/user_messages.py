@@ -156,3 +156,63 @@ def msg_sub_config_refresh(profile_name: str = "🚀 BenderVPN Auto") -> str:
 
 
 MSG_SUB_CONFIG_REFRESH = msg_sub_config_refresh()
+
+
+def msg_auto_renew_success(
+    key_email: str,
+    months: int,
+    expire_dt,
+    cost_rub: float,
+    *,
+    early: bool,
+) -> str:
+    """Auto-renew notification (P3-UX-BOT-POLISH-02)."""
+    when = expire_dt.strftime("%d.%m.%Y %H:%M")
+    prefix = (
+        "🔁 <b>Автопродление сработало заранее</b> — доступ не прерывался.\n\n"
+        if early
+        else "🔁 <b>Автопродление после окончания срока</b>\n\n"
+    )
+    return (
+        f"{prefix}"
+        f"Ключ <code>{key_email}</code> продлён на {months} мес. до {when}.\n"
+        f"Списано с баланса: {cost_rub:.0f} ₽"
+    )
+
+
+def msg_autopay_bind_offer(amount_rub: float, interval_days: int) -> str:
+    return (
+        "💳 <b>Автопродление с карты</b>\n\n"
+        f"При оплате вы <b>соглашаетесь</b>, что ЮKassa будет списывать "
+        f"<b>{amount_rub:.0f} ₽</b> примерно раз в <b>{interval_days} дней</b> "
+        "с привязанной карты для продления VPN.\n\n"
+        f"Первое списание сейчас: <b>{amount_rub:.0f} ₽</b> "
+        "(пополнение баланса + привязка карты).\n\n"
+        "Отключить можно в любой момент кнопкой «Автоплатёж: выкл» в меню.\n\n"
+        "Нажмите «Оплатить» — откроется безопасная страница ЮKassa."
+    )
+
+
+def msg_autopay_charged(amount_rub: float, days_left: int) -> str:
+    return (
+        f"✅ <b>Автопродление прошло</b>\n\n"
+        f"С карты списано {amount_rub:.0f} ₽.\n"
+        f"VPN активен ещё ~{days_left} дн."
+    )
+
+
+def msg_autopay_failed() -> str:
+    return (
+        "⚠️ <b>Не удалось списать автопродление с карты</b>\n\n"
+        "Пополните баланс вручную или привяжите карту заново "
+        "(Автоплатёж → выкл → вкл)."
+    )
+
+
+def msg_auto_renew_multi_success(lines: list[str], total_cost: float, *, early: bool) -> str:
+    prefix = (
+        "🔁 <b>Автопродление сработало заранее</b> для нескольких ключей:\n\n"
+        if early
+        else "🔁 <b>Автопродление после окончания срока</b>:\n\n"
+    )
+    return prefix + "\n".join(lines) + f"\n\nСписано всего: {total_cost:.0f} ₽"

@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import random
 import time
 
 from aiogram import Bot
 from aiogram.enums import ParseMode
-from aiogram.exceptions import TelegramRetryAfter
+from aiogram.exceptions import TelegramForbiddenError, TelegramRetryAfter
 
 from shop_bot.bot import user_messages
 from shop_bot.config import SUB_REFRESH_JITTER_MAX_SEC
@@ -16,12 +17,17 @@ from shop_bot.data_manager import database
 
 logger = logging.getLogger(__name__)
 
+SUB_REFRESH_NOTIFY_ENABLED = os.getenv(
+    "SUB_REFRESH_NOTIFY_ENABLED", "0"
+).strip().lower() in ("1", "true", "yes")
 SUB_REFRESH_BATCH = 50
 SUB_REFRESH_SEND_INTERVAL_SEC = 0.035
+_SUB_REFRESH_429_MAX_RETRIES = 5
 
 
 async def _send_with_rate_limit(bot: Bot, user_id: int, text: str) -> None:
-    """Send one notify; honor Telegram 429 with backoff."""
+    """Send one notify; honor Telegram 429 with capped backoff (P2-RED-BOT-RENEW-NOTIFY-01)."""
+    attempts = 0
     while True:
         try:
             await bot.send_message(
@@ -32,8 +38,17 @@ async def _send_with_rate_limit(bot: Bot, user_id: int, text: str) -> None:
             )
             return
         except TelegramRetryAfter as e:
+            attempts += 1
+            if attempts >= _SUB_REFRESH_429_MAX_RETRIES:
+                raise
             wait = float(getattr(e, "retry_after", 1)) + 0.5
-            logger.warning("sub refresh 429 user=%s sleep %.1fs", user_id, wait)
+            logger.warning(
+                "sub refresh 429 user=%s sleep %.1fs (attempt %s/%s)",
+                user_id,
+                wait,
+                attempts,
+                _SUB_REFRESH_429_MAX_RETRIES,
+            )
             await asyncio.sleep(wait)
 
 
@@ -42,6 +57,9 @@ async def run_sub_refresh_notify_batch(bot: Bot) -> tuple[int, int]:
 
     Returns (sent_ok, sent_fail).
     """
+    if not SUB_REFRESH_NOTIFY_ENABLED:
+        return 0, 0
+
     current_gen = database.get_sub_config_generation()
     if current_gen <= 0:
         return 0, 0
@@ -62,11 +80,14 @@ async def run_sub_refresh_notify_batch(bot: Bot) -> tuple[int, int]:
     for user_id in pending:
         try:
             await _send_with_rate_limit(bot, user_id, text)
-            database.update_sub_refresh_notified_generation(user_id, current_gen)
+            ok += 1
+        except TelegramForbiddenError:
+            logger.info("sub refresh blocked user=%s — bump generation", user_id)
             ok += 1
         except Exception as e:
             logger.warning("sub refresh notify failed for %s: %s", user_id, e)
             fail += 1
+        database.update_sub_refresh_notified_generation(user_id, current_gen)
         await asyncio.sleep(SUB_REFRESH_SEND_INTERVAL_SEC)
 
     if ok or fail:

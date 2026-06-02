@@ -1,6 +1,9 @@
+import logging
 import os
 
 from shop_bot.public_urls import telegram_webapp_url
+
+_logger = logging.getLogger(__name__)
 
 server_name = os.getenv("SERVER_NAME")
 
@@ -48,9 +51,10 @@ PLANS = {
 
 
 def balance_to_days(balance: float) -> int:
-    if balance <= 0:
+    """Whole days of VPN left at current balance (floor; 0 if below one day rate)."""
+    if balance < DAILY_RATE:
         return 0
-    return max(1, int(balance / DAILY_RATE))
+    return int(balance / DAILY_RATE)
 
 
 def topup_button_label(amount_rub: float) -> str:
@@ -68,10 +72,10 @@ CHOOSE_PLAN_MESSAGE = "Выберите подходящий тариф:"
 CHOOSE_TOPUP_MESSAGE = "Выберите сумму пополнения:"
 CHOOSE_PAYMENT_METHOD_MESSAGE = "Выберите удобный способ оплаты:"
 CUSTOM_AMOUNT_UNAVAILABLE = (
-    "Сейчас доступны фиксированные суммы пополнения и Telegram Stars. "
-    "Произвольная сумма и оплата картой или криптой появятся позже."
+    "Сейчас доступны фиксированные суммы пополнения банковской картой. "
+    "Произвольная сумма и другие способы — позже."
 )
-KEY_EMAIL_DOMAIN = os.getenv("KEY_EMAIL_DOMAIN", "kitsura.fun")
+KEY_EMAIL_DOMAIN = os.getenv("KEY_EMAIL_DOMAIN", "kitsura.fun").strip().lstrip("@")
 
 # P3-FLOW-12: same URL as site portal (BotFather Menu Button + inline WebApp)
 TELEGRAM_WEBAPP_URL = telegram_webapp_url()
@@ -178,3 +182,25 @@ def get_purchase_success_text(action: str, key_number: int, expiry_date, connect
 def build_progress_bar(percent: float, width: int = 20) -> str:
     filled = int(width * percent / 100)
     return '▰' * filled + '▱' * (width - filled)
+
+
+def validate_required_config() -> None:
+    """Fail fast on missing critical env (P2-RED-BOT-ENV-01)."""
+    missing: list[str] = []
+    if not os.getenv("TELEGRAM_BOT_TOKEN", "").strip():
+        missing.append("TELEGRAM_BOT_TOKEN")
+    if not os.getenv("TELEGRAM_BOT_USERNAME", "").strip():
+        missing.append("TELEGRAM_BOT_USERNAME")
+    if not os.getenv("REMNA_BASE_URL", "").strip():
+        missing.append("REMNA_BASE_URL")
+    if not os.getenv("REMNA_API_TOKEN", "").strip():
+        missing.append("REMNA_API_TOKEN")
+    if not os.getenv("PORTAL_SETUP_HMAC_SECRET", "").strip():
+        missing.append("PORTAL_SETUP_HMAC_SECRET")
+    if not os.getenv("PORTAL_WEB_TRIAL_SECRET", "").strip():
+        missing.append("PORTAL_WEB_TRIAL_SECRET")
+    if missing:
+        raise RuntimeError("Missing required environment: " + ", ".join(missing))
+    sg = os.getenv("SUPPORT_GROUP_ID", "0").strip()
+    if sg in ("", "0"):
+        _logger.warning("SUPPORT_GROUP_ID=0 — support group disabled")

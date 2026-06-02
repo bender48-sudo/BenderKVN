@@ -206,14 +206,26 @@ def create_webhook_app(bot, payment_processor):
             logger.error("portal-cabinet: %s", e, exc_info=True)
             return jsonify({"ok": False, "error": "server_error"}), 500
 
+    def _health_authorized() -> bool:
+        secret = os.getenv("HEALTH_CHECK_SECRET", "").strip()
+        bind = os.getenv("WEBHOOK_BIND_HOST", "127.0.0.1").strip() or "127.0.0.1"
+        remote = (request.remote_addr or "").strip()
+        if bind in ("127.0.0.1", "localhost", "::1"):
+            if remote in ("127.0.0.1", "::1", ""):
+                return True
+        if secret and request.headers.get("X-Health-Secret", "").strip() == secret:
+            return True
+        return False
+
     @flask_app.route("/health", methods=["GET"])
     def health_handler():
         """P2-OPS-BOT-HEALTH-01: liveness + DB + Remna panel API."""
         import time
 
-        import sqlite3
+        if not _health_authorized():
+            return jsonify({"ok": False, "error": "forbidden"}), 403
 
-        from shop_bot.data_manager.database import DB_FILE
+        from shop_bot.data_manager.database import db_connection
         from shop_bot.modules.remnawave_api import (
             _fetch_json,
             remna_client_session,
@@ -227,11 +239,12 @@ def create_webhook_app(bot, payment_processor):
         ok = True
 
         try:
-            with sqlite3.connect(DB_FILE, timeout=2) as conn:
+            with db_connection(timeout=2) as conn:
                 conn.execute("SELECT 1")
             checks["db"] = "ok"
-        except Exception as exc:
-            checks["db"] = str(exc)
+        except Exception:
+            logger.exception("health db check failed")
+            checks["db"] = "error"
             ok = False
 
         async def _panel_probe():
@@ -247,8 +260,9 @@ def create_webhook_app(bot, payment_processor):
                 ok = False
             else:
                 checks["panel"] = "ok"
-        except Exception as exc:
-            checks["panel"] = str(exc)
+        except Exception:
+            logger.exception("health panel check failed")
+            checks["panel"] = "error"
             ok = False
 
         body = {

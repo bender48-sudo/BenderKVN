@@ -1,6 +1,7 @@
 import asyncio
 import os
 import logging
+import threading
 import base64
 import time
 from contextlib import asynccontextmanager
@@ -78,6 +79,7 @@ _session_lock = asyncio.Lock()
 # P2-RED-BOT-BACKOFF-01: global circuit breaker after consecutive panel failures
 _global_backoff_until: float = 0.0
 _consecutive_failures: int = 0
+_backoff_lock = threading.Lock()
 _BACKOFF_FAIL_THRESHOLD = 3
 _BACKOFF_PAUSE_SEC = 30
 
@@ -117,8 +119,9 @@ def _retry_if_transient(exc: BaseException) -> bool:
 def reset_global_backoff() -> None:
     """Clear circuit breaker (e.g. health_check recovery)."""
     global _global_backoff_until, _consecutive_failures
-    _global_backoff_until = 0.0
-    _consecutive_failures = 0
+    with _backoff_lock:
+        _global_backoff_until = 0.0
+        _consecutive_failures = 0
 
 
 def _check_backoff() -> bool:
@@ -128,20 +131,23 @@ def _check_backoff() -> bool:
 
 def _record_api_success() -> None:
     global _consecutive_failures, _global_backoff_until
-    _consecutive_failures = 0
-    _global_backoff_until = 0.0
+    with _backoff_lock:
+        _consecutive_failures = 0
+        _global_backoff_until = 0.0
 
 
 def _record_api_failure() -> None:
     global _consecutive_failures, _global_backoff_until
-    _consecutive_failures += 1
-    if _consecutive_failures >= _BACKOFF_FAIL_THRESHOLD:
-        _global_backoff_until = time.time() + _BACKOFF_PAUSE_SEC
-        logger.warning(
-            "Remna global backoff %.0fs after %s consecutive failures",
-            _BACKOFF_PAUSE_SEC,
-            _consecutive_failures,
-        )
+    with _backoff_lock:
+        _consecutive_failures += 1
+        failures = _consecutive_failures
+        if failures >= _BACKOFF_FAIL_THRESHOLD:
+            _global_backoff_until = time.time() + _BACKOFF_PAUSE_SEC
+            logger.warning(
+                "Remna global backoff %.0fs after %s consecutive failures",
+                _BACKOFF_PAUSE_SEC,
+                failures,
+            )
 
 
 def _log_remna_retry(retry_state) -> None:
@@ -470,6 +476,47 @@ def build_vless_uri(inbound: RemnaInbound, vless_uuid: str, email: str) -> Optio
         f"#{inbound.tag}-{email}"
     )
 
+async def set_user_access_days(
+    telegram_id: str,
+    days: int,
+    email: str | None = None,
+) -> str | None:
+    """Set absolute panel expiry from prepaid balance (now + days; 0 = access ends)."""
+    async with remna_client_session() as session:
+        existing = await get_user_by_telegram_id(session, telegram_id)
+        if not existing:
+            if days <= 0:
+                return None
+            if not email:
+                return None
+            uri, expire_iso, _uuid, _sub = await provision_key(
+                email, days=days, telegram_id=telegram_id
+            )
+            return expire_iso if uri else None
+
+        now = datetime.now(timezone.utc)
+        if days <= 0:
+            # Panel rejects expireAt in the past; minimal future = access ends almost immediately.
+            new_exp = now + timedelta(minutes=2)
+        else:
+            new_exp = now + timedelta(days=int(days))
+        new_iso = new_exp.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        panel_email = email or existing.get("email") or ""
+        body = {
+            "email": panel_email,
+            "uuid": existing.get("uuid"),
+            "expireAt": new_iso,
+            "trafficLimitBytes": TRAFFIC_LIMIT_BYTES,
+            "trafficLimitStrategy": TRAFFIC_STRATEGY,
+        }
+        if telegram_id:
+            body["telegramId"] = int(telegram_id)
+        updated = await _fetch_json(session, "PATCH", "/api/users", json=body)
+        if updated and "response" in updated:
+            return updated["response"].get("expireAt") or new_iso
+        return None
+
+
 async def provision_key(email: str, days: int | None = None, telegram_id: str = None) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
     days = days or DEFAULT_DAYS
     t0 = time.perf_counter()
@@ -524,20 +571,13 @@ class RemnaWaveAPI:
         self.token = token
         self.cookie = cookie
 
-    async def _fetch_json(self, endpoint: str):
-        url = f"{self.base_url}{endpoint}"
-        headers = {
-            "Authorization": f"Bearer {self.token}",
-            "accept": "application/json"
-        }
-        if self.cookie:
-            headers["Cookie"] = self.cookie
+    async def _fetch_json(self, endpoint: str, method: str = "GET", **kwargs):
+        """Use shared retry/backoff fetch (P2-RED-BOT-INTEGRITY-01)."""
         async with remna_client_session() as session:
-            async with session.get(url, headers=headers) as response:
-                if response.status == 404:
-                    raise Exception(f"Remna API GET {endpoint} failed 404: {await response.text()}")
-                response.raise_for_status()
-                return await response.json()
+            data = await _fetch_json(session, method.upper(), endpoint, **kwargs)
+            if data is None:
+                raise Exception(f"Remna API {method} {endpoint} failed")
+            return data
 
     async def get_config_profiles_inbounds(self):
         data = await self._fetch_json("/api/config-profiles/inbounds")

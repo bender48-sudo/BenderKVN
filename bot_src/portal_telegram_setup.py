@@ -38,12 +38,8 @@ async def telegram_setup_for_user(telegram_id: int) -> dict:
             "message": "Не удалось подготовить страницу настройки. Напиши в поддержку.",
         }
 
-    from shop_bot.subscription_cache import get_subscription_url_cached
-
-    sub_url = await get_subscription_url_cached(tid)
     return {
         "ok": True,
         "setup_page_url": setup_page_url,
-        "sub_url": sub_url,
         "telegram_id": tid,
     }

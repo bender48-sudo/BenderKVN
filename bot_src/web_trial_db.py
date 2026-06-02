@@ -9,7 +9,7 @@ import secrets
 import sqlite3
 import threading
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from shop_bot.data_manager.database import DB_FILE
 
@@ -125,11 +125,12 @@ def _claim_row_to_dict(row) -> dict:
         "telegram_id": int(row[6]) if len(row) > 6 and row[6] is not None else None,
         "bound_at": row[7] if len(row) > 7 else "",
         "customer_seq": int(row[8]) if len(row) > 8 and row[8] is not None else None,
+        "bind_token_expires_at": row[9] if len(row) > 9 else "",
     }
 
 
 _CLAIM_SELECT = """SELECT contact_email, web_user_id, panel_email, contact_phone, claimed_at,
-                          bind_token, telegram_id, bound_at, customer_seq
+                          bind_token, telegram_id, bound_at, customer_seq, bind_token_expires_at
                    FROM web_trial_claims"""
 
 
@@ -196,7 +197,18 @@ def get_claim_by_bind_token(bind_token: str) -> dict | None:
             row = conn.execute(f"{_CLAIM_SELECT} WHERE bind_token = ?", (token,)).fetchone()
         if not row:
             return None
-        return _claim_row_to_dict(row)
+        claim = _claim_row_to_dict(row)
+        expires_raw = (claim.get("bind_token_expires_at") or "").strip()
+        if expires_raw:
+            try:
+                exp = datetime.fromisoformat(expires_raw.replace("Z", "+00:00"))
+                if exp.tzinfo is None:
+                    exp = exp.replace(tzinfo=timezone.utc)
+                if exp < datetime.now(timezone.utc):
+                    return None
+            except ValueError:
+                return None
+        return claim
     except Exception as exc:
         logger.error("get_claim_by_bind_token failed: %s", exc)
         return None
@@ -211,11 +223,14 @@ def ensure_bind_token(web_user_id: int) -> str:
     if claim.get("bind_token"):
         return str(claim["bind_token"])
     token = secrets.token_hex(16)
+    expires_at = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
     try:
         with _conn() as conn:
             conn.execute(
-                "UPDATE web_trial_claims SET bind_token = ? WHERE web_user_id = ?",
-                (token, int(web_user_id)),
+                """UPDATE web_trial_claims
+                   SET bind_token = ?, bind_token_expires_at = ?
+                   WHERE web_user_id = ?""",
+                (token, expires_at, int(web_user_id)),
             )
             conn.commit()
         return token

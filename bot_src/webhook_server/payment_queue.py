@@ -140,6 +140,12 @@ class PaymentWebhookQueue:
                 idempotency_key=job.idempotency_key,
                 notify=True,
             )
+            try:
+                from shop_bot.yookassa_autopay import on_payment_succeeded
+
+                on_payment_succeeded(event_json)
+            except Exception as exc:
+                logger.warning("yookassa autopay hook: %s", exc)
         elif metadata:
             metadata = dict(metadata)
             metadata["webhook_idempotency_key"] = job.idempotency_key

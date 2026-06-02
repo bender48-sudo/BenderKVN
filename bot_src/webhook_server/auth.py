@@ -75,7 +75,7 @@ def verify_crypto_shared_secret(req: Request) -> bool:
     expected = os.getenv("CRYPTO_WEBHOOK_SECRET", "").strip()
     if not expected:
         return _env_bool("WEBHOOK_ALLOW_OPEN_CRYPTO", False)
-    got = (req.headers.get("X-Webhook-Secret") or req.args.get("secret") or "").strip()
+    got = (req.headers.get("X-Webhook-Secret") or "").strip()
     return hmac.compare_digest(got, expected)
 
 

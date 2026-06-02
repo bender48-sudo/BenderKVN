@@ -11,6 +11,7 @@ $UserMsgs = Join-Path $RepoRoot "bot_src\user_messages.py"
 $Scheduler = Join-Path $RepoRoot "bot_src\scheduler.py"
 $Keyboards = Join-Path $RepoRoot "bot_src\keyboards.py"
 $MainPy = Join-Path $RepoRoot "bot_src\main.py"
+$LocalEnv = Join-Path $RepoRoot "bot_src\local_env.py"
 $ConfigPy = Join-Path $RepoRoot "bot_src\config.py"
 $PortalLinks = Join-Path $RepoRoot "bot_src\portal_links.py"
 $PortalWebTrial = Join-Path $RepoRoot "bot_src\portal_web_trial.py"
@@ -42,7 +43,13 @@ $AdminAuth = Join-Path $RepoRoot "bot_src\admin_auth.py"
 $SchemaMigrations = Join-Path $RepoRoot "bot_src\schema_migrations.py"
 $SetupUrlService = Join-Path $RepoRoot "bot_src\setup_url_service.py"
 $SubscriptionCache = Join-Path $RepoRoot "bot_src\subscription_cache.py"
-foreach ($f in @($Handlers, $UserMsgs, $Scheduler, $Keyboards, $MainPy, $ConfigPy, $PortalLinks, $PortalWebTrial, $WebTrialDb, $WebTgBind, $VpnWizard, $SubQr, $SubRefresh, $AutoRenew, $SupportAuth, $SupportHandler, $RemnaApi, $PortalCabinet, $PortalBrowserResolve, $PortalTelegramSetup, $SubscriptionResolve, $PublicUrls, $AdminHandlers, $AdminFlowTest, $AdminFlowGuide, $AdminAuth, $SchemaMigrations, $SetupUrlService, $SubscriptionCache, $Database, $WebhookApp, $WebhookAppMain, $WebhookAuth, $WebhookPayQ, $WebhookPayAmt, $WebhookPayloadRedact)) {
+$BackgroundTasks = Join-Path $RepoRoot "bot_src\background_tasks.py"
+$YookassaPayment = Join-Path $RepoRoot "bot_src\yookassa_payment.py"
+$BalanceBilling = Join-Path $RepoRoot "bot_src\balance_billing.py"
+$YookassaAutopay = Join-Path $RepoRoot "bot_src\yookassa_autopay.py"
+$YookassaAutopaySched = Join-Path $RepoRoot "bot_src\yookassa_autopay_scheduler.py"
+$SubscriptionProfile = Join-Path $RepoRoot "bot_src\subscription_profile.py"
+foreach ($f in @($Handlers, $UserMsgs, $Scheduler, $Keyboards, $MainPy, $LocalEnv, $ConfigPy, $PortalLinks, $PortalWebTrial, $WebTrialDb, $WebTgBind, $VpnWizard, $SubQr, $SubRefresh, $AutoRenew, $SupportAuth, $SupportHandler, $RemnaApi, $BalanceBilling, $YookassaAutopay, $YookassaAutopaySched, $SubscriptionProfile, $PortalCabinet, $PortalBrowserResolve, $PortalTelegramSetup, $SubscriptionResolve, $PublicUrls, $AdminHandlers, $AdminFlowTest, $AdminFlowGuide, $AdminAuth, $SchemaMigrations, $SetupUrlService, $SubscriptionCache, $Database, $BackgroundTasks, $YookassaPayment, $WebhookApp, $WebhookAppMain, $WebhookAuth, $WebhookPayQ, $WebhookPayAmt, $WebhookPayloadRedact)) {
     if (-not (Test-Path $f)) { throw "Missing: $f" }
 }
 
@@ -76,6 +83,7 @@ Write-Host "[deploy-bot-handlers-ams] scp..."
 & scp @($Common + @("-P", "$Port", "${Scheduler}", "root@${HostAms}:/tmp/scheduler.py"))
 & scp @($Common + @("-P", "$Port", "${Keyboards}", "root@${HostAms}:/tmp/keyboards.py"))
 & scp @($Common + @("-P", "$Port", "${MainPy}", "root@${HostAms}:/tmp/main.py"))
+& scp @($Common + @("-P", "$Port", "${LocalEnv}", "root@${HostAms}:/tmp/local_env.py"))
 & scp @($Common + @("-P", "$Port", "${ConfigPy}", "root@${HostAms}:/tmp/config.py"))
 & scp @($Common + @("-P", "$Port", "${PortalLinks}", "root@${HostAms}:/tmp/portal_links.py"))
 & scp @($Common + @("-P", "$Port", "${PortalWebTrial}", "root@${HostAms}:/tmp/portal_web_trial.py"))
@@ -89,6 +97,12 @@ Write-Host "[deploy-bot-handlers-ams] scp..."
 & scp @($Common + @("-P", "$Port", "${SupportAuth}", "root@${HostAms}:/tmp/support_auth.py"))
 & scp @($Common + @("-P", "$Port", "${SupportHandler}", "root@${HostAms}:/tmp/support_handler.py"))
 & scp @($Common + @("-P", "$Port", "${RemnaApi}", "root@${HostAms}:/tmp/remnawave_api.py"))
+& scp @($Common + @("-P", "$Port", "${BalanceBilling}", "root@${HostAms}:/tmp/balance_billing.py"))
+& scp @($Common + @("-P", "$Port", "${YookassaAutopay}", "root@${HostAms}:/tmp/yookassa_autopay.py"))
+& scp @($Common + @("-P", "$Port", "${YookassaAutopaySched}", "root@${HostAms}:/tmp/yookassa_autopay_scheduler.py"))
+& scp @($Common + @("-P", "$Port", "${SubscriptionProfile}", "root@${HostAms}:/tmp/subscription_profile.py"))
+& scp @($Common + @("-P", "$Port", "${BackgroundTasks}", "root@${HostAms}:/tmp/background_tasks.py"))
+& scp @($Common + @("-P", "$Port", "${YookassaPayment}", "root@${HostAms}:/tmp/yookassa_payment.py"))
 & scp @($Common + @("-P", "$Port", "${WebhookApp}", "root@${HostAms}:/tmp/webhook_app_ams.py"))
 & scp @($Common + @("-P", "$Port", "${WebhookAppMain}", "root@${HostAms}:/tmp/webhook_app_main.py"))
 & scp @($Common + @("-P", "$Port", "${WebhookAuth}", "root@${HostAms}:/tmp/webhook_auth.py"))
@@ -115,7 +129,7 @@ BT=/opt/remna-shop/src/shop_bot/bot
 SB=/opt/remna-shop/src/shop_bot
 DM=/opt/remna-shop/src/shop_bot/data_manager
 WH=/opt/remna-shop/src/shop_bot/webhook_server
-sed -i 's/\r$//' /tmp/handlers.py /tmp/user_messages.py /tmp/scheduler.py /tmp/keyboards.py /tmp/main.py /tmp/config.py /tmp/portal_links.py /tmp/portal_web_trial.py /tmp/portal_telegram_setup.py /tmp/subscription_resolve.py /tmp/web_trial_db.py /tmp/web_tg_bind.py /tmp/vpn_setup_wizard.py /tmp/subscription_qr.py /tmp/subscription_refresh.py /tmp/auto_renew_billing.py /tmp/support_auth.py /tmp/support_handler.py /tmp/remnawave_api.py /tmp/portal_cabinet.py /tmp/portal_browser_resolve.py /tmp/public_urls.py /tmp/admin_handlers.py /tmp/admin_flow_test.py /tmp/admin_flow_guide.py /tmp/schema_migrations.py /tmp/setup_url_service.py /tmp/subscription_cache.py /tmp/database.py /tmp/webhook_app_ams.py /tmp/webhook_app_main.py /tmp/webhook_auth.py /tmp/webhook_payment_queue.py /tmp/webhook_payment_amount_verify.py /tmp/webhook_payload_redact.py
+sed -i 's/\r$//' /tmp/handlers.py /tmp/user_messages.py /tmp/scheduler.py /tmp/keyboards.py /tmp/main.py /tmp/local_env.py /tmp/config.py /tmp/portal_links.py /tmp/portal_web_trial.py /tmp/portal_telegram_setup.py /tmp/subscription_resolve.py /tmp/web_trial_db.py /tmp/web_tg_bind.py /tmp/vpn_setup_wizard.py /tmp/subscription_qr.py /tmp/subscription_refresh.py /tmp/auto_renew_billing.py /tmp/balance_billing.py /tmp/yookassa_autopay.py /tmp/yookassa_autopay_scheduler.py /tmp/subscription_profile.py /tmp/background_tasks.py /tmp/yookassa_payment.py /tmp/support_auth.py /tmp/support_handler.py /tmp/remnawave_api.py /tmp/portal_cabinet.py /tmp/portal_browser_resolve.py /tmp/public_urls.py /tmp/admin_handlers.py /tmp/admin_flow_test.py /tmp/admin_flow_guide.py /tmp/schema_migrations.py /tmp/setup_url_service.py /tmp/subscription_cache.py /tmp/database.py /tmp/webhook_app_ams.py /tmp/webhook_app_main.py /tmp/webhook_auth.py /tmp/webhook_payment_queue.py /tmp/webhook_payment_amount_verify.py /tmp/webhook_payload_redact.py
 ENV=/opt/remna-shop/.env
 grep -q '^WEB_TRIAL_DAYS=' "$ENV" 2>/dev/null && sed -i '/^WEB_TRIAL_DAYS=/d' "$ENV" || true
 echo 'WEB_TRIAL_DAYS=1' >> "$ENV"
@@ -143,6 +157,12 @@ install -m 0644 /tmp/vpn_setup_wizard.py "$SB/vpn_setup_wizard.py"
 install -m 0644 /tmp/subscription_qr.py "$SB/subscription_qr.py"
 install -m 0644 /tmp/subscription_refresh.py "$BT/subscription_refresh.py"
 install -m 0644 /tmp/auto_renew_billing.py "$SB/auto_renew_billing.py"
+install -m 0644 /tmp/balance_billing.py "$SB/balance_billing.py"
+install -m 0644 /tmp/yookassa_autopay.py "$SB/yookassa_autopay.py"
+install -m 0644 /tmp/yookassa_autopay_scheduler.py "$SB/yookassa_autopay_scheduler.py"
+install -m 0644 /tmp/subscription_profile.py "$SB/subscription_profile.py"
+install -m 0644 /tmp/background_tasks.py "$SB/background_tasks.py"
+install -m 0644 /tmp/yookassa_payment.py "$SB/yookassa_payment.py"
 install -m 0644 /tmp/database.py "$DM/database.py"
 install -m 0644 /tmp/support_auth.py "$SB/support_auth.py"
 install -m 0644 /tmp/support_handler.py "$BT/support_handler.py"
@@ -167,6 +187,7 @@ install -m 0644 /tmp/webhook_payment_queue.py "$WH/payment_queue.py"
 install -m 0644 /tmp/webhook_payment_amount_verify.py "$WH/payment_amount_verify.py"
 install -m 0644 /tmp/webhook_payload_redact.py "$WH/payload_redact.py"
 install -m 0644 /tmp/main.py /opt/remna-shop/src/shop_bot/main.py
+install -m 0644 /tmp/local_env.py /opt/remna-shop/src/shop_bot/local_env.py
 docker cp /tmp/handlers.py remna-shop-bot:/app/src/shop_bot/bot/handlers.py
 docker cp /tmp/user_messages.py remna-shop-bot:/app/src/shop_bot/bot/user_messages.py
 docker cp /tmp/keyboards.py remna-shop-bot:/app/src/shop_bot/bot/keyboards.py
@@ -180,6 +201,12 @@ docker cp /tmp/vpn_setup_wizard.py remna-shop-bot:/app/src/shop_bot/vpn_setup_wi
 docker cp /tmp/subscription_qr.py remna-shop-bot:/app/src/shop_bot/subscription_qr.py
 docker cp /tmp/subscription_refresh.py remna-shop-bot:/app/src/shop_bot/bot/subscription_refresh.py
 docker cp /tmp/auto_renew_billing.py remna-shop-bot:/app/src/shop_bot/auto_renew_billing.py
+docker cp /tmp/balance_billing.py remna-shop-bot:/app/src/shop_bot/balance_billing.py
+docker cp /tmp/yookassa_autopay.py remna-shop-bot:/app/src/shop_bot/yookassa_autopay.py
+docker cp /tmp/yookassa_autopay_scheduler.py remna-shop-bot:/app/src/shop_bot/yookassa_autopay_scheduler.py
+docker cp /tmp/subscription_profile.py remna-shop-bot:/app/src/shop_bot/subscription_profile.py
+docker cp /tmp/background_tasks.py remna-shop-bot:/app/src/shop_bot/background_tasks.py
+docker cp /tmp/yookassa_payment.py remna-shop-bot:/app/src/shop_bot/yookassa_payment.py
 docker cp /tmp/database.py remna-shop-bot:/app/src/shop_bot/data_manager/database.py
 docker cp /tmp/support_auth.py remna-shop-bot:/app/src/shop_bot/support_auth.py
 docker cp /tmp/support_handler.py remna-shop-bot:/app/src/shop_bot/bot/support_handler.py
@@ -204,6 +231,7 @@ docker cp /tmp/webhook_payment_queue.py remna-shop-bot:/app/src/shop_bot/webhook
 docker cp /tmp/webhook_payment_amount_verify.py remna-shop-bot:/app/src/shop_bot/webhook_server/payment_amount_verify.py
 docker cp /tmp/webhook_payload_redact.py remna-shop-bot:/app/src/shop_bot/webhook_server/payload_redact.py
 docker cp /tmp/main.py remna-shop-bot:/app/src/shop_bot/main.py
+docker cp /tmp/local_env.py remna-shop-bot:/app/src/shop_bot/local_env.py
 docker exec remna-shop-bot pip install -q 'tenacity>=8.2,<10'
 cd /opt/remna-shop && docker compose restart remna-shop-bot
 echo "Remote md5:"

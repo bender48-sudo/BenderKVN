@@ -52,6 +52,7 @@ from shop_bot.data_manager.database import (
     set_auto_renew, get_auto_renew, log_action, has_action, add_traffic_extra,
     create_promo, get_all_promos, get_balance, add_balance,
 )
+from shop_bot.yookassa_payment import yookassa_receipt
 from shop_bot.config import (
     PLANS, get_profile_text, get_vpn_active_text, VPN_INACTIVE_TEXT, VPN_NO_DATA_TEXT,
     get_key_info_text, CHOOSE_PAYMENT_METHOD_MESSAGE, get_purchase_success_text, ABOUT_TEXT, TERMS_URL, PRIVACY_URL, SUPPORT_USER, SUPPORT_TEXT,
@@ -70,7 +71,7 @@ PAYMENT_METHODS = None
 PLANS = None
 from shop_bot.admin_auth import is_admin_telegram
 
-ADMIN_ID = os.getenv("ADMIN_TELEGRAM_ID")
+ADMIN_TELEGRAM_ID = os.getenv("ADMIN_TELEGRAM_ID")
 
 logger = logging.getLogger(__name__)
 
@@ -89,17 +90,31 @@ async def process_topup_payment(
     """Зачислить пополнение и синхронизировать expireAt на панели. True если обработано."""
     if amount_rub <= 0:
         return False
-    if idempotency_key and has_action(user_id, idempotency_key):
-        logger.info("Duplicate topup ignored: user=%s key=%s", user_id, idempotency_key)
-        return False
+    from shop_bot.data_manager.database import try_acquire_topup_idempotency
+
+    webhook_key = bool(
+        idempotency_key
+        and idempotency_key.startswith(("yk:", "crypto:", "cryptobot:"))
+    )
+    if idempotency_key:
+        if webhook_key:
+            if has_action(user_id, idempotency_key):
+                logger.info("Duplicate topup ignored: user=%s key=%s", user_id, idempotency_key)
+                return False
+        elif not try_acquire_topup_idempotency(user_id, idempotency_key):
+            logger.info("Duplicate topup ignored: user=%s key=%s", user_id, idempotency_key)
+            return False
 
     add_balance(user_id, amount_rub)
+    from shop_bot.balance_billing import waive_daily_charge_today
+
+    waive_daily_charge_today(user_id)
     new_balance = get_balance(user_id)
     days_left = balance_to_days(new_balance)
     synced = await sync_panel_access_from_balance(user_id, new_balance)
     update_user_stats(user_id, amount_rub, 0)
     log_action(user_id, "topup", f"{amount_rub}")
-    if idempotency_key:
+    if idempotency_key and webhook_key:
         log_action(user_id, idempotency_key, f"{amount_rub}")
 
     if notify:
@@ -120,32 +135,28 @@ async def process_topup_payment(
 
 
 async def sync_panel_access_from_balance(user_id: int, balance: float) -> bool:
-    """Продлить доступ на панели по текущему балансу (balance / DAILY_RATE дней)."""
-    days = balance_to_days(balance)
-    if days <= 0:
-        return False
+    """Синхронизировать expireAt на панели с балансом (абсолютный срок, не +N к trial)."""
+    from shop_bot.balance_billing import sync_panel_from_balance
+
+    if balance_to_days(balance) <= 0:
+        return await sync_panel_from_balance(user_id)
     keys = get_user_keys(user_id)
-    email = None
-    if keys:
-        email = keys[0]["key_email"]
-    else:
+    if not keys:
         key_number = get_next_key_number(user_id)
         email = f"user{user_id}-key{key_number}@{KEY_EMAIL_DOMAIN}"
-    uri, expire_iso, vless_uuid, _sub_url = await remnawave_api.provision_key(
-        email, days=days, telegram_id=str(user_id)
-    )
-    if not uri or not expire_iso or not vless_uuid:
-        return False
-    expiry_dt = datetime.fromisoformat(expire_iso.replace("Z", "+00:00"))
-    expiry_ms = int(expiry_dt.timestamp() * 1000)
-    if keys:
-        update_key_info(keys[0]["key_id"], vless_uuid, expiry_ms)
-    else:
-        add_new_key(user_id, vless_uuid, email, expiry_ms)
-    from shop_bot.subscription_cache import invalidate_subscription_url_cache
+        days = balance_to_days(balance)
+        uri, expire_iso, vless_uuid, _sub_url = await remnawave_api.provision_key(
+            email, days=days, telegram_id=str(user_id)
+        )
+        if not uri or not expire_iso or not vless_uuid:
+            return False
+        expiry_dt = datetime.fromisoformat(expire_iso.replace("Z", "+00:00"))
+        add_new_key(user_id, vless_uuid, email, int(expiry_dt.timestamp() * 1000))
+        from shop_bot.subscription_cache import invalidate_subscription_url_cache
 
-    invalidate_subscription_url_cache(user_id)
-    return True
+        invalidate_subscription_url_cache(user_id)
+        return True
+    return await sync_panel_from_balance(user_id)
 
 async def notify_backup_failure(
     bot: Bot, admin_id: str, title: str, detail: str, is_auto: bool = False
@@ -753,12 +764,58 @@ async def manage_keys_handler(callback: types.CallbackQuery):
 
 @user_router.callback_query(F.data == "toggle_autorenew")
 async def toggle_autorenew_handler(callback: types.CallbackQuery):
-    await callback.answer()
+    from shop_bot.data_manager.database import (
+        get_yookassa_autopay,
+        get_yookassa_payment_method_id,
+        set_yookassa_autopay_enabled,
+    )
+    from shop_bot.yookassa_autopay import (
+        autopay_amount_rub,
+        autopay_interval_days,
+        create_bind_payment,
+    )
+
     uid = callback.from_user.id
-    current = get_auto_renew(uid)
-    set_auto_renew(uid, not current)
-    log_action(uid, 'auto_renew_toggle', str(not current))
-    await show_main_menu(callback.message, edit_message=True)
+    info = get_yookassa_autopay(uid)
+    enabled = bool(info.get("yookassa_autopay_enabled"))
+
+    if enabled:
+        await callback.answer("Автоплатёж отключён")
+        set_yookassa_autopay_enabled(uid, False)
+        log_action(uid, "autopay_off", "user")
+        await show_main_menu(callback.message, edit_message=True)
+        return
+
+    if not (PAYMENT_METHODS or {}).get("yookassa"):
+        await callback.answer("Оплата картой недоступна", show_alert=True)
+        return
+
+    pm_id = get_yookassa_payment_method_id(uid)
+    if pm_id:
+        await callback.answer("Автоплатёж включён")
+        set_yookassa_autopay_enabled(uid, True)
+        from shop_bot.data_manager.database import schedule_yookassa_autopay_next
+
+        schedule_yookassa_autopay_next(uid, days=autopay_interval_days())
+        log_action(uid, "autopay_on", "existing_pm")
+        await show_main_menu(callback.message, edit_message=True)
+        return
+
+    await callback.answer()
+    amount = autopay_amount_rub()
+    url, err = create_bind_payment(uid)
+    if not url:
+        await callback.message.answer(
+            "❌ Не удалось создать платёж для автопродления.\n" + user_messages.ERR_PAYMENT_LINK
+        )
+        return
+    log_action(uid, "autopay_bind_start", str(amount))
+    await callback.message.edit_text(
+        user_messages.msg_autopay_bind_offer(amount, autopay_interval_days()),
+        reply_markup=keyboards.create_payment_keyboard(url),
+        parse_mode="HTML",
+        disable_web_page_preview=True,
+    )
 
 @user_router.callback_query(F.data.startswith("traffic_packs_"))
 async def show_traffic_packs(callback: types.CallbackQuery):
@@ -828,7 +885,7 @@ async def trial_period_handler(callback: types.CallbackQuery):
     await callback.message.edit_text("Создаю твой VPN… ⏳")
     try:
         key_number = get_next_key_number(user_id)
-        email = f"user{user_id}-key{key_number}-trial@kitsura.fun"
+        email = f"user{user_id}-key{key_number}-trial@{KEY_EMAIL_DOMAIN}"
         uri, expire_iso, vless_uuid, sub_url = await remnawave_api.provision_key(
             email, days=REMNA_TRIAL_DAYS, telegram_id=str(user_id))
         if not uri or not expire_iso or not vless_uuid:
@@ -1088,7 +1145,7 @@ async def admin_backup_handler(callback: types.CallbackQuery):
         pass  # Игнорируем ошибки редактирования
     
     # Используем универсальную функцию для создания бэкапа
-    success = await create_backup_and_send(callback.bot, ADMIN_ID, is_auto=False)
+    success = await create_backup_and_send(callback.bot, ADMIN_TELEGRAM_ID, is_auto=False)
     
     if success:
         final_text = "✅ Бэкап создан на сервере (в TG — только при ошибке)."
@@ -1211,11 +1268,10 @@ async def admin_promo_toggle(callback: types.CallbackQuery):
         await callback.answer("Выключено")
     else:
         # нужен доступ к неактивным - получим напрямую
-        import sqlite3
-        from shop_bot.data_manager.database import DB_FILE
+        from shop_bot.data_manager.database import db_connection
         restored = False
         try:
-            with sqlite3.connect(DB_FILE) as conn:
+            with db_connection() as conn:
                 c = conn.cursor(); c.execute("SELECT code FROM promo_codes WHERE code = ?", (code,))
                 if c.fetchone():
                     set_promo_active(code, True); restored = True
@@ -1360,7 +1416,7 @@ async def topup_select_handler(callback: types.CallbackQuery):
     )
     await callback.message.edit_text(
         text,
-        reply_markup=keyboards.create_topup_payment_keyboard(topup_id),
+        reply_markup=keyboards.create_topup_payment_keyboard(topup_id, PAYMENT_METHODS),
         parse_mode="HTML",
     )
 
@@ -1407,6 +1463,50 @@ async def pay_stars_topup_handler(callback: types.CallbackQuery, bot: Bot):
         logger.error(f"Failed to create Stars topup invoice: {e}", exc_info=True)
         await callback.message.edit_text("❌ " + user_messages.ERR_TELEGRAM_STARS)
 
+
+@user_router.callback_query(F.data.startswith("pay_yookassa_topup_"))
+async def pay_yookassa_topup_handler(callback: types.CallbackQuery):
+    await callback.answer("Создаю ссылку на оплату...")
+    topup_id = callback.data.replace("pay_yookassa_topup_", "", 1)
+    if topup_id not in TOPUP_PRESETS:
+        await callback.message.edit_text("Ошибка: пресет не найден.")
+        return
+    _name, price_str, amount_rub = TOPUP_PRESETS[topup_id]
+    user_id = callback.from_user.id
+    bot_username = TELEGRAM_BOT_USERNAME or os.getenv("TELEGRAM_BOT_USERNAME", "")
+    return_url = f"https://t.me/{bot_username}" if bot_username else "https://t.me/"
+    amount_value = f"{float(amount_rub):.2f}"
+    description = f"Пополнение баланса BenderVPN {amount_rub:.0f} ₽"
+    try:
+        payment = Payment.create(
+            {
+                "amount": {"value": amount_value, "currency": "RUB"},
+                "confirmation": {"type": "redirect", "return_url": return_url},
+                "capture": True,
+                "description": description,
+                "receipt": yookassa_receipt(description, amount_value, user_id),
+                "metadata": {
+                    "t": "topup",
+                    "u": user_id,
+                    "user_id": user_id,
+                    "a": amount_value,
+                    "amount": amount_value,
+                },
+            },
+            uuid.uuid4(),
+        )
+        await callback.message.edit_text(
+            f"💳 Оплата картой (ЮKassa)\n\n"
+            f"Сумма: <b>{amount_rub:.0f} ₽</b> (~{balance_to_days(amount_rub)} дн. VPN)\n\n"
+            "Нажмите кнопку ниже:",
+            reply_markup=keyboards.create_payment_keyboard(payment.confirmation.confirmation_url),
+            parse_mode="HTML",
+        )
+    except Exception as e:
+        logger.error("Failed to create YooKassa topup payment: %s", e, exc_info=True)
+        await callback.message.edit_text("❌ " + user_messages.ERR_PAYMENT_LINK)
+
+
 @user_router.callback_query(F.data.startswith("buy_") & F.data.contains("_month"))
 async def choose_payment_method_handler(callback: types.CallbackQuery):
     await callback.answer()
@@ -1417,7 +1517,9 @@ async def choose_payment_method_handler(callback: types.CallbackQuery):
         reply_markup=keyboards.create_payment_method_keyboard(PAYMENT_METHODS, plan_id, action, key_id)
     )
 
-@user_router.callback_query(F.data.startswith("pay_yookassa_"))
+@user_router.callback_query(
+    F.data.startswith("pay_yookassa_") & ~F.data.startswith("pay_yookassa_topup_")
+)
 async def create_yookassa_payment_handler(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer("Создаю ссылку на оплату...")
     
@@ -1454,7 +1556,9 @@ async def create_yookassa_payment_handler(callback: types.CallbackQuery, state: 
         payment = Payment.create({
             "amount": {"value": amount_value, "currency": "RUB"},
             "confirmation": {"type": "redirect", "return_url": f"https://t.me/{TELEGRAM_BOT_USERNAME}"},
-            "capture": True, "description": description,
+            "capture": True,
+            "description": description,
+            "receipt": yookassa_receipt(description, amount_value, user_id),
             "metadata": {
                 "user_id": user_id, "months": months, "price": amount_value,
                 "action": action, "key_id": key_id,
@@ -1780,7 +1884,7 @@ async def process_successful_payment(bot: Bot, metadata: dict):
         key_number = 0
         if action == "new":
             key_number = get_next_key_number(user_id)
-            email = f"user{user_id}-key{key_number}@kitsura.fun"
+            email = f"user{user_id}-key{key_number}@{KEY_EMAIL_DOMAIN}"
         elif action == "extend":
             key_data = get_key_by_id(key_id)
             if not key_data or key_data['user_id'] != user_id:
