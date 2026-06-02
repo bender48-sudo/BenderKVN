@@ -2,6 +2,14 @@
 # Всё под .secrets/, кроме публичных примеров (не коммитить vault, prod-compose, токены)
 .secrets/**
 !.secrets/vault.env.example
+!.secrets/yookassa.env.example
+
+# YooKassa (локально; не коммитить)
+secret_key 2
+secret_key 2.txt
+secret_key*
+shop_id
+shop_id.txt
 
 # Корневые и разовые .env без суффикса .example (tmpl-секреты именуются *.env.tmpl)
 *.env
@@ -72,3 +80,10 @@ Thumbs.db
 
 # --- Logs ---
 *.log
+
+# Local VPN debug dumps (do not commit)
+/drift-q084.txt
+/inject_map*.txt
+/routing.txt
+/relay1_hosts.json
+/Caddyfile-latvia-full.txt
