@@ -23,7 +23,8 @@
 - [ ] Версии **Xray** на **LV** и **NL** (`remnanode`) — записать в review-файл
 - [ ] [sing-box releases](https://github.com/SagerNet/sing-box/releases) — stable + критичные security/fingerprint notes
 - [ ] Happ / поддерживаемые клиенты — есть ли релиз с **ECH** / новым **uTLS** (релиз-ноты, не обещать пользователям до теста)
-- [ ] Подписка: протоколы (**vless+reality**), **flow**, **mux** — без неожиданных регрессий
+- [ ] **`python ops/patch_fingerprint_chrome.py`** → `FINGERPRINT_CHROME_OK`
+- [ ] **`python ops/patch_sni_yandex.py`** → panel + live SNI yandex
 - [ ] Нужен ли PATCH шаблона? → снапшот **`HAPP-MATRIX`** + smoke **`probe_routing.py`**
 - [ ] Строка в **`docs/COMMERCIAL-BACKLOG.md` §12`**
 

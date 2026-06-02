@@ -148,6 +148,25 @@ def main() -> None:
         print(f"  degenerate rules (Xray 'no effective fields'): {degen}")
         if degen:
             print("  *** run: python ops/ru_bypass_routing.py --strip-degenerate-only --apply")
+
+        dns = cfg.get("dns") or {}
+        dns_port53_direct = any(
+            str(r.get("port") or "") == "53" and r.get("outboundTag") == "direct"
+            for r in rules
+        )
+        if dns_port53_direct:
+            print("  *** CRIT: DNS port 53 → direct (regression) — run patch_revert_dns_direct.py")
+        elif dns:
+            print(f"  dns: split config ({len(dns.get('servers') or [])} servers)")
+        else:
+            print("  dns: none (Super catch-all) — consider patch_dns_split_config.py")
+
+        has_geoip_ru = any(
+            r.get("outboundTag") == "direct" and (r.get("ip") or []) == ["geoip:ru"]
+            for r in rules
+        )
+        print(f"  geoip:ru → direct: {'yes' if has_geoip_ru else 'NO (emergency mode?)'}")
+
         outs = cfg.get("outbounds", [])
         proxy_count = sum(1 for o in outs if o.get("tag", "").startswith("proxy"))
         print(f"  outbounds total: {len(outs)} (proxy*: {proxy_count})")

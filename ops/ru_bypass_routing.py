@@ -132,7 +132,10 @@ EXTRA_DIRECT_DOMAINS = [
     "userapi.com",
     "vkontakte.com",
 
-    # Яндекс на .com / .net
+    # Яндекс на .com / .net / .st / short domain
+    "ya.ru",
+    "yandex.ru",
+    "yandex.st",
     "yandex.com",
     "yandex.net",
     "yandexcloud.net",
@@ -145,7 +148,7 @@ EXTRA_DIRECT_DOMAINS = [
     "beeline.com",
     "tele2.com",
 
-    # Банки на .com / .online
+    # Банки на .com / .online / .ru
     "sber.com",
     "sberbank.com",
     "sberbank.online",
@@ -155,6 +158,34 @@ EXTRA_DIRECT_DOMAINS = [
     "vtb.com",
     "alfabank.com",
     "raiffeisen.com",
+    "tochka.com",
+    "modulbank.com",
+    "open.ru",
+    "homecredit.ru",
+    "domrfbank.ru",
+    "psbank.ru",
+    "rosbank.ru",
+    "gazprombank.ru",
+    "sovcombank.ru",
+
+    # VK / OK / Mail CDN
+    "ok.ru",
+    "mail.ru",
+    "imgsmail.ru",
+    "attachmail.ru",
+    "mycdn.me",
+    "player.vk.com",
+
+    # Стриминг / медиа
+    "ivi.ru",
+    "more.tv",
+    "start.ru",
+    "premier.one",
+    "rutube.ru",
+    "kinopoisk.ru",
+
+    # Игры (часть .com / не-.ru)
+    "warface.com",
 
     # Маркетплейсы / e-commerce на .com / .eu
     "avito.com",
@@ -189,11 +220,15 @@ def plan_changes(rules: list[dict], unblock_max: bool):
         lambda r: r.get("outboundTag") == "block"
         and any(d in (r.get("domain") or []) for d in ("max.ru", "oneme.ru")),
     )
-    # R3: direct-rule с geosite:category-ru
+    # direct-rule with RU geosite or regexp (template evolved beyond category-ru only)
     direct_idx, direct_rule = find_rule(
         rules,
         lambda r: r.get("outboundTag") == "direct"
-        and "geosite:category-ru" in (r.get("domain") or []),
+        and (
+            "geosite:category-ru" in (r.get("domain") or [])
+            or "geosite:ru" in (r.get("domain") or [])
+            or any("regexp:.*\\.ru$" in str(d) for d in (r.get("domain") or []))
+        ),
     )
 
     block_doms = (block_rule or {}).get("domain", []) if block_rule else []
@@ -326,10 +361,15 @@ def main() -> None:
 
     plan = plan_changes(rules, unblock_max)
 
-    if plan["block_idx"] < 0 and unblock_max:
+    if plan["block_idx"] < 0 and unblock_max and plan["will_unblock"]:
         sys.exit("FATAL: не нашёл block-rule с max.ru/oneme.ru — структура отличается, прерываюсь.")
+    if plan["block_idx"] < 0 and unblock_max and not plan["will_unblock"]:
+        print("NOTE: block-rule без max.ru/oneme.ru — уже разблокировано, продолжаем direct-only patch")
     if plan["direct_idx"] < 0:
-        sys.exit("FATAL: не нашёл direct-rule с geosite:category-ru — структура отличается, прерываюсь.")
+        sys.exit(
+            "FATAL: не нашёл direct-rule с geosite:ru/category-ru/regexp.ru — "
+            "структура отличается, прерываюсь."
+        )
 
     print()
     if unblock_max:

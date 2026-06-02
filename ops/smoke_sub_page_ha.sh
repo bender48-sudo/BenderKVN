@@ -2,8 +2,8 @@
 # P6-RED-SUBHA-01: split-host smoke — both origins HTTP 200, same body (shared panel).
 set -euo pipefail
 PROBE_SUFFIX="${SUB_MONITOR_PROBE_SUFFIX:-api/sub/JLCF43RGjyq4ML78Qcsbq7Kf2}"
-PRIMARY="${SUB_PUBLIC_ORIGIN:-https://p4n7q.conntest.xyz:2053}"
-ALT="${SUB_ALT_PUBLIC_ORIGIN:-https://k9x2m1.conntest.xyz:2053}"
+PRIMARY="${SUB_PUBLIC_ORIGIN:-https://p4n7q.conntest.xyz:8443}"
+ALT="${SUB_ALT_PUBLIC_ORIGIN:-https://k9x2m1.conntest.xyz:8443}"
 U1="${PRIMARY%/}/${PROBE_SUFFIX}"
 U2="${ALT%/}/${PROBE_SUFFIX}"
 

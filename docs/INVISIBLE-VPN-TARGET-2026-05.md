@@ -20,7 +20,8 @@
 | Компонент | Состояние |
 |-----------|-----------|
 | **injectHosts** | **10** — relay#1×3 + relay#2×3 + NL direct×4 |
-| **Intl_Direct** | **relay×6 + NL×4** (NL только после `NL_REACHABILITY_PROBE_RU_OK`) |
+| **Intl_Direct** | **relay×6 + NL×4** catch-all (speedtest/general) |
+| **Intl_Stealth** | **relay×6 only** — TG/Meta IP + geosite rules (VPN-AUD-221) |
 | **Catch-all** | **Intl_Direct** (не Super/LV — без footgun gen=132) |
 | **Super / DNS_LV / observatory** | **нет** |
 | **Autotrim (LV cron 15 min)** | relay slow IP + NL fail → selector trim; injectHosts NL остаётся |
@@ -39,7 +40,13 @@
 | **gen=47** | relay-only sub (Happ ping fix) |
 | **VPN-AUD-310** | `latency_selector_autotrim.py` + cron |
 | **VPN-AUD-220** | NL в Intl gated probe (`patch_add_nl_intl_gated.py`) |
+| **VPN-AUD-221** | stealth split TG/Meta→relay only (`patch_intl_stealth_split.py`) |
 | **VPN-AUD-101** | `vpn_verify_gate.py` / `.sh` |
+| **VPN-AUD-BBR-01** | `audit_bbr_congestion.py` — relay+LV bbr+fq (2026-05-30 OK) |
+
+### Задачи скорости (карта)
+
+См. **`docs/VPN-SPEED-AUDIT-TASKS-2026-05-30.md`** — P1/P2/P3 после stealth split + Amnezia/GitHub аудита.
 
 ---
 

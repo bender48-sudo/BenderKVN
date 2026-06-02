@@ -85,7 +85,36 @@ Exit **0** и строка **`TRANSPORT_MUX_OK`** — матрица на про
 
 ---
 
-## 6. Связанные файлы
+## 6. Policy / buffer (VPN-AUD-110/111)
+
+| Параметр | Prod canonical | Mobile experiment |
+|----------|----------------|-------------------|
+| handshake | 4 | — |
+| connIdle | 300 | — |
+| uplinkOnly / downlinkOnly | 30 / 30 | — |
+| bufferSize | **128 KB** | 64 KB (A/B only, not default prod) |
+
+Audit: `python ops/audit_policy_latency.py`
+
+## 7. SNI / fingerprint (Q102)
+
+| Check | Script |
+|-------|--------|
+| Reality SNI = yandex | `python ops/patch_sni_yandex.py` |
+| Live sub SNI smoke | `python ops/smoke_live_sub_sni.py` |
+| fp=chrome audit | `python ops/patch_fingerprint_chrome.py` |
+
+Целевой SNI: **`www.yandex.ru`** (`REMNA_SERVER_SNI`). Запрещённый кластер: github/microsoft/bing/apple.
+
+## 8. XHTTP incident recovery
+
+Happ sub **без** XHTTP (batch-import). Recovery:
+
+1. Happ: alt **NL:9443** / **LV:8443**
+2. Hiddify/Streisand: та же URL подписки
+3. Ops: `python ops/generate_xhttp_recovery_url.py --short …`
+
+## 9. Связанные файлы
 
 - **`ops/probe_subscription.py`** — разбор одного пользователя (by transport, Content-Type)
 - **`ops/diagnose_happ_import.py`** — Happ batch-import A/B (xhttp risk)

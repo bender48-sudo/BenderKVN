@@ -61,12 +61,19 @@ def push_to_ams(generation: int, reason: str) -> None:
     )
 
 
-def after_template_patch(reason: str, *, push_ams: bool = True) -> int:
-    """Call after a successful subscription-template PATCH on panel."""
+def after_template_patch(reason: str, *, push_ams: bool = False) -> int:
+    """Call after a successful subscription-template PATCH on panel.
+
+    By default only bumps local generation (config still changes on panel).
+    Telegram sub-refresh broadcast is opt-in: push_ams=True or
+    ``python ops/subscription_config_notify.py --reason …`` without --no-push.
+    """
     gen = bump_generation(reason)
     print(f"[sub-config] generation -> {gen} ({reason})")
     if push_ams:
         push_to_ams(gen, reason)
+    else:
+        print("[sub-config] AMS notify skipped (no Telegram broadcast)")
     return gen
 
 

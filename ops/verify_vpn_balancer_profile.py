@@ -18,9 +18,11 @@ if str(_OPS) not in sys.path:
 import site_urls  # noqa: E402
 from balancer_selectors import (  # noqa: E402
     INTL_RELAY_NL_SELECTOR,
+    INTL_STEALTH_BALANCER_TAG,
     RELAY1_SELECTOR,
     RELAY2_SELECTOR,
     RELAY6_SELECTOR,
+    is_stealth_split_profile,
     verify_ru_multipath_profile,
 )
 from dns_split_config import verify_dns_split_config  # noqa: E402
@@ -125,6 +127,9 @@ def main() -> int:
         mode = "relay-only×3 (relay1 fast path)"
     elif super_len == 0 and intl_sel == list(RELAY2_SELECTOR):
         mode = "relay-only×3 (relay2 fast path)"
+    elif super_len == 0 and is_stealth_split_profile(cfg):
+        stealth_len = len((balancers.get(INTL_STEALTH_BALANCER_TAG) or {}).get("selector") or [])
+        mode = f"stealth split Stealth=relay×{stealth_len} Fast=relay+NL×{intl_len}"
     elif super_len == 0 and intl_sel == list(INTL_RELAY_NL_SELECTOR):
         mode = "relay×6+NL×4 Intl (VPN-AUD-220)"
     elif super_len == 0 and intl_len >= 3:
