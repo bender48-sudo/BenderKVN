@@ -27,7 +27,7 @@ REMNA_TRIAL_DAYS = int(
 # Browser /email trial: short access only to complete Happ setup + bind Telegram (anti-abuse).
 WEB_TRIAL_DAYS = int(os.getenv("WEB_TRIAL_DAYS", "1"))
 
-# Оплата в боте (ЮKassa/TG Stars и т.д.). Если false — напоминания об окончании
+# Оплата в боте (ЮKassa; Stars отключены). Если false — напоминания об окончании
 # пробного периода без кнопки пополнения, только поддержка.
 BOT_PAYMENTS_LIVE = os.getenv("BOT_PAYMENTS_LIVE", "").strip().lower() in ("1", "true", "yes")
 
@@ -67,13 +67,12 @@ TRAFFIC_PACKS = {
     "traffic_300_gb": ("Доп. трафик +300 ГБ", "250.00", 300),
 }
 
-WELCOME_MESSAGE = "Здесь вы можете приобрести быстрый и надежный VPN."
-CHOOSE_PLAN_MESSAGE = "Выберите подходящий тариф:"
-CHOOSE_TOPUP_MESSAGE = "Выберите сумму пополнения:"
-CHOOSE_PAYMENT_METHOD_MESSAGE = "Выберите удобный способ оплаты:"
+WELCOME_MESSAGE = "Начни бесплатный период — 90 дней без ограничений."
+CHOOSE_PLAN_MESSAGE = "Выбери вариант:"
+CHOOSE_TOPUP_MESSAGE = "Выбери сумму пополнения:"
+CHOOSE_PAYMENT_METHOD_MESSAGE = "Выбери способ оплаты:"
 CUSTOM_AMOUNT_UNAVAILABLE = (
-    "Сейчас доступны фиксированные суммы пополнения банковской картой. "
-    "Произвольная сумма и другие способы — позже."
+    "Что-то пошло не так. Попробуй выбрать сумму из предложенных вариантов или напиши нам."
 )
 KEY_EMAIL_DOMAIN = os.getenv("KEY_EMAIL_DOMAIN", "kitsura.fun").strip().lstrip("@")
 
@@ -142,20 +141,19 @@ SUPPORT_TEXT = "Текст поддержки не установлен. Уст�
 
 def get_profile_text(username, total_spent, total_months, vpn_status_text):
     return (
-        f"👤 <b>Профиль:</b> {username}\n\n"
-        f"💰 <b>Потрачено всего:</b> {total_spent:.0f} RUB\n"
-        f"📅 <b>Приобретено месяцев:</b> {total_months}\n\n"
+        f"<b>Профиль:</b> {username}\n\n"
+        f"Потрачено: {total_spent:.0f} ₽\n\n"
         f"{vpn_status_text}"
     )
 
 def get_vpn_active_text(days_left, hours_left):
     return (
-        f"✅ <b>Статус VPN:</b> Активен\n"
-        f"⏳ <b>Осталось:</b> {days_left} д. {hours_left} ч."
+        f"✅ <b>Доступ активен</b>\n"
+        f"Осталось: {days_left} д. {hours_left} ч."
     )
 
-VPN_INACTIVE_TEXT = "❌ <b>Статус VPN:</b> Неактивен (срок истек)"
-VPN_NO_DATA_TEXT = "ℹ️ <b>Статус VPN:</b> У вас пока нет активных ключей."
+VPN_INACTIVE_TEXT = "Доступ неактивен — срок истёк."
+VPN_NO_DATA_TEXT = "Активных ключей пока нет."
 
 def get_key_info_text(key_number, expiry_date, created_date, connection_string):
     expiry_formatted = expiry_date.strftime('%d.%m.%Y в %H:%M')
@@ -169,13 +167,11 @@ def get_key_info_text(key_number, expiry_date, created_date, connection_string):
     )
 
 def get_purchase_success_text(action: str, key_number: int, expiry_date, connection_string: str):
-    
-    action_text = "обновлен" if action == "extend" else "готов"
-    expiry_formatted = expiry_date.strftime('%d.%m.%Y в %H:%M')
+    action_text = "обновлён" if action == "extend" else "активирован"
+    expiry_formatted = expiry_date.strftime('%d.%m.%Y')
 
     return (
-        f"🎉 <b>Ваш ключ #{key_number} {action_text}!</b>\n\n"
-        f"⏳ <b>Он будет действовать до:</b> {expiry_formatted}\n\n"
+        f"✅ <b>Доступ {action_text}</b> до {expiry_formatted}\n\n"
         f"<code>{connection_string}</code>"
     )
 

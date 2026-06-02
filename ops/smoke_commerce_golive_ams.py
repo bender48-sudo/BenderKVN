@@ -31,11 +31,18 @@ def main() -> int:
             return 4
     print("OK: legal URLs in SQLite")
 
-    stars = os.getenv("STARS_ENABLED", "true").lower() == "true"
-    if not stars:
-        print("FAIL: STARS_ENABLED", file=sys.stderr)
+    stars = os.getenv("STARS_ENABLED", "false").lower() in ("1", "true", "yes")
+    if stars:
+        print("FAIL: STARS_ENABLED must be false", file=sys.stderr)
         return 5
-    print("OK: STARS_ENABLED")
+    print("OK: STARS_ENABLED=false")
+
+    sid = (os.getenv("YOOKASSA_SHOP_ID") or "").strip()
+    sec = (os.getenv("YOOKASSA_SECRET_KEY") or "").strip()
+    if not sid or not sec:
+        print("FAIL: YooKassa credentials missing", file=sys.stderr)
+        return 6
+    print("OK: YooKassa configured")
     print("COM-MONETIZE_GO_LIVE_OK")
     return 0
 

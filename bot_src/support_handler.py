@@ -38,7 +38,7 @@ SUPPORT_USER_RL_WINDOW = int(os.getenv("SUPPORT_USER_RL_WINDOW", "60"))
 SUPPORT_USER_RL_MAX = int(os.getenv("SUPPORT_USER_RL_MAX", "8"))
 
 MSG_SUPPORT_DISABLED = (
-    "Поддержка временно недоступна. Попробуй позже или напиши на @BenderVPN_support."
+    "Поддержка временно не принимает сообщения. Напиши напрямую: @BenderVPN_support"
 )
 
 

@@ -75,22 +75,16 @@ def main():
     yookassa_enabled = bool(yookassa_shop_id and yookassa_shop_id.strip() and yookassa_secret_key and yookassa_secret_key.strip())
     crypto_enabled = bool(crypto_api_key and crypto_api_key.strip() and crypto_merchant_id and crypto_merchant_id.strip())
     crypto_bot_enabled = bool(crypto_bot_api and crypto_bot_api.strip())
-    stars_enabled = bool(os.getenv("STARS_ENABLED", "false").lower() in ("1", "true", "yes"))
+    # Telegram Stars отключены навсегда (вывод в РФ недоступен) — не читаем STARS_ENABLED.
 
     if not TELEGRAM_TOKEN or not TELEGRAM_BOT_USERNAME:
         raise ValueError("Необходимо установить TELEGRAM_BOT_TOKEN и TELEGRAM_BOT_USERNAME")
 
     payment_methods = {
-        "stars": stars_enabled,
         "yookassa": yookassa_enabled,
         "crypto": crypto_enabled,
-        "crypto_bot": crypto_bot_enabled
+        "crypto_bot": crypto_bot_enabled,
     }
-
-    if payment_methods["stars"]:
-        bot_logger.system("PAYMENTS", "Telegram Stars payment enabled", "OK")
-    else:
-        bot_logger.system("PAYMENTS", "Telegram Stars payment disabled", "WARNING")
 
     if payment_methods["yookassa"]:
         Configuration.account_id = yookassa_shop_id
@@ -108,6 +102,13 @@ def main():
         bot_logger.system("PAYMENTS", "Crypto bot payment enabled", "OK")
     else:
         bot_logger.system("PAYMENTS", "Crypto bot payment disabled (API missing)", "WARNING")
+
+    from shop_bot.config import BOT_PAYMENTS_LIVE
+
+    if BOT_PAYMENTS_LIVE and not yookassa_enabled:
+        bot_logger.system("PAYMENTS", "BOT_PAYMENTS_LIVE but YooKassa missing", "ERROR")
+        bot_logger.critical("Configure YOOKASSA_SHOP_ID + YOOKASSA_SECRET_KEY on AMS")
+        return
 
     if not any(payment_methods.values()):
         bot_logger.system("PAYMENTS", "NO PAYMENT SYSTEMS CONFIGURED!", "ERROR")

@@ -166,8 +166,6 @@ def create_topup_keyboard():
 def create_topup_payment_keyboard(topup_id: str, payment_methods: dict | None = None):
     builder = InlineKeyboardBuilder()
     pm = payment_methods or {}
-    if pm.get("stars"):
-        builder.button(text="\u2b50 Telegram Stars", callback_data=f"pay_stars_topup_{topup_id}")
     if pm.get("yookassa"):
         builder.button(text="\U0001f4b3 \u0411\u0430\u043d\u043a\u043e\u0432\u0441\u043a\u0430\u044f \u043a\u0430\u0440\u0442\u0430", callback_data=f"pay_yookassa_topup_{topup_id}")
     builder.button(text="\U0001f519 \u041d\u0430\u0437\u0430\u0434", callback_data="show_topup")
@@ -401,8 +399,6 @@ def create_plans_keyboard(plans, action, key_id=0):
 
 def create_payment_method_keyboard(payment_methods, plan_id, action, key_id):
     builder = InlineKeyboardBuilder()
-    if payment_methods.get("stars"):
-        builder.button(text="\u2b50 Telegram Stars", callback_data=f"pay_stars_{plan_id}_{action}_{key_id}")
     if payment_methods.get("yookassa"):
         builder.button(text="\U0001f4b3 \u041a\u0430\u0440\u0442\u0430", callback_data=f"pay_yookassa_{plan_id}_{action}_{key_id}")
     if payment_methods.get("crypto"):

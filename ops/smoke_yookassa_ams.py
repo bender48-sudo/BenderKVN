@@ -59,7 +59,11 @@ test -n "$sid" && test -n "$sec" && echo YOOKASSA_ENV_OK
         ),
         (
             "keyboard",
-            """docker exec remna-shop-bot grep -q pay_yookassa_topup_ /app/src/shop_bot/bot/keyboards.py && echo TOPUP_KEYBOARD_OK""",
+            """docker exec remna-shop-bot sh -c '
+grep -q pay_yookassa_topup_ /app/src/shop_bot/bot/keyboards.py &&
+! grep -q pay_stars_topup_ /app/src/shop_bot/bot/keyboards.py &&
+echo TOPUP_KEYBOARD_OK
+'""",
         ),
         (
             "health",

@@ -256,15 +256,12 @@ async def show_main_menu(message: types.Message, edit_message: bool = False):
     is_admin = is_admin_telegram(user_id)
 
     if has_active_sub:
-        text = (
-            "🏠 <b>BenderVPN</b>\n\n"
-            "VPN активен. Выбери что нужно:"
-        )
+        text = "Всё работает. Выбери, что нужно:"
     else:
         text = (
-            "👋 <b>Привет!</b>\n\n"
-            "Нажми кнопку ниже — за 30 секунд получишь бесплатный VPN на 3 месяца.\n"
-            "Уже есть доступ? Кнопка «Мой VPN» 👇"
+            "Привет.\n\n"
+            "Начни бесплатный период — 90 дней без ограничений.\n"
+            "Уже есть доступ? Кнопка «Мой VPN» ниже."
         )
     auto_renew = get_auto_renew(user_id) if user_db_data else False
     keyboard = keyboards.create_main_menu_keyboard(
@@ -299,6 +296,10 @@ class PromoCreate(StatesGroup):
 class VpnSetupWizard(StatesGroup):
     picking_device = State()
     on_device = State()
+
+
+class CustomTopup(StatesGroup):
+    waiting_for_amount = State()
 
 
 async def _fetch_subscription_url(user_id: int) -> str | None:
@@ -413,11 +414,11 @@ async def start_handler(message: types.Message, state: FSMContext):
             )
             return
         agreement_text = (
-            "<b>Привет! 👋</b>\n\n"
-            "BenderVPN — свободный интернет без блокировок. "
-            "Первые 3 месяца бесплатно.\n\n"
-            "Для начала прочитай и прими условия:\n"
-            f"→ <a href='{terms_url}'>Условия использования</a> и "
+            "<b>Привет.</b>\n\n"
+            "Небольшой сервис для тех, кому нужно, чтобы подключение просто работало: "
+            "без сюрпризов, постоянных переподключений и ощущения «почему опять сломалось».\n\n"
+            "Первые 90 дней — бесплатно.\n\n"
+            f"→ <a href='{terms_url}'>Условия использования</a> · "
             f"<a href='{privacy_url}'>Политика конфиденциальности</a>"
         )
         await message.answer(agreement_text, reply_markup=keyboards.create_agreement_keyboard(), disable_web_page_preview=True)
@@ -453,7 +454,7 @@ async def agree_to_terms_handler(callback: types.CallbackQuery, state: FSMContex
         pass
 
     await callback.message.answer(
-        "Отлично! Получи бесплатный VPN на 3 месяца 👇",
+        "Отлично. Начни бесплатный период — кнопка «Получить бесплатный VPN» ниже.",
         reply_markup=keyboards.main_reply_keyboard,
     )
     if pending_bind:
@@ -463,7 +464,7 @@ async def agree_to_terms_handler(callback: types.CallbackQuery, state: FSMContex
 
 @user_router.message(UserAgreement.waiting_for_agreement)
 async def agreement_fallback_handler(message: types.Message):
-    await message.answer("Пожалуйста, сначала примите условия использования, нажав на кнопку «Принимаю» выше.")
+    await message.answer("Пожалуйста, нажми кнопку «Принимаю» выше.")
 
 
 async def _ensure_terms_or_prompt(message: types.Message, state: FSMContext) -> bool:
@@ -489,11 +490,11 @@ async def _ensure_terms_or_prompt(message: types.Message, state: FSMContext) -> 
         )
         return False
     agreement_text = (
-        "<b>Добро пожаловать!</b>\n\n"
-        "Перед началом использования бота, пожалуйста, ознакомьтесь и примите наши "
-        f"<a href='{terms_url}'>Условия использования</a> и "
-        f"<a href='{privacy_url}'>Политику конфиденциальности</a>.\n\n"
-        "Нажимая кнопку «Принимаю», вы подтверждаете согласие с этими документами."
+        "<b>Добро пожаловать.</b>\n\n"
+        "Перед началом ознакомься с "
+        f"<a href='{terms_url}'>Условиями использования</a> и "
+        f"<a href='{privacy_url}'>Политикой конфиденциальности</a>.\n\n"
+        "Нажимая «Принимаю», ты подтверждаешь согласие."
     )
     await message.answer(
         agreement_text,
@@ -904,12 +905,12 @@ async def trial_period_handler(callback: types.CallbackQuery):
         # Показываем созданный ключ пользователю
         expiry_str = expiry_dt.strftime("%d.%m.%Y")
         message_text = (
-            f"✅ <b>VPN готов!</b> Бесплатно до <b>{expiry_str}</b>.\n\n"
-            "Три шага — и интернет свободен:\n\n"
-            "1️⃣ Скачай Happ (кнопка ниже)\n"
-            "2️⃣ Нажми «📷 Показать QR-код» ниже → открой камеру → наведи\n"
-            "3️⃣ В Happ нажми Connect — готово 🎉\n\n"
-            "Не получается? Кнопка «❓ Не получается» ниже."
+            f"Доступ активирован до <b>{expiry_str}</b>.\n\n"
+            "Три шага:\n\n"
+            "1. Скачай приложение — кнопка ниже.\n"
+            "2. Нажми «📷 Показать QR» и отсканируй код.\n"
+            "3. Нажми Connect.\n\n"
+            "Если не получается — напиши, разберёмся."
         )
         
         await callback.message.edit_text(
@@ -954,9 +955,9 @@ async def my_account_handler(callback: types.CallbackQuery):
         latest = max(active_keys, key=lambda k: datetime.fromisoformat(k["expiry_date"]))
         exp = datetime.fromisoformat(latest["expiry_date"])
         text = (
-            f"🔌 <b>Твой VPN</b>\n\n"
-            f"✅ Активен до {exp.strftime('%d.%m.%Y')}\n"
-            f"💰 Баланс: {balance:.0f} ₽ (~{days_left} дней)"
+            f"Активен до {exp.strftime('%d.%m.%Y')}.\n\n"
+            f"Баланс: {balance:.0f} ₽ — примерно {days_left} дней.\n\n"
+            "Конфигурация ниже. Если меняешь устройство или что-то перестало работать — напиши нам."
         )
         await callback.message.edit_text(
             text,
@@ -965,10 +966,18 @@ async def my_account_handler(callback: types.CallbackQuery):
         )
     else:
         trial_available = not (user_db_data and user_db_data.get("trial_used"))
-        text = (
-            "VPN пока не активен.\n\n"
-            "Получи бесплатный доступ на 3 месяца 👇"
-        )
+        if trial_available:
+            text = (
+                "Попробовать можно бесплатно — на 90 дней.\n\n"
+                "Чтобы остаться после пробного периода, понадобится приглашение от участника. "
+                "Так мы растём постепенно и не превращаем сервис в массовый поток."
+            )
+        else:
+            text = (
+                "Пробный период завершился.\n\n"
+                "Пополни баланс, чтобы продолжить — 6,67 ₽ в день. "
+                "Конфигурация сохранена, заново настраивать ничего не нужно."
+            )
         await callback.message.edit_text(
             text, parse_mode="HTML", reply_markup=keyboards.create_account_no_sub_keyboard(trial_available)
         )
@@ -977,10 +986,9 @@ async def my_account_handler(callback: types.CallbackQuery):
 async def menu_help_handler(callback: types.CallbackQuery):
     await callback.answer()
     text = (
-        "❓ <b>Помощь</b>\n\n"
-        "Инструкция по подключению, видео и частые вопросы — кнопки ниже.\n\n"
-        "Если VPN включён, но пишет «0 серверов» — не удаляй профиль.\n"
-        "Нажми 🔄 обновить в Happ — всё появится само."
+        "<b>Помощь</b>\n\n"
+        "Инструкция по подключению и частые вопросы — кнопки ниже.\n\n"
+        "Если пишет «0 серверов» — не удаляй профиль: нажми 🔄 в Happ рядом с ним, узлы появятся сами."
     )
     await callback.message.edit_text(
         text,
@@ -1001,8 +1009,9 @@ async def contact_support_handler(callback: types.CallbackQuery):
         )
         return
     await callback.message.answer(
-        "💬 Напиши свой вопрос — ответим быстро.\n\n"
-        "Если VPN не работает — укажи устройство (iPhone/Android/ПК) и что происходит.",
+        "Напиши, что случилось — отвечаем сами.\n\n"
+        "Если что-то не работает, укажи устройство и опиши ситуацию. "
+        "Скриншот ускоряет разбор.",
         parse_mode="HTML",
     )
 
@@ -1382,8 +1391,8 @@ async def show_topup_handler(callback: types.CallbackQuery):
     balance = get_balance(user_id)
     days_left = balance_to_days(balance)
     text = (
-        f"💰 <b>Баланс: {balance:.0f} ₽</b> (~{days_left} дней VPN)\n\n"
-        f"Выбери сколько пополнить:"
+        f"<b>Баланс: {balance:.0f} ₽</b> — примерно {days_left} дней доступа.\n\n"
+        "Выбери сумму пополнения:"
     )
     await callback.message.edit_text(
         text,
@@ -1393,13 +1402,46 @@ async def show_topup_handler(callback: types.CallbackQuery):
 
 
 @user_router.callback_query(F.data == "topup_custom")
-async def topup_custom_handler(callback: types.CallbackQuery):
+async def topup_custom_handler(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
+    await state.set_state(CustomTopup.waiting_for_amount)
     await callback.message.edit_text(
-        CUSTOM_AMOUNT_UNAVAILABLE,
-        reply_markup=keyboards.create_topup_keyboard(),
+        "Введи любую сумму — от 50 до 20 000 ₽.\n\n"
+        "Деньги зачислятся на баланс, а доступ будет списываться по 6,67 ₽ в день.\n\n"
+        "200 ₽ — около месяца, 2 000 ₽ — примерно 10 месяцев.",
+        reply_markup=keyboards.create_back_to_menu_keyboard(),
         parse_mode="HTML",
     )
+
+
+@user_router.message(CustomTopup.waiting_for_amount)
+async def custom_topup_amount_handler(message: types.Message, state: FSMContext):
+    raw = (message.text or "").strip().replace(",", ".").replace(" ", "").replace(" ", "")
+    try:
+        amount = float(raw)
+    except (ValueError, AttributeError):
+        await message.answer("Введи число — например: 500")
+        return
+    if amount < 50:
+        await message.answer("Минимальная сумма — 50 ₽ (примерно 7 дней доступа).")
+        return
+    if amount > 20000:
+        await message.answer("Максимальная сумма — 20 000 ₽.")
+        return
+    amount_int = int(round(amount))
+    days = balance_to_days(amount_int)
+    await state.clear()
+    custom_topup_id = f"custom_{amount_int}"
+    text = (
+        f"Пополнение на <b>{amount_int} ₽</b> — примерно {days} дней доступа.\n\n"
+        "Выбери способ оплаты:"
+    )
+    await message.answer(
+        text,
+        reply_markup=keyboards.create_topup_payment_keyboard(custom_topup_id, PAYMENT_METHODS),
+        parse_mode="HTML",
+    )
+    log_action(message.from_user.id, "topup_custom_amount", str(amount_int))
 
 
 @user_router.callback_query(F.data.in_({"topup_200", "topup_500", "topup_1000", "topup_2000"}))
@@ -1411,8 +1453,8 @@ async def topup_select_handler(callback: types.CallbackQuery):
     _name, _price_str, amount = TOPUP_PRESETS[topup_id]
     days = balance_to_days(amount)
     text = (
-        f"Пополнение на <b>{amount:.0f} ₽</b> — это ~{days} дней VPN.\n\n"
-        f"Способ оплаты:"
+        f"Пополнение на <b>{amount:.0f} ₽</b> — примерно {days} дней доступа.\n\n"
+        "Выбери способ оплаты:"
     )
     await callback.message.edit_text(
         text,
@@ -1422,56 +1464,31 @@ async def topup_select_handler(callback: types.CallbackQuery):
 
 
 @user_router.callback_query(F.data.startswith("pay_stars_topup_"))
-async def pay_stars_topup_handler(callback: types.CallbackQuery, bot: Bot):
-    await callback.answer("Создаю счёт...")
-    topup_id = callback.data.replace("pay_stars_topup_", "")
-    if topup_id not in TOPUP_PRESETS:
-        await callback.message.edit_text("Ошибка: пресет не найден.")
-        return
-    _name, price_str, amount_rub = TOPUP_PRESETS[topup_id]
-    user_id = callback.from_user.id
-    stars_rate = float(os.getenv("STARS_RATE", "2.0"))
-    stars_amount = max(1, int(float(price_str) * stars_rate))
-    payload_data = json.dumps(
-        {"u": user_id, "t": "topup", "a": amount_rub},
-        separators=(",", ":"),
+async def pay_stars_topup_disabled_handler(callback: types.CallbackQuery):
+    await callback.answer()
+    await callback.message.edit_text(
+        user_messages.MSG_STARS_DISABLED,
+        reply_markup=keyboards.create_topup_keyboard(),
+        parse_mode="HTML",
     )
-    try:
-        from aiogram.types import LabeledPrice, InlineKeyboardMarkup, InlineKeyboardButton
-
-        link = await bot.create_invoice_link(
-            title=f"Пополнение {amount_rub:.0f} ₽",
-            description=f"Баланс BenderVPN +{amount_rub:.0f} ₽",
-            payload=payload_data,
-            provider_token="",
-            currency="XTR",
-            prices=[LabeledPrice(label=f"{amount_rub:.0f} RUB", amount=stars_amount)],
-        )
-        kb = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(text=f"⭐ Оплатить {stars_amount} Stars", url=link)]
-            ]
-        )
-        await callback.message.edit_text(
-            f"⭐ Оплата через Telegram Stars\n\n"
-            f"Сумма: {stars_amount} Stars (~{amount_rub:.0f} ₽)\n\n"
-            f"Нажмите кнопку ниже:",
-            reply_markup=kb,
-            parse_mode="HTML",
-        )
-    except Exception as e:
-        logger.error(f"Failed to create Stars topup invoice: {e}", exc_info=True)
-        await callback.message.edit_text("❌ " + user_messages.ERR_TELEGRAM_STARS)
 
 
 @user_router.callback_query(F.data.startswith("pay_yookassa_topup_"))
 async def pay_yookassa_topup_handler(callback: types.CallbackQuery):
     await callback.answer("Создаю ссылку на оплату...")
     topup_id = callback.data.replace("pay_yookassa_topup_", "", 1)
-    if topup_id not in TOPUP_PRESETS:
-        await callback.message.edit_text("Ошибка: пресет не найден.")
+    if topup_id.startswith("custom_"):
+        try:
+            amount_rub = float(topup_id[7:])
+            price_str = f"{amount_rub:.2f}"
+        except (ValueError, IndexError):
+            await callback.message.edit_text(user_messages.ERR_GENERIC_RETRY)
+            return
+    elif topup_id in TOPUP_PRESETS:
+        _name, price_str, amount_rub = TOPUP_PRESETS[topup_id]
+    else:
+        await callback.message.edit_text(user_messages.ERR_GENERIC_RETRY)
         return
-    _name, price_str, amount_rub = TOPUP_PRESETS[topup_id]
     user_id = callback.from_user.id
     bot_username = TELEGRAM_BOT_USERNAME or os.getenv("TELEGRAM_BOT_USERNAME", "")
     return_url = f"https://t.me/{bot_username}" if bot_username else "https://t.me/"
@@ -1496,9 +1513,9 @@ async def pay_yookassa_topup_handler(callback: types.CallbackQuery):
             uuid.uuid4(),
         )
         await callback.message.edit_text(
-            f"💳 Оплата картой (ЮKassa)\n\n"
-            f"Сумма: <b>{amount_rub:.0f} ₽</b> (~{balance_to_days(amount_rub)} дн. VPN)\n\n"
-            "Нажмите кнопку ниже:",
+            f"💳 Оплата картой\n\n"
+            f"<b>{amount_rub:.0f} ₽</b> — примерно {balance_to_days(amount_rub)} дней доступа.\n\n"
+            "Нажми кнопку ниже:",
             reply_markup=keyboards.create_payment_keyboard(payment.confirmation.confirmation_url),
             parse_mode="HTML",
         )
@@ -1701,92 +1718,26 @@ async def create_crypto_payment_handler(callback: types.CallbackQuery, state: FS
         logger.error(f"Exception during crypto payment creation: {e}", exc_info=True)
         await callback.message.edit_text("❌ " + user_messages.ERR_PAYMENT_CRITICAL)
 
-@user_router.callback_query(F.data.startswith("pay_stars_"))
-async def create_stars_payment_handler(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
-    await callback.answer("Создаю счет для оплаты звездами...")
-    
-    parts = callback.data.split("_")[2:]
-    plan_id = "_".join(parts[:-2])
-    action = parts[-2]
-    key_id = int(parts[-1])
-    
-    if plan_id not in PLANS:
-        await callback.message.answer("❌ " + user_messages.ERR_TARIFF_CHOICE)
-        return
+@user_router.callback_query(
+    F.data.startswith("pay_stars_") & ~F.data.startswith("pay_stars_topup_")
+)
+async def pay_stars_plan_disabled_handler(callback: types.CallbackQuery):
+    await callback.answer()
+    await callback.message.edit_text(
+        user_messages.MSG_STARS_DISABLED,
+        reply_markup=keyboards.create_back_to_menu_keyboard(),
+        parse_mode="HTML",
+    )
 
-    name, price_rub, months = PLANS[plan_id]
-    user_id = callback.from_user.id
-    
-    # Конвертируем рубли в звезды (примерно 1 рубль = 2 звезды)
-    stars_rate = float(os.getenv("STARS_RATE", "2.0"))  # сколько звезд за 1 рубль
-    
-    data = await state.get_data()
-    promo_code = data.get('promo_code')
-    amount_value = float(price_rub)
-    
-    if promo_code:
-        promo = get_promo(promo_code)
-        if promo:
-            disc = promo.get('discount_percent', 0)
-            if disc and 0 < disc < 100:
-                amount_value = round(float(price_rub) * (100-disc)/100, 2)
-    
-    stars_amount = int(amount_value * stars_rate)
-    
-    try:
-        if months == 1:
-            description = f"Оплата подписки на 1 месяц"
-        elif months <= 4:
-            description = f"Оплата подписки на {months} месяца"
-        else:
-            description = f"Оплата подписки на {months} месяцев"
-        
-        # Создаем инвойс для Telegram Stars
-        from aiogram.types import LabeledPrice
-        
-        # Telegram Stars payload ограничен 128 байтами, поэтому минимизируем данные
-        payload_data = {
-            "u": user_id,  # user_id
-            "m": months,   # months
-            "p": amount_value,  # price
-            "a": action,   # action
-            "k": key_id,   # key_id
-            "pl": plan_id, # plan_id
-            "pr": promo_code[:10] if promo_code else None,  # promo_code (первые 10 символов)
-            "c": callback.message.chat.id,  # chat_id
-            "mid": callback.message.message_id  # message_id
-        }
-        
-        invoice = await bot.create_invoice_link(
-            title=f"VPN подписка - {name}",
-            description=description,
-            payload=json.dumps(payload_data, separators=(',', ':')),  # без пробелов
-            provider_token="",  # Для Telegram Stars токен должен быть пустым
-            currency="XTR",  # Telegram Stars currency
-            prices=[LabeledPrice(label=name, amount=stars_amount)]
-        )
-        
-        # Создаем инлайн-кнопку для оплаты
-        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text=f"💫 Оплатить {stars_amount} звездами", url=invoice)]
-        ])
-        
-        await callback.message.edit_text(
-            f"💫 Оплата звездами Telegram\n\n"
-            f"Стоимость: {stars_amount} ⭐\n"
-            f"Период: {months} мес.\n\n"
-            f"Нажмите кнопку ниже для оплаты:",
-            reply_markup=keyboard
-        )
-        
-    except Exception as e:
-        logger.error(f"Failed to create Telegram Stars payment: {e}", exc_info=True)
-        await callback.message.answer("❌ " + user_messages.ERR_TELEGRAM_STARS)
 
 @user_router.pre_checkout_query()
 async def pre_checkout_handler(pre_checkout_query: types.PreCheckoutQuery):
-    """Обрабатываем предварительную проверку платежа звездами"""
+    if pre_checkout_query.currency == "XTR":
+        await pre_checkout_query.answer(
+            ok=False,
+            error_message="Оплата звёздами отключена. Пополни баланс картой в боте.",
+        )
+        return
     await pre_checkout_query.answer(ok=True)
 
 @user_router.message(F.successful_payment)
