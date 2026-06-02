@@ -80,6 +80,8 @@ WIZARD_STUCK = (
     "Нажми 🔄 в Happ рядом с профилем BenderVPN Auto.\n\n"
     "<b>На LTE не коннектится (443)</b> — в Happ выбери узел <b>NL / 9443</b> "
     "или <b>Latvia / 8443</b>, затем обнови подписку.\n"
+    "<b>Windows: Telegram / ChatGPT не открываются</b> — включи <b>TUN</b> "
+    "(Настройки → Дополнительно) и обнови подписку.\n"
     "Для жёсткого блока ТСПУ: Hiddify или Streisand + та же ссылка подписки.\n\n"
     f"• <a href=\"{public_status_url()}\">Статус сервиса</a>\n"
     "• Напиши в поддержку — кнопка ниже"
@@ -115,4 +117,9 @@ def format_chat_steps(device_id: str, *, has_active_key: bool) -> str:
         store_label=f'<a href="{store_url}">{store_label}</a>',
         config_step=config_step,
     )
+    if device_id == "windows":
+        text += (
+            "\n\n<b>Windows:</b> Настройки Happ → Дополнительно → включите <b>TUN</b>. "
+            "Обновите подписку (🔄) — профиль маршрутизации подтянется сам."
+        )
     return text
