@@ -326,7 +326,7 @@
 
 **Закрыто:** **P0–P2**, **P6** (фаза 1), **P1/P3-RED** + **P5-COM-01** (фаза 2), **P3-FLOW-00, 14, 01, 02, 12, 03** (Q033–038).
 
-**Сейчас (агент):** фаза 9 **Q142–160** ✅. **NEXT** нет. Владелец: **Q032**, **Q120**. Фаза 8 ✅.
+**Сейчас (агент):** фаза 10 **Q161–166** ✅. **Q120** ✅ **2026-05-29**. Владелец: **Q032**. Фаза 8 ✅.
 
 **Владелец:** **Q032** оферта; **BotFather :8443**; **CryptoBot POST**; DNSSEC — **`docs/MANUAL-OWNER-CHECKLIST.md`**.
 
@@ -344,8 +344,9 @@
 
 | Дата | Что сделано |
 |------|-------------|
-| 2026-05-25 | **Фаза 9 Q142–160 — DONE:** renew idempotency, multi-key auto-renew, Remna backoff, webhook async, DB migrations/indexes, sub cache, UX/support; deploy AMS; smokes **`AUTO_RENEW_BILLING_OK`**, **`VPN_SETUP_WIZARD_OK`**, `/health` ok. **NEXT:** нет. |
+| 2026-05-29 | **VPN-AUD-201 DONE:** relay#2 hysteria + 3 panel hosts + injectHosts proxy-12..14; Super/Intl **10-path** (2 relay IP); gen=44; **`VPN_BALANCER_PROFILE_OK`**. | renew idempotency, multi-key auto-renew, Remna backoff, webhook async, DB migrations/indexes, sub cache, UX/support; deploy AMS; smokes **`AUTO_RENEW_BILLING_OK`**, **`VPN_SETUP_WIZARD_OK`**, `/health` ok. **NEXT:** нет. |
 | 2026-05-25 | **CodeRabbit bot audit → фаза 9:** [`AUDIT-2026-05-BOT-CODERABBIT.md`](AUDIT-2026-05-BOT-CODERABBIT.md); очередь **Q142–160** (19 задач). |
+| 2026-05-25 | **CodeRabbit bot audit раунд 2 → фаза 10:** [`AUDIT-2026-05-BOT-CODERABBIT-02.md`](AUDIT-2026-05-BOT-CODERABBIT-02.md); очередь **Q161–166** (6 фаз CR); **NEXT=Q161**. Сверка с Q142–160 в AUDIT-02. |
 | 2026-05-25 | **Q132 hotfix ping:** split **`Intl_Direct`** (8 Direct, TG/IG rules) vs **`Super_Balancer`** catch-all **`["proxy"]`** only — gen=22; иначе пинг ×3 (random NL на весь VPN). |
 | 2026-05-25 | **Q132 P1-PRO-VPN-SPEED-01 — LIVE:** gen=21→22; sub **200**, 14 vless + RELAY×6; intl via **Intl_Direct**. |
 | 2026-05-25 | **Фаза 8 Q123–141 (агент) — DONE:** tenacity retry, jitter config, backup tar.gz prune, shared aiohttp pool, scheduler gather+metrics, WAL, autorenew `days_left<=0`, expiry 6h, `/health`, transport health script, TSPU TG alert, provision_key slow log, runbooks SNI/relay/bootstrap/monitoring. **Владелец:** **Q120**, **Q032**. |

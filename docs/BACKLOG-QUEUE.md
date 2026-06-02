@@ -81,11 +81,11 @@
 6. **Фаза 6** — GTM hardening (**Q086–097**, см. **`AGENT-PHASE6-BACKLOG.md`**)
 7. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** нет (фаза 9 **Q142–160** закрыта агентом). **Q120** / **Q032** — только владелец.
+**NEXT:** — (фаза 10 Q161–166 закрыта). **Q120** ✅ **2026-05-29**. **Q032** — владелец.
 
 | Кому | Документ |
 |------|----------|
-| **Агент — сейчас** | — (очередь агента до **Q120**); **Q120** / **Q032** — владелец |
+| **Агент — сейчас** | — (фаза 10 закрыта). **Q032** — владелец |
 | Владелец (параллельно) | **`docs/MANUAL-OWNER-CHECKLIST.md`**, LTE § **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
 | Аудиты | **`POST-DEPLOY-REVIEW-2026-05.md`**, **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
 | Правило Cursor | **`sequential-backlog.mdc`** |
@@ -212,7 +212,7 @@
 | 117 | **P2-RED-MUX-XHTTP-01** | **DONE** | MUX + XHTTP-first incident/FAQ | transport audit | `product: P2-RED-MUX-XHTTP-01` |
 | 118 | **P2-RED-SELFSTEAL-SNI-01** | **DONE** | Убрать github :9443 selfsteal | Caddy | `ops: selfsteal SNI` |
 | 119 | **P2-RED-WHITELIST-L3-01** | **DONE** | Runbook whitelist (черновик есть) | doc | `docs: whitelist L3` |
-| 120 | **P2-OPS-RU-RELAY-02-VPS-01** | **TODO** | 2-й RU relay VPS (владелец) | 2× `tspu_block_probe` | OWNER — **`RUNBOOK-RU-RELAY-EXPANSION`** (Q139) |
+| 120 | **P2-OPS-RU-RELAY-02-VPS-01** | **DONE** | 2-й RU relay VPS (владелец) | 2× `tspu_block_probe` **2026-05-29** | **`RUNBOOK-RU-RELAY-EXPANSION`** |
 | 121 | **P2-RED-TLS-JA3-01** | **DONE** | TLS client stack audit | **TLS_CLIENT_STACK_AUDIT_OK** | `ops: JA3 audit` |
 
 **Аудиты:** [`AUDIT-2026-05-SECURITY-02.md`](AUDIT-2026-05-SECURITY-02.md) (Q101), [`AUDIT-2026-05-TSPU-REDTEAM-04.md`](AUDIT-2026-05-TSPU-REDTEAM-04.md) (ТСПУ **5/10**).  
@@ -246,7 +246,7 @@
 | 140 | **P2-DOC-BOOTSTRAP-FALLBACK-01** | **DONE** | Backup bootstrap runbook | **`RUNBOOK-BACKUP-BOOTSTRAP-FALLBACK.md`** | `docs: P2-DOC-BOOTSTRAP-FALLBACK-01` |
 | 141 | **P2-DOC-MONITORING-01** | **DONE** | `MONITORING.md` | doc review | `docs: P2-DOC-MONITORING-01` |
 
-**NEXT=—** (фаза 8 Q122–141 закрыта агентом). **Q120** / **Q032** — владелец.
+**NEXT=—** (фаза 8 Q122–141 закрыта). **Q120** ✅ **2026-05-29**. **Q032** — владелец.
 
 ### Фаза 9 — Bot CodeRabbit (2026-05-25)
 
@@ -275,7 +275,21 @@
 | 159 | **P3-RED-SUPPORT-RATELIMIT-PERSIST-01** | **DONE** | DB-backed support rate limit | `py_compile` | `security: P3-RED-SUPPORT-RATELIMIT-PERSIST-01` |
 | 160 | **P3-RED-SUPPORT-SILENT-01** | **DONE** | support unavailable user msg | `py_compile` | `ops: P3-RED-SUPPORT-SILENT-01` |
 
-**NEXT:** нет. **Параллельно (владелец):** **Q120**, **Q032**.
+**NEXT:** — (фаза 10 закрыта). | **Параллельно (владелец):** **Q032** (оферта). **Q120** ✅ **2026-05-29**.
+
+### Фаза 10 — Bot CodeRabbit раунд 2 (2026-05-25)
+
+**Контекст:** [`docs/AUDIT-2026-05-BOT-CODERABBIT-02.md`](AUDIT-2026-05-BOT-CODERABBIT-02.md), [`docs/AGENT-PHASE10-BOT-CODERABBIT-BACKLOG.md`](AGENT-PHASE10-BOT-CODERABBIT-BACKLOG.md).  
+**Сверка с фазой 9:** Q142–160 закрыты — в аудите помечено «дубль / хвост». Ответ Claude — дополнить триаж в AUDIT-02, не менять NEXT без согласования.
+
+| Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
+|---|-----|--------|-------------------|--------|-----------------|
+| 161 | **P2-RED-BOT-ENV-01** | **DONE** | dotenv до импортов; validate_config; db busy_timeout; /health | `py_compile` | `fix: P2-RED-BOT-ENV-01` |
+| 162 | **P2-RED-BOT-INTEGRITY-01** | **DONE** | topup TOCTOU; remna class fetch; task GC; backoff lock | `py_compile` + payment smoke | `fix: P2-RED-BOT-INTEGRITY-01` |
+| 163 | **P2-RED-BOT-RENEW-NOTIFY-01** | **DONE** | renew `days_left<=1`; backup first run; blocked refresh; 429 cap | `py_compile` | `fix: P2-RED-BOT-RENEW-NOTIFY-01` |
+| 164 | **P2-RED-BOT-SEC-02** | **DONE** | no sub_url JSON; header webhook secret; bind TTL 24h | `py_compile` + grep | `security: P2-RED-BOT-SEC-02` |
+| 165 | **P2-OPS-SCHEMA-02** | **DONE** | schema_version PK; migration tx; v2 guard | fresh DB migrate | `chore: P2-OPS-SCHEMA-02` |
+| 166 | **P3-UX-BOT-POLISH-02** | **DONE** | user_messages; config constants; autorenew UI; prune flags | menu smoke | `product: P3-UX-BOT-POLISH-02` |
 
 ---
 
@@ -431,10 +445,11 @@
 | 2026-05-19 | **Q086** P3-RED-ADMIN-FSM-01 | **NEXT=Q087** |
 | 2026-05-19 | **Q087–097** (непрерывный режим) | **NEXT** пусто, фаза 6 закрыта |
 | 2026-05-20 | **Q102–121** (агент) | **NEXT=Q120** (владелец: 2-й RU VPS) |
-| 2026-05-25 | **Q120** owner | **Фаза 8** Q122–141; **NEXT=Q122** (`AGENT-PHASE8-RELIABILITY-BACKLOG`) |
+| 2026-05-25 | **Q120** owner | **Q120 DONE** **2026-05-29**; фаза 8 Q122–141 |
 | 2026-05-25 | **Q122** P2-RED-BOT-TIMEOUT-01 | **Q123** P2-RED-BOT-RETRY-01 |
 | 2026-05-25 | **Q123–129, Q133** phase8 bot reliability | **Q134** P2-OPS-BOT-HEALTH-01 |
 | 2026-05-25 | **Q134–141** phase8 health/ops/docs + Q132 patch | — (фаза 8 агент закрыт) |
+| 2026-05-25 | — | **Фаза 10** CodeRabbit bot раунд 2; **NEXT=Q161** (`AUDIT-2026-05-BOT-CODERABBIT-02`) |
 | 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |
 | 2026-05-18 | **Q079** P2-OPS-DEPLOY-BOT-SEC-01 | **Q080** P2-OPS-DEPLOY-EDGE-01 |
 | 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy |

@@ -30,3 +30,11 @@ Host bvpn-relay
     User root
     IdentityFile ~/.ssh/selectel_relay
     IdentitiesOnly yes
+
+# Relay #2 (Q120 Timeweb Cloud RU)
+Host bvpn-relay2
+    HostName 46.173.28.252
+    Port 22
+    User root
+    IdentityFile ~/.ssh/timeweb_relay
+    IdentitiesOnly yes
