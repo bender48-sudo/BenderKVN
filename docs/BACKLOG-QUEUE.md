@@ -81,11 +81,11 @@
 6. **Фаза 6** — GTM hardening (**Q086–097**, см. **`AGENT-PHASE6-BACKLOG.md`**)
 7. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** **—** (фаза 11 агент **Q167–170** ✅ **2026-06-03**). **Q032** — владелец.
+**NEXT:** **—** (Q171 ✅ **2026-06-03**). **Q167–171** ✅. **Q032** — владелец.
 
 | Кому | Документ |
 |------|----------|
-| **Агент — сейчас** | Фаза 11 закрыта; см. [`RUNBOOK-SUB-EDGE-BACKUP-NL.md`](RUNBOOK-SUB-EDGE-BACKUP-NL.md) (**n4l8q:4433**) |
+| **Агент — сейчас** | **Q171** — flow smoke fix + `vpn_verify_gate` / drift на проде |
 | Владелец (параллельно) | **`docs/MANUAL-OWNER-CHECKLIST.md`**, LTE § **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
 | Аудиты | **`POST-DEPLOY-REVIEW-2026-05.md`**, **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
 | Правило Cursor | **`sequential-backlog.mdc`** |
@@ -302,8 +302,9 @@
 | 168 | **P2-OPS-NODE-FAILOVER-AUTO-01** | **DONE** | AMS cron + `ams_node_resilience_smoke.sh` | **AMS_NODE_RESILIENCE_SMOKE_OK**, AUTO_SKIP | `ops: P2-OPS-NODE-FAILOVER-AUTO-01` |
 | 169 | **P2-RED-SUB-EDGE-JURISDICTION-01** | **DONE** | DNS **n4l8q** → NL; Caddy **:4433** + AMS firewall NL | **SUB_JURISDICTION_BACKUP_OK** **2026-06-03** | `ops: P2-RED-SUB-EDGE-JURISDICTION-01` |
 | 170 | **P1-PRO-SUB-DEAD-OUTBOUND-01** | **DONE** | AMS cron `sync_injecthosts_connected` | smoke injectHosts no change | `product: P1-PRO-SUB-DEAD-OUTBOUND-01` |
+| 171 | **P3-FLOW-PORTAL-SMOKE-01** | **DONE** | smoke: install_steps≤5, after_device≤3 отдельно | **FLOW_BACKLOG_STATIC_OK**, **VPN_VERIFY_GATE_OK** LV **2026-06-03** | `fix: P3-FLOW-PORTAL-SMOKE-01` |
 
-**NEXT:** **—** (фаза 11 закрыта **2026-06-03**). Параллельно владелец: **Q032**.
+**NEXT:** **—**. Параллельно владелец: **Q032**, VPN-AUD-210+.
 
 ---
 
@@ -465,6 +466,8 @@
 | 2026-05-25 | **Q134–141** phase8 health/ops/docs + Q132 patch | — (фаза 8 агент закрыт) |
 | 2026-05-25 | — | **Фаза 10** CodeRabbit bot раунд 2; **NEXT=Q161** (`AUDIT-2026-05-BOT-CODERABBIT-02`) |
 | 2026-06-03 | — (фаза 10 закрыта) | **Фаза 11** VPN node resilience **Q167–170**; **NEXT=Q167** (`AGENT-PHASE11-VPN-NODE-RESILIENCE-BACKLOG`) |
+| 2026-06-03 | **Q169** P2-RED-SUB-EDGE-JURISDICTION-01 | **Q171** P3-FLOW-PORTAL-SMOKE-01 |
+| 2026-06-03 | **Q171** | **NEXT=—**; gate LV OK |
 | 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |
 | 2026-05-18 | **Q079** P2-OPS-DEPLOY-BOT-SEC-01 | **Q080** P2-OPS-DEPLOY-EDGE-01 |
 | 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy |

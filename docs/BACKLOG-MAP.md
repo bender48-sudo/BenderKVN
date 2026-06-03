@@ -42,9 +42,9 @@
 | **8** | 122–141 | **Закрыта** | Bot reliability → VPN speed → observability |
 | **9** | 142–160 | **Закрыта** | CodeRabbit bot: renew idempotency, DB, cache, UX |
 | **10** | 161–166 | **Закрыта** | CodeRabbit bot раунд 2 |
-| **11** | 167–170 | **Активна** | LV→NL template failover, auto monitor, backup sub edge, dead outbound filter |
+| **11** | 167–171 | **Закрыта** | LV→NL failover, backup sub **n4l8q:4433**, flow smoke gate |
 
-**Сейчас:** **NEXT=Q167** — [`AGENT-PHASE11-VPN-NODE-RESILIENCE-BACKLOG.md`](AGENT-PHASE11-VPN-NODE-RESILIENCE-BACKLOG.md). VPN audit: [`BACKLOG-VPN-FULL-AUDIT-2026-05-28.md`](BACKLOG-VPN-FULL-AUDIT-2026-05-28.md). Владелец: **Q032**.
+**Сейчас:** **NEXT=—** (агент). VPN audit Phase 2: [`BACKLOG-VPN-FULL-AUDIT-2026-05-28.md`](BACKLOG-VPN-FULL-AUDIT-2026-05-28.md) (**VPN-AUD-210+**). Владелец: **Q032**.
 
 **Gate после каждой VPN-правки:** `python ops/vpn_verify_gate.py`
 

@@ -21,10 +21,14 @@ def main() -> int:
     if len(devices) < 4:
         print("PORTAL_DEVICE_BRANCHES_FAIL: need 4 devices", file=sys.stderr)
         return 1
+    after_n = len((ru.get("steps") or {}).get("after_device") or [])
+    if after_n > 3:
+        print(f"PORTAL_DEVICE_BRANCHES_FAIL: after_device has {after_n} steps (max 3)", file=sys.stderr)
+        return 1
     for d in devices:
-        n = len(d.get("install_steps") or []) + len((ru.get("steps") or {}).get("after_device") or [])
+        n = len(d.get("install_steps") or [])
         if n > 5:
-            print(f"PORTAL_DEVICE_BRANCHES_FAIL: {d['id']} has {n} steps", file=sys.stderr)
+            print(f"PORTAL_DEVICE_BRANCHES_FAIL: {d['id']} has {n} install_steps", file=sys.stderr)
             return 1
     if "trackFunnel" not in portal_js or "#device=" not in portal_js:
         print("PORTAL_DEVICE_BRANCHES_FAIL: portal.js routing", file=sys.stderr)
