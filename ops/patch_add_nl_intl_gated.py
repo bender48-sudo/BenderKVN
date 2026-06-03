@@ -36,10 +36,12 @@ if str(_OPS) not in sys.path:
 from balancer_selectors import (  # noqa: E402
     INTL_BALANCER_TAG,
     INTL_RELAY_NL_SELECTOR,
+    NL_DIRECT_SELECTOR,
     RELAY6_SELECTOR,
     allowed_relay_only_selectors,
     is_relay_nl_intl_profile,
     is_relay_only_profile,
+    is_stealth_split_profile,
 )
 from panel_client import PanelClient  # noqa: E402
 from subscription_config_notify import after_template_patch  # noqa: E402
@@ -49,6 +51,37 @@ SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
 NL_IP = "91.90.192.17"
 NL_PORT = 443
 INTL_TAG = INTL_BALANCER_TAG
+
+
+def _nl_already_in_inject(doc: dict, nl_uuids: list[str]) -> bool:
+    values = [
+        str(x)
+        for x in (doc.get("remnawave", {}).get("injectHosts") or [{}])[0]
+        .get("selector", {})
+        .get("values")
+        or []
+    ]
+    return bool(nl_uuids) and all(uid in values for uid in nl_uuids)
+
+
+def _intl_has_nl_selector(doc: dict) -> bool:
+    balancers = {b.get("tag"): b for b in (doc.get("routing") or {}).get("balancers") or []}
+    intl_b = balancers.get(INTL_BALANCER_TAG)
+    if not intl_b:
+        return False
+    sel = list(intl_b.get("selector") or [])
+    return all(tag in sel for tag in NL_DIRECT_SELECTOR)
+
+
+def vpn_aud_220_satisfied(doc: dict, nl_uuids: list[str]) -> bool:
+    """True when NL direct :443 is in injectHosts and Intl pool (incl. stealth split)."""
+    if not _nl_already_in_inject(doc, nl_uuids):
+        return False
+    if is_relay_nl_intl_profile(doc):
+        return True
+    if is_stealth_split_profile(doc) and _intl_has_nl_selector(doc):
+        return True
+    return False
 
 
 def _nl_host_uuids(c: PanelClient) -> list[str]:
@@ -144,10 +177,28 @@ def apply_patch(doc: dict, nl_uuids: list[str]) -> tuple[bool, list[str]]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--status", action="store_true", help="verify VPN-AUD-220 on live template (panel only)")
     ap.add_argument("--skip-probe", action="store_true", help="emergency only")
     ap.add_argument("--skip-pre-verify", action="store_true")
     ap.add_argument("--template-uuid", default=site_urls.REMNA_TEMPLATE_UUID)
     args = ap.parse_args()
+
+    c = PanelClient(timeout=120)
+    tpl = c.get_or_raise(f"/api/subscription-templates/{args.template_uuid}")["response"]
+    doc = tpl["templateJson"]
+    nl_uuids = _nl_host_uuids(c)
+
+    if args.status:
+        if not vpn_aud_220_satisfied(doc, nl_uuids):
+            print("FAIL: VPN-AUD-220 not satisfied", file=sys.stderr)
+            return 1
+        print(f"injectHosts={len(doc['remnawave']['injectHosts'][0]['selector']['values'])} NL_uuids={len(nl_uuids)}")
+        if not args.skip_probe:
+            print("=== NL reachability probe (RU) ===")
+            if not _run_nl_probe():
+                return 1
+        print("VPN_AUD_220_OK")
+        return 0
 
     print("=== pre-verify ===")
     if not args.skip_pre_verify:
@@ -155,12 +206,15 @@ def main() -> int:
             print("ABORT: pre-verify failed", file=sys.stderr)
             return 1
 
-    c = PanelClient(timeout=120)
     tpl = c.get_or_raise(f"/api/subscription-templates/{args.template_uuid}")["response"]
     doc = tpl["templateJson"]
 
     if is_relay_nl_intl_profile(doc):
         print("OK: NL already in Intl relay profile — nothing to do")
+        return 0
+    if vpn_aud_220_satisfied(doc, nl_uuids):
+        print("OK: VPN-AUD-220 satisfied (NL×4 :443 in injectHosts + Intl_Direct)")
+        print("VPN_AUD_220_OK")
         return 0
     if not is_relay_only_profile(doc):
         print("ABORT: expected relay-only gen>=47 before NL add", file=sys.stderr)
@@ -174,7 +228,6 @@ def main() -> int:
     else:
         print("WARN: --skip-probe")
 
-    nl_uuids = _nl_host_uuids(c)
     print(f"NL host UUIDs ({len(nl_uuids)}):")
     for uid in nl_uuids:
         print(f"  {uid}")

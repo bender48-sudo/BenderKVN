@@ -220,7 +220,9 @@ VPN-AUD-101 (gate script)
 | 2026-06-02 | **VPN-AUD-230** | **DONE** | split DNS DoH intl + localhost RU; gate+PROBE_DNS_LEAK_OK; live dns=yes |
 | 2026-06-02 | **deploy** | **DONE** | `deploy_lv_vpn_ops.ps1` → LV /opt/scripts; autotrim cron |
 | 2026-06-03 | **VPN-AUD-210** | **REVERTED** | `geosite:ru` → Happ crash `geosite.dat: RU`; rollback gen=51, regexp.ru restored; **`VPN_VERIFY_GATE_OK`** |
+| 2026-06-03 | **VPN-AUD-220** | **DONE** | NL :443×4 уже в prod (stealth split Intl_Direct relay+NL×10); **`VPN_AUD_220_OK`**, gate LV |
 | | VPN-AUD-210 | **NO-GO** | Happ-only: keep regexp.ru; v2rayN may differ |
+| | VPN-AUD-260+ | TODO | singbox mount, phase 3 |
 
 ---
 

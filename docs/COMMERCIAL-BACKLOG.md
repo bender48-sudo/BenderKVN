@@ -345,7 +345,7 @@
 | Дата | Что сделано |
 |------|-------------|
 | 2026-06-03 | **Q171 DONE:** `smoke_flow_backlog_static` — лимит только `install_steps` (≤5), `after_device` отдельно (≤3); LV **`VPN_VERIFY_GATE_OK`**, backup **SUB_JURISDICTION_BACKUP_OK**. |
-| 2026-06-03 | **VPN-AUD-210 REVERTED:** Happ `geosite.dat: RU` crash — rollback gen=51, regexp.ru restored; patch script `--apply` blocked. |
+| 2026-06-03 | **VPN-AUD-220 DONE (verify):** NL :443×4 в sub (proxy-7..10), stealth split Intl; **`VPN_AUD_220_OK`**, **`NL_REACHABILITY_PROBE_RU_OK`**, LV gate; RELAY-NL :9443 по-прежнему out (VPN-AUD-160). |
 | 2026-06-03 | **Q169 DONE:** DNS **n4l8q** → **91.90.192.17**; backup sub **`https://n4l8q.conntest.xyz:4433`** (не **:8443** — занят rw-core на NL); Caddy в **caddy-selfsteal**, UFW **4433**, AMS **DOCKER-USER** ACCEPT NL+LV на **3010/3011**; smoke **SUB_JURISDICTION_BACKUP_OK**. |
 | 2026-06-03 | **Q167 DONE:** `lv_node_down_nl_failover` + runbook в репо; prod `--status` → LV connected, injectHosts 10, NL 7; **без** `--apply` (нет деградации). SSH LV/AMS нестабилен — cron на AMS (**Q168**). `panel_client` retry на transient SSL. |
 | 2026-06-03 | **Фаза 11 — VPN node resilience:** очередь **Q167–170**; **NEXT=Q168** (AMS auto-failover cron). |

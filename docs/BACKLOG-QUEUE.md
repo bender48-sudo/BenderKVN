@@ -304,7 +304,7 @@
 | 170 | **P1-PRO-SUB-DEAD-OUTBOUND-01** | **DONE** | AMS cron `sync_injecthosts_connected` | smoke injectHosts no change | `product: P1-PRO-SUB-DEAD-OUTBOUND-01` |
 | 171 | **P3-FLOW-PORTAL-SMOKE-01** | **DONE** | smoke: install_steps≤5, after_device≤3 отдельно | **FLOW_BACKLOG_STATIC_OK**, **VPN_VERIFY_GATE_OK** LV **2026-06-03** | `fix: P3-FLOW-PORTAL-SMOKE-01` |
 
-**NEXT:** **—**. Параллельно владелец: **Q032**. VPN audit: **VPN-AUD-220** (NL :443).
+**NEXT:** **—**. Параллельно владелец: **Q032**. VPN audit: **VPN-AUD-260**.
 
 ### Фаза 12 — VPN audit Phase 2 (2026-06-03)
 
@@ -314,8 +314,9 @@
 | Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
 |---|-----|--------|-------------------|--------|-----------------|
 | 172 | **VPN-AUD-210** | **REVERTED** | regexp.ru → geosite:ru — Happ crash; rollback gen=51 | **VPN_VERIFY_GATE_OK** post-rollback | `fix: VPN-AUD-210 revert — Happ geosite.dat` |
+| 173 | **VPN-AUD-220** | **DONE** | NL direct :443×4 in injectHosts + Intl (stealth split); no PATCH | **VPN_AUD_220_OK**, **NL_REACHABILITY_PROBE_RU_OK**, LV gate | `docs: VPN-AUD-220 verify NL :443 live` |
 
-**NEXT:** **VPN-AUD-220** (NL relay :443 inbound). Владелец: **Q032**.
+**NEXT:** **VPN-AUD-260** (singbox.generator mount checklist). Владелец: **Q032**.
 
 ---
 
@@ -479,7 +480,7 @@
 | 2026-06-03 | — (фаза 10 закрыта) | **Фаза 11** VPN node resilience **Q167–170**; **NEXT=Q167** (`AGENT-PHASE11-VPN-NODE-RESILIENCE-BACKLOG`) |
 | 2026-06-03 | **Q169** P2-RED-SUB-EDGE-JURISDICTION-01 | **Q171** P3-FLOW-PORTAL-SMOKE-01 |
 | 2026-06-03 | **Q171** | **NEXT=—**; gate LV OK |
-| 2026-06-03 | — | **VPN-AUD-210** DONE; **NEXT=VPN-AUD-220** |
+| 2026-06-03 | — | **VPN-AUD-220** DONE verify; **NEXT=VPN-AUD-260** |
 | 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |
 | 2026-05-18 | **Q079** P2-OPS-DEPLOY-BOT-SEC-01 | **Q080** P2-OPS-DEPLOY-EDGE-01 |
 | 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy |
