@@ -1,0 +1,21 @@
+---
+description: Перед PATCH templateJson routing/dns — guardrails Happ geosite
+globs:
+  - ops/patch_routing*.py
+  - ops/patch_dns*.py
+  - ops/ru_bypass_routing.py
+  - ops/dns_split_config.py
+---
+
+# Geo / routing — Happ
+
+Перед **любым** `--apply` на шаблон подписки (routing или dns):
+
+1. Прочитать **`docs/VPN-ROUTING-GEO-GUARDRAILS.md`** (§2–§4).
+2. **`python ops/happ_geosite_guard.py`** → `HAPP_GEOSITE_GUARD_OK`.
+3. Snapshot в `.secrets/snapshots/` + план отката.
+4. **Запрещено** для Happ template: **`geosite:ru`** в routing/dns (crash `geosite.dat: RU`).
+5. **`geosite:category-ru`** в direct — только с Intl_Stealth pre-rule; риск leak TG/IG.
+6. Безопасный RU bypass: **regexp `.ru`** + **`EXTRA_DIRECT_DOMAINS`** (`ru_bypass_routing.py`).
+
+Gate: **`vpn_verify_gate.py`** включает `happ_geosite_guard`.

@@ -9,7 +9,8 @@
 | Что нужно | Документ / артефакт |
 |-----------|---------------------|
 | **Карта бэклога (начать здесь)** | **`docs/BACKLOG-MAP.md`** |
-| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **NEXT=VPN-AUD-220**; **VPN-AUD-210** ✅ **2026-06-03**; **Q032** (владелец) |
+| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **NEXT=VPN-AUD-220**; **VPN-AUD-210 REVERTED**; **Q032** (владелец) |
+| **Geo / routing Happ (не ломать)** | **`docs/VPN-ROUTING-GEO-GUARDRAILS.md`**, **`ops/happ_geosite_guard.py`** |
 | **Флоу (после Q062)** | **`docs/AGENT-FLOW-BACKLOG.md`** |
 | **ТСПУ — 12 наблюдений → бэклог** | **`docs/TSPU-OBSERVATIONS.md`** |
 | **Порт вместо 2053** | **`docs/EDGE-PORT-RECOMMENDATION.md`** |
@@ -98,6 +99,8 @@
 | IG/TG открываются, но **очень медленно** | Routing → VPN + balancer **`random`** на 14 proxy (часто RELAY) | Не откатывать routing leak; отдельный patch Direct-first / tuned leastLoad (§4 lessons) |
 | Пуши «обновите подписку» не идут | **`SUB_REFRESH_JITTER_MAX_SEC`** не определена → monitor loop падает | **`bot_src/subscription_refresh.py`**, **`deploy-bot-sub-refresh-ams.ps1`** |
 | Happ «0 servers» / UnknownContentType | Virtual Host = один JSON-профиль | Не PATCH шаблон; Append custom, обновить sub |
+| Happ **«Ошибка Geo файлов»** / `geosite.dat: RU` | **`geosite:ru`** в routing или dns template | **`docs/VPN-ROUTING-GEO-GUARDRAILS.md`**, rollback snapshot, **`happ_geosite_guard.py`** |
+| IG/TG через direct (RU bypass «слишком широкий») | **`geosite:category-ru`** в direct без pre-rule | **`patch_routing_category_ru_leak.py`**, Intl_Stealth выше direct |
 
 ---
 

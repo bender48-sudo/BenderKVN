@@ -24,6 +24,11 @@ from subscription_fetch import (
     xray_config_root,
 )
 
+_OPS = Path(__file__).resolve().parent
+if str(_OPS) not in sys.path:
+    sys.path.insert(0, str(_OPS))
+from happ_geosite_guard import scan_template_json  # noqa: E402
+
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
@@ -71,29 +76,6 @@ def print_batch_report(label: str, outbounds: list[dict]) -> dict:
     return sim
 
 
-def happ_forbidden_geosite_markers(root: dict) -> list[str]:
-    """geosite:ru breaks Happ core (no RU in bundled geosite.dat)."""
-    found: list[str] = []
-    routing = root.get("routing") or {}
-    for rule in routing.get("rules") or []:
-        for d in rule.get("domain") or []:
-            if str(d) == "geosite:ru":
-                found.append(f"routing.rules domain={d}")
-    dns = root.get("dns") or {}
-    for srv in dns.get("servers") or []:
-        if not isinstance(srv, dict):
-            continue
-        for key in ("geosite", "domains", "domain"):
-            val = srv.get(key)
-            if val == "ru" or val == ["ru"] or (isinstance(val, list) and "ru" in val):
-                found.append(f"dns.servers geosite:ru")
-            if isinstance(val, list):
-                for item in val:
-                    if str(item) == "geosite:ru":
-                        found.append(f"dns.servers {item}")
-    return found
-
-
 def main() -> int:
     p = argparse.ArgumentParser(description="Happ import compatibility diagnostic")
     p.add_argument("--short", help="subscription shortUuid (default: first active user)")
@@ -111,7 +93,7 @@ def main() -> int:
 
     sub = decode_subscription(sub_resp.body)
     root = xray_config_root(sub)
-    geo_bad = happ_forbidden_geosite_markers(root)
+    geo_bad = scan_template_json(root)
     if geo_bad:
         print("FAIL: Happ-incompatible geosite markers (core crash geosite.dat: RU):", file=sys.stderr)
         for g in geo_bad:

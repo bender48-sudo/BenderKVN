@@ -34,6 +34,7 @@ $files = @(
     "probe_ru_bypass.py",
     "verify_ru_bypass_status.py",
     "patch_routing_regexp_to_geosite_ru.py",
+    "happ_geosite_guard.py",
     "transport_mux_audit.py"
 )
 

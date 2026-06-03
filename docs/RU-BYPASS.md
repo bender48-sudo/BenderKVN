@@ -1,5 +1,7 @@
 # RU bypass (direct routing for RU apps)
 
+**Guardrails Happ (geo/routing):** **`docs/VPN-ROUTING-GEO-GUARDRAILS.md`** — прочитать **до** любого PATCH.
+
 Приложение: список доменов для **`outboundTag: direct`** в шаблоне подписки
 Remnawave (`templateJson.routing`). Каноничный код и список доменов
 живут в **`ops/ru_bypass_routing.py`** (`EXTRA_DIRECT_DOMAINS`).
@@ -8,15 +10,16 @@ Remnawave (`templateJson.routing`). Каноничный код и список 
 
 | Режим | Признак | Действие |
 |-------|---------|----------|
-| **normal** | `geoip:ru → direct` + `geosite:category-ru` + regexp `.ru` | Целевой прод |
+| **normal_regexp** | `geoip:ru` + regexp `.ru` + EXTRA FQDN; **без** geosite:ru/category-ru | **Прод Happ** (gen≥51) |
+| **geosite_ru** | `geosite:ru` в direct | **NO-GO** — crash Happ |
 | **emergency_tun_all_proxy** | `geoip:ru` direct **удалён** | `patch_routing_tun_all_proxy.py` — только инцидент |
 | **partial** | direct rules неполные | `ru_bypass_routing.py --apply` |
 
-Проверка: `python ops/verify_ru_bypass_status.py`
+Проверка: `python ops/verify_ru_bypass_status.py` + `python ops/happ_geosite_guard.py`
 
 ## Покрытые сервисы (EXTRA_DIRECT_DOMAINS)
 
-Помимо regexp `.*\.ru$` и `geosite:category-ru`:
+Помимо regexp `.*\.ru$` (Happ-safe; **не** заменять на `geosite:ru`):
 
 | Категория | Домены |
 |-----------|--------|
@@ -45,6 +48,7 @@ Split DNS: **`ops/patch_dns_split_config.py`** (VPN-AUD-230) — DoH для intl
 3. Apply: `python ops/ru_bypass_routing.py --apply`
 4. Verify:
    ```bash
+   python ops/happ_geosite_guard.py
    python ops/probe_ru_bypass.py
    python ops/probe_routing.py
    python ops/verify_ru_bypass_status.py

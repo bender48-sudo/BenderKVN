@@ -33,6 +33,7 @@ if str(_OPS) not in sys.path:
 from panel_client import PanelClient  # noqa: E402
 from ru_bypass_routing import strip_degenerate_routing_rules  # noqa: E402
 from subscription_config_notify import after_template_patch  # noqa: E402
+from happ_geosite_guard import HAPP_FORBIDDEN_DOMAIN_MATCHERS  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
@@ -41,9 +42,10 @@ DEFAULT_TEMPLATE_UUID = site_urls.REMNA_TEMPLATE_UUID
 ADD_GEOSITE = "geosite:ru"
 FORBIDDEN_GEOSITE = "geosite:category-ru"
 HAPP_GEOSITE_RU_BLOCK_REASON = (
-    "Happ bundled geosite.dat has no RU section — routing/dns geosite:ru crashes core "
-    "(infra/conf: code not found in geosite.dat: RU). Keep regexp.ru on Happ template."
+    "Happ bundled geosite.dat has no RU section — see docs/VPN-ROUTING-GEO-GUARDRAILS.md"
 )
+if ADD_GEOSITE in HAPP_FORBIDDEN_DOMAIN_MATCHERS:
+    HAPP_GEOSITE_RU_BLOCK_REASON += f" ({ADD_GEOSITE} forbidden for Happ routing/dns)"
 
 REGEXP_RU_PATTERNS = (
     "regexp:.*\\.ru$",

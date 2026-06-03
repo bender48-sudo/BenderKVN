@@ -22,6 +22,14 @@
 | E8 | Несколько PATCH подряд **без** единого dry-run + **`probe_subscription.py`** между шагами | Часы простоя, gen 13→20, путаница в снимках | Один PATCH → probe → smoke → только потом следующий |
 | E9 | Меняли **`handshake`** (4↔12) в разных патчах | Непредсказуемый connect latency | Не трогать без измерений; gen=20 оставляет **handshake=4** |
 
+### Geo / routing (Happ) — **`docs/VPN-ROUTING-GEO-GUARDRAILS.md`**
+
+| # | Что сделали | Симптом | Почему плохо |
+|---|-------------|---------|--------------|
+| G1 | **`geosite:category-ru`** в direct-rule | IG/TG флапают, часть intl → direct | category-ru шире «банков»; нужен Intl_Stealth **выше** |
+| G2 | **`geosite:ru`** в **`dns.servers`** (gen=39) | Happ: «Ошибка Geo файлов», ядро не стартует | Bundled geosite.dat **без секции RU** |
+| G3 | **`geosite:ru`** в routing direct (VPN-AUD-210, gen=50) | Тот же `geosite.dat: RU` | Gate не проверял routing geosite до G3 |
+
 ### Бот (AMS)
 
 | # | Что сделали | Симптом | Почему плохо |
@@ -46,7 +54,9 @@
 4. **Не** менять routing + injectHosts + balancer в **одном** коммите без промежуточного probe.
 5. **Не** деплоить бот-код, ссылающийся на новые константы, без `ast.parse` / `py_compile` и grep логов после restart.
 6. **Не** накатывать compose/env AMS в хотфиксе VPN — только hot-patch Python или template API.
-7. После любого template PATCH: **`python ops/probe_subscription.py`**, **`diagnose_happ_import.py`**, размер ~10.5 KB, 14 proxy, RELAY present, observatory absent.
+7. После любого template PATCH: **`python ops/happ_geosite_guard.py`**, **`probe_subscription.py`**, **`diagnose_happ_import.py`**, размер sub OK, observatory absent.
+8. **Не** использовать **`geosite:ru`** в routing/dns для Happ template — см. **`VPN-ROUTING-GEO-GUARDRAILS.md`**.
+9. **Не** возвращать **`geosite:category-ru`** в direct без Intl_Stealth pre-rule и owner smoke.
 
 ---
 
@@ -86,12 +96,15 @@
 ## 5. Команды verify (после любых правок)
 
 ```bash
+python ops/happ_geosite_guard.py
 python ops/probe_subscription.py
 python ops/diagnose_happ_import.py
 python ops/patch_restore_14_relay_no_obs.py          # dry-run: already on 14-relay profile
 python ops/smoke_ams_safe_deploy.py --skip-sub-probe
 python ops/_verify_sub_refresh_deploy.py             # бот: jitter=300, нет NameError
 ```
+
+**Geo / routing (Happ):** **`docs/VPN-ROUTING-GEO-GUARDRAILS.md`** — три инцидента geosite; **`happ_geosite_guard.py`** в gate.
 
 ---
 

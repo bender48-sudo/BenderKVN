@@ -15,8 +15,9 @@
 
 ```bash
 python ops/verify_vpn_balancer_profile.py    # VPN_BALANCER_PROFILE_OK
+python ops/happ_geosite_guard.py             # HAPP_GEOSITE_GUARD_OK
 python ops/probe_subscription.py
-python ops/diagnose_happ_import.py           # batch_risk=LOW, xhttp=0
+python ops/diagnose_happ_import.py           # batch_risk=LOW, geosite:ru forbidden
 python ops/transport_mux_audit.py
 bash ops/smoke_sub_page_ha.sh
 python ops/smoke_ams_safe_deploy.py --skip-sub-probe
