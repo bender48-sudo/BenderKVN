@@ -32,6 +32,11 @@
       "fqdn": "p4n7q.conntest.xyz",
       "role": "subscription primary",
       "must_resolve": true
+    },
+    {
+      "fqdn": "n4l8q.conntest.xyz",
+      "role": "subscription backup edge (NL jurisdiction)",
+      "must_resolve": false
     }
   ],
   "backup_apex": {

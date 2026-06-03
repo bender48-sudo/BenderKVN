@@ -244,23 +244,25 @@
   }
 
   function setEventsState(mode, ev) {
-    var pill = $("events-pill");
+    var dot = $("events-pill");
     var detail = $("events-detail");
     var steps = $("events-steps");
     var ackBtn = $("btn-events-ack");
-    if (!pill || !detail || !ev) return;
+    if (!dot || !detail || !ev) return;
 
-    pill.className = "events-pill";
+    dot.className = "status__dot";
+    dot.textContent = "";
+    dot.setAttribute("aria-label", "");
     steps.classList.add("hidden");
     ackBtn.classList.add("hidden");
 
     if (mode === "ok") {
-      pill.classList.add("events-pill--ok");
-      pill.textContent = ev.ok_pill;
+      dot.classList.add("status__dot--ok");
+      dot.setAttribute("aria-label", ev.ok_pill || "Всё в порядке");
       detail.textContent = ev.ok_detail;
     } else if (mode === "refresh") {
-      pill.classList.add("events-pill--action");
-      pill.textContent = ev.refresh_pill;
+      dot.classList.add("status__dot--action");
+      dot.setAttribute("aria-label", ev.refresh_pill || "Нужно обновить");
       detail.textContent = ev.refresh_detail;
       steps.classList.remove("hidden");
       steps.innerHTML = "";
@@ -271,8 +273,8 @@
       });
       ackBtn.classList.remove("hidden");
     } else if (mode === "incident") {
-      pill.classList.add("events-pill--incident");
-      pill.textContent = ev.incident_pill;
+      dot.classList.add("status__dot--incident");
+      dot.setAttribute("aria-label", ev.incident_pill || "Сбой");
       detail.textContent = ev.incident_detail;
     }
   }
@@ -313,34 +315,57 @@
       });
   }
 
+  function renderPhilosophy() {
+    var pos = content.positioning;
+    var body = $("fold-about-body");
+    var title = $("fold-about-title");
+    if (!pos || !body) return;
+    if (title) title.textContent = content.home.about_fold_title || "О сервисе";
+    var blocks = [
+      ["invite_title", "invite_body"],
+      ["limit_title", "limit_body"],
+      ["support_title", "support_body"],
+    ];
+    body.innerHTML = "";
+    blocks.forEach(function (pair) {
+      if (!pos[pair[0]]) return;
+      var block = document.createElement("p");
+      block.innerHTML =
+        "<strong>" +
+        pos[pair[0]] +
+        "</strong> " +
+        (pos[pair[1]] || "").replace(/\n\n/g, " ");
+      body.appendChild(block);
+    });
+  }
+
   function renderHome() {
     var home = content.home;
     var tg = getTelegramWebApp();
     $("page-title").textContent = home.title;
-    if ($("hero-badge") && home.hero_badge) {
-      $("hero-badge").textContent = tg && home.hero_badge_tg
+    var badge = $("hero-badge");
+    if (badge && home.hero_badge) {
+      var badgeText = tg && home.hero_badge_tg
         ? home.hero_badge_tg
         : home.hero_badge;
+      badge.textContent = badgeText;
+      badge.classList.remove("hidden");
+    } else if (badge) {
+      badge.classList.add("hidden");
     }
     var sub = $("page-subtitle");
     if (sub) {
       sub.textContent = tg
-        ? home.subtitle_tg || home.hero_mono || home.subtitle || ""
-        : home.hero_mono || home.subtitle || "";
+        ? home.subtitle_tg || home.hero_title || home.subtitle || ""
+        : home.hero_title || home.subtitle || "";
     }
-    var stack = $("hero-stack");
-    if (stack && home.features && home.features.length) {
-      stack.innerHTML = "";
-      home.features.forEach(function (label) {
-        var li = document.createElement("li");
-        li.textContent = label;
-        stack.appendChild(li);
-      });
+    if ($("devices-note") && home.devices_note) {
+      $("devices-note").textContent = home.devices_note;
     }
-    $("devices-note").textContent = home.devices_note;
     var cabBtn = $("btn-cabinet");
-    if (cabBtn) cabBtn.textContent = content.buttons.cabinet || "Личный кабинет";
+    if (cabBtn) cabBtn.textContent = content.buttons.cabinet || "Мой доступ";
     $("btn-connect").textContent = content.buttons.connect;
+    renderPhilosophy();
     var setupBtn = $("btn-setup");
     if (setupBtn && content.buttons.setup_browser) {
       if (tg) {
@@ -377,10 +402,23 @@
         helpList.appendChild(li);
       });
     }
-    $("tg-blocked-title").textContent = content.telegram_blocked.title;
-    $("tg-blocked-body").textContent = content.telegram_blocked.body;
-    $("happ-note").textContent = content.happ.phone_and_pc;
+    if ($("tg-blocked-title") && content.telegram_blocked) {
+      $("tg-blocked-title").textContent = content.telegram_blocked.title;
+    }
+    if ($("tg-blocked-body") && content.telegram_blocked) {
+      $("tg-blocked-body").textContent = content.telegram_blocked.body;
+    }
+    if ($("happ-note") && content.happ) {
+      $("happ-note").textContent = content.happ.phone_and_pc;
+    }
     loadEvents();
+  }
+
+  function focusAccountSheet() {
+    var sheet = $("account-sheet");
+    if (sheet) {
+      sheet.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 
   function renderDevices() {
@@ -515,8 +553,12 @@
   function renderCabinet() {
     var cab = content.cabinet || {};
     var tg = getTelegramWebApp();
-    $("cabinet-title").textContent = cab.title || "Личный кабинет";
-    $("cabinet-lead").textContent = tg ? cab.lead_tg : cab.lead_web;
+    if ($("cabinet-title")) {
+      $("cabinet-title").textContent = cab.title || "Мой VPN";
+    }
+    if ($("cabinet-lead")) {
+      $("cabinet-lead").textContent = tg ? cab.lead_tg : cab.lead_web;
+    }
     $("cabinet-balance-label").textContent = cab.balance_label || "Баланс";
     $("cabinet-balance").textContent = cab.balance_na || "—";
     $("cabinet-balance-hint").textContent = cab.balance_hint || "";
@@ -571,14 +613,11 @@
     if (lead && getTelegramWebApp()) {
       lead.textContent = msg;
     }
-    var panel = $("cabinet-balance-panel");
-    if (panel) panel.classList.add("hidden");
   }
 
   function applyCabinetData(doc) {
     var cab = content.cabinet || {};
     var balEl = $("cabinet-balance");
-    var panel = $("cabinet-balance-panel");
     var err = $("cabinet-load-error");
     if (err) err.classList.add("hidden");
     if (!doc || !doc.ok) {
@@ -604,8 +643,11 @@
       .replace("{days}", String(doc.days_left));
     if (doc.days_left <= 3) {
       balEl.classList.add("cabinet-balance--low");
+    } else {
+      balEl.classList.remove("cabinet-balance--low");
     }
-    if (panel) panel.classList.remove("hidden");
+    var login = $("cabinet-login-panel");
+    if (login && getTelegramWebApp()) login.classList.add("hidden");
     var botBtn = $("btn-cabinet-bot");
     if (botBtn && doc.bot_url) {
       botBtn.href = doc.bot_url;
@@ -635,11 +677,9 @@
   }
 
   function showCabinetLoading() {
-    var panel = $("cabinet-balance-panel");
     var balEl = $("cabinet-balance");
     var err = $("cabinet-load-error");
     if (err) err.classList.add("hidden");
-    if (panel) panel.classList.remove("hidden");
     if (balEl) balEl.textContent = "…";
   }
 
@@ -738,14 +778,16 @@
 
   function openCabinetView() {
     renderCabinet();
-    show("cabinet");
+    show("home");
     trackFunnel("portal_view_cabinet");
     loadCabinetBalance();
+    focusAccountSheet();
   }
 
   function applyRouteFromHash() {
     var raw = resolveRouteView();
     if (raw === "cabinet") {
+      show("home");
       openCabinetView();
       return;
     }
@@ -811,15 +853,15 @@
       });
     }
     var btnStuck = $("btn-stuck");
-    if (btnStuck) btnStuck.addEventListener("click", function () {
-      var helpPanel = $("help-stuck");
-      if (helpPanel) {
-        helpPanel.classList.toggle("hidden");
-        if (!helpPanel.classList.contains("hidden")) {
+    if (btnStuck) {
+      btnStuck.addEventListener("click", function () {
+        var helpPanel = $("help-stuck-panel");
+        if (helpPanel) {
+          helpPanel.open = true;
           helpPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
-      }
-    });
+      });
+    }
     bindExternalLink($("btn-support"));
     bindExternalLink($("btn-device-support"));
 
@@ -863,8 +905,16 @@
       bindActions();
       bindSetupEntryButtons();
       applyRouteFromHash();
-      if (resolveRouteView() !== "cabinet") {
+      var route = resolveRouteView();
+      if (route !== "cabinet" && route !== "devices" && !/^device=/.test(route)) {
         trackFunnel("portal_view_home");
+      }
+      if (getTelegramWebApp() || window.BVPN_FOCUS_ACCOUNT) {
+        loadCabinetBalance();
+      }
+      if (window.BVPN_FOCUS_ACCOUNT) {
+        show("home");
+        focusAccountSheet();
       }
     })
     .catch(function () {

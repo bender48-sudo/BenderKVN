@@ -53,6 +53,12 @@ _raw_alt = os.environ.get(
     "SUB_ALT_PUBLIC_ORIGINS", f"https://k9x2m1.conntest.xyz:{EDGE_PUBLIC_PORT}"
 )
 SUB_ALT_PUBLIC_ORIGINS = [o.strip().rstrip("/") for o in _raw_alt.split(",") if o.strip()]
+
+# P2-RED-SUB-EDGE-JURISDICTION-01: backup HTTPS sub edge on NL (not LV IP).
+SUB_JURISDICTION_BACKUP_ORIGIN = os.environ.get(
+    "SUB_JURISDICTION_BACKUP_ORIGIN", "https://n4l8q.conntest.xyz:4433"
+).strip().rstrip("/")
+
 REMNA_TEMPLATE_UUID = os.environ.get(
     "REMNA_TEMPLATE_UUID", "9ebbce97-ae45-4f39-a7e6-d7e675a94a73"
 )
@@ -68,7 +74,12 @@ _SUB_MONITOR_SUFFIX = os.environ.get(
 
 def sub_monitor_probe_url() -> str:
     """HTTPS URL used for subscription edge health (returns 200 when OK)."""
-    return f"{SUB_PUBLIC_ORIGIN}/{_SUB_MONITOR_SUFFIX}"
+    return sub_monitor_probe_url_for_origin(SUB_PUBLIC_ORIGIN)
+
+
+def sub_monitor_probe_url_for_origin(origin: str) -> str:
+    """Probe URL for a given subscription HTTPS origin."""
+    return f"{origin.rstrip('/')}/{_SUB_MONITOR_SUFFIX}"
 
 
 STATUS_MIRROR_PATH = os.environ.get(
@@ -183,10 +194,14 @@ def probe_short_id() -> str:
 
 
 def sub_all_probe_urls() -> list[str]:
-    """Primary + alternate subscription smoke URLs (same shortId path)."""
+    """Primary + alternate + jurisdiction backup subscription smoke URLs."""
     urls = [sub_monitor_probe_url()]
     for origin in SUB_ALT_PUBLIC_ORIGINS:
-        u = f"{origin}/{_SUB_MONITOR_SUFFIX}"
+        u = sub_monitor_probe_url_for_origin(origin)
+        if u not in urls:
+            urls.append(u)
+    if SUB_JURISDICTION_BACKUP_ORIGIN:
+        u = sub_monitor_probe_url_for_origin(SUB_JURISDICTION_BACKUP_ORIGIN)
         if u not in urls:
             urls.append(u)
     return urls

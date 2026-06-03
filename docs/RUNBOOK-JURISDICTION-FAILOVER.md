@@ -54,7 +54,7 @@ ssh -o IdentitiesOnly=yes -i $env:USERPROFILE\.ssh\bvpn_ams_ed25519 -p 3344 root
 | **T+1 ч** | Заказать **новый VPS** в **другой** стране/ASN (не тот же дата-центр, что старый LV). Минимум: Ubuntu, 2 vCPU, Caddy, открыты **2053/tcp**. |
 | **T+2–4 ч** | Восстановить Caddy из **`Caddyfile-latvia-full.txt`** / последний бэкап с LV (если доступен snapshot). Секреты TLS — из Bitwarden, не из git. |
 | **T+4–6 ч** | **DNS:** в Dynadot обновить A **`k9x2m1`** и **`p4n7q`** → новый IP (TTL учесть до 1 ч). Альтернатива: переключение на **backup apex** — **`RUNBOOK-DNS-RED-TEAM` §3**, **`dns_critical_inventory.json`**. |
-| **T+6–12 ч** | Smoke: **`subscription_origin_drift_probe`**, **`monitor.sh`** на новом хосте, **`p0-audit.sh`**. Alternate origin — **`RUNBOOK-P6-SUBSCRIPTION-MULTI-ORIGIN`**. Пользователям — «обновите подписку» (**`FAQ.md`**). |
+| **T+6–12 ч** | Smoke: **`subscription_origin_drift_probe`**, **`monitor.sh`** на новом хосте, **`p0-audit.sh`**. Alternate origin — **`RUNBOOK-P6-SUBSCRIPTION-MULTI-ORIGIN`**. **Быстрый backup edge на NL:** **`RUNBOOK-SUB-EDGE-BACKUP-NL.md`** (n4l8q). Пользователям — «обновите подписку» (**`FAQ.md`**). |
 | **T+24 ч** | Постмортем: нужен ли постоянный второй edge (active/passive). |
 
 **AMS жив, LV мёртв:** пользователи с **уже выданным** конфигом на NL могут работать; **новые** подписки и панель — нет, пока не восстановлен edge.

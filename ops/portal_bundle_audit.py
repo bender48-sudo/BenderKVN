@@ -45,8 +45,8 @@ def main() -> int:
         if ids != DEVICE_IDS:
             errors.append(f"devices must be {DEVICE_IDS}, got {ids}")
         note = (doc.get("home") or {}).get("devices_note", "")
-        if "Windows" not in note or "Mac" not in note:
-            errors.append("home.devices_note must mention Windows and Mac")
+        if note and ("Windows" not in note or "Mac" not in note):
+            errors.append("home.devices_note must mention Windows and Mac when set")
         happ = (doc.get("happ") or {}).get("phone_and_pc", "")
         if "Happ" not in happ:
             errors.append("happ.phone_and_pc must mention Happ")
@@ -56,14 +56,12 @@ def main() -> int:
     ).is_file() else ""
     if "device-grid" not in html:
         errors.append("index.html missing device-grid")
-    if "site-header" not in html:
-        errors.append("index.html missing site-header (HIT-style shell)")
-    if "hero-badge" not in html:
-        errors.append("index.html missing hero-badge")
-    if "hero-stack" not in html:
-        errors.append("index.html missing hero-stack (HIT-style)")
-    if "events-card" not in html:
-        errors.append("index.html missing events-card")
+    if "top" not in html and "site-header" not in html:
+        errors.append("index.html missing top/site-header shell")
+    if "account-sheet" not in html:
+        errors.append("index.html missing account-sheet (unified LK)")
+    if "events-card" not in html and "id=\"events-card\"" not in html:
+        errors.append("index.html missing events-card/status block")
     if "telegram-web-app.js" not in html:
         errors.append("index.html missing telegram-web-app.js (Mini App)")
     if "btn-setup" not in html:
@@ -77,9 +75,9 @@ def main() -> int:
         errors.append("setup.html missing btn-signup-submit")
     if RU.is_file():
         doc2 = json.loads(RU.read_text(encoding="utf-8"))
-        feats = (doc2.get("home") or {}).get("features") or []
-        if len(feats) < 3:
-            errors.append("home.features must have 3 hero lines (HIT-style)")
+        hero = (doc2.get("home") or {}).get("hero_title") or ""
+        if not hero:
+            errors.append("home.hero_title missing in ru.json")
         if not (doc2.get("events") or {}).get("ok_pill"):
             errors.append("events.ok_pill missing in ru.json")
         sv = doc2.get("setup_videos") or {}

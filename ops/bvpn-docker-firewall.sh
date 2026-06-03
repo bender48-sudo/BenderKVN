@@ -13,6 +13,9 @@ set -euo pipefail
 
 WAN_IF="${WAN_IF:-eth0}"
 LV_IP="${LV_IP:-176.126.162.158}"
+NL_IP="${NL_IP:-91.90.192.17}"
+# Space-separated source IPs allowed to reach subscription-page (LV edge + NL backup).
+SUB_ALLOW_IPS="${SUB_ALLOW_IPS:-$LV_IP $NL_IP}"
 # Space-separated list (P6-RED-SUBHA-01: 3010 primary + 3011 alt split-host).
 SUB_PORTS="${SUB_PORTS:-${SUB_PORT:-3010}}"
 
@@ -20,12 +23,16 @@ SUB_PORTS="${SUB_PORTS:-${SUB_PORT:-3010}}"
 iptables -L DOCKER-USER -n >/dev/null 2>&1 || iptables -N DOCKER-USER
 
 apply_port() {
-  local port="$1"
-  while iptables -D DOCKER-USER -i "$WAN_IF" -p tcp --dport "$port" -s "$LV_IP" -j ACCEPT 2>/dev/null; do :; done
-  while iptables -D DOCKER-USER -i "$WAN_IF" -p tcp --dport "$port" -j DROP   2>/dev/null; do :; done
+  local port="$1" ip
+  for ip in $SUB_ALLOW_IPS; do
+    while iptables -D DOCKER-USER -i "$WAN_IF" -p tcp --dport "$port" -s "$ip" -j ACCEPT 2>/dev/null; do :; done
+  done
+  while iptables -D DOCKER-USER -i "$WAN_IF" -p tcp --dport "$port" -j DROP 2>/dev/null; do :; done
   iptables -I DOCKER-USER 1 -i "$WAN_IF" -p tcp --dport "$port" -j DROP
-  iptables -I DOCKER-USER 1 -i "$WAN_IF" -p tcp --dport "$port" -s "$LV_IP" -j ACCEPT
-  echo "  port $port: ACCEPT from $LV_IP, DROP others"
+  for ip in $SUB_ALLOW_IPS; do
+    iptables -I DOCKER-USER 1 -i "$WAN_IF" -p tcp --dport "$port" -s "$ip" -j ACCEPT
+  done
+  echo "  port $port: ACCEPT from [$SUB_ALLOW_IPS], DROP others"
 }
 
 echo "Applying DOCKER-USER rules for SUB_PORTS: $SUB_PORTS"

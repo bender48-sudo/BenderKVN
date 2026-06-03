@@ -70,7 +70,16 @@ def normalize_subscription_url(url: str | None) -> str:
     u = (url or "").strip()
     if not u:
         return u
-    for host in ("p4n7q.conntest.xyz", "k9x2m1.conntest.xyz"):
+    for host in (
+        "p4n7q.conntest.xyz",
+        "k9x2m1.conntest.xyz",
+        "n4l8q.conntest.xyz",
+    ):
         u = u.replace(f"://{host}:2053/", f"://{host}:8443/")
         u = u.replace(f"://{host}:2053", f"://{host}:8443")
     return u
+
+
+def subscription_backup_origin() -> str:
+    """NL jurisdiction backup sub HTTPS origin (empty if unset)."""
+    return os.getenv("SUB_JURISDICTION_BACKUP_ORIGIN", "").strip().rstrip("/")

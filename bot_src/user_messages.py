@@ -208,6 +208,18 @@ def msg_autopay_failed() -> str:
     )
 
 
+def msg_referral_invite(ref_count: int, ref_url: str) -> str:
+    """Экран «Пригласи друга» — ссылка в тексте и кнопки ниже."""
+    return (
+        "<b>Пригласи друга</b>\n\n"
+        "Перешли ссылку в Telegram. Друг откроет бота и получит "
+        "<b>90 дней бесплатно</b>.\n\n"
+        f"Уже приглашено: <b>{ref_count}</b>\n\n"
+        "Твоя ссылка (удержи и скопируй):\n"
+        f"<code>{ref_url}</code>"
+    )
+
+
 def msg_auto_renew_multi_success(lines: list[str], total_cost: float, *, early: bool) -> str:
     prefix = (
         "🔁 <b>Автопродление сработало заранее</b> для нескольких ключей:\n\n"

@@ -25,6 +25,7 @@
 |------|------|----------------|
 | **k9x2m1.conntest.xyz** | Панель, alternate sub, status JSON | AMS panel / LV Caddy → **176.126.162.158** |
 | **p4n7q.conntest.xyz** | Primary subscription | LV Caddy → AMS sub **:3010** |
+| **n4l8q.conntest.xyz** | Backup subscription (jurisdiction) | NL Caddy **:4433** → AMS **:3010** — **`RUNBOOK-SUB-EDGE-BACKUP-NL.md`** |
 
 Источник URL: **`ops/site_urls.py`**, **`ops/site.env.example`**.
 

@@ -56,6 +56,11 @@
 - **0%** сессий/трафика NL при обеих нодах в шаблоне и **connected** → проверить squads, Happ profile, **`leastLoad`**, порядок outbounds.
 - См. **`docs/TRANSPORT-MUX-MATRIX.md`**.
 
+## LV недоступен (billing / VPS)
+
+Авто NL-only в шаблоне подписки (gate до/после): **`docs/RUNBOOK-LV-DOWN-NL-FAILOVER.md`**,  
+`python ops/lv_node_down_nl_failover.py --auto --gate --apply`.
+
 ## Связанные файлы
 
 - **`balancer.sh`** — алерты 80/95/100% capacity

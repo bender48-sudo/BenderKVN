@@ -81,11 +81,11 @@
 6. **Фаза 6** — GTM hardening (**Q086–097**, см. **`AGENT-PHASE6-BACKLOG.md`**)
 7. **Q032** — возвраты в оферте (**только владелец**, параллельно)
 
-**NEXT:** — (фаза 10 Q161–166 закрыта). **Q120** ✅ **2026-05-29**. **Q032** — владелец.
+**NEXT:** **—** (фаза 11 агент **Q167–170** ✅ **2026-06-03**). **Q032** — владелец.
 
 | Кому | Документ |
 |------|----------|
-| **Агент — сейчас** | — (фаза 10 закрыта). **Q032** — владелец |
+| **Агент — сейчас** | Фаза 11 закрыта; см. [`RUNBOOK-SUB-EDGE-BACKUP-NL.md`](RUNBOOK-SUB-EDGE-BACKUP-NL.md) (**n4l8q:4433**) |
 | Владелец (параллельно) | **`docs/MANUAL-OWNER-CHECKLIST.md`**, LTE § **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
 | Аудиты | **`POST-DEPLOY-REVIEW-2026-05.md`**, **`AUDIT-2026-05-TSPU-REDTEAM.md`** |
 | Правило Cursor | **`sequential-backlog.mdc`** |
@@ -275,7 +275,7 @@
 | 159 | **P3-RED-SUPPORT-RATELIMIT-PERSIST-01** | **DONE** | DB-backed support rate limit | `py_compile` | `security: P3-RED-SUPPORT-RATELIMIT-PERSIST-01` |
 | 160 | **P3-RED-SUPPORT-SILENT-01** | **DONE** | support unavailable user msg | `py_compile` | `ops: P3-RED-SUPPORT-SILENT-01` |
 
-**NEXT:** — (фаза 10 закрыта). | **Параллельно (владелец):** **Q032** (оферта). **Q120** ✅ **2026-05-29**.
+**NEXT:** **Q168** (фаза 11). **Q167** ✅ **2026-06-03**. | **Параллельно (владелец):** **Q032**, DNS **n4l8q**.
 
 ### Фаза 10 — Bot CodeRabbit раунд 2 (2026-05-25)
 
@@ -290,6 +290,20 @@
 | 164 | **P2-RED-BOT-SEC-02** | **DONE** | no sub_url JSON; header webhook secret; bind TTL 24h | `py_compile` + grep | `security: P2-RED-BOT-SEC-02` |
 | 165 | **P2-OPS-SCHEMA-02** | **DONE** | schema_version PK; migration tx; v2 guard | fresh DB migrate | `chore: P2-OPS-SCHEMA-02` |
 | 166 | **P3-UX-BOT-POLISH-02** | **DONE** | user_messages; config constants; autorenew UI; prune flags | menu smoke | `product: P3-UX-BOT-POLISH-02` |
+
+### Фаза 11 — VPN node & edge resilience (2026-06-03)
+
+**Контекст:** [`docs/AGENT-PHASE11-VPN-NODE-RESILIENCE-BACKLOG.md`](AGENT-PHASE11-VPN-NODE-RESILIENCE-BACKLOG.md), [`docs/RUNBOOK-LV-DOWN-NL-FAILOVER.md`](RUNBOOK-LV-DOWN-NL-FAILOVER.md), инцидент LV unpaid → sub edge SPOF + multipath без NL.  
+**Правило:** один Q → gate phase11 doc → коммит → стоп. **Не** `--apply` NL failover на живом LV без runbook drill.
+
+| Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
+|---|-----|--------|-------------------|--------|-----------------|
+| 167 | **P2-OPS-LV-NL-FAILOVER-REPO-01** | **DONE** | NL failover scripts + runbook; `py_compile`; `--status` LV connected | prod: **не** `--apply` на живом LV; gate с LV/AMS SSH | `ops: P2-OPS-LV-NL-FAILOVER-REPO-01` |
+| 168 | **P2-OPS-NODE-FAILOVER-AUTO-01** | **DONE** | AMS cron + `ams_node_resilience_smoke.sh` | **AMS_NODE_RESILIENCE_SMOKE_OK**, AUTO_SKIP | `ops: P2-OPS-NODE-FAILOVER-AUTO-01` |
+| 169 | **P2-RED-SUB-EDGE-JURISDICTION-01** | **DONE** | DNS **n4l8q** → NL; Caddy **:4433** + AMS firewall NL | **SUB_JURISDICTION_BACKUP_OK** **2026-06-03** | `ops: P2-RED-SUB-EDGE-JURISDICTION-01` |
+| 170 | **P1-PRO-SUB-DEAD-OUTBOUND-01** | **DONE** | AMS cron `sync_injecthosts_connected` | smoke injectHosts no change | `product: P1-PRO-SUB-DEAD-OUTBOUND-01` |
+
+**NEXT:** **—** (фаза 11 закрыта **2026-06-03**). Параллельно владелец: **Q032**.
 
 ---
 
@@ -450,6 +464,7 @@
 | 2026-05-25 | **Q123–129, Q133** phase8 bot reliability | **Q134** P2-OPS-BOT-HEALTH-01 |
 | 2026-05-25 | **Q134–141** phase8 health/ops/docs + Q132 patch | — (фаза 8 агент закрыт) |
 | 2026-05-25 | — | **Фаза 10** CodeRabbit bot раунд 2; **NEXT=Q161** (`AUDIT-2026-05-BOT-CODERABBIT-02`) |
+| 2026-06-03 | — (фаза 10 закрыта) | **Фаза 11** VPN node resilience **Q167–170**; **NEXT=Q167** (`AGENT-PHASE11-VPN-NODE-RESILIENCE-BACKLOG`) |
 | 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |
 | 2026-05-18 | **Q079** P2-OPS-DEPLOY-BOT-SEC-01 | **Q080** P2-OPS-DEPLOY-EDGE-01 |
 | 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy |

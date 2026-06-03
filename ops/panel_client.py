@@ -26,6 +26,7 @@ from __future__ import annotations
 import json
 import os
 import ssl
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -105,22 +106,35 @@ class PanelClient:
         for k, v in (extra_headers or {}).items():
             req.add_header(k, v)
 
-        try:
-            with urllib.request.urlopen(req, context=self._ctx, timeout=self.timeout) as resp:
-                raw = resp.read()
-                if not raw:
-                    return resp.status, None
-                try:
-                    return resp.status, json.loads(raw.decode("utf-8"))
-                except (json.JSONDecodeError, UnicodeDecodeError):
-                    return resp.status, {"raw": raw.decode("utf-8", errors="replace")}
-        except urllib.error.HTTPError as e:
+        last_err: Exception | None = None
+        for attempt in range(5):
+            try:
+                with urllib.request.urlopen(req, context=self._ctx, timeout=self.timeout) as resp:
+                    raw = resp.read()
+                    if not raw:
+                        return resp.status, None
+                    try:
+                        return resp.status, json.loads(raw.decode("utf-8"))
+                    except (json.JSONDecodeError, UnicodeDecodeError):
+                        return resp.status, {"raw": raw.decode("utf-8", errors="replace")}
+            except urllib.error.HTTPError as e:
+                last_err = e
+                break
+            except (urllib.error.URLError, TimeoutError, OSError) as e:
+                last_err = e
+                if attempt < 4:
+                    time.sleep(2.0 * (attempt + 1))
+                    continue
+                raise
+        if isinstance(last_err, urllib.error.HTTPError):
+            e = last_err
             raw = e.read()
             try:
                 payload = json.loads(raw.decode("utf-8") or "{}")
             except (json.JSONDecodeError, UnicodeDecodeError):
                 payload = {"raw": raw.decode("utf-8", errors="replace")}
             return e.code, payload
+        raise last_err  # type: ignore[misc]
 
     # --- thin verbs ---
     def get(self, path: str, **kw: Any) -> tuple[int, Any]:

@@ -42,6 +42,7 @@ async def safe_edit_message(message: types.Message, text: str, reply_markup=None
         # Для любых других ошибок отправляем новое сообщение
         await message.answer(text, reply_markup=reply_markup)
 
+
 from shop_bot.bot import keyboards, user_messages
 from shop_bot.modules import remnawave_api
 from shop_bot.data_manager.database import (
@@ -77,6 +78,33 @@ logger = logging.getLogger(__name__)
 
 # Импорт красивого логгера
 from shop_bot.utils.logger import bot_logger
+
+
+async def referral_invite_payload(bot: Bot, user_id: int) -> tuple[str, str]:
+    ref_code = ensure_user_ref_code(user_id)
+    ref_count = count_referrals(ref_code)
+    bot_info = await bot.get_me()
+    ref_url = f"https://t.me/{bot_info.username}?start=ref_{ref_code}"
+    text = user_messages.msg_referral_invite(ref_count, ref_url)
+    return text, ref_url
+
+
+async def present_referral_invite(
+    message: types.Message,
+    bot: Bot,
+    user_id: int,
+    *,
+    edit: bool = True,
+) -> None:
+    text, ref_url = await referral_invite_payload(bot, user_id)
+    markup = keyboards.create_referral_keyboard(ref_url)
+    if edit:
+        try:
+            await message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+        except TelegramBadRequest:
+            await message.answer(text, parse_mode="HTML", reply_markup=markup)
+    else:
+        await message.answer(text, parse_mode="HTML", reply_markup=markup)
 
 
 async def process_topup_payment(
@@ -256,12 +284,16 @@ async def show_main_menu(message: types.Message, edit_message: bool = False):
     is_admin = is_admin_telegram(user_id)
 
     if has_active_sub:
-        text = "Всё работает. Выбери, что нужно:"
+        text = (
+            "Всё работает. Выбери, что нужно:\n\n"
+            "Другу — 90 дней бесплатно: кнопка «Пригласить друга»."
+        )
     else:
         text = (
             "Привет.\n\n"
             "Начни бесплатный период — 90 дней без ограничений.\n"
-            "Уже есть доступ? Кнопка «Мой VPN» ниже."
+            "Уже есть доступ? Кнопка «Мой VPN» ниже.\n\n"
+            "Есть друзья — «Пригласить друга»: отправь им ссылку."
         )
     auto_renew = get_auto_renew(user_id) if user_db_data else False
     keyboard = keyboards.create_main_menu_keyboard(
@@ -619,20 +651,23 @@ async def profile_handler_callback(callback: types.CallbackQuery):
     else: vpn_status_text = VPN_NO_DATA_TEXT
     ref_code = ensure_user_ref_code(user_id)
     ref_count = count_referrals(ref_code)
-    final_text = get_profile_text(username, total_spent, total_months, vpn_status_text) + f"\n\n👥 Ваш реф-код: <code>{ref_code}</code>\nПриглашено: {ref_count}"
-    await callback.message.edit_text(final_text, reply_markup=keyboards.create_back_to_menu_keyboard())
+    final_text = (
+        get_profile_text(username, total_spent, total_months, vpn_status_text)
+        + f"\n\n👥 Приглашено друзей: <b>{ref_count}</b>\n"
+        "Ссылку для друга — кнопка «Пригласить друга» ниже."
+    )
+    await callback.message.edit_text(
+        final_text,
+        parse_mode="HTML",
+        reply_markup=keyboards.create_profile_keyboard(),
+    )
 
 @user_router.callback_query(F.data == "show_referrals")
 async def referrals_handler(callback: types.CallbackQuery):
     await callback.answer()
-    user_id = callback.from_user.id
-    
-    ref_code = ensure_user_ref_code(user_id)
-    ref_count = count_referrals(ref_code)
-    
-    text = f"👥 <b>Пригласите друга</b>\n\nКогда друг активирует подписку —\nвы оба получите +3 дня 🎁\n\n👥 Приглашено: {ref_count}"
-    
-    await callback.message.edit_text(text, reply_markup=keyboards.create_back_to_menu_keyboard())
+    await present_referral_invite(
+        callback.message, callback.bot, callback.from_user.id, edit=True
+    )
 
 @user_router.callback_query(F.data == "show_about")
 async def about_handler(callback: types.CallbackQuery):
@@ -1018,25 +1053,26 @@ async def contact_support_handler(callback: types.CallbackQuery):
 @user_router.callback_query(F.data == "invite_friend")
 async def invite_friend_handler(callback: types.CallbackQuery):
     await callback.answer()
-    user_id = callback.from_user.id
-    ref_code = ensure_user_ref_code(user_id)
-    ref_count = count_referrals(ref_code)
-    bot_info = await callback.bot.get_me()
-    text = f"👥 <b>Пригласите друга</b>\n\nКогда друг активирует подписку —\nвы оба получите +3 дня 🎁\n\n👥 Приглашено: {ref_count}"
-    ref_url = f"https://t.me/{bot_info.username}?start=ref_{ref_code}"
-    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboards.create_invite_keyboard(ref_url))
+    await present_referral_invite(
+        callback.message, callback.bot, callback.from_user.id, edit=True
+    )
+
+
+@user_router.message(Command("invite"))
+async def invite_command_handler(message: types.Message):
+    await present_referral_invite(
+        message, message.bot, message.chat.id, edit=False
+    )
+
 
 @user_router.callback_query(F.data == "copy_ref_url")
 async def copy_ref_url_handler(callback: types.CallbackQuery):
-    await callback.answer()
-    user_id = callback.from_user.id
-    ref_code = ensure_user_ref_code(user_id)
-    bot_info = await callback.bot.get_me()
-    ref_url = f"https://t.me/{bot_info.username}?start=ref_{ref_code}"
+    await callback.answer("Ссылка в следующем сообщении")
+    text, ref_url = await referral_invite_payload(callback.bot, callback.from_user.id)
     await callback.message.answer(
-        f"\U0001f465 Твоя реферальная ссылка \u2014 нажми чтобы скопировать:\n\n"
-        f"`{ref_url}`",
-        parse_mode="Markdown"
+        text,
+        parse_mode="HTML",
+        reply_markup=keyboards.create_referral_keyboard(ref_url),
     )
 
 

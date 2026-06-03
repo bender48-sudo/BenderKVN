@@ -9,7 +9,7 @@
 | Что нужно | Документ / артефакт |
 |-----------|---------------------|
 | **Карта бэклога (начать здесь)** | **`docs/BACKLOG-MAP.md`** |
-| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — фаза 4 **DONE**; владелец: **`MANUAL-OWNER-CHECKLIST.md`** (BotFather **:8443**, Q032) |
+| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — фаза 11 ✅ (**Q167–170**); агент **NEXT=—**; владелец: **Q032** |
 | **Флоу (после Q062)** | **`docs/AGENT-FLOW-BACKLOG.md`** |
 | **ТСПУ — 12 наблюдений → бэклог** | **`docs/TSPU-OBSERVATIONS.md`** |
 | **Порт вместо 2053** | **`docs/EDGE-PORT-RECOMMENDATION.md`** |

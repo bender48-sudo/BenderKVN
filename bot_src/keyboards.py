@@ -102,6 +102,10 @@ def create_main_menu_keyboard(
                 text="\ud83d\udcb0 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c",
                 callback_data="show_topup",
             )
+    builder.button(
+        text="\ud83d\udc65 \u041f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u0442\u044c \u0434\u0440\u0443\u0433\u0430",
+        callback_data="invite_friend",
+    )
     builder.button(text="\u2753 \u041f\u043e\u043c\u043e\u0449\u044c", callback_data="menu_help")
     builder.button(text="\ud83d\udcac \u041d\u0430\u043f\u0438\u0441\u0430\u0442\u044c \u043d\u0430\u043c", callback_data="contact_support")
     if is_admin:
@@ -119,6 +123,7 @@ def create_trial_success_keyboard(sub_url, telegram_id: int | None = None):
     if sub_url:
         builder.button(text="📷 Показать QR-код", callback_data="show_sub_qr")
     builder.button(text="📋 Скопировать ссылку", callback_data="copy_sub_url")
+    builder.button(text="👥 Пригласить друга", callback_data="invite_friend")
     builder.button(text="❓ Не получается", callback_data="menu_help")
     builder.button(text="🏠 Главное меню", callback_data="back_to_main_menu")
     builder.adjust(1)
@@ -134,6 +139,10 @@ def create_account_keyboard(sub_url=None, telegram_id: int | None = None):
             callback_data="copy_sub_url",
         )
     builder.button(text="\U0001f4b0 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u0431\u0430\u043b\u0430\u043d\u0441", callback_data="show_topup")
+    builder.button(
+        text="\ud83d\udc65 \u041f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u0442\u044c \u0434\u0440\u0443\u0433\u0430",
+        callback_data="invite_friend",
+    )
     builder.button(text="\U0001f519 \u041d\u0430\u0437\u0430\u0434", callback_data="back_to_main_menu")
     builder.adjust(1)
     return builder.as_markup()
@@ -173,10 +182,33 @@ def create_topup_payment_keyboard(topup_id: str, payment_methods: dict | None = 
     return builder.as_markup()
 
 
-def create_invite_keyboard(ref_url):
+def create_referral_keyboard(ref_url: str, *, back_callback: str = "back_to_main_menu"):
     builder = InlineKeyboardBuilder()
-    builder.button(text="\U0001f4cb \u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0440\u0435\u0444\u0435\u0440\u0430\u043b\u044c\u043d\u0443\u044e \u0441\u0441\u044b\u043b\u043a\u0443", callback_data="copy_ref_url")
-    builder.button(text="\U0001f519 \u041d\u0430\u0437\u0430\u0434", callback_data="my_account")
+    builder.button(
+        text="\ud83d\udce4 \u041f\u0435\u0440\u0435\u0441\u043b\u0430\u0442\u044c \u0434\u0440\u0443\u0433\u0443",
+        url=ref_url,
+    )
+    builder.button(
+        text="\U0001f4cb \u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0443",
+        callback_data="copy_ref_url",
+    )
+    builder.button(text="\U0001f519 \u0413\u043b\u0430\u0432\u043d\u043e\u0435 \u043c\u0435\u043d\u044e", callback_data=back_callback)
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def create_invite_keyboard(ref_url):
+    """Совместимость: тот же экран, что create_referral_keyboard."""
+    return create_referral_keyboard(ref_url)
+
+
+def create_profile_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text="\ud83d\udc65 \u041f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u0442\u044c \u0434\u0440\u0443\u0433\u0430",
+        callback_data="invite_friend",
+    )
+    builder.button(text="\U0001f519 \u0413\u043b\u0430\u0432\u043d\u043e\u0435 \u043c\u0435\u043d\u044e", callback_data="back_to_main_menu")
     builder.adjust(1)
     return builder.as_markup()
 

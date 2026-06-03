@@ -37,10 +37,6 @@ def charge_daily_balance_if_due(user_id: int) -> str:
     """Idempotent daily tariff. Returns charged | already | insufficient | skipped."""
     if not BOT_PAYMENTS_LIVE:
         return "skipped"
-    from shop_bot.data_manager.database import get_yookassa_autopay_enabled
-
-    if get_yookassa_autopay_enabled(user_id):
-        return "skipped"
     action = _daily_charge_action()
     if has_action(user_id, action):
         return "already"
@@ -95,7 +91,7 @@ async def process_daily_balance_user(
     if kind != "wallet":
         return
     status = charge_daily_balance_if_due(user_id)
-    if status in ("charged", "already", "insufficient"):
+    if status in ("charged", "already", "insufficient", "skipped"):
         await sync_panel_from_balance(user_id)
     if status == "insufficient":
         logger.info("daily balance insufficient user=%s", user_id)

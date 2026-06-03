@@ -344,6 +344,9 @@
 
 | Дата | Что сделано |
 |------|-------------|
+| 2026-06-03 | **Q169 DONE:** DNS **n4l8q** → **91.90.192.17**; backup sub **`https://n4l8q.conntest.xyz:4433`** (не **:8443** — занят rw-core на NL); Caddy в **caddy-selfsteal**, UFW **4433**, AMS **DOCKER-USER** ACCEPT NL+LV на **3010/3011**; smoke **SUB_JURISDICTION_BACKUP_OK**. |
+| 2026-06-03 | **Q167 DONE:** `lv_node_down_nl_failover` + runbook в репо; prod `--status` → LV connected, injectHosts 10, NL 7; **без** `--apply` (нет деградации). SSH LV/AMS нестабилен — cron на AMS (**Q168**). `panel_client` retry на transient SSL. |
+| 2026-06-03 | **Фаза 11 — VPN node resilience:** очередь **Q167–170**; **NEXT=Q168** (AMS auto-failover cron). |
 | 2026-05-29 | **VPN-AUD-201 DONE:** relay#2 hysteria + 3 panel hosts + injectHosts proxy-12..14; Super/Intl **10-path** (2 relay IP); gen=44; **`VPN_BALANCER_PROFILE_OK`**. | renew idempotency, multi-key auto-renew, Remna backoff, webhook async, DB migrations/indexes, sub cache, UX/support; deploy AMS; smokes **`AUTO_RENEW_BILLING_OK`**, **`VPN_SETUP_WIZARD_OK`**, `/health` ok. **NEXT:** нет. |
 | 2026-05-25 | **CodeRabbit bot audit → фаза 9:** [`AUDIT-2026-05-BOT-CODERABBIT.md`](AUDIT-2026-05-BOT-CODERABBIT.md); очередь **Q142–160** (19 задач). |
 | 2026-05-25 | **CodeRabbit bot audit раунд 2 → фаза 10:** [`AUDIT-2026-05-BOT-CODERABBIT-02.md`](AUDIT-2026-05-BOT-CODERABBIT-02.md); очередь **Q161–166** (6 фаз CR); **NEXT=Q161**. Сверка с Q142–160 в AUDIT-02. |
