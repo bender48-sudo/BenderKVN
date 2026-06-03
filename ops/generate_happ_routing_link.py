@@ -24,6 +24,7 @@ if str(_OPS) not in sys.path:
     sys.path.insert(0, str(_OPS))
 
 from patch_routing_category_ru_leak import PROXY_EXTRA_DOMAINS, PROXY_GEOSITES  # noqa: E402
+from routing_geo_common import PRIVATE_IP_CIDRS  # noqa: E402
 from ru_bypass_routing import EXTRA_DIRECT_DOMAINS  # noqa: E402
 
 PROFILE_PATH = _OPS / "happ_routing_profile_ru.json"
@@ -41,16 +42,6 @@ RU_REGEXP_DIRECT = [
     "regexp:.*\\.xn--p1ag$",
 ]
 
-PRIVATE_IP_DIRECT = [
-    "10.0.0.0/8",
-    "172.16.0.0/12",
-    "192.168.0.0/16",
-    "169.254.0.0/16",
-    "224.0.0.0/4",
-    "255.255.255.255",
-]
-
-
 def _domain_entries(fqdns: list[str]) -> list[str]:
     out: list[str] = []
     for d in fqdns:
@@ -64,7 +55,7 @@ def _domain_entries(fqdns: list[str]) -> list[str]:
 def build_profile(*, use_bundled_geofiles: bool = True) -> dict:
     direct_sites = list(RU_REGEXP_DIRECT) + _domain_entries(list(EXTRA_DIRECT_DOMAINS))
     proxy_sites = list(PROXY_GEOSITES) + _domain_entries(list(PROXY_EXTRA_DOMAINS))
-    direct_ip = ["geoip:ru", *PRIVATE_IP_DIRECT]
+    direct_ip = ["geoip:ru", *PRIVATE_IP_CIDRS]
 
     base = json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
     base["DirectSites"] = direct_sites

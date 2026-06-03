@@ -98,16 +98,26 @@ def main() -> None:
         print(f"\n=== user: {username} ===")
         cfg = None
         used_ua = None
-        for ua, _label in UAS:
+        for ua, label in UAS:
             raw = fetch(f"{SUB}/api/sub/{short}", {"User-Agent": ua})
             text = raw.decode("utf-8", errors="replace")
             try:
                 parsed = json.loads(text)
                 cfg = parsed
                 used_ua = ua
-                print(f"  parsed as JSON via UA={ua}")
+                print(f"  parsed as JSON via UA={ua} ({len(raw)} bytes)")
+                if label in ("streisand", "hiddify") and len(raw) < 2000:
+                    print(
+                        f"  *** WARN: {label} got small JSON — run "
+                        "ops/patch_routing_client_refresh.py --apply"
+                    )
                 break
             except json.JSONDecodeError:
+                if label in ("streisand", "hiddify"):
+                    print(
+                        f"  *** {label}: not JSON ({len(raw)} bytes) — "
+                        "run ops/patch_routing_client_refresh.py --apply"
+                    )
                 continue
         if cfg is None:
             print("  no UA returned JSON; try /happ endpoint")
@@ -160,6 +170,12 @@ def main() -> None:
             print(f"  dns: split config ({len(dns.get('servers') or [])} servers)")
         else:
             print("  dns: none (Super catch-all) — consider patch_dns_split_config.py")
+
+        has_geoip_private = any("geoip:private" in (r.get("ip") or []) for r in rules)
+        print(
+            f"  geoip:private in rules: "
+            f"{'YES — run patch_routing_client_refresh.py --apply' if has_geoip_private else 'no'}"
+        )
 
         has_geoip_ru = any(
             r.get("outboundTag") == "direct" and (r.get("ip") or []) == ["geoip:ru"]

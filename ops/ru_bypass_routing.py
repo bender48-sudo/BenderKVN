@@ -12,7 +12,7 @@
 
   R0  domain=[oneme.ru, max.ru]                        → block  ⚠ MAX-мессенджер VK
   R1  protocol=[bittorrent, utp]                       → block
-  R2  ip=[geoip:private]                               → direct
+  R2  ip=[private CIDRs / was geoip:private]            → direct
   R3  domain=[avito.st, geosite:category-ru,
               regexp:.*\\.ru$, regexp:.*\\.xn--p1ai$,
               regexp:.*\\.xn--p1acf$, regexp:.*\\.xn--p1ag$]
@@ -63,6 +63,7 @@ import site_urls  # noqa: E402
 _OPS = Path(__file__).resolve().parent
 if str(_OPS) not in sys.path:
     sys.path.insert(0, str(_OPS))
+from routing_geo_common import expand_geoip_private  # noqa: E402
 from subscription_config_notify import after_template_patch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -272,6 +273,17 @@ def apply_changes(rules: list[dict], plan: dict) -> None:
     strip_degenerate_routing_rules(rules)
 
 
+def normalize_private_geoip(rules: list[dict]) -> int:
+    """Replace geoip:private with RFC1918 CIDRs (iOS clients without PRIVATE in geoip.dat)."""
+    n = 0
+    for rule in rules:
+        new_ips, changed = expand_geoip_private(list(rule.get("ip") or []))
+        if changed:
+            rule["ip"] = new_ips
+            n += 1
+    return n
+
+
 def patch_template(c: PanelClient, tpl: dict, template_uuid: str) -> None:
     minimal = {
         "uuid": tpl.get("uuid") or template_uuid,
@@ -333,6 +345,9 @@ def main() -> None:
         n_live = strip_degenerate_routing_rules(rules)
         if n_live != n:
             print(f"WARN: live strip removed {n_live} vs dry-run {n}")
+        priv = normalize_private_geoip(rules)
+        if priv:
+            print(f"[geoip:private] expanded in {priv} rule(s)")
         patch_template(c, tpl, args.template_uuid)
         print("[patch] OK")
         if not args.no_sub_notify:
@@ -403,6 +418,9 @@ def main() -> None:
     print(f"\n[backup] template -> {backup_path}")
 
     apply_changes(rules, plan)
+    priv = normalize_private_geoip(rules)
+    if priv:
+        print(f"[geoip:private] expanded in {priv} rule(s)")
     patch_template(c, tpl, args.template_uuid)
     print("[patch] OK")
 

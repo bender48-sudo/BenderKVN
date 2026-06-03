@@ -57,3 +57,14 @@ Split DNS: **`ops/patch_dns_split_config.py`** (VPN-AUD-230) — DoH для intl
 ## Регресс Xray («no effective fields»)
 
 `python ops/ru_bypass_routing.py --strip-degenerate-only --apply`
+
+## Регресс iOS («geoip.dat … секция PRIVATE»)
+
+Шаблон не должен содержать `geoip:private` — только явные CIDR для LAN.
+Патч и выдача JSON для Streisand/Hiddify:
+
+```bash
+python ops/patch_routing_client_refresh.py --apply
+```
+
+Пользователю: **обновить подписку** в клиенте и переподключить VPN.
