@@ -172,6 +172,7 @@ python ops/drift-check.py                    # целевой: problems → 0 и
 4. Удалить xhttp из infra/template без Happ-only path.  
 5. «Выберите NL вручную» в UX.  
 6. Массовый патч regexp.ru без rollback snapshot.
+7. **`geosite:ru` в routing/dns subscription template для Happ** — bundled geosite.dat без секции RU (incident **2026-06-03**).
 
 ---
 
@@ -217,8 +218,8 @@ VPN-AUD-101 (gate script)
 | 2026-06-02 | **VPN-AUD-310b** | **DONE** | autotrim patches Intl_Stealth on failover (TG/Meta same pool as Intl_Direct) |
 | 2026-06-02 | **VPN-AUD-230** | **DONE** | split DNS DoH intl + localhost RU; gate+PROBE_DNS_LEAK_OK; live dns=yes |
 | 2026-06-02 | **deploy** | **DONE** | `deploy_lv_vpn_ops.ps1` → LV /opt/scripts; autotrim cron |
-| 2026-06-03 | **VPN-AUD-210** | **DONE** | regexp.ru → `geosite:ru` in direct rule R4; snapshot gen=50; Intl_Stealth pre-rule OK; **`RU_BYPASS_STATUS_OK`**, LV **`VPN_VERIFY_GATE_OK`** |
-| | VPN-AUD-220+ | TODO | NL :443 inbound — Phase 2 |
+| 2026-06-03 | **VPN-AUD-210** | **REVERTED** | `geosite:ru` → Happ crash `geosite.dat: RU`; rollback gen=51, regexp.ru restored; **`VPN_VERIFY_GATE_OK`** |
+| | VPN-AUD-210 | **NO-GO** | Happ-only: keep regexp.ru; v2rayN may differ |
 
 ---
 

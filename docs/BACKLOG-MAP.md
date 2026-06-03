@@ -43,9 +43,9 @@
 | **9** | 142–160 | **Закрыта** | CodeRabbit bot: renew idempotency, DB, cache, UX |
 | **10** | 161–166 | **Закрыта** | CodeRabbit bot раунд 2 |
 | **11** | 167–171 | **Закрыта** | LV→NL failover, backup sub **n4l8q:4433**, flow smoke gate |
-| **12** | 172 (VPN-AUD-210) | **Закрыта** | geosite:ru routing (gen=50) |
+| **12** | 172 (VPN-AUD-210) | **REVERTED** | geosite:ru NO-GO on Happ; regexp.ru restored gen=51 |
 
-**Сейчас:** **NEXT=VPN-AUD-220** (NL :443 inbound). **VPN-AUD-210** ✅ **2026-06-03**. Владелец: **Q032**.
+**Сейчас:** **NEXT=VPN-AUD-220**. **VPN-AUD-210** **REVERTED** (Happ geosite.dat). Владелец: **Q032**.
 
 **Gate после каждой VPN-правки:** `python ops/vpn_verify_gate.py`
 

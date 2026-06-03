@@ -313,7 +313,7 @@
 
 | Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
 |---|-----|--------|-------------------|--------|-----------------|
-| 172 | **VPN-AUD-210** | **DONE** | regexp.ru → geosite:ru; TG/IG via Intl_Stealth pre-rule | **RU_BYPASS_STATUS_OK**, **VPN_VERIFY_GATE_OK** LV **2026-06-03** | `ops: VPN-AUD-210 — geosite.ru routing` |
+| 172 | **VPN-AUD-210** | **REVERTED** | regexp.ru → geosite:ru — Happ crash; rollback gen=51 | **VPN_VERIFY_GATE_OK** post-rollback | `fix: VPN-AUD-210 revert — Happ geosite.dat` |
 
 **NEXT:** **VPN-AUD-220** (NL relay :443 inbound). Владелец: **Q032**.
 

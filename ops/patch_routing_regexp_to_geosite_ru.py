@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """VPN-AUD-210: replace broad regexp:.*\\.ru$ direct matchers with geosite:ru.
 
-Keeps TG/IG via proxy: requires a balancer rule with geosite:telegram *before*
-the RU direct domain rule (Intl_Stealth or Super_Balancer — already on prod).
+**NO-GO on Happ (2026-06-03):** bundled geosite.dat has no ``RU`` code — core crash
+``code not found in geosite.dat: RU``. Prod rolled back to regexp.ru (gen=51).
+See ``ops/patch_remove_dns_split.py``, ``ops/dns_split_config.py``.
 
-Does NOT re-add geosite:category-ru (leaked TG/IG to direct — see category-ru-leak patch).
+This script remains for rollback of a bad apply and documentation only.
+``--apply`` is blocked unless ``--force-happ-incompatible``.
 
 Usage:
-    python ops/patch_routing_regexp_to_geosite_ru.py              # dry-run A/B preview
-    python ops/patch_routing_regexp_to_geosite_ru.py --apply     # snapshot + PATCH + notify
-    python ops/patch_routing_regexp_to_geosite_ru.py --rollback .secrets/snapshots/template-before-....json
+    python ops/patch_routing_regexp_to_geosite_ru.py --rollback SNAPSHOT.json
 """
 from __future__ import annotations
 
@@ -40,6 +40,10 @@ DEFAULT_TEMPLATE_UUID = site_urls.REMNA_TEMPLATE_UUID
 
 ADD_GEOSITE = "geosite:ru"
 FORBIDDEN_GEOSITE = "geosite:category-ru"
+HAPP_GEOSITE_RU_BLOCK_REASON = (
+    "Happ bundled geosite.dat has no RU section — routing/dns geosite:ru crashes core "
+    "(infra/conf: code not found in geosite.dat: RU). Keep regexp.ru on Happ template."
+)
 
 REGEXP_RU_PATTERNS = (
     "regexp:.*\\.ru$",
@@ -212,10 +216,20 @@ def verify_post_patch(rules: list[dict]) -> list[str]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument(
+        "--force-happ-incompatible",
+        action="store_true",
+        help="allow --apply despite Happ geosite:ru crash (staging / non-Happ clients only)",
+    )
     ap.add_argument("--rollback", metavar="SNAPSHOT.json")
     ap.add_argument("--template-uuid", default=DEFAULT_TEMPLATE_UUID)
     ap.add_argument("--no-sub-notify", action="store_true")
     args = ap.parse_args()
+
+    if args.apply and not args.force_happ_incompatible:
+        print(f"BLOCKED: --apply disabled ({HAPP_GEOSITE_RU_BLOCK_REASON})", file=sys.stderr)
+        print("Use --rollback if prod was patched; regexp.ru is the Happ-safe path.", file=sys.stderr)
+        return 1
 
     c = PanelClient()
     if args.rollback:
