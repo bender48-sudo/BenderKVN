@@ -304,7 +304,18 @@
 | 170 | **P1-PRO-SUB-DEAD-OUTBOUND-01** | **DONE** | AMS cron `sync_injecthosts_connected` | smoke injectHosts no change | `product: P1-PRO-SUB-DEAD-OUTBOUND-01` |
 | 171 | **P3-FLOW-PORTAL-SMOKE-01** | **DONE** | smoke: install_steps≤5, after_device≤3 отдельно | **FLOW_BACKLOG_STATIC_OK**, **VPN_VERIFY_GATE_OK** LV **2026-06-03** | `fix: P3-FLOW-PORTAL-SMOKE-01` |
 
-**NEXT:** **—**. Параллельно владелец: **Q032**, VPN-AUD-210+.
+**NEXT:** **—**. Параллельно владелец: **Q032**. VPN audit: **VPN-AUD-220** (NL :443).
+
+### Фаза 12 — VPN audit Phase 2 (2026-06-03)
+
+**Контекст:** [`docs/BACKLOG-VPN-FULL-AUDIT-2026-05-28.md`](BACKLOG-VPN-FULL-AUDIT-2026-05-28.md).  
+**Правило:** один VPN-AUD → gate `vpn_verify_gate.py` → snapshot перед template PATCH → коммит → стоп.
+
+| Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
+|---|-----|--------|-------------------|--------|-----------------|
+| 172 | **VPN-AUD-210** | **DONE** | regexp.ru → geosite:ru; TG/IG via Intl_Stealth pre-rule | **RU_BYPASS_STATUS_OK**, **VPN_VERIFY_GATE_OK** LV **2026-06-03** | `ops: VPN-AUD-210 — geosite.ru routing` |
+
+**NEXT:** **VPN-AUD-220** (NL relay :443 inbound). Владелец: **Q032**.
 
 ---
 
@@ -468,6 +479,7 @@
 | 2026-06-03 | — (фаза 10 закрыта) | **Фаза 11** VPN node resilience **Q167–170**; **NEXT=Q167** (`AGENT-PHASE11-VPN-NODE-RESILIENCE-BACKLOG`) |
 | 2026-06-03 | **Q169** P2-RED-SUB-EDGE-JURISDICTION-01 | **Q171** P3-FLOW-PORTAL-SMOKE-01 |
 | 2026-06-03 | **Q171** | **NEXT=—**; gate LV OK |
+| 2026-06-03 | — | **VPN-AUD-210** DONE; **NEXT=VPN-AUD-220** |
 | 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |
 | 2026-05-18 | **Q079** P2-OPS-DEPLOY-BOT-SEC-01 | **Q080** P2-OPS-DEPLOY-EDGE-01 |
 | 2026-05-18 | — | Репо Q063–050 **DONE**; фаза 4 **Q079–084** prod deploy |

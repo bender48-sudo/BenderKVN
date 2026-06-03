@@ -31,6 +31,9 @@ $files = @(
     "audit_policy_latency.py",
     "probe_subscription.py",
     "diagnose_happ_import.py",
+    "probe_ru_bypass.py",
+    "verify_ru_bypass_status.py",
+    "patch_routing_regexp_to_geosite_ru.py",
     "transport_mux_audit.py"
 )
 

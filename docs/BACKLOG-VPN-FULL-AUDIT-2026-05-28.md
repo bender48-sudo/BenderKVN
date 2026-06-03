@@ -217,7 +217,8 @@ VPN-AUD-101 (gate script)
 | 2026-06-02 | **VPN-AUD-310b** | **DONE** | autotrim patches Intl_Stealth on failover (TG/Meta same pool as Intl_Direct) |
 | 2026-06-02 | **VPN-AUD-230** | **DONE** | split DNS DoH intl + localhost RU; gate+PROBE_DNS_LEAK_OK; live dns=yes |
 | 2026-06-02 | **deploy** | **DONE** | `deploy_lv_vpn_ops.ps1` → LV /opt/scripts; autotrim cron |
-| | VPN-AUD-210,220+ | TODO | geosite.ru routing, NL :443 — Phase 2 (owner go/no-go on regexp) |
+| 2026-06-03 | **VPN-AUD-210** | **DONE** | regexp.ru → `geosite:ru` in direct rule R4; snapshot gen=50; Intl_Stealth pre-rule OK; **`RU_BYPASS_STATUS_OK`**, LV **`VPN_VERIFY_GATE_OK`** |
+| | VPN-AUD-220+ | TODO | NL :443 inbound — Phase 2 |
 
 ---
 

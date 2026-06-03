@@ -29,6 +29,9 @@ TOKEN_PATH = ROOT / ".secrets" / "panel-token.txt"
 
 RU_TEST_DOMAINS = ("yandex.ru", "vk.com", "sberbank.ru", "gosuslugi.ru", "ozon.ru")
 INTL_TEST_DOMAINS = ("telegram.org", "instagram.com", "youtube.com", "twitter.com")
+BALANCER_TAGS = frozenset(
+    {"Super_Balancer", "Intl_Direct", "Intl_Stealth", "proxy", "default"}
+)
 
 GEOSITE_RU_MARKERS = frozenset({"geosite:ru", "geosite:category-ru"})
 
@@ -122,7 +125,7 @@ def main() -> int:
 
     for d in INTL_TEST_DOMAINS:
         tag = classify_domain(d, rules)
-        ok = tag in ("Super_Balancer", "Intl_Direct", "proxy", "default")
+        ok = tag in BALANCER_TAGS
         if tag == "direct":
             ok = False
         results.append({"domain": d, "expect": "balancer", "got": tag, "ok": ok})

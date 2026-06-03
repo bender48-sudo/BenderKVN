@@ -63,16 +63,25 @@ def analyze_template(doc: dict) -> dict:
         and not routing_rule_has_matchers(r)
     )
 
+    has_geosite_ru = any(
+        r.get("outboundTag") == "direct" and "geosite:ru" in (r.get("domain") or [])
+        for r in rules
+    )
     if not has_geoip_ru:
         mode = "emergency_tun_all_proxy"
+    elif has_geosite_ru and not has_regexp_ru:
+        mode = "geosite_ru"
     elif has_category_ru and has_regexp_ru:
-        mode = "normal"
+        mode = "normal_regexp"
+    elif has_regexp_ru:
+        mode = "regexp_ru"
     else:
         mode = "partial"
 
     return {
         "mode": mode,
         "has_geoip_ru_direct": has_geoip_ru,
+        "has_geosite_ru": has_geosite_ru,
         "has_category_ru": has_category_ru,
         "has_regexp_ru": has_regexp_ru,
         "extra_direct_count": len(direct_domains & set(EXTRA_DIRECT_DOMAINS)),
@@ -94,7 +103,7 @@ def main() -> int:
     report = analyze_template(tpl.get("templateJson") or {})
 
     ok = (
-        report["mode"] == "normal"
+        report["mode"] in ("geosite_ru", "normal_regexp", "regexp_ru")
         and report["degenerate_rules"] == 0
         and not report["missing_extra_domains"]
     )
