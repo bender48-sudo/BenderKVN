@@ -218,7 +218,7 @@ def main() -> int:
     if code not in (200, 201, 204):
         print(f"FAIL PATCH HTTP {code}: {body!s}"[:400], file=sys.stderr)
         return 1
-    after_template_patch("patch_add_relay_nl_443_inject")
+    after_template_patch("patch_add_relay_nl_443_inject", push_ams=True)
 
     print("=== post-verify (LV gate) ===")
     if not _verify_gate("vpn_verify_gate.py", "VPN_VERIFY_GATE_OK", via_lv=True):
