@@ -80,6 +80,9 @@ def main() -> int:
     print(f"relay-NL :443 enabled hosts: {len(rnl)} (want>={MIN_RELAY_NL_HOSTS})")
     if len(rnl) < MIN_RELAY_NL_HOSTS:
         errors.append(f"enabled relay-NL hosts={len(rnl)}")
+    visible = [h for h in rnl if not h.get("isHidden")]
+    if visible:
+        errors.append(f"relay-NL must be isHidden for inject export, visible={len(visible)}")
 
     if args.ssh_gate:
         print("=== vpn_verify_gate (LV) ===")

@@ -81,15 +81,15 @@ def _enable_hosts(c: PanelClient, uuids: list[str], *, apply: bool) -> list[str]
         if not h:
             log.append(f"WARN missing host {uid[:8]}")
             continue
-        if not h.get("isDisabled") and not h.get("isHidden"):
+        if not h.get("isDisabled") and h.get("isHidden"):
             log.append(f"OK enabled: {h.get('remark')!r}")
             continue
         if not apply:
-            log.append(f"dry-run enable: {h.get('remark')!r}")
+            log.append(f"dry-run enable (hidden): {h.get('remark')!r}")
             continue
         code, body = c.patch(
             "/api/hosts",
-            body={"uuid": uid, "isDisabled": False, "isHidden": False},
+            body={"uuid": uid, "isDisabled": False, "isHidden": True},
         )
         if code != 200:
             log.append(f"FAIL enable {uid[:8]} HTTP {code}")

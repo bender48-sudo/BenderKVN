@@ -29,6 +29,7 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
 ROOT = Path(__file__).resolve().parent.parent
 TOKEN = (ROOT / ".secrets" / "panel-token.txt").read_text(encoding="ascii").strip()
 BASE = site_urls.PANEL_URL
+SQUAD = "2cbf24bd-0bc6-4711-a789-375c3d7da908"
 NL_REALITY = "eeeb131b-ce71-4d06-9f15-5c5fbbb858fb"
 NL_XHTTP = "128a0d98-488e-4f3d-bcf7-cfb358a83db3"
 

@@ -2,7 +2,7 @@
 
 **Цель:** симметрия с relay→LV — RU relay терминирует на **NL direct :443**, не на :9443 (legacy снят VPN-AUD-273).
 
-**Статус:** **LIVE 2026-06-04 (VPN-AUD-279)** — injectHosts **16**, Intl_Direct **16** (relay×6+NL×4+relay-NL×6), Intl_Stealth **relay×6** only. Мониторинг: `usersOnline` NL, **O-VPN-002** smoke. Откат: snapshot `template-before-relay-nl-443-inject-*`.
+**Статус:** **LIVE 2026-06-04 (VPN-AUD-279)** — injectHosts **16**, Intl_Direct **16** (relay×6+NL×4+relay-NL×6), Intl_Stealth **relay×6** only. **VPN-AUD-281:** хосты в inject обязаны **`isHidden=true`** (иначе sub остаётся на 10 proxy). Мониторинг: `usersOnline` NL, **O-VPN-002** smoke. Откат: snapshot `template-before-relay-nl-443-inject-*`.
 
 ---
 
@@ -13,6 +13,8 @@
 | `ops/patch_add_relay_nl_443_hosts.py` | Создать 6 hosts (relay1+relay2 ×3 SNI), `--apply` → hidden+disabled |
 | `ops/probe_relay_nl_443_poc.py` | Gate: hosts + `NL_REACHABILITY` (LV SSH) + Happ geosite + RU bypass |
 | `ops/patch_trim_injecthosts_relay_nl.py` | **Не** для :443 — только trim legacy :9443 из inject |
+| `ops/patch_relay_nl_inject_hidden.py` | Fix `isHidden=true` на relay-NL :443 (VPN-AUD-281) |
+| `ops/probe_injecthosts_sub_parity.py` | inject UUID count vs live `vless_proxy` |
 
 ---
 

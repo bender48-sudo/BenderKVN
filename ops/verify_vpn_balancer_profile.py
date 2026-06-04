@@ -114,6 +114,14 @@ def main() -> int:
         print(f"FAIL: xhttp={xhttp} batch_fail={bad}", file=sys.stderr)
         return 1
 
+    want_proxy = 16 if is_stealth_split_relay_nl_443_profile(cfg) else None
+    if want_proxy is not None and proxy_n != want_proxy:
+        print(
+            f"FAIL: vless_proxy={proxy_n} want {want_proxy} (injectHosts parity)",
+            file=sys.stderr,
+        )
+        return 1
+
     balancers = {
         b.get("tag"): b for b in (cfg.get("routing") or {}).get("balancers") or []
     }
