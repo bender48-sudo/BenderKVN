@@ -345,6 +345,7 @@
 | Дата | Что сделано |
 |------|-------------|
 | 2026-06-03 | **Q171 DONE:** `smoke_flow_backlog_static` — лимит только `install_steps` (≤5), `after_device` отдельно (≤3); LV **`VPN_VERIFY_GATE_OK`**, backup **SUB_JURISDICTION_BACKUP_OK**. |
+| 2026-06-04 | **Фаза 16 закрыта:** **VPN-AUD-282** parity в gate LV; **VPN-AUD-283** sample 5 users **16 proxy / 13300 B**; **VPN-AUD-310** autotrim dry-run + **`RUNBOOK-LATENCY-SELECTOR-AUTOTRIM`**. |
 | 2026-06-04 | **VPN-AUD-281:** inject parity — relay-NL :443 **`isHidden=true`** (было `false` → sub 10 proxy); live **`vless_proxy=16`**, gen **54** notify; **`INJECT_SUB_PARITY_OK`**, gate LV. |
 | 2026-06-04 | **VPN-AUD-280:** post-inject verify **`RELAY_NL_443_LIVE_OK`**; sub-config gen **53** → AMS (notify refresh sub). |
 | 2026-06-04 | **VPN-AUD-279:** relay-NL **:443** в inject (**16** path), Intl_Direct **16**, Stealth **relay×6**; autotrim fix. |

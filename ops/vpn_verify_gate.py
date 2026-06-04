@@ -57,10 +57,14 @@ def main() -> int:
     if _on_lv():
         _load_lv_panel_env()
     py = sys.executable
+    parity_cmd = [py, str(OPS / "probe_injecthosts_sub_parity.py")]
+    if not _on_lv():
+        parity_cmd.append("--via-lv")
     steps: list[tuple[list[str], str, bool]] = [
         ([py, str(OPS / "verify_vpn_balancer_profile.py")], "balancer profile", False),
         ([py, str(OPS / "happ_geosite_guard.py")], "happ geosite guard", False),
         ([py, str(OPS / "audit_policy_latency.py")], "policy latency audit", False),
+        (parity_cmd, "inject sub parity", False),
         ([py, str(OPS / "probe_subscription.py")], "probe subscription", False),
         ([py, str(OPS / "diagnose_happ_import.py")], "happ import", False),
     ]

@@ -44,6 +44,8 @@ $files = @(
     "verify_relay_nl_443_live.py",
     "probe_injecthosts_sub_parity.py",
     "patch_relay_nl_inject_hidden.py",
+    "probe_users_sub_sample.py",
+    "smoke_latency_selector_autotrim.py",
     "ru_bypass_routing.py"
 )
 

@@ -304,7 +304,7 @@
 | 170 | **P1-PRO-SUB-DEAD-OUTBOUND-01** | **DONE** | AMS cron `sync_injecthosts_connected` | smoke injectHosts no change | `product: P1-PRO-SUB-DEAD-OUTBOUND-01` |
 | 171 | **P3-FLOW-PORTAL-SMOKE-01** | **DONE** | smoke: install_steps≤5, after_device≤3 отдельно | **FLOW_BACKLOG_STATIC_OK**, **VPN_VERIFY_GATE_OK** LV **2026-06-03** | `fix: P3-FLOW-PORTAL-SMOKE-01` |
 
-**NEXT:** **VPN-AUD-282** (фаза 16). **VPN-AUD-281** ✅ **2026-06-04**. Параллельно: **Q032**, **O-VPN-009**, **O-VPN-002**.
+**NEXT:** **—** (фаза 16 закрыта **2026-06-04**). **Q032**, **O-VPN-009**, **O-VPN-002** — владелец.
 
 ### Фаза 16 — качество продукта (2026-06-04)
 
@@ -313,9 +313,9 @@
 | Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
 |---|-----|--------|-------------------|--------|-----------------|
 | 184 | **VPN-AUD-281** | **DONE** | relay-NL inject `isHidden=true`; live sub 16 proxy | **INJECT_SUB_PARITY_OK**, **vless_proxy=16**, gen **54** | `fix: VPN-AUD-281 inject sub parity` |
-| 185 | **VPN-AUD-282** | **NEXT** | parity probe в `vpn_verify_gate` | gate fails on mismatch | `ops: VPN-AUD-282 gate inject parity` |
-| 186 | **VPN-AUD-283** | **TODO** | sample 5 users post-gen54 | §12 | `ops: VPN-AUD-283 sub sample verify` |
-| 187 | **VPN-AUD-310** | **TODO** | ru-monitor auto selector trim v1 | dry-run OK | `ops: VPN-AUD-310 relay selector auto` |
+| 185 | **VPN-AUD-282** | **DONE** | parity probe в `vpn_verify_gate` | gate fails on mismatch; LV **2026-06-04** | `ops: VPN-AUD-282 gate inject parity` |
+| 186 | **VPN-AUD-283** | **DONE** | sample 5 users post-gen54 | **SUB_SAMPLE_VERIFY_OK** 5×16 proxy, 13300 B | `ops: VPN-AUD-283 sub sample verify` |
+| 187 | **VPN-AUD-310** | **DONE** | ru-monitor auto selector trim v1 | dry-run LV OK; cron installed; runbook | `ops: VPN-AUD-310 relay selector auto` |
 
 ### Фаза 12 — VPN audit Phase 2 (2026-06-03)
 
@@ -341,7 +341,7 @@
 |---|-----|--------|-------------------|--------|-----------------|
 | 183 | **VPN-AUD-280** | **DONE** | notify gen **53** + `verify_relay_nl_443_live` | **RELAY_NL_443_LIVE_OK**, AMS push **2026-06-04** | `ops: VPN-AUD-280 post-inject notify` |
 
-**NEXT:** см. **фаза 16** (**VPN-AUD-282**). **O-VPN-002** smoke (владелец).
+**NEXT:** см. **фаза 16** (закрыта). **O-VPN-002** smoke (владелец).
 
 ### Фаза 13 — NL полноценная нода · 3-я prod · ёмкость (2026-06-04)
 
@@ -522,6 +522,7 @@
 | 2026-06-03 | — (фаза 10 закрыта) | **Фаза 11** VPN node resilience **Q167–170**; **NEXT=Q167** (`AGENT-PHASE11-VPN-NODE-RESILIENCE-BACKLOG`) |
 | 2026-06-03 | **Q169** P2-RED-SUB-EDGE-JURISDICTION-01 | **Q171** P3-FLOW-PORTAL-SMOKE-01 |
 | 2026-06-04 | **VPN-AUD-281** | **NEXT=VPN-AUD-282**; inject parity 16 proxy, gen 54 |
+| 2026-06-04 | **VPN-AUD-282–310** | **NEXT=—**; фаза 16 закрыта |
 | 2026-06-03 | **Q171** | **NEXT=—**; gate LV OK |
 | 2026-06-03 | — | **VPN-AUD-220** DONE verify; **NEXT=VPN-AUD-260** |
 | 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |
