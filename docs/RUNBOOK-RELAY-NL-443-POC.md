@@ -2,7 +2,7 @@
 
 **Цель:** симметрия с relay→LV — RU relay терминирует на **NL direct :443**, не на :9443 (legacy снят VPN-AUD-273).
 
-**Статус:** **PoC hosts DONE 2026-06-04** — 6 panel hosts relay→NL **:443** (hidden+disabled); **injectHosts без изменений** (10 path). Следующий шаг — inject/balancer только после gate + owner smoke.
+**Статус:** **LIVE 2026-06-04 (VPN-AUD-279)** — injectHosts **16**, Intl_Direct **16** (relay×6+NL×4+relay-NL×6), Intl_Stealth **relay×6** only. Мониторинг: `usersOnline` NL, **O-VPN-002** smoke. Откат: snapshot `template-before-relay-nl-443-inject-*`.
 
 ---
 

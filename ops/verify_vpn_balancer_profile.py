@@ -17,15 +17,18 @@ if str(_OPS) not in sys.path:
 
 import site_urls  # noqa: E402
 from balancer_selectors import (  # noqa: E402
+    INTL_RELAY_NL_443_SELECTOR,
     INTL_RELAY_NL_SELECTOR,
     INTL_STEALTH_BALANCER_TAG,
     RELAY1_SELECTOR,
     RELAY2_SELECTOR,
     RELAY6_SELECTOR,
     is_stealth_split_profile,
+    is_stealth_split_relay_nl_443_profile,
     verify_ru_multipath_profile,
 )
 from dns_split_config import verify_dns_split_config  # noqa: E402
+from panel_client import _load_token  # noqa: E402
 from subscription_fetch import (  # noqa: E402
     HAPP_UA,
     decode_subscription,
@@ -43,16 +46,14 @@ TOKEN_PATH = ROOT / ".secrets" / "panel-token.txt"
 
 
 def main() -> int:
-    token = os.environ.get("PANEL_TOKEN") or os.environ.get("REMNA_API_TOKEN")
-    if not token and not TOKEN_PATH.is_file():
+    try:
+        token = _load_token(None)
+    except FileNotFoundError:
         print(
             "FAIL: set PANEL_TOKEN/REMNA_API_TOKEN or create .secrets/panel-token.txt",
             file=sys.stderr,
         )
         return 1
-
-    if not token:
-        token = TOKEN_PATH.read_text(encoding="ascii").strip()
     panel = site_urls.PANEL_URL
     sub_origin = site_urls.SUB_PUBLIC_ORIGIN
 
@@ -127,6 +128,9 @@ def main() -> int:
         mode = "relay-only×3 (relay1 fast path)"
     elif super_len == 0 and intl_sel == list(RELAY2_SELECTOR):
         mode = "relay-only×3 (relay2 fast path)"
+    elif super_len == 0 and is_stealth_split_relay_nl_443_profile(cfg):
+        stealth_len = len((balancers.get(INTL_STEALTH_BALANCER_TAG) or {}).get("selector") or [])
+        mode = f"stealth split Stealth=relay×{stealth_len} Fast=relay+NL+relay-NL×{intl_len}"
     elif super_len == 0 and is_stealth_split_profile(cfg):
         stealth_len = len((balancers.get(INTL_STEALTH_BALANCER_TAG) or {}).get("selector") or [])
         mode = f"stealth split Stealth=relay×{stealth_len} Fast=relay+NL×{intl_len}"

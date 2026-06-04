@@ -304,7 +304,7 @@
 | 170 | **P1-PRO-SUB-DEAD-OUTBOUND-01** | **DONE** | AMS cron `sync_injecthosts_connected` | smoke injectHosts no change | `product: P1-PRO-SUB-DEAD-OUTBOUND-01` |
 | 171 | **P3-FLOW-PORTAL-SMOKE-01** | **DONE** | smoke: install_steps≤5, after_device≤3 отдельно | **FLOW_BACKLOG_STATIC_OK**, **VPN_VERIFY_GATE_OK** LV **2026-06-03** | `fix: P3-FLOW-PORTAL-SMOKE-01` |
 
-**NEXT:** **—** (фаза 13 закрыта **2026-06-04**, Q174–181 ✅). Параллельно: **Q032**, **O-VPN-009** (3-й VPS).
+**NEXT:** **—** (фаза 14 **VPN-AUD-279** ✅ **2026-06-04**). Параллельно: **Q032**, **O-VPN-009**, **O-VPN-002** smoke.
 
 ### Фаза 12 — VPN audit Phase 2 (2026-06-03)
 
@@ -315,6 +315,14 @@
 |---|-----|--------|-------------------|--------|-----------------|
 | 172 | **VPN-AUD-210** | **REVERTED** | regexp.ru → geosite:ru — Happ crash; rollback gen=51 | **VPN_VERIFY_GATE_OK** post-rollback | `fix: VPN-AUD-210 revert — Happ geosite.dat` |
 | 173 | **VPN-AUD-220** | **DONE** | NL direct :443×4 in injectHosts + Intl (stealth split); no PATCH | **VPN_AUD_220_OK**, **NL_REACHABILITY_PROBE_RU_OK**, LV gate | `docs: VPN-AUD-220 verify NL :443 live` |
+
+**NEXT:** **—**. **Q032**, **O-VPN-009**, **O-VPN-002** (телефон после relay-NL inject).
+
+### Фаза 14 — relay-NL :443 в inject (2026-06-04)
+
+| Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
+|---|-----|--------|-------------------|--------|-----------------|
+| 182 | **VPN-AUD-279** | **DONE** | inject 16 + Intl 16; stealth relay×6; autotrim fix | **VPN_AUD_279_OK**, gate LV | `ops: VPN-AUD-279 relay-NL inject` |
 
 **NEXT:** **—** (следующая фаза — по согласованию с владельцем). **Q032**, **O-VPN-009**.
 

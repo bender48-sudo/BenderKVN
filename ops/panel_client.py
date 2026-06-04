@@ -40,6 +40,23 @@ DEFAULT_PANEL_URL = site_urls.PANEL_URL
 DEFAULT_TIMEOUT = 30
 
 
+def _load_token_from_bvpn_env() -> str | None:
+    """On LV: token lives in /etc/bvpn/*.env (not repo .secrets)."""
+    for path in (
+        Path("/etc/bvpn/ru-monitor.env"),
+        Path("/etc/bvpn/balancer.env"),
+    ):
+        if not path.is_file():
+            continue
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            line = line.strip()
+            if line.startswith("REMNA_API_TOKEN=") or line.startswith("PANEL_TOKEN="):
+                val = line.split("=", 1)[1].strip().strip('"').strip("'")
+                if val:
+                    return val
+    return None
+
+
 def _load_token(explicit: str | None) -> str:
     if explicit:
         return explicit.strip()
@@ -47,6 +64,9 @@ def _load_token(explicit: str | None) -> str:
         env = os.environ.get(key)
         if env:
             return env.strip()
+    bvpn = _load_token_from_bvpn_env()
+    if bvpn:
+        return bvpn
     if DEFAULT_TOKEN_FILE.is_file():
         return DEFAULT_TOKEN_FILE.read_text(encoding="ascii").strip()
     raise FileNotFoundError(

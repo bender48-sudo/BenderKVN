@@ -40,10 +40,12 @@ from balancer_selectors import (  # noqa: E402
     RELAY1_SELECTOR,
     RELAY2_SELECTOR,
     RELAY6_SELECTOR,
+    RELAY_NL443_SELECTOR,
     allowed_relay_only_selectors,
     is_relay_nl_intl_profile,
     is_relay_only_profile,
     is_stealth_split_profile,
+    is_stealth_split_relay_nl_443_profile,
 )
 from nl_reachability_probe_ru import NL_IP, probe_nl_from_ru  # noqa: E402
 from panel_client import PanelClient  # noqa: E402
@@ -96,6 +98,11 @@ def _inject_has_nl(doc: dict) -> bool:
     return n >= 10
 
 
+def _inject_has_relay_nl_443(doc: dict) -> bool:
+    n = len(doc.get("remnawave", {}).get("injectHosts", [{}])[0].get("selector", {}).get("values") or [])
+    return n >= 16
+
+
 def _relay_part(mode: str) -> list[str]:
     if mode == "relay1_only":
         return list(RELAY1_SELECTOR)
@@ -106,8 +113,11 @@ def _relay_part(mode: str) -> list[str]:
 
 def _build_target(relay_mode: str, include_nl: bool, doc: dict) -> list[str]:
     relay_sel = _relay_part(relay_mode)
-    if include_nl and _inject_has_nl(doc):
-        return relay_sel + list(NL_DIRECT_SELECTOR)
+    nl_part = list(NL_DIRECT_SELECTOR) if include_nl and _inject_has_nl(doc) else []
+    if _inject_has_relay_nl_443(doc):
+        return relay_sel + nl_part + list(RELAY_NL443_SELECTOR)
+    if nl_part:
+        return relay_sel + nl_part
     return relay_sel
 
 
@@ -317,7 +327,12 @@ def main() -> int:
     tpl = c.get_or_raise(f"/api/subscription-templates/{args.template_uuid}")["response"]
     doc = tpl["templateJson"]
 
-    if not is_relay_only_profile(doc) and not is_relay_nl_intl_profile(doc) and not is_stealth_split_profile(doc):
+    if (
+        not is_relay_only_profile(doc)
+        and not is_relay_nl_intl_profile(doc)
+        and not is_stealth_split_profile(doc)
+        and not is_stealth_split_relay_nl_443_profile(doc)
+    ):
         print("ABORT: not relay gen>=47 profile", file=sys.stderr)
         return 1
 

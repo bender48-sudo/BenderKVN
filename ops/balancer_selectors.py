@@ -68,6 +68,17 @@ NL_DIRECT_SELECTOR: list[str] = ["proxy-7", "proxy-8", "proxy-9", "proxy-10"]
 # VPN-AUD-220: Intl = relay×6 + NL×4 (NL gated by RU probe; never Super catch-all LV).
 INTL_RELAY_NL_SELECTOR: list[str] = RELAY6_SELECTOR + NL_DIRECT_SELECTOR
 
+# VPN-AUD-279: after relay-NL :443 hosts in inject (positions 11–16); Stealth stays relay×6 only.
+RELAY_NL443_SELECTOR: list[str] = [
+    "proxy-11",
+    "proxy-12",
+    "proxy-13",
+    "proxy-14",
+    "proxy-15",
+    "proxy-16",
+]
+INTL_RELAY_NL_443_SELECTOR: list[str] = RELAY6_SELECTOR + NL_DIRECT_SELECTOR + RELAY_NL443_SELECTOR
+
 
 def relay_n_selector(n: int) -> list[str]:
     if n <= 0:
@@ -92,7 +103,7 @@ def allowed_relay_only_selectors() -> tuple[list[str], ...]:
 
 
 def allowed_intl_relay_selectors() -> tuple[list[str], ...]:
-    return allowed_relay_only_selectors() + (INTL_RELAY_NL_SELECTOR,)
+    return allowed_relay_only_selectors() + (INTL_RELAY_NL_SELECTOR, INTL_RELAY_NL_443_SELECTOR)
 
 
 def is_relay_only_profile(doc: dict) -> bool:
@@ -110,6 +121,16 @@ def is_relay_only_profile(doc: dict) -> bool:
         for r in (doc.get("routing") or {}).get("rules") or []
     )
     return catch_intl and len(intl_sel) >= 3
+
+
+def is_stealth_split_relay_nl_443_profile(doc: dict) -> bool:
+    if not is_stealth_split_profile(doc):
+        return False
+    balancers = {b.get("tag"): b for b in (doc.get("routing") or {}).get("balancers") or []}
+    intl_b = balancers.get(INTL_BALANCER_TAG)
+    if not intl_b:
+        return False
+    return list(intl_b.get("selector") or []) == INTL_RELAY_NL_443_SELECTOR
 
 
 def is_relay_nl_intl_profile(doc: dict) -> bool:
@@ -159,6 +180,7 @@ def is_stealth_split_profile(doc: dict) -> bool:
         return False
     if intl_sel not in allowed_intl_relay_selectors():
         return False
+    # VPN-AUD-279: Intl may be relay×6+NL×4+relay-NL×6; Stealth must stay relay-only.
     rules = (doc.get("routing") or {}).get("rules") or []
     catch_fast = any(
         r.get("network") == "tcp,udp"
@@ -177,6 +199,7 @@ def _accepted_traffic_selectors() -> tuple[list[str], ...]:
         SUPER_LV_DIRECT_SELECTOR,
         RELAY6_SELECTOR,
         INTL_RELAY_NL_SELECTOR,
+        INTL_RELAY_NL_443_SELECTOR,
     )
 
 
@@ -213,7 +236,7 @@ def verify_ru_multipath_profile(doc: dict) -> list[str]:
             relay_only_ok = True
         if is_relay_nl_intl_profile(doc):
             relay_nl_ok = True
-        if is_stealth_split_profile(doc):
+        if is_stealth_split_profile(doc) or is_stealth_split_relay_nl_443_profile(doc):
             stealth_split_ok = True
 
     if not super_b and not relay_only_ok and not relay_nl_ok and not stealth_split_ok:

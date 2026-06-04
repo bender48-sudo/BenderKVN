@@ -39,7 +39,9 @@ $files = @(
     "nl_node_health_probe.py",
     "disable_relay_nl_legacy_hosts.py",
     "patch_add_relay_nl_443_hosts.py",
-    "probe_relay_nl_443_poc.py"
+    "probe_relay_nl_443_poc.py",
+    "patch_add_relay_nl_443_inject.py",
+    "ru_bypass_routing.py"
 )
 
 foreach ($f in $files) {
