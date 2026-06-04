@@ -233,7 +233,7 @@ VPN-AUD-101 (gate script)
 | **VPN-AUD-272** | P1 | Агент | LV deploy + full `vpn_verify_gate` | **DONE** **VPN_VERIFY_GATE_OK** LV **2026-06-04** |
 | **VPN-AUD-273** | P2 | Агент | Disable RELAY→NL :9443 panel hosts | **RELAY_NL_LEGACY_DISABLE_OK** |
 | **VPN-AUD-274** | P2 | Агент | BBR on NL | **DONE** **BBR_AUDIT_OK** NL **2026-06-04** |
-| **VPN-AUD-275** | P1 | Агент | Relay→NL :443 design + gated apply | probe |
+| **VPN-AUD-275** | P1 | Агент | Relay→NL :443 PoC hosts + probe | **DONE** **RELAY_NL_443_POC_OK** **2026-06-04** |
 | **VPN-AUD-276** | P1 | Агент+владелец | 3rd prod node onboarding doc + deploy | connected |
 | **O-VPN-009** | P0 | Владелец | 3rd VPS IP/SSH (не AMS/NL clone DC) | SSH OK |
 

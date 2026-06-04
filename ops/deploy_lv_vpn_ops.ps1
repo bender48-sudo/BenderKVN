@@ -37,7 +37,9 @@ $files = @(
     "happ_geosite_guard.py",
     "transport_mux_audit.py",
     "nl_node_health_probe.py",
-    "disable_relay_nl_legacy_hosts.py"
+    "disable_relay_nl_legacy_hosts.py",
+    "patch_add_relay_nl_443_hosts.py",
+    "probe_relay_nl_443_poc.py"
 )
 
 foreach ($f in $files) {

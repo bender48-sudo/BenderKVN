@@ -304,7 +304,7 @@
 | 170 | **P1-PRO-SUB-DEAD-OUTBOUND-01** | **DONE** | AMS cron `sync_injecthosts_connected` | smoke injectHosts no change | `product: P1-PRO-SUB-DEAD-OUTBOUND-01` |
 | 171 | **P3-FLOW-PORTAL-SMOKE-01** | **DONE** | smoke: install_steps≤5, after_device≤3 отдельно | **FLOW_BACKLOG_STATIC_OK**, **VPN_VERIFY_GATE_OK** LV **2026-06-03** | `fix: P3-FLOW-PORTAL-SMOKE-01` |
 
-**NEXT:** **VPN-AUD-275** (фаза 13). Параллельно: **Q032**, **O-VPN-009** (3-й VPS).
+**NEXT:** **—** (фаза 13 закрыта **2026-06-04**, Q174–181 ✅). Параллельно: **Q032**, **O-VPN-009** (3-й VPS).
 
 ### Фаза 12 — VPN audit Phase 2 (2026-06-03)
 
@@ -316,7 +316,7 @@
 | 172 | **VPN-AUD-210** | **REVERTED** | regexp.ru → geosite:ru — Happ crash; rollback gen=51 | **VPN_VERIFY_GATE_OK** post-rollback | `fix: VPN-AUD-210 revert — Happ geosite.dat` |
 | 173 | **VPN-AUD-220** | **DONE** | NL direct :443×4 in injectHosts + Intl (stealth split); no PATCH | **VPN_AUD_220_OK**, **NL_REACHABILITY_PROBE_RU_OK**, LV gate | `docs: VPN-AUD-220 verify NL :443 live` |
 
-**NEXT:** **VPN-AUD-275**. Владелец: **Q032**, **O-VPN-009** (3-й VPS IP/SSH).
+**NEXT:** **—** (следующая фаза — по согласованию с владельцем). **Q032**, **O-VPN-009**.
 
 ### Фаза 13 — NL полноценная нода · 3-я prod · ёмкость (2026-06-04)
 
@@ -328,7 +328,7 @@
 | 175 | **VPN-AUD-272** | **DONE** | deploy LV: happ_geosite + full gate | **VPN_VERIFY_GATE_OK** LV **2026-06-04** | `ops: VPN-AUD-272 — LV gate scripts` |
 | 176 | **VPN-AUD-273** | **DONE** | disable legacy RELAY→NL :9443 panel hosts (3) | **RELAY_NL_LEGACY_DISABLE_OK** | `ops: VPN-AUD-273 — disable relay-NL 9443` |
 | 177 | **VPN-AUD-274** | **DONE** | BBR **bbr+fq** на **bvpn-nl** (`99-tcp-bbr.conf`) | **BBR_AUDIT_OK** NL sysctl | `ops: VPN-AUD-274 — BBR NL` |
-| 178 | **VPN-AUD-275** | **NEXT** | `RUNBOOK-RELAY-NL-443-POC.md` + inbound в панели | probe before apply | `docs: VPN-AUD-275 relay-NL-443` |
+| 178 | **VPN-AUD-275** | **DONE** | 6× relay-NL :443 hosts (hid+dis); PoC probe; inject **10** без изменений | **RELAY_NL_443_POC_OK** **2026-06-04** | `ops: VPN-AUD-275 relay-NL-443 PoC` |
 | 179 | **VPN-AUD-276** | **DONE** | `THIRD-PROD-NODE-ONBOARDING.md` | doc | `docs: VPN-AUD-276 third node` |
 | 180 | **VPN-AUD-277** | **DONE** | `deploy_lv_vpn_ops` includes NL scripts | list | `ops: VPN-AUD-277 deploy NL ops` |
 | 181 | **VPN-AUD-278** | **DONE** | `CAPACITY-AND-FAILOVER-ROADMAP.md` + §12 | — | `docs: VPN-AUD-278 capacity roadmap` |

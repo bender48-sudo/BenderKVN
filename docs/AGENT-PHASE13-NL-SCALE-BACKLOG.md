@@ -26,7 +26,7 @@ python ops/nl_reachability_probe_ru.py
 | 175 | **VPN-AUD-272** | P1 | `happ_geosite_guard` + полный gate на LV (`deploy_lv_vpn_ops.ps1`) | **VPN_VERIFY_GATE_OK** на LV (оба шага) |
 | 176 | **VPN-AUD-273** | P2 | Legacy RELAY→NL :9443 hosts `isDisabled=true` в панели | **RELAY_NL_LEGACY_DISABLE_OK** |
 | 177 | **VPN-AUD-274** | P2 | BBR/fq на **bvpn-nl** (SSH с LV или alias) | **BBR_AUDIT_OK** включает NL |
-| 178 | **VPN-AUD-275** | P1 | Runbook + dry-run: inbound **Relay→NL :443** (не 9443) | probe OK; **не** apply без gate |
+| 178 | **VPN-AUD-275** | P1 | Runbook + 6× relay-NL :443 hosts (hidden); **RELAY_NL_443_POC_OK** | inject unchanged; staging only |
 | 179 | **VPN-AUD-276** | P1 | **3-я prod-нода:** runbook чеклист в `docs/THIRD-PROD-NODE-ONBOARDING.md` | doc review |
 | 180 | **VPN-AUD-277** | P2 | `audit_bbr_congestion` + `nl_node_health` в `deploy_lv_vpn_ops.ps1` | deploy smoke |
 | 181 | **VPN-AUD-278** | P1 | Док §12 + `CAPACITY-AND-FAILOVER-ROADMAP` синхрон с очередью | — |

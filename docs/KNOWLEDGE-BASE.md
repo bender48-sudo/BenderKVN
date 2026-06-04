@@ -9,7 +9,7 @@
 | Что нужно | Документ / артефакт |
 |-----------|---------------------|
 | **Карта бэклога (начать здесь)** | **`docs/BACKLOG-MAP.md`** |
-| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **NEXT=VPN-AUD-275** (relay→NL :443 PoC); **`docs/AGENT-PHASE13-NL-SCALE-BACKLOG.md`** |
+| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — фаза 13 **закрыта**; inject relay-NL :443 — только по **`RUNBOOK-RELAY-NL-443-POC.md`** + owner smoke |
 | **Ёмкость / failover 300→10k** | **`docs/CAPACITY-AND-FAILOVER-ROADMAP.md`** |
 | **Geo / routing Happ (не ломать)** | **`docs/VPN-ROUTING-GEO-GUARDRAILS.md`**, **`ops/happ_geosite_guard.py`** |
 | **Флоу (после Q062)** | **`docs/AGENT-FLOW-BACKLOG.md`** |
