@@ -67,6 +67,48 @@
     return Promise.reject(new Error("clipboard unavailable"));
   }
 
+  function showToast(msg, kind) {
+    var text = (msg || "").trim();
+    if (!text) return;
+    var root = $("toast-root");
+    var inline = $("portal-toast");
+    if (inline) {
+      inline.textContent = text;
+      inline.className =
+        "banner " + (kind === "error" ? "banner--error" : "banner--warn");
+      inline.classList.remove("hidden");
+      setTimeout(function () {
+        inline.classList.add("hidden");
+      }, 6000);
+    }
+    if (!root) return;
+    var el = document.createElement("div");
+    el.className = "toast";
+    el.setAttribute("role", "status");
+    el.textContent = text;
+    root.appendChild(el);
+    requestAnimationFrame(function () {
+      el.classList.add("toast--visible");
+    });
+    setTimeout(function () {
+      el.classList.remove("toast--visible");
+      setTimeout(function () {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 220);
+    }, 5200);
+  }
+
+  function hasStoredSetup() {
+    try {
+      if (readStoredSubscriptionUrl()) return true;
+      if (localStorage.getItem(CID_KEY)) return true;
+      if (localStorage.getItem(EMAIL_KEY)) return true;
+    } catch (e) {
+      /* ignore */
+    }
+    return false;
+  }
+
   function initTelegram() {
     var tg = getTelegramWebApp();
     if (!tg) return;
@@ -173,8 +215,9 @@
     }
     trackFunnel("portal_tg_setup");
     if (!tid) {
-      window.alert(
-        "Не удалось определить Telegram. Закройте Mini App и откройте снова из бота."
+      showToast(
+        "Не удалось определить Telegram. Закрой Mini App и открой снова из бота.",
+        "error"
       );
       return;
     }
@@ -206,22 +249,20 @@
             window.location.href = res.body.bot_url;
           }
         }
-        window.alert(msg);
+        showToast(msg, "error");
       })
       .catch(function () {
-        window.alert(content.errors.generic);
+        showToast(content.errors.generic, "error");
       });
   }
 
   function bindSetupEntryButtons() {
-    ["btn-setup", "btn-cabinet-setup"].forEach(function (id) {
-      var el = $(id);
-      if (!el) return;
-      el.addEventListener("click", function (ev) {
-        if (getTelegramWebApp() || getTelegramUserId() > 0) {
-          openTelegramSetup(ev);
-        }
-      });
+    var el = $("btn-cabinet-setup");
+    if (!el) return;
+    el.addEventListener("click", function (ev) {
+      if (getTelegramWebApp() || getTelegramUserId() > 0) {
+        openTelegramSetup(ev);
+      }
     });
   }
 
@@ -315,6 +356,90 @@
       });
   }
 
+  function renderFaq() {
+    var faq = content.faq;
+    var list = $("faq-list");
+    var title = $("faq-fold-title");
+    if (!faq || !list) return;
+    if (title) title.textContent = faq.title || "Частые вопросы";
+    list.innerHTML = "";
+    (faq.items || []).forEach(function (item) {
+      var det = document.createElement("details");
+      det.className = "faq__item";
+      var sum = document.createElement("summary");
+      sum.textContent = item.q || "";
+      var p = document.createElement("p");
+      p.textContent = item.a || "";
+      det.appendChild(sum);
+      det.appendChild(p);
+      list.appendChild(det);
+    });
+  }
+
+  function updateHomeCtas() {
+    var tg = getTelegramWebApp();
+    var btns = content.buttons || {};
+    var primary = $("btn-setup");
+    var secondary = $("btn-setup-secondary");
+    var connect = $("btn-connect");
+    var topup = $("btn-topup");
+    var sepTopup = $("sep-topup");
+    if (!primary) return;
+
+    if (tg) {
+      primary.textContent = btns.setup_tg || "Открыть мою настройку";
+      primary.href = "#";
+      primary.classList.remove("hidden");
+      if (secondary) secondary.classList.add("hidden");
+      if (connect) {
+        connect.textContent = btns.connect || "Инструкция по устройству";
+        connect.classList.remove("hidden");
+      }
+      if (topup) {
+        topup.textContent = btns.topup_bot || "Пополнить в боте";
+        topup.href = "https://t.me/Bender_KVN_bot";
+        topup.classList.remove("hidden");
+      }
+      if (sepTopup) sepTopup.classList.remove("hidden");
+      var fold = $("account-fold");
+      if (fold) fold.open = true;
+      return;
+    }
+
+    if (hasStoredSetup()) {
+      primary.textContent = btns.connect || "Инструкция по устройству";
+      primary.href = "#";
+      primary.classList.add("btn--primary");
+      if (secondary) {
+        secondary.textContent = btns.connect_setup || "Обновить настройку";
+        secondary.href = SETUP_PATH;
+        secondary.classList.remove("hidden");
+      }
+      if (connect) {
+        connect.textContent = btns.connect_guide || "Смотреть видео";
+        connect.classList.remove("hidden");
+      }
+      var foldHas = $("account-fold");
+      if (foldHas && (localStorage.getItem(EMAIL_KEY) || localStorage.getItem(CID_KEY))) {
+        foldHas.open = true;
+      }
+    } else {
+      primary.textContent =
+        btns.setup_browser || "Получить настройку — 1 сутки бесплатно";
+      primary.href = SETUP_PATH;
+      primary.classList.remove("hidden");
+      if (secondary) secondary.classList.add("hidden");
+      if (connect) {
+        connect.textContent = btns.connect_guide || "Смотреть видео";
+        connect.classList.remove("hidden");
+      }
+      var blocked = $("tg-blocked-banner");
+      if (blocked) blocked.classList.remove("hidden");
+    }
+    if (topup) topup.classList.add("hidden");
+    if (sepTopup) sepTopup.classList.add("hidden");
+  }
+
   function renderPhilosophy() {
     var pos = content.positioning;
     var body = $("fold-about-body");
@@ -359,31 +484,34 @@
         ? home.subtitle_tg || home.hero_title || home.subtitle || ""
         : home.hero_title || home.subtitle || "";
     }
+    var lead = $("hero-lead");
+    if (lead && home.hero_lead) {
+      lead.textContent = home.hero_lead;
+    }
     if ($("devices-note") && home.devices_note) {
       $("devices-note").textContent = home.devices_note;
     }
+    var foldTitle = $("account-fold-title");
+    if (foldTitle && home.account_fold_title) {
+      foldTitle.textContent = home.account_fold_title;
+    }
     var cabBtn = $("btn-cabinet");
     if (cabBtn) cabBtn.textContent = content.buttons.cabinet || "Мой доступ";
-    $("btn-connect").textContent = content.buttons.connect;
     renderPhilosophy();
-    var setupBtn = $("btn-setup");
-    if (setupBtn && content.buttons.setup_browser) {
-      if (tg) {
-        setupBtn.textContent = content.buttons.setup_tg || "Моя настройка VPN";
-        setupBtn.href = "#";
-      } else {
-        setupBtn.textContent = content.buttons.setup_browser;
-        setupBtn.href = SETUP_PATH;
-      }
-    }
+    renderFaq();
+    updateHomeCtas();
     var guideBtn = $("btn-guide");
     if (guideBtn && content.buttons.watch_guide) {
       guideBtn.textContent = content.buttons.watch_guide;
       guideBtn.href = "/portal/guide.html";
     }
     var supportBtn = $("btn-support");
-    supportBtn.textContent = content.buttons.support;
-    supportBtn.href = SUPPORT_URL;
+    if (supportBtn) {
+      supportBtn.textContent = content.buttons.support;
+      supportBtn.href = SUPPORT_URL;
+    }
+    bindExternalLink(supportBtn);
+    bindExternalLink($("btn-topup"));
     $("btn-stuck").textContent = content.buttons.stuck;
     var errBtn = $("btn-help-errors");
     if (errBtn && content.buttons.help_errors) {
@@ -406,7 +534,13 @@
       $("tg-blocked-title").textContent = content.telegram_blocked.title;
     }
     if ($("tg-blocked-body") && content.telegram_blocked) {
-      $("tg-blocked-body").textContent = content.telegram_blocked.body;
+      $("tg-blocked-body").textContent = " " + (content.telegram_blocked.body || "");
+    }
+    var blockedBanner = $("tg-blocked-banner");
+    if (blockedBanner) {
+      if (tg || hasStoredSetup()) {
+        blockedBanner.classList.add("hidden");
+      }
     }
     if ($("happ-note") && content.happ) {
       $("happ-note").textContent = content.happ.phone_and_pc;
@@ -518,7 +652,16 @@
     var storeKey = dev.install_store_key || dev.id;
     var stores = content.happ_install || {};
     var store = stores[storeKey] || stores.generic;
-    var steps = (dev.install_steps || []).slice(0, 3);
+    var tunCallout = $("device-tun-callout");
+    if (tunCallout) {
+      if (dev.tun_callout) {
+        tunCallout.textContent = dev.tun_callout;
+        tunCallout.classList.remove("hidden");
+      } else {
+        tunCallout.classList.add("hidden");
+      }
+    }
+    var steps = dev.install_steps || [];
     steps.forEach(function (step, idx) {
       var li = document.createElement("li");
       li.textContent = step;
@@ -624,8 +767,8 @@
       var msg =
         (doc && doc.message) ||
         (getTelegramWebApp()
-          ? "Аккаунт не найден. Нажмите /start в боте и попробуйте снова."
-          : "Не найдено. Проверьте email или BVPN-ID.");
+          ? "Аккаунт не найден. Нажми /start в боте и открой Mini App снова."
+          : "Не найдено. Проверь email или ID.");
       showCabinetError(msg);
       if (doc && doc.bot_url) {
         var bindBtn = $("btn-cabinet-bind");
@@ -694,7 +837,9 @@
         return;
       }
       if (!uid) {
-        showCabinetError("Не удалось определить пользователя. Закройте Mini App и откройте снова из бота.");
+        showCabinetError(
+          "Не удалось определить пользователя. Закрой Mini App и открой снова из бота."
+        );
         return;
       }
       showCabinetLoading();
@@ -831,15 +976,47 @@
       });
     }
     var btnConnect = $("btn-connect");
-    if (btnConnect) btnConnect.addEventListener("click", function () {
-      try {
-        history.replaceState(null, "", "#devices");
-      } catch (e) {
-        window.location.hash = "devices";
-      }
-      show("devices");
-      trackFunnel("portal_view_devices");
-    });
+    if (btnConnect) {
+      btnConnect.addEventListener("click", function () {
+        var tg = getTelegramWebApp();
+        var label = (content.buttons && content.buttons.connect_guide) || "";
+        if (!tg && !hasStoredSetup() && btnConnect.textContent === label) {
+          window.location.href = "/portal/guide.html";
+          return;
+        }
+        try {
+          history.replaceState(null, "", "#devices");
+        } catch (e) {
+          window.location.hash = "devices";
+        }
+        show("devices");
+        trackFunnel("portal_view_devices");
+      });
+    }
+    var btnSetup = $("btn-setup");
+    if (btnSetup) {
+      btnSetup.addEventListener("click", function (ev) {
+        if (getTelegramWebApp() || getTelegramUserId() > 0) {
+          ev.preventDefault();
+          openTelegramSetup(ev);
+          return;
+        }
+        if (hasStoredSetup()) {
+          ev.preventDefault();
+          try {
+            history.replaceState(null, "", "#devices");
+          } catch (e2) {
+            window.location.hash = "devices";
+          }
+          show("devices");
+          trackFunnel("portal_view_devices");
+        }
+      });
+    }
+    var btnSetupSecondary = $("btn-setup-secondary");
+    if (btnSetupSecondary) {
+      bindExternalLink(btnSetupSecondary);
+    }
     var btnBackHome = $("btn-back-home");
     if (btnBackHome) {
       btnBackHome.addEventListener("click", function () {

@@ -1,0 +1,52 @@
+---
+description: UI/UX and copy rules for VPN bot, mini app and website
+globs:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.ts"
+  - "**/*.js"
+  - "**/*.html"
+  - "**/*.css"
+  - "**/*.md"
+alwaysApply: true
+---
+
+# VPN Product UI/UX Rules
+
+Project context:
+- Product: VPN service with bot, mini app and website.
+- Goal: make the interface clearer, more trustworthy, more conversion-focused and easier to use.
+- Audience: users who need a simple, reliable VPN and may not understand technical terms.
+
+General UX principles:
+- Reduce user anxiety: explain what happens next.
+- Make payment, trial, connection setup and support paths obvious.
+- Avoid technical jargon unless it is explained.
+- Prioritize mobile-first UX.
+- Every screen should have one main action.
+- Empty states, errors and loading states must be human-readable.
+- Do not invent backend capabilities or tariff conditions. If information is missing, mark it as missing.
+
+Copywriting principles:
+- Tone: clear, calm, trustworthy, not aggressive.
+- Avoid generic claims like "best VPN", "fastest", "100% secure" unless proven.
+- Prefer concrete benefits: stable access, easy setup, works on devices, quick support.
+- CTA should describe the next action: "Выбрать тариф", "Подключить VPN", "Открыть инструкцию".
+- Button text must be short and action-based.
+
+Conversion priorities:
+1. Explain value immediately.
+2. Show how to start.
+3. Make tariffs easy to compare.
+4. Reduce fear before payment.
+5. Make support easy to find.
+6. Show trust signals and limitations honestly.
+
+When reviewing UI:
+Return:
+1. Critical UX issues
+2. Copy issues
+3. Suggested screen/page structure
+4. Specific text replacements
+5. Components to improve
+6. What to test with Playwright

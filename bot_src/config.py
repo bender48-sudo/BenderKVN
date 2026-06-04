@@ -69,7 +69,7 @@ TRAFFIC_PACKS = {
 
 WELCOME_MESSAGE = "Начни бесплатный период — 90 дней без ограничений."
 CHOOSE_PLAN_MESSAGE = "Выбери вариант:"
-CHOOSE_TOPUP_MESSAGE = "Выбери сумму пополнения:"
+CHOOSE_TOPUP_MESSAGE = "Выбери сумму пополнения баланса:"
 CHOOSE_PAYMENT_METHOD_MESSAGE = "Выбери способ оплаты:"
 CUSTOM_AMOUNT_UNAVAILABLE = (
     "Что-то пошло не так. Попробуй выбрать сумму из предложенных вариантов или напиши нам."

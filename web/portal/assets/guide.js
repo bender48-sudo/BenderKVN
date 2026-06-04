@@ -77,6 +77,14 @@
       document.title = (v.title || "BenderVPN") + " — видео";
       $("guide-lead").textContent =
         v.lead || "Короткая инструкция для телефона. Работает без VPN.";
+      var autoNote = $("guide-auto-note");
+      if (autoNote) {
+        autoNote.textContent =
+          v.auto_note ||
+          (data.auto_profile && data.auto_profile.lead) ||
+          "";
+        if (!autoNote.textContent.trim()) autoNote.classList.add("hidden");
+      }
       $("tab-ios").textContent = v.ios_tab || "iPhone";
       $("tab-android").textContent = v.android_tab || "Android";
       $("guide-ios-caption").textContent = v.ios_caption || "";

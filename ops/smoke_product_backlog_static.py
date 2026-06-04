@@ -18,7 +18,16 @@ CHECKS = [
     ("TSPU_THREAT_MODEL_OK", ["docs/TSPU-THREAT-MODEL.md"], None),
     ("P4_RF_EGRESS_POC_OK", ["docs/P4-DNS-RF-EGRESS-POC.md"], None),
     ("NODE_DNS_RESOLVER_OK", ["docs/RUNBOOK-NODE-DNS-RESOLVER.md"], None),
-    ("SUB_TIER_PROFILES_OK", [], lambda: "tier_profiles" in json.loads((ROOT / "web/portal/content/ru.json").read_text(encoding="utf-8"))),
+    (
+        "SUB_TIER_PROFILES_OK",
+        [],
+        lambda: (
+            (ru := json.loads((ROOT / "web/portal/content/ru.json").read_text(encoding="utf-8")))
+            and "auto_profile" in ru
+            and "BenderVPN Auto" in json.dumps(ru, ensure_ascii=False)
+            and "turbo" not in json.dumps(ru.get("auto_profile", {}), ensure_ascii=False)
+        ),
+    ),
 ]
 
 

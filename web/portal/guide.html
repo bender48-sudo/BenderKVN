@@ -3,23 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0a0a0c">
+  <meta name="theme-color" content="#09090b">
   <title>BenderVPN — видео-инструкция</title>
   <link rel="stylesheet" href="/portal/assets/portal.css">
   <script src="/portal/assets/guide.js" defer></script>
 </head>
 <body>
   <main>
-    <header class="site-header">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true">🤖</span>
-        <h1 class="brand-name" id="guide-title">BenderVPN</h1>
-      </div>
-      <a class="nav-code" href="/portal/">&lt;/&gt; инструкция</a>
+    <header class="top top--sub">
+      <h1 class="brand-name" id="guide-title">BenderVPN</h1>
+      <a class="nav-link" href="/start/">← Главная</a>
     </header>
 
     <p id="guide-lead" class="lead"></p>
-    <p class="muted">В Happ несколько узлов: <strong>turbo</strong> — быстрее на Wi‑Fi/LTE; <strong>wl-direct</strong> / <strong>wl-routed</strong> — обход WL, обычно медленнее. На роутере выбирайте только <strong>turbo</strong>.</p>
+    <p id="guide-auto-note" class="callout callout--warn" role="note"></p>
 
     <div class="guide-tabs" role="tablist" aria-label="Платформа">
       <button type="button" class="guide-tab guide-tab--active" id="tab-ios" role="tab" aria-selected="true" aria-controls="panel-ios" data-device="iphone"></button>
@@ -36,14 +33,14 @@
       <div class="guide-media" id="media-android"></div>
     </section>
 
-    <div class="actions" style="margin-top:1rem">
-      <a class="btn btn-primary" id="btn-guide-setup" href="/setup/">Получить бесплатный VPN</a>
-      <a class="btn btn-secondary" id="btn-guide-portal" href="/portal/">К инструкции</a>
+    <div class="actions">
+      <a class="btn btn--primary btn--block" id="btn-guide-setup" href="/setup/">Получить настройку</a>
+      <a class="btn btn--secondary btn--block" id="btn-guide-portal" href="/start/">На главную</a>
     </div>
 
     <nav class="footer-nav">
-      <a class="btn btn-ghost btn-no-code" href="/start/">← Главная</a>
-      <a class="btn btn-ghost btn-no-code" href="/status">Статус</a>
+      <a class="btn btn--ghost" href="/start/help/errors/">Частые проблемы</a>
+      <a class="btn btn--ghost" href="/status">Статус</a>
     </nav>
   </main>
 </body>

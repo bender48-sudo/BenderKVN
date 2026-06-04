@@ -1459,7 +1459,8 @@ async def show_topup_handler(callback: types.CallbackQuery):
     balance = get_balance(user_id)
     days_left = balance_to_days(balance)
     text = (
-        f"<b>Баланс: {balance:.0f} ₽</b> — примерно {days_left} дней доступа.\n\n"
+        f"<b>Баланс: {balance:.0f} ₽</b> — примерно {days_left} дней доступа.\n"
+        "Списание: 6,67 ₽ в день, пока есть деньги на балансе.\n\n"
         "Выбери сумму пополнения:"
     )
     await callback.message.edit_text(
