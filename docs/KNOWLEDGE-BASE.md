@@ -9,7 +9,8 @@
 | Что нужно | Документ / артефакт |
 |-----------|---------------------|
 | **Карта бэклога (начать здесь)** | **`docs/BACKLOG-MAP.md`** |
-| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **NEXT=VPN-AUD-260**; **VPN-AUD-220** ✅ verify **2026-06-03** |
+| **Что делать сейчас (один NEXT)** | **`docs/BACKLOG-QUEUE.md`** — **NEXT=VPN-AUD-275** (relay→NL :443 PoC); **`docs/AGENT-PHASE13-NL-SCALE-BACKLOG.md`** |
+| **Ёмкость / failover 300→10k** | **`docs/CAPACITY-AND-FAILOVER-ROADMAP.md`** |
 | **Geo / routing Happ (не ломать)** | **`docs/VPN-ROUTING-GEO-GUARDRAILS.md`**, **`ops/happ_geosite_guard.py`** |
 | **Флоу (после Q062)** | **`docs/AGENT-FLOW-BACKLOG.md`** |
 | **ТСПУ — 12 наблюдений → бэклог** | **`docs/TSPU-OBSERVATIONS.md`** |

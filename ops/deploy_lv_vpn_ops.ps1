@@ -35,7 +35,9 @@ $files = @(
     "verify_ru_bypass_status.py",
     "patch_routing_regexp_to_geosite_ru.py",
     "happ_geosite_guard.py",
-    "transport_mux_audit.py"
+    "transport_mux_audit.py",
+    "nl_node_health_probe.py",
+    "disable_relay_nl_legacy_hosts.py"
 )
 
 foreach ($f in $files) {
