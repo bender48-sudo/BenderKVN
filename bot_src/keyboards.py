@@ -57,6 +57,17 @@ def create_help_menu_keyboard(setup_url: str | None = None):
     return builder.as_markup()
 
 
+def create_help_connect_keyboard():
+    """VPN-AUD-370: after /help_connect — portal errors + main menu."""
+    builder = InlineKeyboardBuilder()
+    errors_url = portal_links.public_errors_url()
+    if errors_url:
+        builder.button(text="\u2753 \u0427\u0430\u0441\u0442\u044b\u0435 \u043e\u0448\u0438\u0431\u043a\u0438", url=errors_url)
+    builder.button(text="\U0001f519 \u0413\u043b\u0430\u0432\u043d\u043e\u0435 \u043c\u0435\u043d\u044e", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
 def create_main_menu_keyboard(
     has_active_sub=False,
     trial_available=True,

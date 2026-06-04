@@ -306,6 +306,27 @@
 
 **NEXT:** **—** (фаза 16 закрыта **2026-06-04**). **Q032**, **O-VPN-009**, **O-VPN-002** — владелец.
 
+**NEXT:** **—** (фаза 17 агент закрыт **2026-06-04**). **Q032**, **O-VPN-002**, **O-VPN-009**, **P4-DNS-01 PoC live**, **P4-DNS-05** — владелец.
+
+### Фаза 17 — хвост VPN audit + P4-DNS + speed (2026-06-04)
+
+**Контекст:** [`docs/BACKLOG-VPN-FULL-AUDIT-2026-05-28.md`](BACKLOG-VPN-FULL-AUDIT-2026-05-28.md), [`docs/VPN-SPEED-AUDIT-TASKS-2026-05-30.md`](VPN-SPEED-AUDIT-TASKS-2026-05-30.md), **P4-DNS** §8.
+
+| Q | ID | Статус | Done when (кратко) | Verify | Commit (пример) |
+|---|-----|--------|-------------------|--------|-----------------|
+| 188 | **VPN-AUD-370** | **DONE** | bot `/help_connect` recovery URL | py_compile + AMS deploy | `product: VPN-AUD-370 help_connect` |
+| 189 | **VPN-AUD-BBR-02** | **DONE** | BBR audit relay#2 + 3/3 nodes | LV+NL **bbr+fq**; relay2 SSH timeout (probe OK) | `ops: VPN-AUD-BBR-02 relay2 BBR` |
+| 190 | **VPN-AUD-260** | **DONE** | singbox mount checklist in AMS runbook | doc step §11 | `docs: VPN-AUD-260 singbox gate` |
+| 191 | **VPN-AUD-430-staging** | **DONE** | observatory staging script + runbook (dry-run) | **OBSERVATORY_STAGING_NO_CHANGE** | `ops: VPN-AUD-430 observatory staging` |
+| 192 | **P4-DNS-03** | **DONE** | user DNS bootstrap guide | **`P4-DNS-USER-GUIDE.md`** | `docs: P4-DNS-03 user guide` |
+| 193 | **P4-DNS-06** | **DONE** | static DNS bootstrap spec | **`P4-DNS-STATIC-BOOTSTRAP-SPEC.md`** | `docs: P4-DNS-06 static spec` |
+| 194 | **P4-DNS-01** | **DONE** | internal PoC doc (dnstt/slipstream) | **`P4-DNS-01-POC-INTERNAL.md`** | `docs: P4-DNS-01 PoC internal` |
+| 195 | **P4-DNS-04b** | **DONE** | DNS delegation weekly cron LV | **DNS_DELEGATION_CRON_OK** | `ops: P4-DNS-04 dns cron LV` |
+
+**Остаётся (владелец / блокер):** **Q032**, **O-VPN-002**, **O-VPN-009**, **P4-DNS-05**, **VPN-AUD-301**, **VPN-AUD-103**, live **P4-DNS-01** VPS PoC.
+
+**Deferred (агент, отдельная сессия / staging):** VPN-AUD-320, 330, 340, 350, 370-xhttp-patch, 401, 410, 420-full, 430 prod apply, 450, 460.
+
 ### Фаза 16 — качество продукта (2026-06-04)
 
 **Контекст:** [`docs/AGENT-PHASE16-PRODUCT-QUALITY-BACKLOG.md`](AGENT-PHASE16-PRODUCT-QUALITY-BACKLOG.md).
@@ -523,6 +544,7 @@
 | 2026-06-03 | **Q169** P2-RED-SUB-EDGE-JURISDICTION-01 | **Q171** P3-FLOW-PORTAL-SMOKE-01 |
 | 2026-06-04 | **VPN-AUD-281** | **NEXT=VPN-AUD-282**; inject parity 16 proxy, gen 54 |
 | 2026-06-04 | **VPN-AUD-282–310** | **NEXT=—**; фаза 16 закрыта |
+| 2026-06-04 | **Q188–195** | **NEXT=—**; фаза 17 закрыта |
 | 2026-06-03 | **Q171** | **NEXT=—**; gate LV OK |
 | 2026-06-03 | — | **VPN-AUD-220** DONE verify; **NEXT=VPN-AUD-260** |
 | 2026-05-18 | **Q080–Q084** фаза 4 prod deploy | — (фаза 4 закрыта) |

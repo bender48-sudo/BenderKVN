@@ -69,9 +69,35 @@ def _ssh_direct(host: str, port: int, user: str, key: str) -> tuple[dict, str]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--ssh", action="store_true")
+    ap.add_argument("--local", action="store_true", help="audit this host only (run on node)")
     ap.add_argument("--ssh-alias", nargs="*", default=[], metavar="ALIAS")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
+
+    if args.local:
+        proc = subprocess.run(
+            ["sysctl", "-n", "net.ipv4.tcp_congestion_control"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        proc2 = subprocess.run(
+            ["sysctl", "-n", "net.core.default_qdisc"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        cc = (proc.stdout or "").strip()
+        qd = (proc2.stdout or "").strip()
+        ok = cc == "bbr" and qd in GOOD_QDISC
+        label = "localhost"
+        print(f"=== BBR / fq audit ({label}) ===")
+        if ok:
+            print(f"  {label}: bbr + {qd}  [BBR_OK]")
+            print("\nBBR_AUDIT_OK (1 node(s))")
+            return 0
+        print(f"  {label}: cc={cc!r} qdisc={qd!r}  [BBR_FIX_NEEDED]", file=sys.stderr)
+        return 1
 
     if not args.ssh:
         print("Run: python ops/audit_bbr_congestion.py --ssh --ssh-alias bvpn-relay bvpn-lv")

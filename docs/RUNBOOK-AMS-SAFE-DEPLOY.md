@@ -29,6 +29,7 @@
 | 8 | **Smoke** | Панель **200**, публичная подписка **200/304**, **`python ops/subscription_load_probe.py --total 20`** (p95 и гистограмма в §12). |
 | 9 | **Drift после** | **`python ops/drift-check.py`** exit **0** или осознанный waive в **`docs/DRIFT-POST-P0.md`**. |
 | 10 | **Журнал** | Строка **`docs/COMMERCIAL-BACKLOG.md` §12**: что накатили, smoke, probe JSON (кратко). |
+| 11 | **sing-box generator mount** (**VPN-AUD-260**) | После bump image Remnawave: `docker inspect remnawave \| grep singbox.generator` — mount **ro** на `/opt/remnawave/patches/singbox.generator.service.js`; `GET /api/sub/<short>` **200**; **`python ops/smoke_ams_safe_deploy.py --skip-sub-probe`**. |
 
 ---
 

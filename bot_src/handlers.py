@@ -1023,7 +1023,8 @@ async def menu_help_handler(callback: types.CallbackQuery):
     text = (
         "<b>Помощь</b>\n\n"
         "Инструкция по подключению и частые вопросы — кнопки ниже.\n\n"
-        "Если пишет «0 серверов» — не удаляй профиль: нажми 🔄 в Happ рядом с ним, узлы появятся сами."
+        "Если пишет «0 серверов» — не удаляй профиль: нажми 🔄 в Happ рядом с ним, узлы появятся сами.\n\n"
+        "На LTE не коннектится — команда <code>/help_connect</code>."
     )
     await callback.message.edit_text(
         text,
@@ -1062,6 +1063,37 @@ async def invite_friend_handler(callback: types.CallbackQuery):
 async def invite_command_handler(message: types.Message):
     await present_referral_invite(
         message, message.bot, message.chat.id, edit=False
+    )
+
+
+@user_router.message(Command("help_connect"))
+async def help_connect_handler(message: types.Message):
+    """VPN-AUD-370: TSPU/LTE recovery — alt nodes + full-matrix clients."""
+    user_id = message.from_user.id
+    register_user_if_not_exists(user_id, message.from_user.username or message.from_user.full_name)
+    log_action(user_id, "help_connect", "cmd")
+    user_data = get_user(user_id)
+    if not user_data or not user_data.get("agreed_to_terms"):
+        await message.answer(
+            "Сначала нажми /start и прими условия — потом вернись сюда.",
+            parse_mode="HTML",
+        )
+        return
+    try:
+        sub_url = await _fetch_subscription_url(user_id)
+    except Exception as exc:
+        logger.warning("help_connect fetch sub tid=%s: %s", user_id, exc)
+        sub_url = None
+    if not sub_url:
+        from shop_bot.subscription_resolve import subscription_unavailable
+
+        hint = subscription_unavailable(user_id)
+        await message.answer(f"❌ {hint['message']}", parse_mode="HTML")
+        return
+    await message.answer(
+        user_messages.msg_help_connect(sub_url),
+        parse_mode="HTML",
+        reply_markup=keyboards.create_help_connect_keyboard(),
     )
 
 

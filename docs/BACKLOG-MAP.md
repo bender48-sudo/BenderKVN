@@ -44,9 +44,10 @@
 | **10** | 161–166 | **Закрыта** | CodeRabbit bot раунд 2 |
 | **11** | 167–171 | **Закрыта** | LV→NL failover, backup sub **n4l8q:4433**, flow smoke gate |
 | **16** | 184–187 | **Закрыта** | inject parity gate, sub sample, autotrim runbook |
+| **17** | 188–195 | **Закрыта** | help_connect, BBR, P4-DNS docs, observatory staging, DNS cron |
 | **12** | 172–173 (VPN-AUD-210/220) | **210 REVERTED, 220 DONE** | geosite:ru NO-GO; NL :443×4 live stealth split |
 
-**Сейчас:** **NEXT=—** (фаза 16 закрыта **2026-06-04**). Владелец: **Q032**, **O-VPN-002**, **O-VPN-009**.
+**Сейчас:** **NEXT=—** (фазы 16–17 закрыты **2026-06-04**). Владелец: **Q032**, **O-VPN-002**, **O-VPN-009**, **P4-DNS-05**, live **P4-DNS-01** VPS.
 
 **Gate после каждой VPN-правки:** `python ops/vpn_verify_gate.py`
 

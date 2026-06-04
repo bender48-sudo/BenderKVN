@@ -227,3 +227,17 @@ def msg_auto_renew_multi_success(lines: list[str], total_cost: float, *, early: 
         else "🔁 <b>Автопродление после окончания срока</b>:\n\n"
     )
     return prefix + "\n".join(lines) + f"\n\nСписано всего: {total_cost:.0f} ₽"
+
+
+def msg_help_connect(sub_url: str) -> str:
+    """VPN-AUD-370: recovery path when LTE/TSPU blocks default Reality path."""
+    return (
+        "<b>Не коннектится на LTE?</b>\n\n"
+        "1. В Happ нажми 🔄 рядом с профилем (обновить подписку).\n"
+        "2. Выбери другой узел в списке: <b>NL / 9443</b> или <b>Latvia / 8443</b>.\n"
+        "3. Если всё ещё не работает — импортируй ту же ссылку в "
+        "<b>Hiddify</b> или <b>Streisand</b> (там доступен полный набор транспортов).\n\n"
+        "Твоя ссылка подписки:\n"
+        f"<code>{sub_url}</code>\n\n"
+        "Подробнее: раздел «Частые ошибки» в Mini App или /portal/help/errors/"
+    )

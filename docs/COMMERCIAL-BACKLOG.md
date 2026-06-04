@@ -247,12 +247,12 @@
 
 | ID | Задача | Done when |
 |----|--------|-----------|
-| **P4-DNS-01** | PoC: **dnstt** или **slipstream** + свой домен; замер через НСДИ и провайдера. | Внутренний doc с цифрами. |
+| ~~**P4-DNS-01**~~ | PoC doc | **`P4-DNS-01-POC-INTERNAL.md`** (live VPS — владелец) |
 | ~~**P4-DNS-02**~~ ✅ | Позиционирование: bootstrap **≠** полноценный VPN. | Блок **`docs/FAQ.md`** («DNS bootstrap ≠ VPN»); PoC (**P4-DNS-01**) отдельно. |
-| **P4-DNS-03** | Гайд пользователя (iOS/Android, DNS, ключ). | Прохождение без root. |
-| **P4-DNS-04** | Мониторинг зоны/authoritative отдельно от RU SNI‑проб. | **`ops/dns_delegation_probe.py`** на LV → **`DNS_DELEGATION_OK`** (P1-RED-DNS-01); TG-алерт — по необходимости. |
+| ~~**P4-DNS-03**~~ ✅ | Гайд пользователя (iOS/Android, DNS, ключ). | **`docs/P4-DNS-USER-GUIDE.md`** |
+| **P4-DNS-04** | Мониторинг зоны/authoritative отдельно от RU SNI‑проб. | **`ops/dns_delegation_probe.py`** + cron LV (**Q195**); TG-алерт — опц. |
 | **P4-DNS-05** | План Б: второй домен/ключ; ToS хостинга; внутренняя юр. оценка. | Wiki + owner. |
-| **P4-DNS-06** | (Опц.) Только статический bootstrap через DNS. | Спека «что разрешено». |
+| ~~**P4-DNS-06**~~ ✅ | (Опц.) Только статический bootstrap через DNS. | **`docs/P4-DNS-STATIC-BOOTSTRAP-SPEC.md`** |
 | **P4-DNS-07** | **RF egress** при **усечённом whitelist** (провод): весь **не‑РФ** режется → **прокси/нода в РФ** для выхода в «разрешённый» интернет. Не путать с основным VPN NL/LV. | PoC + go/no-go; связь **P4-DNS-01**. **`TSPU-OBSERVATIONS`** п.10. |
 | **P4-DNS-08** | **Whitelist IP:** списки **не** с устаревших GitHub seed; свой источник + периодическое обновление; мониторинг «пропали» IP. | Wiki источника; probe или ручной регламент 1×/нед. п.12. |
 
@@ -345,6 +345,7 @@
 | Дата | Что сделано |
 |------|-------------|
 | 2026-06-03 | **Q171 DONE:** `smoke_flow_backlog_static` — лимит только `install_steps` (≤5), `after_device` отдельно (≤3); LV **`VPN_VERIFY_GATE_OK`**, backup **SUB_JURISDICTION_BACKUP_OK**. |
+| 2026-06-04 | **Фаза 17:** **VPN-AUD-370** `/help_connect`; **BBR-02** 3/3; **260** runbook; **430-staging** dry-run; **P4-DNS** 01/03/04b/06 docs+cron. |
 | 2026-06-04 | **Фаза 16 закрыта:** **VPN-AUD-282** parity в gate LV; **VPN-AUD-283** sample 5 users **16 proxy / 13300 B**; **VPN-AUD-310** autotrim dry-run + **`RUNBOOK-LATENCY-SELECTOR-AUTOTRIM`**. |
 | 2026-06-04 | **VPN-AUD-281:** inject parity — relay-NL :443 **`isHidden=true`** (было `false` → sub 10 proxy); live **`vless_proxy=16`**, gen **54** notify; **`INJECT_SUB_PARITY_OK`**, gate LV. |
 | 2026-06-04 | **VPN-AUD-280:** post-inject verify **`RELAY_NL_443_LIVE_OK`**; sub-config gen **53** → AMS (notify refresh sub). |
