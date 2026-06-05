@@ -502,7 +502,7 @@
         foldHas.open = true;
       }
     } else {
-      primary.textContent = btns.landing_tg || btns.setup_browser_alt || "Telegram";
+      primary.textContent = btns.landing_primary_tg || btns.landing_tg || btns.setup_browser_alt || "Telegram";
       primary.href = botUrlWithReferral();
       bindExternalLink(primary);
       primary.classList.remove("hidden");
@@ -682,7 +682,7 @@
     }
     var tgBtn = $("btn-landing-tg");
     if (tgBtn) {
-      tgBtn.textContent = btns.landing_tg || btns.setup_browser_alt || "Telegram";
+      tgBtn.textContent = btns.landing_primary_tg || btns.landing_tg || btns.setup_browser_alt || "Telegram";
       tgBtn.href = botUrlWithReferral();
       bindExternalLink(tgBtn);
     }

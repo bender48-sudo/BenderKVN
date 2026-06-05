@@ -47,6 +47,11 @@
       hide($("setup-signup"));
     } else {
       showEl($("setup-signup"));
+      if (!isTelegramMiniApp()) {
+        showEl($("setup-paths"));
+        showEl($("setup-hero"));
+        if ($("setup-recover-fold")) showEl($("setup-recover-fold"));
+      }
     }
   }
 
@@ -195,7 +200,7 @@
       var st = stores[key];
       if (!st || !st.url) return;
       var a = document.createElement("a");
-      a.className = "btn btn-secondary";
+      a.className = "btn btn--secondary";
       a.href = st.url;
       a.target = "_blank";
       a.rel = "noopener";
@@ -348,6 +353,9 @@
     hide($("setup-loading"));
     hide($("setup-signup"));
     hide($("setup-error"));
+    hide($("setup-paths"));
+    hide($("setup-hero"));
+    if ($("setup-recover-fold")) hide($("setup-recover-fold"));
     if ($("config-ready-title")) {
       $("config-ready-title").textContent = s.config_ready_title || "Твоя настройка готова";
     }
@@ -413,8 +421,8 @@
     if (devRule && s.device_rule) devRule.textContent = s.device_rule;
     var instr = $("btn-setup-instruction");
     if (instr) {
-      instr.href = "/start/#devices";
-      instr.textContent = s.instruction_link || "Инструкция";
+      instr.href = "/portal/guide.html?v=27";
+      instr.textContent = s.instruction_link || "Открыть инструкцию";
     }
     bindExternalLink(instr);
     renderQr(norm);
@@ -457,10 +465,10 @@
     var termsUrl = shared ? shared.legalTermsUrl() : "/portal/legal/terms.html";
     var privacyUrl = shared ? shared.legalPrivacyUrl() : "/portal/legal/privacy.html";
     label.innerHTML =
-      'Я принимаю <a class="site-footer__link" href="' +
+      'Я принимаю <a class="text-link" href="' +
       termsUrl +
       '" target="_blank" rel="noopener">условия пользования</a> и ' +
-      '<a class="site-footer__link" href="' +
+      '<a class="text-link" href="' +
       privacyUrl +
       '" target="_blank" rel="noopener">политику конфиденциальности</a>.';
     function syncBtn() {
@@ -581,9 +589,12 @@
       tg.ready();
       tg.expand();
     }
-    $("setup-title").textContent = s.title_tg || s.title;
-    $("setup-lead").textContent = s.lead_tg || s.lead_browser;
+    if ($("setup-hero-title")) $("setup-hero-title").textContent = s.title_tg || s.title;
+    if ($("setup-hero-lead")) $("setup-hero-lead").textContent = s.lead_tg || "";
+    if ($("setup-hero")) showEl($("setup-hero"));
+    hide($("setup-paths"));
     hide($("setup-signup"));
+    if ($("setup-recover-fold")) hide($("setup-recover-fold"));
     hide($("setup-error"));
     showEl($("setup-loading"));
     $("setup-loading").textContent = s.signup_loading_tg || s.signup_loading;
@@ -641,29 +652,84 @@
       });
   }
 
+  function botUrlWithReferral() {
+    try {
+      var ref = localStorage.getItem("bvpn_ref_code") || "";
+      if (ref) return SUPPORT_BOT_URL + "?start=ref_" + encodeURIComponent(ref);
+    } catch (e) {
+      /* ignore */
+    }
+    return SUPPORT_BOT_URL;
+  }
+
+  function renderSetupStepsList() {
+    var list = $("setup-steps-list");
+    var s = content.setup || {};
+    if (!list) return;
+    list.innerHTML = "";
+    (s.steps_list || s.journey_steps || []).forEach(function (step, idx) {
+      var li = document.createElement("li");
+      li.textContent = idx + 1 + ". " + step;
+      list.appendChild(li);
+    });
+  }
+
   function bindTexts() {
     var s = content.setup;
     var inTg = isTelegramMiniApp();
     var browser = isBrowserFlow();
-    $("setup-title").textContent = inTg
-      ? s.title_tg || s.title
-      : s.title_browser || s.title;
-    $("setup-lead").textContent = inTg ? s.lead_tg || s.lead_browser : s.lead_browser;
-    if (browser) {
-      renderJourney(1);
-      var badge = $("signup-step-badge");
-      if (badge) {
-        badge.textContent = "Шаг 1 из 3";
-        showEl(badge);
-      }
-    } else {
+    var hero = $("setup-hero");
+    var paths = $("setup-paths");
+    var recoverFold = $("setup-recover-fold");
+
+    if (inTg) {
+      if (hero) hide(hero);
+      if (paths) hide(paths);
+      if (recoverFold) hide(recoverFold);
       hide($("setup-journey"));
       hide($("signup-step-badge"));
+    } else if (browser) {
+      if (hero) showEl(hero);
+      if ($("setup-hero-title")) {
+        $("setup-hero-title").textContent = s.hero_title || s.title_browser || s.title;
+      }
+      if ($("setup-hero-lead")) {
+        $("setup-hero-lead").textContent = s.hero_lead || s.path_email_lead || "";
+      }
+      if (paths) showEl(paths);
+      if ($("setup-tg-badge")) $("setup-tg-badge").textContent = s.path_tg_badge || "90 дней";
+      if ($("setup-tg-title")) $("setup-tg-title").textContent = s.path_tg_title || "Trial через Telegram";
+      if ($("setup-tg-lead")) $("setup-tg-lead").textContent = s.path_tg_lead || "";
+      var tgBtn = $("btn-setup-tg");
+      if (tgBtn) {
+        tgBtn.textContent = s.path_tg_button || "Открыть Telegram-бот";
+        tgBtn.href = botUrlWithReferral();
+        bindExternalLink(tgBtn);
+      }
+      if ($("setup-email-badge")) $("setup-email-badge").textContent = s.path_email_badge || "1 сутки";
+      if ($("setup-email-title")) {
+        $("setup-email-title").textContent = s.path_email_title || s.signup_heading;
+      }
+      if ($("setup-email-lead")) {
+        $("setup-email-lead").textContent = s.path_email_lead || s.signup_lead;
+      }
+      renderJourney(1);
+      renderSetupStepsList();
+      if (recoverFold) showEl(recoverFold);
     }
-    $("signup-heading").textContent = s.signup_heading;
-    $("signup-lead").textContent = s.signup_lead;
-    $("recover-heading").textContent = s.recover_heading;
+
+    if ($("recover-fold-title")) {
+      $("recover-fold-title").textContent = s.recover_fold_title || s.recover_heading || "";
+    }
     $("recover-lead").textContent = s.recover_lead;
+    if ($("recover-tg-hint")) $("recover-tg-hint").textContent = s.recover_tg_hint || "";
+    var recoverTgBtn = $("btn-recover-tg-id");
+    if (recoverTgBtn) {
+      recoverTgBtn.textContent = s.recover_tg_btn || "Узнать мой Telegram ID";
+      recoverTgBtn.href = SUPPORT_BOT_URL + "?start=show_id";
+      bindExternalLink(recoverTgBtn);
+    }
+    if ($("recover-email-label")) $("recover-email-label").textContent = s.signup_email_label;
     $("signup-email-label").textContent = s.signup_email_label;
     $("signup-phone-label").textContent = s.signup_phone_label;
     var consent = $("signup-consent-note");
@@ -686,8 +752,13 @@
       var gv = (content.setup_videos || {}).guide_link || content.buttons.watch_guide;
       guideBtn.textContent = gv || "Инструкция по шагам";
     }
-    var recoverLabel = $("recover-email").previousElementSibling;
-    if (recoverLabel) recoverLabel.textContent = s.signup_email_label;
+    var instr = $("btn-setup-instruction");
+    if (instr) {
+      instr.textContent = s.instruction_link || "Открыть инструкцию";
+    }
+    if ($("device-pick-title")) {
+      $("device-pick-title").textContent = s.device_pick_title || "Выбери устройство";
+    }
   }
 
   fetch(CONTENT_URL)
@@ -718,14 +789,18 @@
           loadTelegramSetup(0);
           return;
         }
+        showEl($("setup-paths"));
         showEl($("setup-signup"));
+        if ($("setup-recover-fold")) showEl($("setup-recover-fold"));
         return;
       }
 
       hide($("setup-signup"));
+      hide($("setup-paths"));
+      hide($("setup-hero"));
+      if ($("setup-recover-fold")) hide($("setup-recover-fold"));
       showEl($("setup-loading"));
       $("setup-loading").textContent = content.setup.lead_token;
-      $("setup-lead").textContent = content.setup.lead_token;
 
       fetch(API_VERIFY + "?t=" + encodeURIComponent(token))
         .then(function (r) {
