@@ -284,17 +284,11 @@ async def show_main_menu(message: types.Message, edit_message: bool = False):
     is_admin = is_admin_telegram(user_id)
 
     if has_active_sub:
-        text = (
-            "Всё работает. Выбери, что нужно:\n\n"
-            "Другу — 90 дней бесплатно: кнопка «Пригласить друга»."
-        )
+        text = user_messages.MSG_MAIN_MENU_ACTIVE
     else:
-        text = (
-            "Привет.\n\n"
-            "Начни бесплатный период — 90 дней без ограничений.\n"
-            "Уже есть доступ? Кнопка «Мой VPN» ниже.\n\n"
-            "Есть друзья — «Пригласить друга»: отправь им ссылку."
-        )
+        text = user_messages.MSG_MAIN_MENU_NEW
+        if trial_available:
+            text += user_messages.MSG_MAIN_MENU_TRIAL_HINT
     auto_renew = get_auto_renew(user_id) if user_db_data else False
     keyboard = keyboards.create_main_menu_keyboard(
         has_active_sub,
@@ -1017,19 +1011,47 @@ async def my_account_handler(callback: types.CallbackQuery):
             text, parse_mode="HTML", reply_markup=keyboards.create_account_no_sub_keyboard(trial_available)
         )
 
+@user_router.callback_query(F.data == "menu_get_setup")
+async def menu_get_setup_handler(callback: types.CallbackQuery):
+    await callback.answer()
+    user_id = callback.from_user.id
+    user_keys = get_user_keys(user_id)
+    user_db = get_user(user_id)
+    trial_available = not (user_db and user_db.get("trial_used"))
+    if not user_keys and trial_available:
+        await callback.message.edit_text(
+            user_messages.MSG_SETUP_NEED_TRIAL,
+            reply_markup=keyboards.create_trial_before_setup_keyboard(),
+        )
+        return
+    setup_url, _setup_reason = await _wizard_setup_url(user_id)
+    if not setup_url:
+        from shop_bot.bot import portal_links
+
+        setup_url = portal_links.public_setup_url()
+    await callback.message.edit_text(
+        user_messages.MSG_SETUP_LINK,
+        reply_markup=keyboards.create_setup_link_keyboard(setup_url),
+        disable_web_page_preview=True,
+    )
+
+
 @user_router.callback_query(F.data == "menu_help")
 async def menu_help_handler(callback: types.CallbackQuery):
     await callback.answer()
+    user_id = callback.from_user.id
+    setup_url, _ = await _wizard_setup_url(user_id)
     text = (
         "<b>Помощь</b>\n\n"
-        "Инструкция по подключению и частые вопросы — кнопки ниже.\n\n"
-        "Если пишет «0 серверов» — не удаляй профиль: нажми 🔄 в Happ рядом с ним, узлы появятся сами.\n\n"
+        "Инструкция и частые вопросы — кнопки ниже.\n\n"
+        "Если пишет «0 серверов» — не удаляй профиль: нажми 🔄 в Happ рядом с ним, "
+        "узлы появятся сами.\n\n"
         "На LTE не коннектится — команда <code>/help_connect</code>."
     )
     await callback.message.edit_text(
         text,
         parse_mode="HTML",
-        reply_markup=keyboards.create_help_menu_keyboard(),
+        reply_markup=keyboards.create_help_menu_keyboard(setup_url=setup_url),
     )
 
 
@@ -1045,9 +1067,7 @@ async def contact_support_handler(callback: types.CallbackQuery):
         )
         return
     await callback.message.answer(
-        "Напиши, что случилось — отвечаем сами.\n\n"
-        "Если что-то не работает, укажи устройство и опиши ситуацию. "
-        "Скриншот ускоряет разбор.",
+        user_messages.MSG_SUPPORT_PROMPT,
         parse_mode="HTML",
     )
 
