@@ -52,6 +52,23 @@
     return 0;
   }
 
+  /** True only inside a real Telegram Mini App session (not bare telegram-web-app.js in a browser). */
+  function hasTelegramInitContext() {
+    var tg = getTelegramWebApp();
+    if (!tg) return false;
+    var initData = (tg.initData || "").trim();
+    if (initData) return true;
+    var unsafe = tg.initDataUnsafe;
+    if (!unsafe || typeof unsafe !== "object") return false;
+    if (unsafe.user && unsafe.user.id) return true;
+    if (unsafe.auth_date) return true;
+    return false;
+  }
+
+  function isTelegramMiniApp() {
+    return hasTelegramInitContext();
+  }
+
   function normalizeSubUrl(url) {
     var u = (url || "").trim();
     if (!u) return u;
@@ -110,6 +127,7 @@
   }
 
   function initTelegram() {
+    if (!isTelegramMiniApp()) return;
     var tg = getTelegramWebApp();
     if (!tg) return;
     document.documentElement.classList.add("tg-webapp");
@@ -151,7 +169,7 @@
   function openExternal(url) {
     var u = (url || "").trim();
     if (!u) return;
-    var tg = getTelegramWebApp();
+    var tg = isTelegramMiniApp() ? getTelegramWebApp() : null;
     if (tg) {
       if (
         /^https?:\/\/(t\.me|telegram\.me)\//i.test(u) &&
@@ -187,7 +205,7 @@
     el.addEventListener("click", function (ev) {
       var href = (el.getAttribute("href") || "").trim();
       if (!href || href === "#") return;
-      if (getTelegramWebApp()) {
+      if (isTelegramMiniApp()) {
         ev.preventDefault();
         openExternal(href);
       }
@@ -209,7 +227,7 @@
   function openTelegramSetup(ev) {
     if (ev) ev.preventDefault();
     var tid = getTelegramUserId();
-    if (!getTelegramWebApp() && tid <= 0) {
+    if (!isTelegramMiniApp() && tid <= 0) {
       window.location.href = SETUP_PATH;
       return;
     }
@@ -231,7 +249,7 @@
           }
         }
         if (res.body && res.body.ok && res.body.setup_page_url) {
-          if (getTelegramWebApp()) {
+          if (isTelegramMiniApp()) {
             window.location.href = res.body.setup_page_url;
           } else {
             openExternal(res.body.setup_page_url);
@@ -243,7 +261,7 @@
           (content.setup && content.setup.error_no_subscription) ||
           "Сначала получите доступ в боте.";
         if (res.body && res.body.bot_url) {
-          if (getTelegramWebApp()) {
+          if (isTelegramMiniApp()) {
             openExternal(res.body.bot_url);
           } else {
             window.location.href = res.body.bot_url;
@@ -260,7 +278,7 @@
     var el = $("btn-cabinet-setup");
     if (!el) return;
     el.addEventListener("click", function (ev) {
-      if (getTelegramWebApp() || getTelegramUserId() > 0) {
+      if (isTelegramMiniApp() || getTelegramUserId() > 0) {
         openTelegramSetup(ev);
       }
     });
@@ -377,7 +395,7 @@
   }
 
   function updateHomeCtas() {
-    var tg = getTelegramWebApp();
+    var tg = isTelegramMiniApp();
     var btns = content.buttons || {};
     var primary = $("btn-setup");
     var secondary = $("btn-setup-secondary");
@@ -466,7 +484,7 @@
 
   function renderHome() {
     var home = content.home;
-    var tg = getTelegramWebApp();
+    var tg = isTelegramMiniApp();
     $("page-title").textContent = home.title;
     var badge = $("hero-badge");
     if (badge && home.hero_badge) {
@@ -695,7 +713,7 @@
 
   function renderCabinet() {
     var cab = content.cabinet || {};
-    var tg = getTelegramWebApp();
+    var tg = isTelegramMiniApp();
     if ($("cabinet-title")) {
       $("cabinet-title").textContent = cab.title || "Мой VPN";
     }
@@ -753,7 +771,7 @@
       err.textContent = msg;
       err.classList.remove("hidden");
     }
-    if (lead && getTelegramWebApp()) {
+    if (lead && isTelegramMiniApp()) {
       lead.textContent = msg;
     }
   }
@@ -766,7 +784,7 @@
     if (!doc || !doc.ok) {
       var msg =
         (doc && doc.message) ||
-        (getTelegramWebApp()
+        (isTelegramMiniApp()
           ? "Аккаунт не найден. Нажми /start в боте и открой Mini App снова."
           : "Не найдено. Проверь email или ID.");
       showCabinetError(msg);
@@ -790,7 +808,7 @@
       balEl.classList.remove("cabinet-balance--low");
     }
     var login = $("cabinet-login-panel");
-    if (login && getTelegramWebApp()) login.classList.add("hidden");
+    if (login && isTelegramMiniApp()) login.classList.add("hidden");
     var botBtn = $("btn-cabinet-bot");
     if (botBtn && doc.bot_url) {
       botBtn.href = doc.bot_url;
@@ -827,8 +845,7 @@
   }
 
   function loadCabinetBalanceAttempt(retry) {
-    var tg = getTelegramWebApp();
-    if (tg) {
+    if (isTelegramMiniApp()) {
       var uid = getTelegramUserId();
       if (!uid && retry < 8) {
         setTimeout(function () {
@@ -914,7 +931,7 @@
     if (view) return view;
     var raw = (window.location.hash || "").replace(/^#/, "").trim();
     if (raw) return raw;
-    var tg = getTelegramWebApp();
+    var tg = isTelegramMiniApp() ? getTelegramWebApp() : null;
     if (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
       return String(tg.initDataUnsafe.start_param).trim();
     }
@@ -978,9 +995,8 @@
     var btnConnect = $("btn-connect");
     if (btnConnect) {
       btnConnect.addEventListener("click", function () {
-        var tg = getTelegramWebApp();
         var label = (content.buttons && content.buttons.connect_guide) || "";
-        if (!tg && !hasStoredSetup() && btnConnect.textContent === label) {
+        if (!isTelegramMiniApp() && !hasStoredSetup() && btnConnect.textContent === label) {
           window.location.href = "/portal/guide.html";
           return;
         }
@@ -996,7 +1012,7 @@
     var btnSetup = $("btn-setup");
     if (btnSetup) {
       btnSetup.addEventListener("click", function (ev) {
-        if (getTelegramWebApp() || getTelegramUserId() > 0) {
+        if (isTelegramMiniApp() || getTelegramUserId() > 0) {
           ev.preventDefault();
           openTelegramSetup(ev);
           return;
@@ -1086,7 +1102,7 @@
       if (route !== "cabinet" && route !== "devices" && !/^device=/.test(route)) {
         trackFunnel("portal_view_home");
       }
-      if (getTelegramWebApp() || window.BVPN_FOCUS_ACCOUNT) {
+      if (isTelegramMiniApp() || window.BVPN_FOCUS_ACCOUNT) {
         loadCabinetBalance();
       }
       if (window.BVPN_FOCUS_ACCOUNT) {

@@ -25,7 +25,8 @@
     if (el) el.classList.remove("hidden");
   }
 
-  function showError(msg, code) {
+  function showError(msg, code, opts) {
+    opts = opts || {};
     hide($("setup-loading"));
     hide($("setup-content"));
     $("setup-error").textContent = msg;
@@ -42,7 +43,11 @@
       }
     }
     showEl($("setup-error"));
-    showEl($("setup-signup"));
+    if (opts.hideSignup) {
+      hide($("setup-signup"));
+    } else {
+      showEl($("setup-signup"));
+    }
   }
 
   function storeForKey(key) {
@@ -54,10 +59,49 @@
     return window.Telegram && window.Telegram.WebApp;
   }
 
+  function getTelegramUserId() {
+    var tg = getTelegramWebApp();
+    if (tg) {
+      var u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+      if (u && u.id) return u.id;
+      try {
+        var idp = new URLSearchParams(tg.initData || "");
+        var uj = idp.get("user");
+        if (uj) {
+          var parsed = JSON.parse(uj);
+          if (parsed && parsed.id) return parsed.id;
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    }
+    var q = new URLSearchParams(window.location.search || "");
+    var tid = parseInt(q.get("tid") || "0", 10);
+    if (tid > 0) return tid;
+    return 0;
+  }
+
+  /** True only inside a real Telegram Mini App session (not bare telegram-web-app.js in a browser). */
+  function hasTelegramInitContext() {
+    var tg = getTelegramWebApp();
+    if (!tg) return false;
+    var initData = (tg.initData || "").trim();
+    if (initData) return true;
+    var unsafe = tg.initDataUnsafe;
+    if (!unsafe || typeof unsafe !== "object") return false;
+    if (unsafe.user && unsafe.user.id) return true;
+    if (unsafe.auth_date) return true;
+    return false;
+  }
+
+  function isTelegramMiniApp() {
+    return hasTelegramInitContext();
+  }
+
   function openExternal(url) {
     var u = (url || "").trim();
     if (!u) return;
-    var tg = getTelegramWebApp();
+    var tg = isTelegramMiniApp() ? getTelegramWebApp() : null;
     if (tg) {
       if (
         /^https?:\/\/(t\.me|telegram\.me)\//i.test(u) &&
@@ -80,7 +124,7 @@
     el.addEventListener("click", function (ev) {
       var href = (el.getAttribute("href") || "").trim();
       if (!href || href === "#") return;
-      if (getTelegramWebApp()) {
+      if (isTelegramMiniApp()) {
         ev.preventDefault();
         openExternal(href);
       }
@@ -103,7 +147,7 @@
   }
 
   function isBrowserFlow() {
-    return !getTelegramWebApp() && !token;
+    return !isTelegramMiniApp() && !token;
   }
 
   function renderJourney(activeStep) {
@@ -249,7 +293,7 @@
     }
     var step1Lead = $("setup-step1-lead");
     if (step1Lead) {
-      var inTg = !!getTelegramWebApp();
+      var inTg = isTelegramMiniApp();
       var lead = inTg
         ? s.step1_lead_tg || s.step1_lead
         : s.step1_lead;
@@ -414,32 +458,10 @@
     });
   }
 
-  function getTelegramUserId() {
-    var tg = getTelegramWebApp();
-    if (tg) {
-      var u = tg.initDataUnsafe && tg.initDataUnsafe.user;
-      if (u && u.id) return u.id;
-      try {
-        var idp = new URLSearchParams(tg.initData || "");
-        var uj = idp.get("user");
-        if (uj) {
-          var parsed = JSON.parse(uj);
-          if (parsed && parsed.id) return parsed.id;
-        }
-      } catch (e) {
-        /* ignore */
-      }
-    }
-    var params = new URLSearchParams(window.location.search || "");
-    var tid = parseInt(params.get("tid") || "0", 10);
-    if (tid > 0) return tid;
-    return 0;
-  }
-
   function loadTelegramSetup(retry) {
     var s = content.setup;
-    var tg = getTelegramWebApp();
-    if (tg) {
+    if (isTelegramMiniApp()) {
+      var tg = getTelegramWebApp();
       document.documentElement.classList.add("tg-webapp");
       tg.ready();
       tg.expand();
@@ -461,8 +483,10 @@
     if (!tid) {
       hide($("setup-loading"));
       showError(
-        "Не удалось определить Telegram. Закройте страницу и откройте снова из бота или Mini App.",
-        "service_unavailable"
+        s.error_tg_user_missing ||
+          "Не удалось определить тебя в Telegram. Закрой Mini App и открой снова из бота.",
+        "service_unavailable",
+        { hideSignup: true }
       );
       return;
     }
@@ -485,7 +509,7 @@
         if (res.body && res.body.error === "no_subscription") {
           msg = s.error_no_subscription || msg;
         }
-        showError(msg, res.body && res.body.error);
+        showError(msg, res.body && res.body.error, { hideSignup: true });
         if (res.body && res.body.bot_url) {
           var helpWrap = $("setup-error-help");
           var helpLink = $("setup-error-help-link");
@@ -498,13 +522,13 @@
       })
       .catch(function () {
         hide($("setup-loading"));
-        showError(content.errors.generic, "service_unavailable");
+        showError(content.errors.generic, "service_unavailable", { hideSignup: true });
       });
   }
 
   function bindTexts() {
     var s = content.setup;
-    var inTg = !!getTelegramWebApp();
+    var inTg = isTelegramMiniApp();
     var browser = isBrowserFlow();
     $("setup-title").textContent = inTg
       ? s.title_tg || s.title
@@ -558,7 +582,7 @@
       bindForms();
 
       if (!token) {
-        if (getTelegramWebApp() || getTelegramUserId() > 0) {
+        if (isTelegramMiniApp()) {
           loadTelegramSetup(0);
           return;
         }

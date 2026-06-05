@@ -269,6 +269,7 @@
     "title_tg": "Настройка VPN",
     "lead_tg": "Подготовим QR и ссылку для Happ по твоему Telegram. Регистрация по email здесь не нужна.",
     "signup_loading_tg": "Загружаем настройку…",
+    "error_tg_user_missing": "Не удалось определить тебя в Telegram. Закрой Mini App и открой снова из бота.",
     "error_no_subscription": "Не удалось получить настройку. В боте: «Мой VPN» → QR или напиши нам.",
     "error_no_subscription_new": "Сначала в боте: «Принимаю» → «Начать бесплатно», затем QR здесь.",
     "error_open_bot": "Открыть бота",
