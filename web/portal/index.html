@@ -16,7 +16,9 @@
 
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" defer></script>
+  <script src="/portal/assets/qrcode.min.js" defer></script>
+
+  <script src="/portal/assets/portal-shared.js" defer></script>
 
   <script src="/portal/assets/portal.js" defer></script>
 
@@ -34,7 +36,7 @@
 
       <h1 class="top__title" id="page-title">BenderVPN</h1>
 
-      <a class="top__link" href="/status" id="nav-status-link">Статус</a>
+      <a class="top__link" href="/status" id="nav-status-link" data-bvpn-status="1">Статус</a>
 
     </header>
 
@@ -54,7 +56,22 @@
 
       <p class="hero-tag hidden" id="hero-badge"></p>
 
+      <div class="sheet sheet--counter hidden" id="slots-card" aria-live="polite">
+        <p class="sheet__label" id="slots-title">Осталось мест</p>
+        <p class="slots-value" id="slots-value">—</p>
+        <p class="muted" id="slots-hint"></p>
+      </div>
 
+      <section class="sheet hidden" id="landing-paths" aria-labelledby="landing-paths-title">
+        <h2 class="sheet__label" id="landing-paths-title">Как начать</h2>
+        <p class="muted" id="landing-tg-lead"></p>
+        <div class="cta cta--tight">
+          <a class="btn btn--primary btn--block" id="btn-landing-tg" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
+          <a class="btn btn--secondary btn--block" id="btn-landing-email" href="/setup/"></a>
+        </div>
+        <p class="muted" id="landing-email-lead"></p>
+        <p class="callout callout--info hidden" id="referral-note" role="note"></p>
+      </section>
 
       <div class="banner banner--info hidden" id="tg-blocked-banner" role="note">
 
@@ -118,7 +135,7 @@
 
             <button type="button" class="btn btn--small hidden" id="btn-events-ack"></button>
 
-            <a class="text-link" id="btn-events-more" href="/status"></a>
+            <a class="text-link" id="btn-events-more" href="/status" data-bvpn-status="1"></a>
 
           </div>
 
@@ -130,11 +147,13 @@
 
       <details class="fold" id="account-fold">
 
-        <summary id="account-fold-title">Баланс и продление</summary>
+        <summary id="account-fold-title">Личный кабинет</summary>
 
         <section class="sheet sheet--nested" id="account-sheet" aria-labelledby="account-heading">
 
-          <h2 class="visually-hidden" id="account-heading">Ваш доступ</h2>
+          <h2 class="visually-hidden" id="account-heading">Личный кабинет</h2>
+
+          <p class="cabinet-lead muted" id="cabinet-lead-inline"></p>
 
           <p class="sheet__label" id="cabinet-balance-label">Баланс</p>
 
@@ -145,6 +164,15 @@
           <p class="banner banner--warn hidden" id="cabinet-load-error" role="alert"></p>
 
           <p class="muted" id="cabinet-web-notify"></p>
+
+          <div class="sheet sheet--nested hidden" id="cabinet-configs-panel">
+            <p class="sheet__label" id="cabinet-configs-title">Конфигурации</p>
+            <ul class="config-list" id="cabinet-configs-list"></ul>
+            <p class="callout callout--warn" id="cabinet-device-rule" role="note"></p>
+            <a class="btn btn--secondary btn--block" id="btn-new-device" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
+          </div>
+
+          <div class="support-cards" id="cabinet-support-cards"></div>
 
 
 
@@ -299,6 +327,8 @@
       <p id="cabinet-lead" class="hidden"></p>
 
     </section>
+
+    <div id="site-footer-mount"></div>
 
   </main>
 

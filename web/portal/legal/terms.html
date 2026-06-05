@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#09090b">
+  <title>Условия пользования — BenderVPN</title>
+  <link rel="stylesheet" href="/portal/assets/portal.css">
+  <script src="/portal/assets/portal-shared.js" defer></script>
+  <script defer>
+    document.addEventListener("DOMContentLoaded", function () {
+      fetch("/portal/content/ru.json")
+        .then(function (r) { return r.json(); })
+        .then(function (c) {
+          var m = document.getElementById("site-footer-mount");
+          if (m && window.BenderPortalShared) {
+            BenderPortalShared.renderSiteFooter(m, c);
+          }
+        })
+        .catch(function () {});
+    });
+  </script>
+</head>
+<body>
+  <main>
+    <header class="top top--sub">
+      <h1 class="brand-name">Условия пользования</h1>
+      <a class="nav-link" href="/start/">← Главная</a>
+    </header>
+    <section class="sheet legal-doc">
+      <p class="banner banner--warn" role="note">
+        <strong>Предварительная редакция.</strong>
+        Финальная редакция документов может быть обновлена перед публичным запуском.
+      </p>
+      <p>BenderVPN — сервис доступа к интернету по подписке. Используя сервис, вы соглашаетесь с правилами ниже.</p>
+      <h2 class="section-title" style="font-size:1.05rem">1. Доступ</h2>
+      <p>Сервис растёт по приглашениям и ограничен по числу активных конфигураций. Одна конфигурация — одно устройство.</p>
+      <h2 class="section-title" style="font-size:1.05rem">2. Оплата</h2>
+      <p>После пробного периода доступ продлевается с баланса в Telegram-боте. Тарификация указана в боте и личном кабинете.</p>
+      <h2 class="section-title" style="font-size:1.05rem">3. Ответственность</h2>
+      <p>Мы стараемся поддерживать стабильный доступ, но не гарантируем бесперебойную работу всех сайтов и сервисов в любой момент.</p>
+      <h2 class="section-title" style="font-size:1.05rem">4. Контакты</h2>
+      <p>Вопросы — через поддержку в Telegram-боте.</p>
+    </section>
+    <div id="site-footer-mount"></div>
+  </main>
+</body>
+</html>

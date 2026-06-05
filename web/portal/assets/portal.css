@@ -727,6 +727,89 @@ main {
   border-top: 1px solid var(--border);
 }
 
+.site-footer {
+  margin-top: 1.75rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.site-footer__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.35rem;
+  align-items: center;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.site-footer__link {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.site-footer__link:hover {
+  color: var(--text);
+}
+
+.site-footer__sep {
+  color: var(--muted);
+  opacity: 0.45;
+  font-size: 0.65rem;
+  user-select: none;
+}
+
+.site-footer__note {
+  margin: 0.45rem 0 0;
+  font-size: 0.72rem;
+}
+
+.checkbox-row .site-footer__link {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.device-grid--guide {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.device-card--active {
+  border-color: rgba(232, 93, 4, 0.55);
+  background: var(--accent-soft);
+}
+
+.guide-steps-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.guide-steps-card ol {
+  margin: 0.5rem 0 0;
+  padding-left: 1.15rem;
+}
+
+.guide-media--optional .guide-gif,
+.guide-media--optional .guide-video {
+  max-height: 200px;
+  width: 100%;
+  object-fit: contain;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
 .btn-primary {
   background: var(--accent);
   color: #fff;
@@ -870,4 +953,124 @@ html.tg-webapp a:not(.btn) {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Landing counter + cabinet v20 */
+.slots-value {
+  margin: 0;
+  font-size: 2.1rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--accent);
+}
+
+.sheet--counter {
+  margin-bottom: 1rem;
+}
+
+.cta--tight {
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.cabinet-lead {
+  margin: 0 0 0.85rem;
+}
+
+.config-list {
+  margin: 0.35rem 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.config-list li {
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+
+.config-list li:last-child {
+  border-bottom: 0;
+}
+
+.config-list__status {
+  display: inline-block;
+  margin-left: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.support-cards {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+}
+
+.support-card {
+  padding: 0.75rem 0.85rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.86rem;
+}
+
+.support-card strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.callout--info {
+  border-color: rgba(74, 222, 128, 0.25);
+  background: rgba(74, 222, 128, 0.06);
+}
+
+.fold--inline {
+  margin: 0.75rem 0;
+}
+
+.fold--inline summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.guide-steps-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.guide-steps-card ol {
+  margin: 0.5rem 0 0;
+  padding-left: 1.15rem;
+}
+
+.guide-steps-card li {
+  margin-bottom: 0.35rem;
+}
+
+.guide-media--optional {
+  margin-top: 0.75rem;
+  opacity: 0.95;
+}
+
+a:not(.btn):not(.text-link):not(.store-link):not(.top__link):not(.nav-link) {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+a.store-link,
+.text-link {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.text-link:hover,
+a.store-link:hover {
+  color: var(--text);
 }

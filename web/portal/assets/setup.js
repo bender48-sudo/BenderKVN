@@ -222,13 +222,38 @@
 
   function renderQr(url) {
     var canvas = $("setup-qr");
-    if (window.QRCode && canvas) {
+    var fallback = $("setup-qr-fallback");
+    var panel = $("setup-qr-panel");
+    if (fallback) {
+      fallback.classList.add("hidden");
+      fallback.textContent = "";
+    }
+    if (!canvas) return;
+    if (window.QRCode) {
       QRCode.toCanvas(
         canvas,
         url,
         { width: 220, margin: 2, color: { dark: "#e85d04", light: "#ffffff" } },
-        function () {}
+        function (err) {
+          if (err) {
+            if (panel) panel.classList.add("qr-wrap--failed");
+            if (fallback) {
+              fallback.textContent =
+                (content.setup && content.setup.qr_fallback) ||
+                "QR не загрузился. Скопируй ссылку или открой Happ вручную.";
+              fallback.classList.remove("hidden");
+            }
+          }
+        }
       );
+    } else {
+      if (panel) panel.classList.add("qr-wrap--failed");
+      if (fallback) {
+        fallback.textContent =
+          (content.setup && content.setup.qr_fallback) ||
+          "QR не загрузился. Скопируй ссылку или открой Happ вручную.";
+        fallback.classList.remove("hidden");
+      }
     }
   }
 
@@ -282,6 +307,18 @@
     }
   }
 
+  function handleTrialSuccess(body) {
+    if (body && body.setup_url) {
+      window.location.href = body.setup_url;
+      return true;
+    }
+    if (body && body.sub_url) {
+      showSetupResult(body.sub_url, body);
+      return true;
+    }
+    return false;
+  }
+
   function showSetupResult(url, extra) {
     var s = content.setup;
     hide($("setup-loading"));
@@ -328,11 +365,21 @@
     var norm = normalizeSubUrl(url);
     var linkEl = $("setup-link");
     if (linkEl) linkEl.textContent = norm;
+    var linkFold = $("setup-link-fold");
+    if (linkFold) linkFold.open = false;
     var openBtn = $("btn-open-happ");
     if (openBtn) {
       openBtn.href = buildHappDeepLink(norm);
       bindExternalLink(openBtn);
     }
+    var devRule = $("setup-device-rule");
+    if (devRule && s.device_rule) devRule.textContent = s.device_rule;
+    var instr = $("btn-setup-instruction");
+    if (instr) {
+      instr.href = "/start/#devices";
+      instr.textContent = s.instruction_link || "Инструкция";
+    }
+    bindExternalLink(instr);
     renderQr(norm);
     try {
       localStorage.setItem("bvpn_subscription_url", norm);
@@ -361,6 +408,30 @@
     });
   }
 
+  function bindLegalConsent() {
+    var label = $("signup-terms-label");
+    var btn = $("btn-signup-submit");
+    var cb = $("signup-terms");
+    if (!label || !btn || !cb) return;
+    var legal = content.legal || {};
+    var shared = window.BenderPortalShared;
+    var termsUrl = shared ? shared.legalTermsUrl() : "/portal/legal/terms.html";
+    var privacyUrl = shared ? shared.legalPrivacyUrl() : "/portal/legal/privacy.html";
+    label.innerHTML =
+      'Я принимаю <a class="site-footer__link" href="' +
+      termsUrl +
+      '" target="_blank" rel="noopener">условия пользования</a> и ' +
+      '<a class="site-footer__link" href="' +
+      privacyUrl +
+      '" target="_blank" rel="noopener">политику конфиденциальности</a>.';
+    function syncBtn() {
+      btn.disabled = !cb.checked;
+      btn.setAttribute("aria-disabled", cb.checked ? "false" : "true");
+    }
+    cb.addEventListener("change", syncBtn);
+    syncBtn();
+  }
+
   function bindForms() {
     var s = content.setup;
 
@@ -380,14 +451,20 @@
       showEl($("setup-loading"));
       $("setup-loading").textContent = s.signup_loading;
 
-      postJson(API_TRIAL, { email: email, phone: phone })
+      var refCode = "";
+      try {
+        refCode = localStorage.getItem("bvpn_ref_code") || "";
+      } catch (eRef) {
+        refCode = "";
+      }
+      postJson(API_TRIAL, { email: email, phone: phone, ref_code: refCode })
         .then(function (res) {
           hide($("setup-loading"));
           if (res.code === 409 && res.body.error === "trial_already_claimed") {
             $("recover-email").value = email;
             return postJson(API_RECOVER, { email: email });
           }
-          if (!res.body.ok || !res.body.sub_url) {
+          if (!res.body.ok || (!res.body.setup_url && !res.body.sub_url)) {
             var err = s.signup_error_generic;
             if (res.body.error === "rate_limited") {
               showError(s.signup_error_rate, "rate_limited");
@@ -404,8 +481,7 @@
         })
         .then(function (res) {
           if (!res) return;
-          if (res.body && res.body.ok && res.body.sub_url) {
-            showSetupResult(res.body.sub_url, res.body);
+          if (res.body && res.body.ok && handleTrialSuccess(res.body)) {
             return;
           }
           if (res.body && res.body.error === "trial_expired") {
@@ -439,7 +515,7 @@
       postJson(API_RECOVER, { email: email })
         .then(function (res) {
           hide($("setup-loading"));
-          if (!res.body.ok || !res.body.sub_url) {
+          if (!res.body.ok || (!res.body.setup_url && !res.body.sub_url)) {
             if (res.body.error === "trial_expired") {
               showError(s.signup_error_expired || s.signup_error_used, "trial_expired");
               if (res.body.bind_url) renderBindTelegram(res.body);
@@ -449,7 +525,7 @@
             else showError(s.signup_error_generic, "service_unavailable");
             return;
           }
-          showSetupResult(res.body.sub_url, res.body);
+          handleTrialSuccess(res.body);
         })
         .catch(function () {
           hide($("setup-loading"));
@@ -551,7 +627,11 @@
     $("recover-lead").textContent = s.recover_lead;
     $("signup-email-label").textContent = s.signup_email_label;
     $("signup-phone-label").textContent = s.signup_phone_label;
-    $("signup-terms-label").textContent = s.signup_terms;
+    var consent = $("signup-consent-note");
+    if (consent) consent.textContent = s.signup_consent_note || "";
+    bindLegalConsent();
+    var linkToggle = $("setup-link-toggle");
+    if (linkToggle) linkToggle.textContent = s.show_link || "Показать ссылку";
     $("btn-signup-submit").textContent = s.signup_submit;
     $("btn-recover-submit").textContent = s.recover_submit;
     $("signup-note").textContent = s.signup_note;
@@ -565,7 +645,7 @@
     var guideBtn = $("btn-setup-guide");
     if (guideBtn) {
       var gv = (content.setup_videos || {}).guide_link || content.buttons.watch_guide;
-      guideBtn.textContent = gv || "Видео: как подключить";
+      guideBtn.textContent = gv || "Инструкция по шагам";
     }
     var recoverLabel = $("recover-email").previousElementSibling;
     if (recoverLabel) recoverLabel.textContent = s.signup_email_label;
@@ -578,8 +658,20 @@
     })
     .then(function (data) {
       content = data;
+      try {
+        var qp = new URLSearchParams(window.location.search || "");
+        var ref = (qp.get("ref") || "").trim();
+        if (ref) localStorage.setItem("bvpn_ref_code", ref);
+      } catch (eRef) {
+        /* ignore */
+      }
       bindTexts();
       bindForms();
+      var footMount = $("site-footer-mount");
+      if (footMount && window.BenderPortalShared) {
+        BenderPortalShared.renderSiteFooter(footMount, data);
+        BenderPortalShared.bindStatusLinks(document);
+      }
 
       if (!token) {
         if (isTelegramMiniApp()) {

@@ -7,7 +7,8 @@
   <title>BenderVPN</title>
   <link rel="stylesheet" href="/portal/assets/portal.css">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" defer></script>
+  <script src="/portal/assets/qrcode.min.js" defer></script>
+  <script src="/portal/assets/portal-shared.js" defer></script>
   <script>window.BVPN_FOCUS_ACCOUNT = true;</script>
   <script src="/portal/assets/portal.js" defer></script>
 </head>
@@ -16,7 +17,7 @@
   <main id="main-content" tabindex="-1">
     <header class="top">
       <h1 class="top__title" id="page-title">BenderVPN</h1>
-      <a class="top__link" href="/status" id="nav-status-link">Статус</a>
+      <a class="top__link" href="/status" id="nav-status-link" data-bvpn-status="1">Статус</a>
     </header>
 
     <p id="load-error" class="banner banner--error hidden" role="alert"></p>

@@ -74,6 +74,11 @@
         $("btn-errors-support").textContent = block.support_button;
       }
       renderItems(block.items || [], pickCode());
+      var foot = $("site-footer-mount");
+      if (foot && window.BenderPortalShared) {
+        BenderPortalShared.renderSiteFooter(foot, data);
+        BenderPortalShared.bindStatusLinks(document);
+      }
     })
     .catch(function () {
       $("errors-lead").textContent =

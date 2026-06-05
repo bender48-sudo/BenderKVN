@@ -4,8 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#09090b">
-  <title>BenderVPN — видео-инструкция</title>
+  <title>BenderVPN — инструкция</title>
   <link rel="stylesheet" href="/portal/assets/portal.css">
+  <script src="/portal/assets/portal-shared.js" defer></script>
   <script src="/portal/assets/guide.js" defer></script>
 </head>
 <body>
@@ -18,30 +19,21 @@
     <p id="guide-lead" class="lead"></p>
     <p id="guide-auto-note" class="callout callout--warn" role="note"></p>
 
-    <div class="guide-tabs" role="tablist" aria-label="Платформа">
-      <button type="button" class="guide-tab guide-tab--active" id="tab-ios" role="tab" aria-selected="true" aria-controls="panel-ios" data-device="iphone"></button>
-      <button type="button" class="guide-tab" id="tab-android" role="tab" aria-selected="false" aria-controls="panel-android" data-device="android"></button>
-    </div>
+    <div class="device-grid device-grid--guide" id="guide-device-tabs" role="tablist" aria-label="Устройство"></div>
 
-    <section id="panel-ios" class="guide-panel" role="tabpanel" aria-labelledby="tab-ios">
-      <p class="muted" id="guide-ios-caption"></p>
-      <div class="guide-media" id="media-ios"></div>
-    </section>
+    <div id="guide-steps-panel" class="guide-steps-card"></div>
 
-    <section id="panel-android" class="guide-panel hidden" role="tabpanel" aria-labelledby="tab-android" hidden>
-      <p class="muted" id="guide-android-caption"></p>
-      <div class="guide-media" id="media-android"></div>
-    </section>
+    <details class="fold fold--inline hidden" id="guide-video-fold">
+      <summary id="guide-video-summary">Видео, если удобнее</summary>
+      <div id="guide-video-wrap" class="guide-media guide-media--optional"></div>
+    </details>
 
     <div class="actions">
       <a class="btn btn--primary btn--block" id="btn-guide-setup" href="/setup/">Получить настройку</a>
       <a class="btn btn--secondary btn--block" id="btn-guide-portal" href="/start/">На главную</a>
     </div>
 
-    <nav class="footer-nav">
-      <a class="btn btn--ghost" href="/start/help/errors/">Частые проблемы</a>
-      <a class="btn btn--ghost" href="/status">Статус</a>
-    </nav>
+    <div id="site-footer-mount"></div>
   </main>
 </body>
 </html>

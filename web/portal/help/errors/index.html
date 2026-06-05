@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#09090b">
   <title>BenderVPN — частые ошибки</title>
   <link rel="stylesheet" href="/portal/assets/portal.css">
+  <script src="/portal/assets/portal-shared.js" defer></script>
   <script src="/portal/assets/errors.js" defer></script>
 </head>
 <body>
@@ -21,12 +22,10 @@
     <div class="actions">
       <a class="btn btn--primary btn--block" id="btn-errors-setup" href="/setup/">Получить настройку</a>
       <a class="btn btn--secondary btn--block" id="btn-errors-support" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
-      <a class="btn btn--ghost btn--block" href="/status">Статус сервиса</a>
+      <a class="btn btn--ghost btn--block" href="/status" data-bvpn-status="1">Статус сервиса</a>
     </div>
 
-    <nav class="footer-nav">
-      <a class="btn btn--ghost" href="/portal/guide.html">Видео-инструкция</a>
-    </nav>
+    <div id="site-footer-mount"></div>
   </main>
 </body>
 </html>
