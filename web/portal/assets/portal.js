@@ -522,11 +522,17 @@
           if (val) val.textContent = "0";
           if (hint) hint.textContent = home.slots_closed || "";
         } else {
-          var fmt = home.slots_format || "{remaining} из {cap}";
+          var fmt = home.slots_format || "{remaining} мест";
           if (val) {
-            val.textContent = fmt
-              .replace("{remaining}", String(doc.remaining_slots))
-              .replace("{cap}", String(cap));
+            val.textContent = fmt.replace(
+              "{remaining}",
+              String(doc.remaining_slots)
+            );
+          }
+          var capNote = $("slots-cap");
+          if (capNote) {
+            var capFmt = home.slots_cap_note || "из {cap}";
+            capNote.textContent = capFmt.replace("{cap}", String(cap));
           }
           if (hint) {
             var hintFmt = home.slots_hint_live || "";
@@ -544,8 +550,71 @@
             home.slots_unavailable || "Количество мест обновляется";
         }
         if ($("slots-hint")) $("slots-hint").textContent = "";
+        var capNote = $("slots-cap");
+        if (capNote) capNote.textContent = "";
         card.classList.remove("hidden");
       });
+  }
+
+  function renderJourney() {
+    var panel = $("landing-journey");
+    var home = content.home || {};
+    if (!panel || isTelegramMiniApp()) {
+      if (panel) panel.classList.add("hidden");
+      return;
+    }
+    var title = $("journey-title");
+    var list = $("journey-steps");
+    var steps = home.journey_steps || [];
+    if (!steps.length) {
+      panel.classList.add("hidden");
+      return;
+    }
+    if (title && home.journey_title) title.textContent = home.journey_title;
+    if (list) {
+      list.innerHTML = "";
+      steps.forEach(function (step, idx) {
+        var li = document.createElement("li");
+        li.className = "journey-steps__item";
+        li.innerHTML =
+          '<span class="journey-steps__num" aria-hidden="true">' +
+          (idx + 1) +
+          "</span><span>" +
+          step +
+          "</span>";
+        list.appendChild(li);
+      });
+    }
+    panel.classList.remove("hidden");
+  }
+
+  function renderReferralWelcome() {
+    var panel = $("referral-welcome");
+    var home = content.home || {};
+    if (!panel || isTelegramMiniApp()) {
+      if (panel) panel.classList.add("hidden");
+      return;
+    }
+    var hasRef = false;
+    try {
+      hasRef = !!localStorage.getItem(REF_KEY);
+    } catch (e) {
+      hasRef = false;
+    }
+    if (!hasRef) {
+      panel.classList.add("hidden");
+      return;
+    }
+    if ($("referral-welcome-title") && home.referral_welcome_title) {
+      $("referral-welcome-title").textContent = home.referral_welcome_title;
+    }
+    if ($("referral-welcome-lead") && home.referral_welcome_lead) {
+      $("referral-welcome-lead").textContent = home.referral_welcome_lead;
+    }
+    if ($("referral-welcome-hint") && home.referral_welcome_hint) {
+      $("referral-welcome-hint").textContent = home.referral_welcome_hint;
+    }
+    panel.classList.remove("hidden");
   }
 
   function renderLandingPaths() {
@@ -580,8 +649,7 @@
     if (refNote) {
       try {
         if (localStorage.getItem(REF_KEY)) {
-          refNote.textContent = home.referral_preserve_note || "";
-          refNote.classList.remove("hidden");
+          refNote.classList.add("hidden");
         } else if (home.invite_model_note) {
           refNote.textContent = home.invite_model_note;
           refNote.classList.remove("hidden");
@@ -640,6 +708,13 @@
     var lead = $("hero-lead");
     if (lead && home.hero_lead) {
       lead.textContent = home.hero_lead;
+    }
+    var eyebrow = $("hero-eyebrow");
+    if (eyebrow && home.hero_eyebrow && !tg) {
+      eyebrow.textContent = home.hero_eyebrow;
+      eyebrow.classList.remove("hidden");
+    } else if (eyebrow) {
+      eyebrow.classList.add("hidden");
     }
     if ($("devices-note") && home.devices_note) {
       $("devices-note").textContent = home.devices_note;
@@ -701,6 +776,8 @@
     preserveReferralFromUrl();
     loadCapacity();
     renderLandingPaths();
+    renderReferralWelcome();
+    renderJourney();
     loadEvents();
   }
 

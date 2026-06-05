@@ -11,7 +11,8 @@
   <script src="/portal/assets/portal-shared.js" defer></script>
   <script src="/portal/assets/setup.js" defer></script>
 </head>
-<body>
+<body class="cosmic">
+  <div class="cosmic-bg" aria-hidden="true"></div>
   <main>
     <header class="top top--sub">
       <h1 class="brand-name" id="setup-title">BenderVPN</h1>
@@ -26,7 +27,7 @@
       <a class="btn btn--ghost btn-no-code" id="setup-error-help-link" href="/start/help/errors/"></a>
     </p>
 
-    <section id="setup-signup" class="panel">
+    <section id="setup-signup" class="panel glass">
       <p id="signup-step-badge" class="step-badge hidden"></p>
       <h2 id="signup-heading" class="section-title" style="margin-top:0"></h2>
       <p id="signup-lead" class="muted"></p>
@@ -54,7 +55,7 @@
       </div>
     </section>
 
-    <section id="setup-content" class="hidden">
+    <section id="setup-content" class="hidden glass panel">
       <p id="setup-success-msg" class="note note-accent"></p>
       <p id="setup-after-vpn" class="note hidden"></p>
       <p id="setup-step1-lead" class="lead hidden"></p>

@@ -1,22 +1,24 @@
 {
-  "meta": { "lang": "ru", "version": 21 },
+  "meta": { "lang": "ru", "version": 22 },
   "auto_profile": {
     "title": "Профиль в Happ",
     "lead": "В подписке один профиль — «BenderVPN Auto». Сервер и маршрут подбираются автоматически; вручную узлы и порты выбирать не нужно."
   },
   "home": {
     "title": "BenderVPN",
-    "hero_title": "Доступ к привычному интернету — без лишней возни",
-    "hero_lead": "Камерный VPN по приглашениям. Один профиль BenderVPN Auto в Happ — сервер и маршрут подбираются сами.",
-    "hero_badge": "По приглашению · лимит 30 000 мест",
+    "hero_title": "Привычный интернет — в камерной сети",
+    "hero_lead": "BenderVPN — invite-only VPN для своих. Один профиль BenderVPN Auto в Happ, без ручного выбора серверов.",
+    "hero_badge": "Доступ по приглашению · лимит 30 000",
+    "hero_eyebrow": "Камерный VPN",
     "hero_badge_tg": "Личный кабинет · баланс · настройка",
     "subtitle": "Стабильное подключение для своих — без массового набора и рекламы.",
     "subtitle_tg": "Личный кабинет BenderVPN: баланс, настройка и инструкции.",
     "about_fold_title": "Почему мы так устроены",
     "account_fold_title": "Личный кабинет",
     "devices_note": "Одна настройка — одно устройство. Для нового телефона или ноутбука выпусти отдельную конфигурацию в боте.",
-    "slots_title": "Осталось мест",
-    "slots_format": "{remaining} из {cap}",
+    "slots_title": "До закрытия доступа осталось",
+    "slots_format": "{remaining} мест",
+    "slots_cap_note": "из {cap}",
     "slots_unavailable": "Количество мест обновляется",
     "slots_hint_live": "Активных конфигураций в сервисе: {active}",
     "slots_closed": "Регистрация закрыта — лимит 30 000 участников достигнут.",
@@ -24,7 +26,18 @@
     "landing_paths_title": "Как начать",
     "landing_tg_lead": "Основной путь — Telegram-бот: trial, баланс, приглашения.",
     "landing_email_lead": "Если Telegram недоступен — временная настройка на 1 сутки по email, затем завершение регистрации в боте.",
-    "referral_preserve_note": "Пришёл по приглашению? Ссылка сохранится при переходе в Telegram или при регистрации по email."
+    "referral_preserve_note": "Пришёл по приглашению? Ссылка сохранится при переходе в Telegram или при регистрации по email.",
+    "journey_title": "Путь подключения",
+    "journey_steps": [
+      "Выбери вход: Telegram или email на 1 сутки",
+      "Получи QR и ссылку настройки",
+      "Установи Happ на устройство",
+      "Импортируй настройку и включи BenderVPN Auto",
+      "При необходимости — продолжи в Telegram или напиши в поддержку"
+    ],
+    "referral_welcome_title": "Доступ по приглашению",
+    "referral_welcome_lead": "Тебя пригласили в закрытую сеть BenderVPN. Следующий шаг — получить настройку и подключить Happ.",
+    "referral_welcome_hint": "Ссылка приглашения сохранена для регистрации."
   },
   "positioning": {
     "invite_title": "Мы растём по приглашениям — без рекламы и массового набора.",
@@ -46,8 +59,8 @@
     "setup_browser_alt": "Получить доступ через Telegram",
     "setup_tg": "Открыть настройку в Happ",
     "cabinet": "Личный кабинет",
-    "landing_tg": "Получить trial в Telegram",
-    "landing_email": "Временная настройка по email (1 сутки)",
+    "landing_tg": "Получить trial через Telegram",
+    "landing_email": "Временный доступ на 1 сутки",
     "miniapp": "Mini App",
     "status": "Статус сервиса",
     "support": "Написать в поддержку",

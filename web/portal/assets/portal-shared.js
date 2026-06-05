@@ -37,8 +37,8 @@
     var f = content.footer || {};
     var items = [
       { href: "/start/", label: f.home || "Главная" },
-      { href: statusPageUrl(), label: f.status || "Статус", attr: "data-bvpn-status" },
       { href: "/portal/guide.html", label: f.guide || "Инструкция" },
+      { href: statusPageUrl(), label: f.status || "Статус", attr: "data-bvpn-status" },
       {
         href: "https://t.me/Bender_KVN_bot",
         label: f.support || "Поддержка",

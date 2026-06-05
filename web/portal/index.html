@@ -24,7 +24,9 @@
 
 </head>
 
-<body>
+<body class="cosmic">
+
+  <div class="cosmic-bg" aria-hidden="true"></div>
 
   <a class="skip-link" href="#main-content">К основному содержимому</a>
 
@@ -50,19 +52,29 @@
 
     <section data-view="home">
 
-      <p class="hero" id="page-subtitle"></p>
+      <header class="hero-shell">
+        <div class="hero-orb" aria-hidden="true"></div>
+        <p class="hero-eyebrow hidden" id="hero-eyebrow"></p>
+        <h2 class="hero-headline" id="page-subtitle"></h2>
+        <p class="hero-lead muted" id="hero-lead"></p>
+        <p class="hero-tag hidden" id="hero-badge"></p>
+      </header>
 
-      <p class="hero-lead muted" id="hero-lead"></p>
-
-      <p class="hero-tag hidden" id="hero-badge"></p>
-
-      <div class="sheet sheet--counter hidden" id="slots-card" aria-live="polite">
-        <p class="sheet__label" id="slots-title">Осталось мест</p>
+      <div class="sheet sheet--counter glass hidden" id="slots-card" aria-live="polite">
+        <p class="sheet__label" id="slots-title">До закрытия доступа осталось</p>
         <p class="slots-value" id="slots-value">—</p>
+        <p class="slots-cap muted" id="slots-cap"></p>
         <p class="muted" id="slots-hint"></p>
       </div>
 
-      <section class="sheet hidden" id="landing-paths" aria-labelledby="landing-paths-title">
+      <section class="invite-welcome glass hidden" id="referral-welcome" role="note">
+        <p class="invite-welcome__eyebrow">✦</p>
+        <h2 class="invite-welcome__title" id="referral-welcome-title"></h2>
+        <p class="invite-welcome__lead" id="referral-welcome-lead"></p>
+        <p class="invite-welcome__hint muted" id="referral-welcome-hint"></p>
+      </section>
+
+      <section class="sheet glass hidden" id="landing-paths" aria-labelledby="landing-paths-title">
         <h2 class="sheet__label" id="landing-paths-title">Как начать</h2>
         <p class="muted" id="landing-tg-lead"></p>
         <div class="cta cta--tight">
@@ -71,6 +83,11 @@
         </div>
         <p class="muted" id="landing-email-lead"></p>
         <p class="callout callout--info hidden" id="referral-note" role="note"></p>
+      </section>
+
+      <section class="journey glass hidden" id="landing-journey" aria-labelledby="journey-title">
+        <h2 class="sheet__label" id="journey-title">Путь подключения</h2>
+        <ol class="journey-steps" id="journey-steps"></ol>
       </section>
 
       <div class="banner banner--info hidden" id="tg-blocked-banner" role="note">
