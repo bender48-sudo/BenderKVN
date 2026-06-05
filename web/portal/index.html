@@ -90,6 +90,11 @@
         <ol class="journey-steps" id="journey-steps"></ol>
       </section>
 
+      <section class="why-limited glass hidden" id="why-limited" aria-labelledby="why-limited-title">
+        <h2 class="section-title" id="why-limited-title" style="font-size:1.1rem;margin-top:0"></h2>
+        <div class="why-limited__body muted" id="why-limited-body"></div>
+      </section>
+
       <div class="banner banner--info hidden" id="tg-blocked-banner" role="note">
 
         <strong id="tg-blocked-title"></strong>
@@ -189,7 +194,12 @@
             <a class="btn btn--secondary btn--block" id="btn-new-device" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
           </div>
 
-          <div class="support-cards" id="cabinet-support-cards"></div>
+          <nav class="cabinet-actions glass hidden" id="cabinet-actions" aria-label="Действия"></nav>
+
+          <details class="fold glass hidden" id="cabinet-faq-fold">
+            <summary id="cabinet-faq-title">Частые вопросы</summary>
+            <div class="faq" id="cabinet-faq-list"></div>
+          </details>
 
 
 
@@ -344,6 +354,8 @@
       <p id="cabinet-lead" class="hidden"></p>
 
     </section>
+
+    <div id="support-block-mount" class="hidden"></div>
 
     <div id="site-footer-mount"></div>
 

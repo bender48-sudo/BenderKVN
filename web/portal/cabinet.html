@@ -24,16 +24,33 @@
     <p id="load-error" class="banner banner--error hidden" role="alert"></p>
 
     <section data-view="home">
-      <p class="hero" id="page-subtitle"></p>
-      <p class="hero-tag hidden" id="hero-badge"></p>
+      <header class="cabinet-head glass">
+        <h2 class="cabinet-head__title" id="cabinet-page-title">Личный кабинет BenderVPN</h2>
+        <p class="cabinet-head__state" id="cabinet-access-state" aria-live="polite"></p>
+        <p class="cabinet-lead muted" id="cabinet-lead-inline"></p>
+      </header>
 
-      <section class="sheet" id="account-sheet" aria-labelledby="account-heading">
+      <section class="sheet glass" id="account-sheet" aria-labelledby="account-heading">
         <h2 class="visually-hidden" id="account-heading">Ваш доступ</h2>
         <p class="sheet__label" id="cabinet-balance-label">Баланс</p>
         <p class="cabinet-balance" id="cabinet-balance" aria-live="polite">—</p>
         <p class="muted" id="cabinet-balance-hint"></p>
         <p class="banner banner--warn hidden" id="cabinet-load-error" role="alert"></p>
         <p class="muted" id="cabinet-web-notify"></p>
+
+        <div class="sheet sheet--nested glass hidden" id="cabinet-configs-panel">
+          <p class="sheet__label" id="cabinet-configs-title">Конфигурации</p>
+          <ul class="config-list" id="cabinet-configs-list"></ul>
+          <p class="callout callout--warn" id="cabinet-device-rule" role="note"></p>
+          <a class="btn btn--secondary btn--block" id="btn-new-device" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
+        </div>
+
+        <nav class="cabinet-actions glass hidden" id="cabinet-actions" aria-label="Действия"></nav>
+
+        <details class="fold glass" id="cabinet-faq-fold">
+          <summary id="cabinet-faq-title">Частые вопросы</summary>
+          <div class="faq" id="cabinet-faq-list"></div>
+        </details>
 
         <div class="login hidden" id="cabinet-login-panel">
           <label class="field" for="cabinet-customer-id">
@@ -134,6 +151,7 @@
       <h2 id="cabinet-title" class="hidden">Мой VPN</h2>
       <p id="cabinet-lead" class="hidden"></p>
     </section>
+    <div id="support-block-mount"></div>
     <div id="site-footer-mount"></div>
   </main>
 </body>

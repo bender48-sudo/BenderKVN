@@ -204,6 +204,10 @@
       if (foot && window.BenderPortalShared) {
         BenderPortalShared.renderSiteFooter(foot, data);
       }
+      var sup = $("support-block-mount");
+      if (sup && window.BenderPortalShared) {
+        BenderPortalShared.renderSupportBlock(sup, data);
+      }
     })
     .catch(function () {
       $("guide-lead").textContent = "Не удалось загрузить тексты. Обновите страницу.";

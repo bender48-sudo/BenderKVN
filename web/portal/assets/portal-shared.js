@@ -2,9 +2,6 @@
 (function (global) {
   "use strict";
 
-  var PROD_STATUS_FALLBACK =
-    "https://k9x2m1.conntest.xyz:8443/status";
-
   function isLocalDev() {
     var h = (window.location.hostname || "").toLowerCase();
     return h === "127.0.0.1" || h === "localhost";
@@ -76,12 +73,47 @@
       var note = document.createElement("p");
       note.className = "site-footer__note muted";
       note.textContent =
-        (f.local_status_note || "") +
-        " Прод: " +
-        PROD_STATUS_FALLBACK;
+        f.local_status_note ||
+        "Локальный просмотр. В продакшене здесь открывается публичная страница статуса сервиса.";
       mount.appendChild(note);
     }
     bindStatusLinks(mount);
+  }
+
+  function renderSupportBlock(mount, content) {
+    if (!mount || !content) return;
+    var s = content.support || {};
+    mount.className = "support-block glass";
+    mount.innerHTML = "";
+    var h = document.createElement("h2");
+    h.className = "sheet__label";
+    h.textContent = s.title || "Поддержка";
+    mount.appendChild(h);
+    var tg = document.createElement("a");
+    tg.className = "btn btn--secondary btn--block";
+    tg.href = s.telegram_url || "https://t.me/Bender_KVN_bot";
+    tg.target = "_blank";
+    tg.rel = "noopener";
+    tg.textContent = s.telegram_label || "Telegram";
+    mount.appendChild(tg);
+    if (s.email_value) {
+      var emailNote = document.createElement("p");
+      emailNote.className = "muted support-block__email";
+      emailNote.innerHTML =
+        (s.email_label || "Email") +
+        ': <a class="site-footer__link" href="mailto:' +
+        s.email_value +
+        '">' +
+        s.email_value +
+        "</a>";
+      mount.appendChild(emailNote);
+    }
+    if (s.message_hint) {
+      var hint = document.createElement("p");
+      hint.className = "muted support-block__hint";
+      hint.textContent = s.message_hint;
+      mount.appendChild(hint);
+    }
   }
 
   global.BenderPortalShared = {
@@ -91,5 +123,6 @@
     legalPrivacyUrl: legalPrivacyUrl,
     bindStatusLinks: bindStatusLinks,
     renderSiteFooter: renderSiteFooter,
+    renderSupportBlock: renderSupportBlock,
   };
 })(typeof window !== "undefined" ? window : globalThis);

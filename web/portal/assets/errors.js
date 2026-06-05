@@ -79,6 +79,10 @@
         BenderPortalShared.renderSiteFooter(foot, data);
         BenderPortalShared.bindStatusLinks(document);
       }
+      var sup = $("support-block-mount");
+      if (sup && window.BenderPortalShared) {
+        BenderPortalShared.renderSupportBlock(sup, data);
+      }
     })
     .catch(function () {
       $("errors-lead").textContent =

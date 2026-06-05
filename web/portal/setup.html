@@ -55,8 +55,13 @@
       </div>
     </section>
 
-    <section id="setup-content" class="hidden glass panel">
-      <p id="setup-success-msg" class="note note-accent"></p>
+    <section id="setup-content" class="hidden glass panel setup-ready">
+      <header class="setup-ready__head">
+        <h2 class="setup-ready__title" id="config-ready-title"></h2>
+        <p class="setup-ready__lead muted" id="config-ready-lead"></p>
+        <p class="setup-ready__note" id="auto-profile-note"></p>
+      </header>
+      <p id="setup-success-msg" class="note note-accent hidden"></p>
       <p id="setup-after-vpn" class="note hidden"></p>
       <p id="setup-step1-lead" class="lead hidden"></p>
       <div class="panel hidden" id="customer-id-panel">
@@ -75,10 +80,14 @@
         <p class="setup-link-wrap muted"><span id="setup-link" class="setup-link" role="text"></span></p>
       </details>
       <div class="actions">
-        <a class="btn btn--primary btn--block" id="btn-open-happ" href="#" rel="noopener"></a>
-        <button type="button" class="btn btn--secondary btn--block" id="btn-copy"></button>
+        <button type="button" class="btn btn--primary btn--block" id="btn-copy"></button>
+        <a class="btn btn--secondary btn--block" id="btn-setup-instruction" href="/portal/guide.html"></a>
+        <a class="btn btn--ghost btn--block" id="btn-open-happ" href="#" rel="noopener"></a>
         <button type="button" class="btn btn--ghost btn--block hidden" id="btn-toggle-qr"></button>
-        <a class="btn btn--ghost btn--block" id="btn-setup-instruction" href="/start/#devices"></a>
+      </div>
+      <div class="panel glass" id="setup-device-pick">
+        <h2 class="sheet__label" id="device-pick-title">Выбери устройство</h2>
+        <div class="device-grid device-grid--setup" id="setup-device-grid"></div>
       </div>
       <div class="panel">
         <h2 id="platform-downloads-title" class="sheet__label"></h2>
@@ -100,6 +109,7 @@
       </section>
     </section>
 
+    <div id="support-block-mount"></div>
     <div id="site-footer-mount"></div>
   </main>
 </body>

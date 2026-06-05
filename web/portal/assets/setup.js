@@ -319,14 +319,51 @@
     return false;
   }
 
+  function renderSetupDeviceGrid() {
+    var grid = $("setup-device-grid");
+    var title = $("device-pick-title");
+    var s = content.setup || {};
+    if (title && s.device_pick_title) title.textContent = s.device_pick_title;
+    if (!grid) return;
+    grid.innerHTML = "";
+    (content.devices || []).forEach(function (dev) {
+      var a = document.createElement("a");
+      a.className = "device-card";
+      a.href = "/portal/guide.html?device=" + encodeURIComponent(dev.id);
+      a.innerHTML =
+        '<span class="icon" aria-hidden="true">' + dev.icon + "</span>" + dev.label;
+      grid.appendChild(a);
+    });
+  }
+
+  function mountSharedSupport() {
+    var mount = $("support-block-mount");
+    if (mount && window.BenderPortalShared && content) {
+      BenderPortalShared.renderSupportBlock(mount, content);
+    }
+  }
+
   function showSetupResult(url, extra) {
     var s = content.setup;
     hide($("setup-loading"));
     hide($("setup-signup"));
     hide($("setup-error"));
+    if ($("config-ready-title")) {
+      $("config-ready-title").textContent = s.config_ready_title || "Твоя настройка готова";
+    }
+    if ($("config-ready-lead")) {
+      $("config-ready-lead").textContent = s.config_ready_lead || s.device_rule || "";
+    }
+    if ($("auto-profile-note")) {
+      $("auto-profile-note").textContent =
+        s.auto_profile_note || (content.auto_profile && content.auto_profile.lead) || "";
+    }
     if (extra && extra.expire_at) {
       $("setup-success-msg").textContent =
         (s.success_trial || "Готово! Бесплатный доступ до") + " " + extra.expire_at;
+      showEl($("setup-success-msg"));
+    } else {
+      hide($("setup-success-msg"));
     }
     var step1Lead = $("setup-step1-lead");
     if (step1Lead) {
@@ -393,6 +430,8 @@
     renderStepList($("happ-steps"), s.happ_steps);
     renderHappStoreLink(lastStoreKey);
     renderBindTelegram(extra);
+    renderSetupDeviceGrid();
+    mountSharedSupport();
     showEl($("setup-content"));
   }
 
@@ -672,6 +711,7 @@
         BenderPortalShared.renderSiteFooter(footMount, data);
         BenderPortalShared.bindStatusLinks(document);
       }
+      mountSharedSupport();
 
       if (!token) {
         if (isTelegramMiniApp()) {
