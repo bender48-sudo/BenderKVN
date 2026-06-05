@@ -64,8 +64,9 @@
 
       <nav class="cabinet-actions glass hidden" id="cabinet-actions" aria-label="Действия"></nav>
 
-      <details class="fold glass cabinet-recover hidden" id="cabinet-recover-fold">
+      <details class="fold glass cabinet-accordion cabinet-recover hidden" id="cabinet-recover-fold">
         <summary id="cabinet-recover-title"></summary>
+        <div class="cabinet-accordion__body">
         <p class="muted" id="cabinet-recover-lead"></p>
         <div class="login" id="cabinet-login-panel">
           <label class="field" for="cabinet-customer-id">
@@ -78,11 +79,14 @@
           </label>
           <button type="button" class="btn btn--secondary btn--block" id="btn-cabinet-load"></button>
         </div>
+        </div>
       </details>
 
-      <details class="fold glass" id="cabinet-faq-fold">
+      <details class="fold glass cabinet-accordion" id="cabinet-faq-fold">
         <summary id="cabinet-faq-title">Частые вопросы</summary>
-        <div class="faq" id="cabinet-faq-list"></div>
+        <div class="cabinet-accordion__body">
+          <div class="faq" id="cabinet-faq-list"></div>
+        </div>
       </details>
 
       <p id="page-title" class="hidden" aria-hidden="true">BenderVPN</p>

@@ -1439,6 +1439,119 @@ a.store-link:hover {
   margin-top: 0.65rem;
 }
 
+/* Cabinet accordions — glass card rows, not raw fold strips */
+.cabinet-page .cabinet-accordion {
+  border-top: none;
+  margin: 0 0 0.65rem;
+  padding: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.cabinet-page .cabinet-accordion > summary {
+  padding: 0.9rem 1rem;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  line-height: 1.35;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cabinet-page .cabinet-accordion > summary:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.cabinet-page .cabinet-accordion > summary:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(139, 124, 255, 0.35);
+}
+
+.cabinet-page .cabinet-accordion > summary::-webkit-details-marker {
+  display: none;
+}
+
+.cabinet-page .cabinet-accordion > summary::after {
+  content: "";
+  flex-shrink: 0;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-top: -0.1rem;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.cabinet-page .cabinet-accordion[open] > summary::after {
+  transform: rotate(-135deg);
+  margin-top: 0.12rem;
+  border-color: var(--cosmic-violet);
+}
+
+.cabinet-page .cabinet-accordion[open] > summary {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cabinet-page .cabinet-accordion__body {
+  padding: 0.85rem 1rem 1rem;
+}
+
+.cabinet-page .cabinet-accordion__body > .muted {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.cabinet-page .cabinet-accordion .login {
+  margin-top: 0;
+}
+
+.cabinet-page .cabinet-accordion .faq {
+  margin-top: 0;
+}
+
+.cabinet-page .cabinet-accordion .faq__item {
+  margin-bottom: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: calc(var(--radius) - 6px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cabinet-page .cabinet-accordion .faq__item:last-child {
+  margin-bottom: 0;
+}
+
+.cabinet-page .cabinet-accordion .faq__item summary {
+  font-size: 0.86rem;
+}
+
+.cabinet-page .cabinet-accordion .faq__item summary::after {
+  content: " +";
+  font-weight: 400;
+  color: var(--muted);
+  border: none;
+  width: auto;
+  height: auto;
+  transform: none;
+  margin: 0;
+}
+
+.cabinet-page .cabinet-accordion .faq__item[open] summary::after {
+  content: " −";
+  transform: none;
+  border: none;
+}
+
 .cabinet-head {
   padding: 1rem 1.05rem;
   margin-bottom: 1rem;
