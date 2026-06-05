@@ -94,8 +94,17 @@ MSG_SETUP_NEED_TRIAL = (
 
 MSG_SUPPORT_PROMPT = (
     "Напиши, что не работает, с какого устройства открываешь и где: "
-    "Telegram, браузер, Happ. Если можешь — приложи скрин."
+    "Telegram, браузер, Happ. Если можешь — приложи скрин.\n\n"
+    "Если пишешь по доступу, приложи Telegram ID. Узнать его можно командой /id."
 )
+
+
+def msg_telegram_id(telegram_id: int) -> str:
+    """Reply for /id, /myid and /start show_id — user's own numeric ID only."""
+    return (
+        f"Твой Telegram ID: <code>{int(telegram_id)}</code>\n\n"
+        "Если поддержка попросила ID, скопируй это число и отправь нам."
+    )
 
 MSG_SUBSCRIPTION_EXPIRED = (
     "Доступ завершился. Пополни баланс, чтобы продолжить — всё восстановится автоматически."

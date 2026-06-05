@@ -8,6 +8,7 @@
     return "/status";
   }
   const SUPPORT_URL = "https://t.me/Bender_KVN_bot";
+  const BOT_SHOW_ID_URL = SUPPORT_URL + "?start=show_id";
   const SETUP_PATH = "/setup/";
   const API_FUNNEL = "/setup/api/funnel-event";
   const API_CABINET = "/setup/api/cabinet";
@@ -115,6 +116,21 @@
       return navigator.clipboard.writeText(text);
     }
     return Promise.reject(new Error("clipboard unavailable"));
+  }
+
+  function copyTextWithInlineFallback(text, opts) {
+    opts = opts || {};
+    var done = opts.onSuccess;
+    var fail = opts.onFail;
+    var value = String(text || "");
+    if (!value) return;
+    copyToClipboard(value)
+      .then(function () {
+        if (done) done();
+      })
+      .catch(function () {
+        if (fail) fail(value);
+      });
   }
 
   function showToast(msg, kind) {
@@ -1118,8 +1134,75 @@
       if (grace) grace.classList.remove("hidden");
       if (sheet) sheet.classList.add("hidden");
     }
-    if (recover && !tg) recover.classList.remove("hidden");
-    else if (recover) recover.classList.add("hidden");
+    if (recover) {
+      if (!tg || isCabinetDedicatedPage()) recover.classList.remove("hidden");
+      else recover.classList.add("hidden");
+    }
+    initCabinetTelegramIdHelper();
+  }
+
+  function showCabinetTelegramIdPanel(tid) {
+    var cab = content.cabinet || {};
+    var panel = $("cabinet-recover-id-panel");
+    var label = $("cabinet-recover-id-label");
+    var value = $("cabinet-recover-id-value");
+    var copyBtn = $("btn-cabinet-copy-tg-id");
+    var fallback = $("cabinet-recover-id-fallback");
+    var fallbackLabel = $("cabinet-recover-id-fallback-label");
+    var fallbackCode = $("cabinet-recover-id-fallback-code");
+    if (!panel || !tid) return;
+    if (label) label.textContent = cab.recover_tg_id_yours || "Твой Telegram ID:";
+    if (value) value.textContent = String(tid);
+    if (copyBtn) copyBtn.textContent = cab.recover_tg_id_copy || "Скопировать ID";
+    if (fallback) fallback.classList.add("hidden");
+    panel.classList.remove("hidden");
+    if (copyBtn) {
+      copyBtn.onclick = function () {
+        copyTextWithInlineFallback(String(tid), {
+          onSuccess: function () {
+            if (fallback) fallback.classList.add("hidden");
+            showToast(cab.recover_tg_id_copied || "ID скопирован");
+          },
+          onFail: function (idStr) {
+            if (fallbackLabel) {
+              fallbackLabel.textContent =
+                cab.recover_tg_id_copy_manual || "Выдели и скопируй:";
+            }
+            if (fallbackCode) fallbackCode.textContent = idStr;
+            if (fallback) fallback.classList.remove("hidden");
+          },
+        });
+      };
+    }
+  }
+
+  function initCabinetTelegramIdHelper() {
+    var cab = content.cabinet || {};
+    var hint = $("cabinet-recover-tg-hint");
+    var btn = $("btn-cabinet-show-tg-id");
+    if (hint) {
+      hint.textContent =
+        cab.recover_tg_id_hint ||
+        "Не знаешь свой Telegram ID? Открой бота — он покажет ID автоматически.";
+    }
+    if (!btn) return;
+    btn.textContent = cab.recover_tg_id_btn || "Узнать мой Telegram ID";
+    btn.onclick = function () {
+      if (hasTelegramInitContext()) {
+        var tid = getTelegramUserId();
+        if (tid > 0) {
+          showCabinetTelegramIdPanel(tid);
+          return;
+        }
+        showToast(
+          cab.recover_tg_id_unavailable ||
+            "Не удалось определить ID. Открой бота по кнопке выше.",
+          "error"
+        );
+        return;
+      }
+      window.open(BOT_SHOW_ID_URL, "_blank", "noopener,noreferrer");
+    };
   }
 
   function renderCabinet() {

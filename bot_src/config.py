@@ -111,6 +111,11 @@ def telegram_bind_url(bind_token: str) -> str:
         return f"https://t.me/{TELEGRAM_BOT_USERNAME}"
     return f"https://t.me/{TELEGRAM_BOT_USERNAME}?start=bind_{token}"
 
+
+def telegram_show_id_url() -> str:
+    """Deep link: bot replies with the user's Telegram numeric ID."""
+    return f"https://t.me/{TELEGRAM_BOT_USERNAME}?start=show_id"
+
 ABOUT_TEXT = "Настройки не установлены. Установите их в админ-панели."
 TERMS_URL = "Ссылка на условия использования не установлена. Установите её в админ-панели."
 PRIVACY_URL = "Ссылка на политику конфиденциальности не установлена. Установите её в админ-панели."

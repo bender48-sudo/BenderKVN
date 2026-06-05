@@ -1,5 +1,5 @@
 {
-  "meta": { "lang": "ru", "version": 24 },
+  "meta": { "lang": "ru", "version": 25 },
   "auto_profile": {
     "title": "Профиль в Happ",
     "lead": "В подписке один профиль — «BenderVPN Auto». Сервер и маршрут подбираются автоматически; вручную узлы и порты выбирать не нужно."
@@ -231,6 +231,13 @@
     "grace_cta_trial": "Получить временный доступ на 1 сутки",
     "recover_fold_title": "Уже получал доступ на сайте?",
     "recover_fold_lead": "Введи email или ID — покажем баланс и настройку снова.",
+    "recover_tg_id_hint": "Не знаешь свой Telegram ID? Открой бота — он покажет ID автоматически.",
+    "recover_tg_id_btn": "Узнать мой Telegram ID",
+    "recover_tg_id_yours": "Твой Telegram ID:",
+    "recover_tg_id_copy": "Скопировать ID",
+    "recover_tg_id_copied": "ID скопирован",
+    "recover_tg_id_copy_manual": "Выдели и скопируй:",
+    "recover_tg_id_unavailable": "Не удалось определить ID. Открой бота по кнопке выше.",
     "balance_label": "Баланс",
     "balance_hint": "6,67 ₽ в день за аккаунт, пока доступ платный. Во время бесплатного trial списаний нет.",
     "balance_hint_trial": "Сейчас бесплатный период — списания с баланса не идут.",

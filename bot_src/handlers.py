@@ -385,18 +385,51 @@ async def _apply_web_bind(message: types.Message, bind_token: str) -> bool:
     return True
 
 
+async def _reply_telegram_id(message: types.Message) -> None:
+    user_id = message.from_user.id
+    username = message.from_user.username or message.from_user.full_name or ""
+    register_user_if_not_exists(user_id, username)
+    await message.answer(
+        user_messages.msg_telegram_id(user_id),
+        parse_mode="HTML",
+    )
+
+
+@user_router.message(Command("id"))
+async def id_command_handler(message: types.Message):
+    await _reply_telegram_id(message)
+
+
+@user_router.message(Command("myid"))
+async def myid_command_handler(message: types.Message):
+    await _reply_telegram_id(message)
+
+
 @user_router.message(Command("start"))
 async def start_handler(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     username = message.from_user.username or message.from_user.full_name
     ref_code = None
     bind_token = None
+    start_arg = None
     if message.text and " " in message.text:
-        arg = message.text.split(" ", 1)[1].strip()
-        if arg.startswith("ref_"):
-            ref_code = arg[4:]
-        elif arg.startswith("bind_"):
-            bind_token = arg[5:]
+        start_arg = message.text.split(" ", 1)[1].strip()
+        if start_arg == "show_id":
+            register_user_if_not_exists(user_id, username)
+            log_action(user_id, "funnel_bot_start", "show_id")
+            await _reply_telegram_id(message)
+            user_data = get_user(user_id)
+            if user_data and user_data.get("agreed_to_terms"):
+                await message.answer(
+                    f"👋 Снова здравствуйте, {html.bold(message.from_user.full_name)}!",
+                    reply_markup=keyboards.main_reply_keyboard,
+                )
+                await show_main_menu(message)
+            return
+        if start_arg.startswith("ref_"):
+            ref_code = start_arg[4:]
+        elif start_arg.startswith("bind_"):
+            bind_token = start_arg[5:]
     register_user_if_not_exists(user_id, username)
     funnel_detail = "bind:***" if bind_token else (ref_code or "")
     log_action(user_id, "funnel_bot_start", funnel_detail)
