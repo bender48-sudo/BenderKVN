@@ -4,39 +4,51 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#09090b">
-  <title>BenderVPN</title>
-  <link rel="stylesheet" href="/portal/assets/portal.css">
+  <title>Личный кабинет — BenderVPN</title>
+  <link rel="stylesheet" href="/portal/assets/portal.css?v=24">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
-  <script src="/portal/assets/qrcode.min.js" defer></script>
-  <script src="/portal/assets/portal-shared.js" defer></script>
+  <script src="/portal/assets/qrcode.min.js?v=24" defer></script>
+  <script src="/portal/assets/portal-shared.js?v=24" defer></script>
   <script>window.BVPN_FOCUS_ACCOUNT = true;</script>
-  <script src="/portal/assets/portal.js" defer></script>
+  <script src="/portal/assets/portal.js?v=24" defer></script>
 </head>
-<body class="cosmic">
+<body class="cosmic cabinet-page">
   <div class="cosmic-bg" aria-hidden="true"></div>
   <a class="skip-link" href="#main-content">К основному содержимому</a>
-  <main id="main-content" tabindex="-1">
-    <header class="top">
-      <h1 class="top__title" id="page-title">BenderVPN</h1>
+  <main id="main-content" class="cabinet-main" tabindex="-1">
+    <header class="top top--sub">
+      <p class="top__eyebrow">BenderVPN</p>
       <a class="top__link" href="/status" id="nav-status-link" data-bvpn-status="1">Статус</a>
     </header>
 
     <p id="load-error" class="banner banner--error hidden" role="alert"></p>
 
     <section data-view="home">
-      <header class="cabinet-head glass">
-        <h2 class="cabinet-head__title" id="cabinet-page-title">Личный кабинет BenderVPN</h2>
-        <p class="cabinet-head__state" id="cabinet-access-state" aria-live="polite"></p>
-        <p class="cabinet-lead muted" id="cabinet-lead-inline"></p>
+      <header class="cabinet-hero glass">
+        <div class="hero-orb cabinet-hero__orb" aria-hidden="true"></div>
+        <h1 class="cabinet-hero__title" id="cabinet-page-title">Личный кабинет BenderVPN</h1>
+        <p class="cabinet-hero__subline muted" id="cabinet-lead-inline"></p>
+        <p class="cabinet-hero__state" id="cabinet-access-state" aria-live="polite"></p>
       </header>
 
-      <section class="sheet glass" id="account-sheet" aria-labelledby="account-heading">
+      <section class="cabinet-grace glass hidden" id="cabinet-grace" aria-labelledby="cabinet-grace-title">
+        <h2 class="cabinet-grace__title" id="cabinet-grace-title"></h2>
+        <p class="cabinet-grace__lead muted" id="cabinet-grace-lead"></p>
+        <div class="cabinet-grace__actions">
+          <a class="btn btn--primary btn--block" id="btn-cabinet-grace-bot" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
+          <a class="btn btn--secondary btn--block" id="btn-cabinet-grace-trial" href="/setup/"></a>
+        </div>
+      </section>
+
+      <section class="cabinet-panel glass hidden" id="account-sheet" aria-labelledby="account-heading">
         <h2 class="visually-hidden" id="account-heading">Ваш доступ</h2>
-        <p class="sheet__label" id="cabinet-balance-label">Баланс</p>
-        <p class="cabinet-balance" id="cabinet-balance" aria-live="polite">—</p>
-        <p class="muted" id="cabinet-balance-hint"></p>
+        <div class="cabinet-balance-card">
+          <p class="sheet__label" id="cabinet-balance-label">Баланс</p>
+          <p class="cabinet-balance" id="cabinet-balance" aria-live="polite">—</p>
+          <p class="muted" id="cabinet-balance-hint"></p>
+        </div>
         <p class="banner banner--warn hidden" id="cabinet-load-error" role="alert"></p>
-        <p class="muted" id="cabinet-web-notify"></p>
+        <p class="muted hidden" id="cabinet-web-notify"></p>
 
         <div class="sheet sheet--nested glass hidden" id="cabinet-configs-panel">
           <p class="sheet__label" id="cabinet-configs-title">Конфигурации</p>
@@ -45,14 +57,17 @@
           <a class="btn btn--secondary btn--block" id="btn-new-device" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
         </div>
 
-        <nav class="cabinet-actions glass hidden" id="cabinet-actions" aria-label="Действия"></nav>
+        <div class="sheet__actions cabinet-panel__bot">
+          <a class="btn btn--secondary btn--block hidden" id="btn-cabinet-bind" href="#" target="_blank" rel="noopener"></a>
+        </div>
+      </section>
 
-        <details class="fold glass" id="cabinet-faq-fold">
-          <summary id="cabinet-faq-title">Частые вопросы</summary>
-          <div class="faq" id="cabinet-faq-list"></div>
-        </details>
+      <nav class="cabinet-actions glass hidden" id="cabinet-actions" aria-label="Действия"></nav>
 
-        <div class="login hidden" id="cabinet-login-panel">
+      <details class="fold glass cabinet-recover hidden" id="cabinet-recover-fold">
+        <summary id="cabinet-recover-title"></summary>
+        <p class="muted" id="cabinet-recover-lead"></p>
+        <div class="login" id="cabinet-login-panel">
           <label class="field" for="cabinet-customer-id">
             <span class="field__label" id="cabinet-customer-id-label">ID</span>
             <input type="text" id="cabinet-customer-id" class="field__input" autocomplete="off">
@@ -63,58 +78,19 @@
           </label>
           <button type="button" class="btn btn--secondary btn--block" id="btn-cabinet-load"></button>
         </div>
-
-        <div class="sheet__actions">
-          <a class="btn btn--secondary btn--block hidden" id="btn-cabinet-bind" href="#" target="_blank" rel="noopener"></a>
-          <a class="btn btn--ghost btn--block" id="btn-cabinet-bot" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
-        </div>
-      </section>
-
-      <div class="status" id="events-card" aria-live="polite">
-        <span class="status__dot" id="events-pill" role="status"></span>
-        <div class="status__body">
-          <p class="status__title hidden" id="events-title">Обновления</p>
-          <p class="status__text" id="events-detail"></p>
-          <ol class="status__steps hidden" id="events-steps"></ol>
-          <div class="status__actions">
-            <button type="button" class="btn btn--small hidden" id="btn-events-ack"></button>
-            <a class="text-link" id="btn-events-more" href="/status"></a>
-          </div>
-        </div>
-      </div>
-
-      <div class="cta">
-        <a class="btn btn--primary btn--block" id="btn-setup" href="/setup/">Начать</a>
-        <button type="button" class="btn btn--secondary btn--block" id="btn-connect"></button>
-      </div>
-
-      <nav class="inline-nav" aria-label="Помощь">
-        <a class="text-link" id="btn-guide" href="/portal/guide.html"></a>
-        <span class="inline-nav__sep" aria-hidden="true">·</span>
-        <a class="text-link" id="btn-support" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
-        <span class="inline-nav__sep" aria-hidden="true">·</span>
-        <button type="button" class="text-link text-link--btn" id="btn-stuck"></button>
-        <span class="inline-nav__sep" aria-hidden="true">·</span>
-        <a class="text-link" id="btn-help-errors" href="/start/help/errors/"></a>
-      </nav>
-
-      <details class="fold" id="help-stuck-panel">
-        <summary id="help-stuck-title">Что проверить</summary>
-        <ol class="fold__list" id="help-stuck-steps"></ol>
       </details>
 
-      <details class="fold" id="fold-about">
-        <summary id="fold-about-title">О сервисе</summary>
-        <div class="fold__body" id="fold-about-body"></div>
+      <details class="fold glass" id="cabinet-faq-fold">
+        <summary id="cabinet-faq-title">Частые вопросы</summary>
+        <div class="faq" id="cabinet-faq-list"></div>
       </details>
 
-      <ul id="hero-stack" class="hidden" aria-hidden="true"></ul>
-      <p id="devices-note" class="hidden"></p>
-      <p id="tg-blocked-title" class="hidden"></p>
-      <p id="tg-blocked-body" class="hidden"></p>
-      <p id="happ-note" class="hidden"></p>
-      <button type="button" id="btn-cabinet" class="hidden" aria-hidden="true"></button>
+      <p id="page-title" class="hidden" aria-hidden="true">BenderVPN</p>
+      <p id="cabinet-lead" class="hidden" aria-hidden="true"></p>
+      <h2 id="cabinet-title" class="hidden" aria-hidden="true"></h2>
       <a id="btn-cabinet-setup" class="hidden" href="/setup/" aria-hidden="true"></a>
+      <a id="btn-cabinet-bot" class="hidden" href="https://t.me/Bender_KVN_bot" aria-hidden="true"></a>
+      <button type="button" id="btn-cabinet" class="hidden" aria-hidden="true"></button>
     </section>
 
     <section data-view="devices" class="hidden" aria-labelledby="devices-heading">
@@ -148,9 +124,8 @@
 
     <section data-view="cabinet" class="hidden" aria-hidden="true">
       <button type="button" class="back" id="btn-back-home-cabinet">← Назад</button>
-      <h2 id="cabinet-title" class="hidden">Мой VPN</h2>
-      <p id="cabinet-lead" class="hidden"></p>
     </section>
+
     <div id="support-block-mount"></div>
     <div id="site-footer-mount"></div>
   </main>

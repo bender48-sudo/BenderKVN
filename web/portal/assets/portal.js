@@ -74,6 +74,34 @@
     return hasTelegramInitContext();
   }
 
+  function isCabinetDedicatedPage() {
+    if (window.BVPN_FOCUS_ACCOUNT) return true;
+    return (window.location.pathname || "").toLowerCase().indexOf("cabinet.html") >= 0;
+  }
+
+  function hasStoredCabinetIdentity() {
+    if (getTelegramUserId() > 0) return true;
+    try {
+      if ((localStorage.getItem(CID_KEY) || "").trim()) return true;
+      if ((localStorage.getItem(EMAIL_KEY) || "").trim()) return true;
+    } catch (e) {
+      /* ignore */
+    }
+    return false;
+  }
+
+  function shouldShowCabinetAccountPanel() {
+    if (isTelegramMiniApp()) return true;
+    if (!isCabinetDedicatedPage()) return hasStoredCabinetIdentity();
+    return !!window.BVPN_CABINET_ACCOUNT_VISIBLE;
+  }
+
+  function shouldAutoLoadCabinet() {
+    if (isTelegramMiniApp()) return true;
+    if (isCabinetDedicatedPage()) return false;
+    return hasStoredCabinetIdentity();
+  }
+
   function normalizeSubUrl(url) {
     var u = (url || "").trim();
     if (!u) return u;
@@ -345,7 +373,9 @@
 
   function loadEvents() {
     var ev = content.events || {};
-    $("events-title").textContent = ev.title || "Обновления VPN";
+    if ($("events-title")) {
+      $("events-title").textContent = ev.title || "Обновления VPN";
+    }
     $("btn-events-ack").textContent = ev.refresh_ack || "Я обновил в Happ";
     var more = $("btn-events-more");
     more.textContent = ev.more || content.buttons.status;
@@ -996,14 +1026,17 @@
       det.appendChild(p);
       list.appendChild(det);
     });
-    if (isTelegramMiniApp()) fold.classList.remove("hidden");
+    if (isTelegramMiniApp() || isCabinetDedicatedPage()) {
+      fold.classList.remove("hidden");
+    }
   }
 
   function renderCabinetActions() {
     var cab = content.cabinet || {};
     var wrap = $("cabinet-actions");
-    if (!wrap || !isTelegramMiniApp()) {
-      if (wrap) wrap.classList.add("hidden");
+    if (!wrap) return;
+    if (!isTelegramMiniApp() && !isCabinetDedicatedPage()) {
+      wrap.classList.add("hidden");
       return;
     }
     wrap.innerHTML = "";
@@ -1011,28 +1044,88 @@
     title.className = "sheet__label";
     title.textContent = cab.actions_title || "Действия";
     wrap.appendChild(title);
-    var items = [
-      { label: cab.action_setup || "Получить настройку", href: "/setup/" },
-      { label: cab.action_guide || "Инструкция", href: "/portal/guide.html" },
-      { label: cab.action_topup || "Пополнить баланс", href: SUPPORT_URL },
-      { label: cab.action_invite || "Пригласить друга", href: botUrlWithReferral() },
-    ];
+    var grid = document.createElement("div");
+    grid.className = "cabinet-actions__grid";
+    var statusHref = statusPageUrl();
+    var items = isTelegramMiniApp()
+      ? [
+          { label: cab.action_setup || "Получить настройку", href: "/setup/" },
+          { label: cab.action_guide || "Инструкция", href: "/portal/guide.html" },
+          { label: cab.action_topup || "Пополнить баланс", href: SUPPORT_URL },
+          { label: cab.action_invite || "Пригласить друга", href: botUrlWithReferral() },
+          { label: cab.action_support || "Поддержка", href: SUPPORT_URL },
+        ]
+      : [
+          { label: cab.action_setup || "Получить настройку", href: "/setup/" },
+          { label: cab.action_guide || "Инструкция", href: "/portal/guide.html" },
+          { label: cab.action_status || "Статус", href: statusHref },
+          { label: cab.action_support || "Поддержка", href: SUPPORT_URL },
+        ];
     items.forEach(function (item) {
       var a = document.createElement("a");
-      a.className = "btn btn--secondary btn--block";
+      a.className = "cabinet-action-card";
       a.href = item.href;
       a.textContent = item.label;
       if (/^https?:\/\/(t\.me|telegram\.me)/i.test(item.href)) {
         bindExternalLink(a);
       }
-      wrap.appendChild(a);
+      grid.appendChild(a);
     });
+    wrap.appendChild(grid);
     wrap.classList.remove("hidden");
+  }
+
+  function updateCabinetChrome() {
+    if (!isCabinetDedicatedPage()) return;
+    document.body.classList.add("cabinet-page");
+    var cab = content.cabinet || {};
+    var grace = $("cabinet-grace");
+    var sheet = $("account-sheet");
+    var recover = $("cabinet-recover-fold");
+    var tg = isTelegramMiniApp();
+    var showAccount = shouldShowCabinetAccountPanel();
+
+    if ($("cabinet-grace-title")) {
+      $("cabinet-grace-title").textContent = cab.grace_title || "Открой ЛК из Telegram-бота";
+    }
+    if ($("cabinet-grace-lead")) {
+      $("cabinet-grace-lead").textContent = cab.grace_lead || "";
+    }
+    var graceBot = $("btn-cabinet-grace-bot");
+    if (graceBot) {
+      graceBot.textContent = cab.grace_cta_bot || cab.open_bot || "Открыть Telegram-бот";
+      graceBot.href = SUPPORT_URL;
+      bindExternalLink(graceBot);
+    }
+    var graceTrial = $("btn-cabinet-grace-trial");
+    if (graceTrial) {
+      graceTrial.textContent =
+        cab.grace_cta_trial || content.buttons.setup_browser || "Получить временный доступ на 1 сутки";
+      graceTrial.href = SETUP_PATH;
+    }
+    if ($("cabinet-recover-title")) {
+      $("cabinet-recover-title").textContent =
+        cab.recover_fold_title || "Уже получал доступ на сайте?";
+    }
+    if ($("cabinet-recover-lead")) {
+      $("cabinet-recover-lead").textContent = cab.recover_fold_lead || "";
+    }
+
+    if (showAccount) {
+      if (grace) grace.classList.add("hidden");
+      if (sheet) sheet.classList.remove("hidden");
+    } else {
+      if (grace) grace.classList.remove("hidden");
+      if (sheet) sheet.classList.add("hidden");
+    }
+    if (recover && !tg) recover.classList.remove("hidden");
+    else if (recover) recover.classList.add("hidden");
   }
 
   function renderCabinet() {
     var cab = content.cabinet || {};
     var tg = isTelegramMiniApp();
+    var dedicated = isCabinetDedicatedPage();
     if ($("cabinet-title")) {
       $("cabinet-title").textContent = cab.title || "Личный кабинет";
     }
@@ -1040,7 +1133,12 @@
       $("cabinet-lead").textContent = tg ? cab.lead_tg : cab.lead_web;
     }
     if ($("cabinet-lead-inline")) {
-      $("cabinet-lead-inline").textContent = tg ? cab.lead_tg : cab.lead_web;
+      if (dedicated) {
+        $("cabinet-lead-inline").textContent =
+          cab.lead_subline || "Здесь баланс, настройки устройств, инструкции и поддержка.";
+      } else {
+        $("cabinet-lead-inline").textContent = tg ? cab.lead_tg : cab.lead_web;
+      }
     }
     if ($("cabinet-configs-title")) {
       $("cabinet-configs-title").textContent = cab.configs_title || "Конфигурации";
@@ -1056,11 +1154,15 @@
     if ($("cabinet-page-title")) {
       $("cabinet-page-title").textContent = cab.title || "Личный кабинет BenderVPN";
     }
+    updateCabinetChrome();
     renderCabinetActions();
     renderCabinetFaq();
-    $("cabinet-balance-label").textContent = cab.balance_label || "Баланс";
-    $("cabinet-balance").textContent = cab.balance_na || "—";
-    $("cabinet-balance-hint").textContent = cab.balance_hint || "";
+    var balLabel = $("cabinet-balance-label");
+    var balVal = $("cabinet-balance");
+    var balHint = $("cabinet-balance-hint");
+    if (balLabel) balLabel.textContent = cab.balance_label || "Баланс";
+    if (balVal) balVal.textContent = cab.balance_na || "—";
+    if (balHint) balHint.textContent = cab.balance_hint || "";
     if ($("cabinet-customer-id-label")) {
       $("cabinet-customer-id-label").textContent = cab.customer_id_label || "BVPN-ID";
     }
@@ -1073,20 +1175,24 @@
     if ($("cabinet-web-notify")) {
       $("cabinet-web-notify").textContent = cab.web_notify_lead || "";
     }
-    $("btn-cabinet-bot").textContent = cab.open_bot || "Открыть бота";
-    if (tg) {
-      $("btn-cabinet-setup").textContent =
-        cab.setup_tg || content.buttons.setup_tg || "QR для Happ";
-      $("btn-cabinet-setup").href = "#";
-    } else {
-      $("btn-cabinet-setup").textContent = content.buttons.setup_browser;
-      $("btn-cabinet-setup").href = SETUP_PATH;
+    var botGhost = $("btn-cabinet-bot");
+    if (botGhost) botGhost.textContent = cab.open_bot || "Открыть бота";
+    var setupGhost = $("btn-cabinet-setup");
+    if (setupGhost) {
+      if (tg) {
+        setupGhost.textContent =
+          cab.setup_tg || (content.buttons && content.buttons.setup_tg) || "QR для Happ";
+        setupGhost.href = "#";
+      } else if (content.buttons && content.buttons.setup_browser) {
+        setupGhost.textContent = content.buttons.setup_browser;
+        setupGhost.href = SETUP_PATH;
+      }
     }
     var bindBtn = $("btn-cabinet-bind");
     if (bindBtn) {
       bindBtn.textContent = cab.bind_tg || "Привязать Telegram";
     }
-    bindExternalLink($("btn-cabinet-bot"));
+    if (botGhost) bindExternalLink(botGhost);
     bindExternalLink(bindBtn);
     try {
       var cid = localStorage.getItem(CID_KEY) || "";
@@ -1097,8 +1203,8 @@
       /* ignore */
     }
     if (tg) {
-      var login = $("cabinet-login-panel");
-      if (login) login.classList.add("hidden");
+      var recoverFold = $("cabinet-recover-fold");
+      if (recoverFold) recoverFold.classList.add("hidden");
     }
   }
 
@@ -1120,6 +1226,15 @@
     var err = $("cabinet-load-error");
     if (err) err.classList.add("hidden");
     if (!doc || !doc.ok) {
+      if (
+        isCabinetDedicatedPage() &&
+        !isTelegramMiniApp() &&
+        !window.BVPN_CABINET_ACCOUNT_VISIBLE
+      ) {
+        updateCabinetChrome();
+        renderCabinetActions();
+        return;
+      }
       var msg =
         (doc && doc.message) ||
         (isTelegramMiniApp()
@@ -1167,7 +1282,7 @@
     }
     var cfgPanel = $("cabinet-configs-panel");
     var cfgList = $("cabinet-configs-list");
-    if (cfgPanel && cfgList && isTelegramMiniApp()) {
+    if (cfgPanel && cfgList && (isTelegramMiniApp() || isCabinetDedicatedPage())) {
       cfgList.innerHTML = "";
       var configs = doc.configurations || [];
       if (!configs.length) {
@@ -1187,8 +1302,11 @@
       }
       cfgPanel.classList.remove("hidden");
     }
-    var login = $("cabinet-login-panel");
-    if (login && isTelegramMiniApp()) login.classList.add("hidden");
+    if (isCabinetDedicatedPage()) {
+      if (doc.ok) window.BVPN_CABINET_ACCOUNT_VISIBLE = true;
+      updateCabinetChrome();
+      renderCabinetActions();
+    }
     var botBtn = $("btn-cabinet-bot");
     if (botBtn && doc.bot_url) {
       botBtn.href = doc.bot_url;
@@ -1273,6 +1391,11 @@
     }
     var cid = ($("cabinet-customer-id") && $("cabinet-customer-id").value) || "";
     var email = ($("cabinet-email") && $("cabinet-email").value) || "";
+    if (!cid.trim() && !email.trim()) {
+      return;
+    }
+    window.BVPN_CABINET_ACCOUNT_VISIBLE = true;
+    updateCabinetChrome();
     try {
       if (email) localStorage.setItem(EMAIL_KEY, email.trim());
     } catch (e) {
@@ -1322,15 +1445,23 @@
     renderCabinet();
     show("home");
     trackFunnel("portal_view_cabinet");
-    loadCabinetBalance();
-    focusAccountSheet();
+    if (shouldAutoLoadCabinet()) {
+      loadCabinetBalance();
+    }
+    if (!isCabinetDedicatedPage()) {
+      focusAccountSheet();
+    }
   }
 
   function applyRouteFromHash() {
     var raw = resolveRouteView();
     if (raw === "cabinet") {
       show("home");
-      openCabinetView();
+      if (isCabinetDedicatedPage()) {
+        if (isTelegramMiniApp()) loadCabinetBalance();
+      } else {
+        openCabinetView();
+      }
       return;
     }
     if (raw === "devices" || raw === "connect") {
@@ -1364,7 +1495,10 @@
     }
     var loadBal = $("btn-cabinet-load");
     if (loadBal) {
-      loadBal.addEventListener("click", loadCabinetBalance);
+      loadBal.addEventListener("click", function () {
+        window.BVPN_CABINET_ACCOUNT_VISIBLE = true;
+        loadCabinetBalance();
+      });
     }
     var backCab = $("btn-back-home-cabinet");
     if (backCab) {
@@ -1482,12 +1616,15 @@
       if (route !== "cabinet" && route !== "devices" && !/^device=/.test(route)) {
         trackFunnel("portal_view_home");
       }
-      if (isTelegramMiniApp() || window.BVPN_FOCUS_ACCOUNT) {
-        loadCabinetBalance();
-      }
-      if (window.BVPN_FOCUS_ACCOUNT) {
+      if (isCabinetDedicatedPage()) {
         show("home");
-        focusAccountSheet();
+        if (shouldAutoLoadCabinet()) {
+          loadCabinetBalance();
+        }
+      } else if (isTelegramMiniApp() || window.BVPN_FOCUS_ACCOUNT) {
+        if (shouldAutoLoadCabinet()) {
+          loadCabinetBalance();
+        }
       }
       var footMount = $("site-footer-mount");
       if (footMount && window.BenderPortalShared) {
