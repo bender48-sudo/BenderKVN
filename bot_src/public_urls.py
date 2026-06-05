@@ -65,6 +65,20 @@ def setup_origin() -> str:
     )
 
 
+def portal_page_url(page: str, *, query: dict[str, str] | None = None) -> str:
+    """Absolute HTTPS URL under /portal/ (cabinet.html, guide.html, …)."""
+    slug = (page or "").strip().lstrip("/")
+    if slug.startswith("portal/"):
+        slug = slug[len("portal/") :]
+    base = f"{portal_origin().rstrip('/')}/portal/{slug}"
+    if not query:
+        return base
+    from urllib.parse import urlencode
+
+    qs = urlencode({k: str(v) for k, v in query.items() if v is not None and str(v) != ""})
+    return f"{base}?{qs}" if qs else base
+
+
 def normalize_subscription_url(url: str | None) -> str:
     """Panel may return :2053; public edge serves /api/sub on :8443 (no auth strip on redirect)."""
     u = (url or "").strip()

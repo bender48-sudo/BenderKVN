@@ -1,7 +1,7 @@
 import logging
 import os
 
-from shop_bot.public_urls import telegram_webapp_url
+from shop_bot.public_urls import portal_page_url, telegram_webapp_url
 
 _logger = logging.getLogger(__name__)
 
@@ -81,11 +81,22 @@ TELEGRAM_WEBAPP_URL = telegram_webapp_url()
 
 
 def telegram_cabinet_webapp_url(telegram_id: int | None = None) -> str:
-    """Mini App deep-link to portal cabinet (path + query; TG often strips #hash)."""
-    base = TELEGRAM_WEBAPP_URL.rstrip("/") + "/cabinet.html"
+    """Mini App deep-link to /portal/cabinet.html (never /portal/ landing)."""
+    query: dict[str, str] = {"wv": "26"}
     if telegram_id and int(telegram_id) > 0:
-        return f"{base}?tid={int(telegram_id)}"
-    return base
+        query["tid"] = str(int(telegram_id))
+    return portal_page_url("cabinet.html", query=query)
+
+
+def telegram_guide_webapp_url(platform: str | None = None) -> str:
+    """Mini App deep-link to /portal/guide.html."""
+    query: dict[str, str] = {"wv": "26"}
+    key = (platform or "").strip().lower()
+    if key in ("ios", "iphone", "ipad"):
+        query["device"] = "iphone"
+    elif key == "android":
+        query["device"] = "android"
+    return portal_page_url("guide.html", query=query)
 
 
 _PORTAL_DEVICE_IDS = frozenset({"iphone", "android", "windows", "mac"})

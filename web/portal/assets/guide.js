@@ -9,6 +9,39 @@
     return document.getElementById(id);
   }
 
+  function getTelegramWebApp() {
+    return window.Telegram && window.Telegram.WebApp;
+  }
+
+  function isTelegramMiniApp() {
+    var tg = getTelegramWebApp();
+    if (!tg) return false;
+    return !!(tg.initData || "").trim() || !!(tg.initDataUnsafe && tg.initDataUnsafe.user);
+  }
+
+  function initTelegram() {
+    if (!isTelegramMiniApp()) return;
+    var tg = getTelegramWebApp();
+    if (!tg) return;
+    document.documentElement.classList.add("tg-webapp");
+    tg.ready();
+    try {
+      tg.expand();
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function tabLabel(dev) {
+    var titles = {
+      iphone: "iPhone",
+      android: "Android",
+      windows: "Windows",
+      mac: "MacOS",
+    };
+    return titles[dev.id] || dev.install_title || dev.label || dev.id;
+  }
+
   function pickDevice() {
     var p = new URLSearchParams(window.location.search).get("device") || "";
     if (p === "ios") return "iphone";
@@ -19,6 +52,18 @@
   function storeForDevice(dev) {
     var key = dev.install_store_key || dev.id;
     return (window._guideContent && window._guideContent.happ_install || {})[key] || null;
+  }
+
+  function appendActionLink(parent, href, label, external) {
+    var a = document.createElement("a");
+    a.className = "btn btn--secondary btn--block guide-action-link";
+    a.href = href;
+    a.textContent = label;
+    if (external) {
+      a.target = "_blank";
+      a.rel = "noopener";
+    }
+    parent.appendChild(a);
   }
 
   function renderDeviceTabs() {
@@ -33,11 +78,11 @@
       btn.setAttribute("aria-selected", dev.id === activeId ? "true" : "false");
       btn.setAttribute("data-device-id", dev.id);
       btn.innerHTML =
-        '<span class="icon" aria-hidden="true">' + dev.icon + "</span>" + dev.label;
+        '<span class="icon" aria-hidden="true">' + dev.icon + "</span>" + tabLabel(dev);
       btn.addEventListener("click", function () {
         activeId = dev.id;
         if (history.replaceState) {
-          history.replaceState(null, "", "?device=" + encodeURIComponent(dev.id));
+          history.replaceState(null, "", "?device=" + encodeURIComponent(dev.id) + "&wv=26");
         }
         renderDeviceTabs();
         renderStepsPanel();
@@ -55,7 +100,7 @@
     if (!panel || !dev) return;
     panel.innerHTML = "";
     var title = document.createElement("strong");
-    title.textContent = dev.install_title || dev.label;
+    title.textContent = dev.install_title || tabLabel(dev);
     panel.appendChild(title);
 
     var ol = document.createElement("ol");
@@ -66,7 +111,7 @@
         var st = storeForDevice(dev);
         if (st && st.url) {
           var a = document.createElement("a");
-          a.className = "store-link";
+          a.className = "btn btn--secondary guide-store-btn";
           a.href = st.url;
           a.target = "_blank";
           a.rel = "noopener";
@@ -76,8 +121,7 @@
         } else if (dev.id === "android") {
           var note = document.createElement("span");
           note.className = "muted";
-          note.textContent =
-            "Ссылка на магазин уточняется — найдите Happ в Google Play.";
+          note.textContent = "Найдите Happ в Google Play по названию.";
           li.appendChild(document.createElement("br"));
           li.appendChild(note);
         }
@@ -109,12 +153,14 @@
       panel.appendChild(callout);
     }
 
-    var trouble = document.createElement("p");
-    trouble.className = "muted";
-    trouble.style.marginTop = "0.75rem";
-    trouble.innerHTML =
-      'Не работает — <a class="site-footer__link" href="/start/help/errors/">частые проблемы</a> или ' +
-      '<a class="site-footer__link" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener">поддержка</a>.';
+    var trouble = document.createElement("div");
+    trouble.className = "guide-trouble-actions";
+    var troubleLead = document.createElement("p");
+    troubleLead.className = "muted";
+    troubleLead.textContent = "Не работает?";
+    trouble.appendChild(troubleLead);
+    appendActionLink(trouble, "/start/help/errors/", "Частые проблемы", false);
+    appendActionLink(trouble, "https://t.me/Bender_KVN_bot", "Поддержка в Telegram", true);
     panel.appendChild(trouble);
   }
 
@@ -178,6 +224,7 @@
     })
     .then(function (data) {
       window._guideContent = data;
+      initTelegram();
       var v = data.setup_videos || {};
       devices = data.devices || [];
       activeId = pickDevice();
@@ -194,8 +241,9 @@
       if (v.setup_button && $("btn-guide-setup")) {
         $("btn-guide-setup").textContent = v.setup_button;
       }
-      if (v.portal_button && $("btn-guide-portal")) {
-        $("btn-guide-portal").textContent = v.portal_button;
+      if ($("btn-guide-portal")) {
+        $("btn-guide-portal").textContent =
+          v.portal_button || (data.cabinet && data.cabinet.title) || "Личный кабинет";
       }
       renderDeviceTabs();
       renderStepsPanel();

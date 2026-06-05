@@ -1152,6 +1152,33 @@ html.tg-webapp a:not(.btn) {
   opacity: 0.95;
 }
 
+.guide-page .guide-trouble-actions {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.guide-page .guide-trouble-actions .muted {
+  margin: 0 0 0.15rem;
+}
+
+.guide-page .guide-action-link,
+.guide-page .guide-store-btn {
+  margin-top: 0.45rem;
+  text-decoration: none;
+  text-align: center;
+}
+
+.guide-page .guide-store-btn {
+  display: inline-block;
+  width: auto;
+  min-width: 12rem;
+}
+
+.guide-page a:not(.btn):not(.text-link):not(.store-link):not(.top__link):not(.nav-link):not(.site-footer__link) {
+  color: var(--accent);
+}
+
 a:not(.btn):not(.text-link):not(.store-link):not(.top__link):not(.nav-link) {
   color: var(--accent);
   text-decoration: none;

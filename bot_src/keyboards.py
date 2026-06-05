@@ -4,6 +4,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from shop_bot.config import (
     TELEGRAM_WEBAPP_URL,
     telegram_cabinet_webapp_url,
+    telegram_guide_webapp_url,
     telegram_portal_webapp_url,
 )
 from shop_bot.vpn_setup_wizard import device_ids
@@ -20,11 +21,10 @@ main_reply_keyboard = ReplyKeyboardMarkup(
 
 def _add_portal_link_buttons(builder: InlineKeyboardBuilder, setup_url: str | None = None) -> None:
     """Guide / errors / browser — help submenu only, not main menu."""
-    guide_url = portal_links.public_guide_url()
-    if guide_url:
+    if TELEGRAM_WEBAPP_URL:
         builder.button(
             text="\U0001f4d6 \u0418\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0438\u044f",
-            url=guide_url,
+            url=telegram_guide_webapp_url(),
         )
     errors_url = portal_links.public_errors_url()
     if errors_url:
@@ -88,8 +88,13 @@ def create_main_menu_keyboard(
         text="\U0001f4b0 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u0431\u0430\u043b\u0430\u043d\u0441",
         callback_data="show_topup",
     )
-    guide_url = portal_links.public_guide_url()
-    if guide_url:
+    guide_url = telegram_guide_webapp_url()
+    if TELEGRAM_WEBAPP_URL and not for_simulation:
+        builder.button(
+            text="\U0001f4d6 \u0418\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0438\u044f",
+            web_app=WebAppInfo(url=guide_url),
+        )
+    elif guide_url:
         builder.button(text="\U0001f4d6 \u0418\u043d\u0441\u0442\u0440\u0443\u043a\u0446\u0438\u044f", url=guide_url)
     builder.button(
         text="\U0001f465 \u041f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u0442\u044c",
