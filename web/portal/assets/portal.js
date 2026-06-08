@@ -544,15 +544,9 @@
     return base;
   }
 
-  function showCapacityFallback(card, home) {
-    if ($("slots-value")) {
-      $("slots-value").textContent =
-        home.slots_unavailable || "Количество мест обновляется";
-    }
-    if ($("slots-hint")) $("slots-hint").textContent = "";
-    var capNote = $("slots-cap");
-    if (capNote) capNote.textContent = "";
-    card.classList.remove("hidden");
+  function hideCapacityCard() {
+    var card = $("slots-card");
+    if (card) card.classList.add("hidden");
   }
 
   function loadCapacity() {
@@ -561,15 +555,15 @@
     var meta = content.meta || {};
     if (!card) return;
     if (isTelegramMiniApp()) {
-      card.classList.add("hidden");
+      hideCapacityCard();
       return;
     }
     if ($("slots-title") && home.slots_title) {
       $("slots-title").textContent = home.slots_title;
     }
-    // Backend POST /setup/api/capacity not deployed; skip fetch to avoid console 404.
+    // No live capacity API — hide counter card; hero_badge shows invite-only limit.
     if (meta.capacity_api_enabled !== true) {
-      showCapacityFallback(card, home);
+      hideCapacityCard();
       return;
     }
     fetch(API_CAPACITY, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
@@ -608,7 +602,7 @@
         card.classList.remove("hidden");
       })
       .catch(function () {
-        showCapacityFallback(card, home);
+        hideCapacityCard();
       });
   }
 
