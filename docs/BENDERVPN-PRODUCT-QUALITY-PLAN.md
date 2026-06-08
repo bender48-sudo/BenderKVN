@@ -1,8 +1,9 @@
 # BenderVPN Product Quality Plan
 
-**Status:** active · **Branch:** `product-referral-cabinet-ui-v1`  
+**Status:** portal journey complete · product policy locked → **`docs/BENDERVPN-PRODUCT-POLICY.md`**
+**Branch:** `product-referral-cabinet-ui-v1`
 **Last updated:** 2026-06-09  
-**Owner loop:** autonomous product-quality (portal + user-facing copy only)
+**Owner loop:** product-quality (portal copy) done; next = Phase 1 product-logic alignment per policy v1
 
 ---
 
@@ -192,14 +193,16 @@ See prioritized backlog below (SEM-001 … UX-212).
 
 ## 10. Open questions (owner decision)
 
-| Question | Notes |
-|----------|-------|
-| Real capacity source | No safe public read-only API found; UX-207 hides counter |
-| Referral bonus | Must not promise until implemented |
-| One-device enforcement | Copy states rule; backend scope TBD |
-| Support email | Telegram-only in product today |
-| Legal final review | Current pages are factual minimal drafts |
-| Paid/topup after trial | 6,67 ₽/day in cabinet copy; bot is payment surface |
+**Resolved in `docs/BENDERVPN-PRODUCT-POLICY.md` v1 (2026-06-09).** Remaining deferred items: OD-01 … OD-10 in policy §11.
+
+| Question | Resolution |
+|----------|------------|
+| Real capacity source | Hidden badge; 30k = active configs; public API deferred (OD-06) |
+| Referral bonus | No bonus at MVP; fix attribution; future small time credit only (OD-02) |
+| One-device enforcement | One config/account; support-only new device; HWID Phase 3 |
+| Support email | TG-only for pilot; required before partner scale (policy §9) |
+| Legal final review | Still open — reconcile REG-001 in Phase 2 (OD-09) |
+| Paid/topup after trial | 6,67 ₽/day; 200 ₽ ≈ 30 days; trial skips balance debit |
 
 ---
 
@@ -209,8 +212,11 @@ See prioritized backlog below (SEM-001 … UX-212).
 |-------|------|--------|
 | A — Git stabilize | 2026-06-09 | 2 commits ahead; UX-207 committed; no uncommitted portal changes |
 | B — This plan | 2026-06-09 | Created |
-| C — Batch 1 | pending | |
-| D — Batch 2 | pending | |
-| E — Batch 3 | pending | |
-| F — Re-audit | pending | |
-| G — Push | pending | |
+| C — Batch 1 | 2026-06-09 | `7ffe7c5` cabinet fallback + legal 90d/1d |
+| D — Batch 2 | 2026-06-09 | `a54f7a2` onboarding copy, support /id, recover teaser |
+| E — Batch 3 | 2026-06-09 | `19678fa` guide nav, events-card hide, a11y labels |
+| F — Re-audit | 2026-06-09 | No P0/P1; see audit summary below |
+| G — Push | 2026-06-09 | `3a9fa73` two-path landing; synced to origin |
+| H — Product audit | 2026-06-09 | Full audit complete; journey good enough |
+| I — Decision workshop | 2026-06-09 | Owner decisions captured |
+| J — Product policy v1 | 2026-06-09 | `docs/BENDERVPN-PRODUCT-POLICY.md` |
