@@ -17,6 +17,24 @@ _INCIDENT_STATUS_RU = {
     "monitoring": "Наблюдаем",
     "resolved": "Устранено",
 }
+_LEGACY_STATUS_MSG_RU = {
+    "all core checks green.": "Все основные проверки пройдены.",
+    "degraded: review nodes/subscription in json.": "Есть ограничения — смотрите компоненты ниже.",
+}
+
+
+def _status_message_ru(message: str, overall: str) -> str:
+    raw = (message or "").strip()
+    if not raw:
+        return (
+            "Все основные проверки пройдены."
+            if overall == "ok"
+            else "Есть ограничения — смотрите компоненты ниже."
+        )
+    mapped = _LEGACY_STATUS_MSG_RU.get(raw.lower())
+    if mapped:
+        return mapped
+    return raw
 
 
 def _load_incidents(path: Path | None) -> list[dict[str, Any]]:
@@ -70,7 +88,7 @@ def render_public_html(
     overall = status.get("overall", "degraded")
     css_class, headline = _STATUS_RU.get(overall, _STATUS_RU["degraded"])
     updated = html.escape(str(status.get("updated_at", "")))
-    message = html.escape(str(status.get("message", "")))
+    message = html.escape(_status_message_ru(str(status.get("message", "")), overall))
 
     incidents = _load_incidents(incidents_path)
     if incidents:
@@ -127,80 +145,93 @@ def render_public_html(
             "Технический JSON (для мониторинга)</a></p>"
         )
 
+    status_pill = "status__dot--ok" if css_class == "operational" else "status__dot--warn"
     return f"""<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="refresh" content="120">
-  <title>BenderVPN — статус сервиса</title>
+  <meta name="theme-color" content="#09090b">
+  <title>Статус сервиса — BenderVPN</title>
+  <link rel="stylesheet" href="/portal/assets/portal.css">
   <style>
-    :root {{
-      --bg: #0f1419;
-      --card: #1a2332;
-      --text: #e7ecf3;
-      --muted: #8b9cb3;
-      --ok: #3dd68c;
-      --warn: #f5a524;
-      --bad: #f31260;
+    .status-page-main {{ max-width: 28rem; margin: 0 auto; padding: 0 1rem 2rem; }}
+    .status-hero {{ margin-top: 0.5rem; }}
+    .status-hero__title {{ margin: 0 0 0.35rem; font-size: 1.35rem; }}
+    .status-hero__lead {{ margin: 0; }}
+    .status-overall {{
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      margin-top: 1rem;
     }}
-    * {{ box-sizing: border-box; }}
-    body {{
-      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 1.25rem;
-      line-height: 1.5;
-    }}
-    main {{ max-width: 42rem; margin: 0 auto; }}
-    h1 {{ font-size: 1.35rem; margin: 0 0 0.5rem; }}
-    .banner {{
-      border-radius: 12px;
-      padding: 1rem 1.25rem;
-      margin: 1rem 0;
-      background: var(--card);
-      border-left: 4px solid var(--muted);
-    }}
-    .operational {{ border-left-color: var(--ok); }}
-    .degraded {{ border-left-color: var(--warn); }}
-    .headline {{ font-size: 1.1rem; font-weight: 600; }}
-    ul {{ list-style: none; padding: 0; margin: 0.75rem 0; }}
-    .comp {{ padding: 0.35rem 0; }}
-    .comp-ok::before {{ content: "✓ "; color: var(--ok); }}
-    .comp-degraded::before {{ content: "! "; color: var(--warn); }}
-    .comp-unknown::before {{ content: "? "; color: var(--muted); }}
-    .incident {{
-      background: var(--card);
-      border-radius: 10px;
-      padding: 1rem;
-      margin: 0.75rem 0;
-    }}
-    .incident h2 {{ font-size: 1rem; margin: 0 0 0.35rem; }}
-    .inc-status {{ color: var(--warn); margin: 0 0 0.5rem; font-size: 0.9rem; }}
-    .muted {{ color: var(--muted); font-size: 0.9rem; }}
-    a {{ color: #6eb5ff; }}
+    .status-overall__text {{ margin: 0; }}
+    .status-overall__headline {{ margin: 0 0 0.35rem; font-size: 1.05rem; font-weight: 600; }}
+    .status-components {{ list-style: none; padding: 0; margin: 0.75rem 0 0; }}
+    .status-components li {{ padding: 0.3rem 0; }}
+    .status-components li::before {{ margin-right: 0.35rem; }}
+    .comp-ok::before {{ content: "✓"; color: var(--accent); }}
+    .comp-degraded::before {{ content: "!"; color: var(--warn); }}
+    .comp-unknown::before {{ content: "?"; color: var(--muted); }}
+    .status-incident {{ margin-top: 0.75rem; }}
+    .status-incident h2 {{ font-size: 1rem; margin: 0 0 0.35rem; }}
+    .status-incident .inc-status {{ color: var(--warn); margin: 0 0 0.5rem; font-size: 0.9rem; }}
+    .status-footnote {{ margin-top: 1rem; }}
   </style>
 </head>
-<body>
-  <main>
-    <h1>BenderVPN</h1>
-    <p class="muted">Публичный статус сервиса</p>
-    <div class="banner {css_class}">
-      <p class="headline">{headline}</p>
-      <p>{message}</p>
-      <p class="muted">Обновлено (UTC): {updated}</p>
-    </div>
-    <section>
-      <h2 class="muted" style="font-size:0.95rem">Компоненты</h2>
-      <ul>{"".join(comp_html)}</ul>
+<body class="cosmic">
+  <div class="cosmic-bg" aria-hidden="true"></div>
+  <main class="status-page-main">
+    <header class="top top--sub">
+      <p class="top__eyebrow">BenderVPN</p>
+      <a class="nav-link" href="/start/">← Главная</a>
+    </header>
+
+    <section class="glass status-hero">
+      <h1 class="status-hero__title">Статус сервиса</h1>
+      <p class="status-hero__lead muted">Публичная страница: работают ли VPN, выдача подписки и активные инциденты.</p>
     </section>
-    <section>
-      <h2 class="muted" style="font-size:0.95rem">Инциденты</h2>
+
+    <section class="sheet glass">
+      <div class="status-overall">
+        <span class="status__dot {status_pill}" aria-hidden="true"></span>
+        <div class="status-overall__text">
+          <p class="status-overall__headline">{headline}</p>
+          <p class="muted">{message}</p>
+          <p class="muted" style="margin-top:0.5rem">Обновлено (UTC): {updated}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sheet glass">
+      <h2 class="sheet__label">Компоненты</h2>
+      <ul class="status-components muted">{"".join(comp_html)}</ul>
+    </section>
+
+    <section class="sheet glass">
+      <h2 class="sheet__label">Инциденты</h2>
       {incidents_block}
     </section>
-    <p class="muted">При проблемах с подключением: обновите подписку в клиенте и напишите в поддержку через Telegram-бот.</p>
+
+    <p class="status-footnote muted">Если VPN не подключается: обнови подписку в Happ (профиль BenderVPN Auto) и напиши в поддержку через Telegram-бот.</p>
     {json_link}
+
+    <footer class="site-footer" style="margin-top:1.5rem">
+      <nav class="site-footer__nav" aria-label="Навигация сайта">
+        <a class="site-footer__link" href="/start/">Главная</a>
+        <span class="site-footer__sep" aria-hidden="true">·</span>
+        <a class="site-footer__link" href="/portal/guide.html">Инструкция</a>
+        <span class="site-footer__sep" aria-hidden="true">·</span>
+        <a class="site-footer__link" href="/status">Статус</a>
+        <span class="site-footer__sep" aria-hidden="true">·</span>
+        <a class="site-footer__link" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener">Поддержка</a>
+        <span class="site-footer__sep" aria-hidden="true">·</span>
+        <a class="site-footer__link" href="/portal/legal/privacy.html">Политика конфиденциальности</a>
+        <span class="site-footer__sep" aria-hidden="true">·</span>
+        <a class="site-footer__link" href="/portal/legal/terms.html">Условия пользования</a>
+      </nav>
+    </footer>
   </main>
 </body>
 </html>

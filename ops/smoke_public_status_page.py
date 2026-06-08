@@ -38,7 +38,7 @@ def main() -> int:
     if code != 200:
         print("PUBLIC_STATUS_FAIL: not HTTP 200", file=sys.stderr)
         return 1
-    for needle in ("BenderVPN", "Публичный статус", "Компоненты"):
+    for needle in ("BenderVPN", "Статус сервиса", "Компоненты"):
         if needle not in body:
             print(f"PUBLIC_STATUS_FAIL: missing {needle!r}", file=sys.stderr)
             return 1

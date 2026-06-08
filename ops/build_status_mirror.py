@@ -147,9 +147,9 @@ def build_status() -> dict:
         overall = "degraded"
 
     tg_api = _probe_telegram_api()
-    msg = "All core checks green."
+    msg = "Все основные проверки пройдены."
     if overall != "ok":
-        msg = "Degraded: review nodes/subscription in JSON."
+        msg = "Есть ограничения — смотрите компоненты ниже."
 
     vpn_config = _vpn_config_from_ams()
 

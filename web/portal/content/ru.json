@@ -29,7 +29,7 @@
     "referral_preserve_note": "Пришёл по приглашению? Ссылка сохранится при переходе в Telegram или при регистрации по email.",
     "journey_title": "Путь подключения",
     "journey_steps": [
-      "Получи доступ — Telegram или email на 1 сутки",
+      "Получи доступ — 90 дней в Telegram или 1 сутки по email",
       "Установи Happ на устройство",
       "Добавь настройку по QR или ссылке",
       "Включи BenderVPN Auto",
@@ -467,7 +467,7 @@
     "title": "Поддержка",
     "telegram_label": "Telegram",
     "telegram_url": "https://t.me/Bender_KVN_bot",
-    "message_hint": "Напиши: устройство (iPhone / Android / Windows / Mac), где открываешь (Telegram или браузер), что произошло. Скриншот — если есть."
+    "message_hint": "Если пишешь по доступу, приложи устройство, что произошло, скриншот и Telegram ID. Узнать ID можно командой /id."
   },
   "faq": {
     "title": "Частые вопросы",

@@ -714,7 +714,7 @@
         $("setup-email-lead").textContent = s.path_email_lead || s.signup_lead;
       }
       renderJourney(1);
-      renderSetupStepsList();
+      if ($("setup-steps-list")) hide($("setup-steps-list"));
       if (recoverFold) showEl(recoverFold);
     }
 
