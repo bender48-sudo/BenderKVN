@@ -704,7 +704,7 @@
       if ($("setup-tg-lead")) $("setup-tg-lead").textContent = s.path_tg_lead || "";
       var tgBtn = $("btn-setup-tg");
       if (tgBtn) {
-        tgBtn.textContent = s.path_tg_button || "Открыть Telegram-бот";
+        tgBtn.textContent = s.path_tg_button || "Открыть Telegram-бота";
         tgBtn.href = botUrlWithReferral();
         bindExternalLink(tgBtn);
       }

@@ -1090,7 +1090,14 @@
           { label: cab.action_support || "Поддержка", href: SUPPORT_URL },
         ]
       : [
-          { label: cab.action_setup || "Получить настройку", href: "/setup/" },
+          {
+            label: cab.action_tg_bot || "Открыть Telegram-бота",
+            href: botUrlWithReferral(),
+          },
+          {
+            label: cab.action_email_access || "Временный доступ на 1 сутки",
+            href: SETUP_PATH,
+          },
           { label: cab.action_guide || "Инструкция", href: "/portal/guide.html" },
           { label: cab.action_status || "Статус", href: statusHref },
           { label: cab.action_support || "Поддержка", href: SUPPORT_URL },
@@ -1125,16 +1132,22 @@
     if ($("cabinet-grace-lead")) {
       $("cabinet-grace-lead").textContent = cab.grace_lead || "";
     }
+    if ($("cabinet-grace-tg-note")) {
+      $("cabinet-grace-tg-note").textContent = cab.grace_path_tg_note || "";
+    }
+    if ($("cabinet-grace-email-note")) {
+      $("cabinet-grace-email-note").textContent = cab.grace_path_email_note || "";
+    }
     var graceBot = $("btn-cabinet-grace-bot");
     if (graceBot) {
-      graceBot.textContent = cab.grace_cta_bot || cab.open_bot || "Открыть Telegram-бот";
-      graceBot.href = SUPPORT_URL;
+      graceBot.textContent = cab.grace_cta_bot || cab.open_bot || "Открыть Telegram-бота";
+      graceBot.href = botUrlWithReferral();
       bindExternalLink(graceBot);
     }
     var graceTrial = $("btn-cabinet-grace-trial");
     if (graceTrial) {
       graceTrial.textContent =
-        cab.grace_cta_trial || content.buttons.setup_browser || "Получить временный доступ на 1 сутки";
+        cab.grace_cta_trial || content.buttons.setup_browser || "Временный доступ на 1 сутки";
       graceTrial.href = SETUP_PATH;
     }
     if ($("cabinet-recover-title")) {
