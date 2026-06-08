@@ -351,6 +351,14 @@
     }
   }
 
+  function setEventsCardVisible(visible) {
+    var card = $("events-card");
+    if (card) {
+      if (visible) card.classList.remove("hidden");
+      else card.classList.add("hidden");
+    }
+  }
+
   function setEventsState(mode, ev) {
     var dot = $("events-pill");
     var detail = $("events-detail");
@@ -363,6 +371,7 @@
     dot.setAttribute("aria-label", "");
     steps.classList.add("hidden");
     ackBtn.classList.add("hidden");
+    setEventsCardVisible(mode !== "ok");
 
     if (mode === "ok") {
       dot.classList.add("status__dot--ok");
@@ -613,6 +622,11 @@
       if (panel) panel.classList.add("hidden");
       return;
     }
+    var paths = $("landing-paths");
+    if (paths && !paths.classList.contains("hidden")) {
+      panel.classList.add("hidden");
+      return;
+    }
     var title = $("journey-title");
     var list = $("journey-steps");
     var steps = home.journey_steps || [];
@@ -698,14 +712,14 @@
     var refNote = $("referral-note");
     if (refNote) {
       try {
-        if (localStorage.getItem(REF_KEY)) {
-          refNote.classList.add("hidden");
-        } else if (home.invite_model_note) {
-          refNote.textContent = home.invite_model_note;
+        if (localStorage.getItem(REF_KEY) && home.referral_preserve_note) {
+          refNote.textContent = home.referral_preserve_note;
           refNote.classList.remove("hidden");
+        } else {
+          refNote.classList.add("hidden");
         }
       } catch (e) {
-        /* ignore */
+        refNote.classList.add("hidden");
       }
     }
     panel.classList.remove("hidden");
@@ -1674,7 +1688,6 @@
           var gen = parseInt((doc.vpn_config || {}).generation, 10) || 0;
           writeAckGeneration(gen > 0 ? gen : 1);
           setEventsState("ok", content.events || {});
-          $("events-card").scrollIntoView({ behavior: "smooth", block: "nearest" });
         })
         .catch(function () {
           writeAckGeneration(1);

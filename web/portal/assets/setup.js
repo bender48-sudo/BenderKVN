@@ -698,7 +698,9 @@
       }
       if (paths) showEl(paths);
       if ($("setup-tg-badge")) $("setup-tg-badge").textContent = s.path_tg_badge || "90 дней";
-      if ($("setup-tg-title")) $("setup-tg-title").textContent = s.path_tg_title || "Trial через Telegram";
+      if ($("setup-tg-title")) {
+        $("setup-tg-title").textContent = s.path_tg_title || "90 дней бесплатно в Telegram";
+      }
       if ($("setup-tg-lead")) $("setup-tg-lead").textContent = s.path_tg_lead || "";
       var tgBtn = $("btn-setup-tg");
       if (tgBtn) {
@@ -721,6 +723,15 @@
     if ($("recover-fold-title")) {
       $("recover-fold-title").textContent = s.recover_fold_title || s.recover_heading || "";
     }
+    var recoverTeaser = $("recover-fold-teaser");
+    if (recoverTeaser) {
+      if (s.recover_fold_teaser) {
+        recoverTeaser.textContent = s.recover_fold_teaser;
+        showEl(recoverTeaser);
+      } else {
+        hide(recoverTeaser);
+      }
+    }
     $("recover-lead").textContent = s.recover_lead;
     if ($("recover-tg-hint")) $("recover-tg-hint").textContent = s.recover_tg_hint || "";
     var recoverTgBtn = $("btn-recover-tg-id");
@@ -732,6 +743,15 @@
     if ($("recover-email-label")) $("recover-email-label").textContent = s.signup_email_label;
     $("signup-email-label").textContent = s.signup_email_label;
     $("signup-phone-label").textContent = s.signup_phone_label;
+    var phoneHint = $("signup-phone-hint");
+    if (phoneHint) {
+      if (s.signup_phone_hint) {
+        phoneHint.textContent = s.signup_phone_hint;
+        showEl(phoneHint);
+      } else {
+        hide(phoneHint);
+      }
+    }
     var consent = $("signup-consent-note");
     if (consent) consent.textContent = s.signup_consent_note || "";
     bindLegalConsent();
