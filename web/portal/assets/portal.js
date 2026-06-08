@@ -1221,8 +1221,13 @@
     }
     if ($("cabinet-lead-inline")) {
       if (dedicated) {
-        $("cabinet-lead-inline").textContent =
-          cab.lead_subline || "Здесь баланс, настройки устройств, инструкции и поддержка.";
+        $("cabinet-lead-inline").textContent = tg
+          ? cab.lead_subline_tg ||
+            cab.lead_subline ||
+            "Здесь баланс, настройки устройств, инструкции и поддержка."
+          : cab.lead_subline_web ||
+            cab.lead_web ||
+            "Полный личный кабинет открывается из Telegram-бота. В браузере здесь — временный доступ, инструкция и поддержка.";
       } else {
         $("cabinet-lead-inline").textContent = tg ? cab.lead_tg : cab.lead_web;
       }
