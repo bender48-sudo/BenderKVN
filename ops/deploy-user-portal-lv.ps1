@@ -22,11 +22,12 @@ try {
 }
 
 Write-Host "[deploy] patch Caddy ..."
-& scp @($Common + @("ops/patch-caddy-user-portal-lv.sh", "root@bvpn-lv:/tmp/"))
+& scp @($Common + @("ops/patch-caddy-user-portal-lv.sh", "ops/patch-caddy-portal-tryfiles-lv.sh", "root@bvpn-lv:/tmp/"))
 & ssh @($Common + @("root@bvpn-lv", @"
 set -e
-sed -i 's/\r$//' /tmp/patch-caddy-user-portal-lv.sh
+sed -i 's/\r$//' /tmp/patch-caddy-user-portal-lv.sh /tmp/patch-caddy-portal-tryfiles-lv.sh
 bash /tmp/patch-caddy-user-portal-lv.sh
+bash /tmp/patch-caddy-portal-tryfiles-lv.sh
 test -f /var/www/bvpn-portal/index.html
 "@))
 

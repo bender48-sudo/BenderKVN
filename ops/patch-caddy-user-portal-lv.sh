@@ -23,7 +23,8 @@ insert = """
     # USER_PORTAL_BOOT_01 — bootstrap + Mini App static portal (P3-FLOW-01)
     handle_path /start/* {
         root * /var/www/bvpn-portal
-        try_files {path} /index.html
+        # PORTAL_TRYFILES_INDEX_01 — directory index before landing fallback
+        try_files {path} {path}/index.html /index.html
         file_server
     }
     handle /start {
@@ -31,7 +32,7 @@ insert = """
     }
     handle_path /portal/* {
         root * /var/www/bvpn-portal
-        try_files {path} /index.html
+        try_files {path} {path}/index.html /index.html
         file_server
     }
     handle /portal {

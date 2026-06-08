@@ -1,5 +1,5 @@
 {
-  "meta": { "lang": "ru", "version": 27 },
+  "meta": { "lang": "ru", "version": 27, "capacity_api_enabled": false },
   "auto_profile": {
     "title": "Профиль в Happ",
     "lead": "В подписке один профиль — «BenderVPN Auto». Сервер и маршрут подбираются автоматически; вручную узлы и порты выбирать не нужно."

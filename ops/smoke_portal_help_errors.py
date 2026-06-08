@@ -19,15 +19,21 @@ REQUIRED_IDS = {
 }
 
 
-def _http_ok(url: str, timeout: float = 25.0) -> bool:
+def _http_body(url: str, timeout: float = 25.0) -> tuple[int, str]:
     req = urllib.request.Request(url, method="GET", headers={"User-Agent": "BVPN-smoke/1"})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return 200 <= resp.status < 300
+            return resp.status, resp.read().decode("utf-8", errors="replace")
     except urllib.error.HTTPError as exc:
-        return 200 <= exc.code < 300
+        body = exc.read().decode("utf-8", errors="replace") if exc.fp else ""
+        return exc.code, body
     except OSError:
-        return False
+        return 0, ""
+
+
+def _http_ok(url: str, timeout: float = 25.0) -> bool:
+    code, _ = _http_body(url, timeout=timeout)
+    return 200 <= code < 300
 
 
 def main() -> int:
@@ -60,8 +66,15 @@ def main() -> int:
         import site_urls
 
         base = site_urls.public_errors_url()
-        if not _http_ok(base):
+        code, body = _http_body(base)
+        if not (200 <= code < 300):
             print(f"PORTAL_HELP_ERRORS_FAIL: HTTP not OK {base}", file=sys.stderr)
+            return 1
+        if "errors.js" not in body or 'id="errors-list"' not in body:
+            print(
+                "PORTAL_HELP_ERRORS_FAIL: pretty URL must serve errors page, not landing",
+                file=sys.stderr,
+            )
             return 1
         if not _http_ok(site_urls.public_errors_url("rate_limited")):
             print("PORTAL_HELP_ERRORS_FAIL: deep link HTTP not OK", file=sys.stderr)

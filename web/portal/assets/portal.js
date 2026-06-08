@@ -544,9 +544,21 @@
     return base;
   }
 
+  function showCapacityFallback(card, home) {
+    if ($("slots-value")) {
+      $("slots-value").textContent =
+        home.slots_unavailable || "Количество мест обновляется";
+    }
+    if ($("slots-hint")) $("slots-hint").textContent = "";
+    var capNote = $("slots-cap");
+    if (capNote) capNote.textContent = "";
+    card.classList.remove("hidden");
+  }
+
   function loadCapacity() {
     var card = $("slots-card");
     var home = content.home || {};
+    var meta = content.meta || {};
     if (!card) return;
     if (isTelegramMiniApp()) {
       card.classList.add("hidden");
@@ -554,6 +566,11 @@
     }
     if ($("slots-title") && home.slots_title) {
       $("slots-title").textContent = home.slots_title;
+    }
+    // Backend POST /setup/api/capacity not deployed; skip fetch to avoid console 404.
+    if (meta.capacity_api_enabled !== true) {
+      showCapacityFallback(card, home);
+      return;
     }
     fetch(API_CAPACITY, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
       .then(function (r) {
@@ -591,14 +608,7 @@
         card.classList.remove("hidden");
       })
       .catch(function () {
-        if ($("slots-value")) {
-          $("slots-value").textContent =
-            home.slots_unavailable || "Количество мест обновляется";
-        }
-        if ($("slots-hint")) $("slots-hint").textContent = "";
-        var capNote = $("slots-cap");
-        if (capNote) capNote.textContent = "";
-        card.classList.remove("hidden");
+        showCapacityFallback(card, home);
       });
   }
 
