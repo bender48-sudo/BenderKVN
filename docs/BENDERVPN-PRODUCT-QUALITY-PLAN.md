@@ -220,3 +220,15 @@ See prioritized backlog below (SEM-001 … UX-212).
 | H — Product audit | 2026-06-09 | Full audit complete; journey good enough |
 | I — Decision workshop | 2026-06-09 | Owner decisions captured |
 | J — Product policy v1 | 2026-06-09 | `docs/BENDERVPN-PRODUCT-POLICY.md` |
+| K — Master backlog | 2026-06-09 | `docs/BENDERVPN-MASTER-BACKLOG.md` + audit roadmap |
+
+---
+
+## Consolidated into master backlog
+
+Portal UX backlog (SEM/UX items), product implementation (PROD/DEC-IMPL), open decisions (OD), and audit needs are **canonical** in:
+
+- **[`docs/BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md)** — single backlog table + implementation phases
+- **[`docs/BENDERVPN-AUDIT-ROADMAP.md`](BENDERVPN-AUDIT-ROADMAP.md)** — ordered audits (start: AUDIT-001 VPN reliability)
+
+This plan remains the **portal UX execution log** for Batches 1–3; do not duplicate closed SEM/UX items elsewhere.

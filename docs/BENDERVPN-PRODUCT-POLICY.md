@@ -465,9 +465,19 @@ Do **not** start these until the relevant phase and open decision are closed:
 | Document | Role |
 |----------|------|
 | `docs/BENDERVPN-PRODUCT-QUALITY-PLAN.md` | Portal UX execution; journey map |
+| `docs/BENDERVPN-MASTER-BACKLOG.md` | Implementation tracking (PROD/DEC-IMPL/OD items) |
+| `docs/BENDERVPN-AUDIT-ROADMAP.md` | Ordered audits before implementation |
 | `docs/DATA-MINIMIZATION-POLICY.md` | Privacy baseline — reconcile in Phase 2 |
 | `web/portal/content/ru.json` | User-facing copy source |
 | `bot_src/config.py` | `REMNA_TRIAL_DAYS`, `WEB_TRIAL_DAYS`, `DAILY_RATE` |
+
+---
+
+## Implementation tracked in master backlog
+
+Policy decisions in §2–13 are **not rewritten here**. Engineering tasks, acceptance criteria, audit sequence, and open decisions (OD-01…10) are tracked in **[`docs/BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md)**.
+
+Audits required before implementation phases: **[`docs/BENDERVPN-AUDIT-ROADMAP.md`](BENDERVPN-AUDIT-ROADMAP.md)**.
 
 ---
 
