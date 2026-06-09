@@ -51,11 +51,13 @@
 
 ### Next recommended work order
 
-1. **AUDIT-001** — VPN reliability diagnostic (read-only) — see [`BENDERVPN-AUDIT-ROADMAP.md`](BENDERVPN-AUDIT-ROADMAP.md)
-2. **AUDIT-002** — VPN architecture map (read-only, parallel OK)
-3. **AUDIT-003** — Product policy implementation audit → unlocks Phase 1
-4. **Phase 1 implementation** — web ref fix, bot labels, admin ledger/lookup (no schema-heavy REG-001, no hard gate)
-5. **AUDIT-007, AUDIT-008** — billing clarity + bot live flow
+**Commercial launch audit (2026-06-10):** [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md) — see **LAUNCH-001…023** ordered surfaces.
+
+1. **LAUNCH-001** — INCIDENT-003 sleep/resume owner diagnostics (G1 desktop)
+2. **LAUNCH-003** — BILL-001 billing/payment commercial audit (G6 — paid blocker)
+3. **LAUNCH-002** — TG bind retest or waiver (G4)
+4. **LAUNCH-005** — Copy truth sweep (device_rule, referral, bot labels)
+5. **LAUNCH-006** — P1-ADM-001 admin user lookup
 6. **Phase 2** — REG-001, trial 90→30 switch prep, metrics (before 300 active configs)
 
 ---

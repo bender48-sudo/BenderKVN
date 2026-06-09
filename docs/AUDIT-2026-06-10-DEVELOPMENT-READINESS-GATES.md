@@ -20,6 +20,8 @@ G5  Public/partner scale
 
 **Development go/no-go (§10):** **NO-GO** for feature work until **G0 + G1** complete. **Conditional GO** for **G2-scoped** fixes after G1.
 
+**Commercial launch audit (2026-06-10):** [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md) — F&F **GO**; soft launch **SOFT-LAUNCH ONLY**; paid/open/referral **NO-GO**.
+
 ---
 
 ## 2. G0 — Audit complete ✅

@@ -3,7 +3,7 @@
 **Status:** portal journey complete · product policy locked → **`docs/BENDERVPN-PRODUCT-POLICY.md`**
 **Branch:** `product-referral-cabinet-ui-v1`
 **Last updated:** 2026-06-09  
-**Owner loop:** product-quality (portal copy) done; next = Phase 1 product-logic alignment per policy v1
+**Owner loop:** product-quality (portal copy) done; **commercial launch audit 2026-06-10** — soft launch only until LAUNCH-001…005 blockers addressed; see [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md)
 
 ---
 
