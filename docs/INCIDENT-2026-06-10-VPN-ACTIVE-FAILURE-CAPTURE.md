@@ -20,8 +20,9 @@
 | **Prod fix justified?** | **NO** — failure not reproduced; continue longer soak before closing |
 | **Incident closed?** | **NO** — extended soak + **sleep/resume** observation pending |
 | **INCIDENT-003 (sleep/resume)** | **OPEN** — owner: another VPN survives laptop sleep; BenderVPN/Happ breaks routes until reboot sometimes. See [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md) |
+| **INCIDENT-004 (browser SaaS long-session)** | **OPEN** — browser SaaS (e.g. Claude) shows connection banner while page loaded; intermittent sends; typical during document work. See [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md) |
 
-INCIDENT-001 proved infrastructure/profile health from read-only probes but did **not** capture an owner failure window. INCIDENT-002 adds **time-correlated evidence collection** and a **controlled stabilization decision tree** — still **no mutation** until evidence + explicit approval. **INCIDENT-003** narrows desktop **sleep/resume** as a distinct, higher-confidence **Happ/OS TUN-route-DNS** failure mode.
+INCIDENT-001 proved infrastructure/profile health from read-only probes but did **not** capture an owner failure window. INCIDENT-002 adds **time-correlated evidence collection** and a **controlled stabilization decision tree** — still **no mutation** until evidence + explicit approval. **INCIDENT-003** narrows desktop **sleep/resume**; **INCIDENT-004** narrows **long-lived browser/SaaS sessions** — both may share Happ TUN lifecycle root cause; short TCP/sub probes **cannot disprove** either.
 
 ---
 
@@ -388,9 +389,10 @@ If owner failure correlates with RST on one relay IP in `report.zip` → prepare
 ### Next observation (owner)
 
 1. **30–60 minutes** normal browsing (Google, Instagram, Telegram, regular sites)
-2. **Sleep / resume** test — **INCIDENT-003** (laptop): run `ops/diagnose_windows_vpn_resume.ps1` BEFORE / AFTER-BROKEN / AFTER-RECOVERY; compare with other VPN same sleep duration
-3. **Wi‑Fi ↔ LTE** switch while VPN connected (mobile)
-4. If failure **recurs**:
+2. **Browser SaaS long-session** — **INCIDENT-004**: Claude/ChatGPT + GDocs 20–30 min active work; record scope (SaaS-only vs all tabs), DevTools error names (no secrets), comparison VPN
+3. **Sleep / resume** test — **INCIDENT-003** (laptop): run `ops/diagnose_windows_vpn_resume.ps1` BEFORE / AFTER-BROKEN / AFTER-RECOVERY; compare with other VPN same sleep duration
+4. **Wi‑Fi ↔ LTE** switch while VPN connected (mobile)
+5. If failure **recurs**:
    - record **exact local time + UTC**
    - note failure mode and whether Happ shows connected
    - collect **`report.zip`** if possible
@@ -408,6 +410,7 @@ If owner failure correlates with RST on one relay IP in `report.zip` → prepare
 
 - INCIDENT-001: [`INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md`](INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md)
 - INCIDENT-003: [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md)
+- INCIDENT-004: [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md)
 - Candidate D apply: [`APPLY-2026-06-10-VPN-CANDIDATE-D.md`](APPLY-2026-06-10-VPN-CANDIDATE-D.md)
 - Skill: `vpn-incident-tg-only-ru` — `report.zip` RST workflow
 - Probes: `verify_vpn_balancer_profile.py`, `relay_latency_probe.py`, `probe_subscription.py`

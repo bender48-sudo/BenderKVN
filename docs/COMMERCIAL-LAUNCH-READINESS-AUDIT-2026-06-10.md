@@ -81,6 +81,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | [`INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md`](INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md) | INCIDENT-001 |
 | [`INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md`](INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md) | INCIDENT-002 |
 | [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md) | INCIDENT-003 |
+| [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md) | INCIDENT-004 |
 | [`AUDIT-2026-06-10-VPN-CLIENT-APP-COMPATIBILITY.md`](AUDIT-2026-06-10-VPN-CLIENT-APP-COMPATIBILITY.md) | Client matrix |
 | [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) | S1–S8 flows |
 | [`AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md`](AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md) | TG bind |
@@ -158,7 +159,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 
 | Gate | Area | Status | Evidence | Soft blocker? | Paid blocker? | Open blocker? | Required action | Owner decision |
 |------|------|--------|----------|---------------|---------------|---------------|-----------------|----------------|
-| **G1** | VPN stability / Happ / sleep-resume | **PARTIAL** | Candidate D active; INCIDENT-002 interim stable; INCIDENT-003 sleep/resume OPEN | Desktop sleep = **yes** for desktop promise | **Yes** if desktop sold | **Yes** | Owner run INCIDENT-003 diagnostics; extended mobile soak | Waive desktop support? |
+| **G1** | VPN stability / Happ / sleep-resume / browser SaaS | **PARTIAL** | Candidate D active; INCIDENT-002 interim stable; INCIDENT-003 sleep OPEN; **INCIDENT-004** browser SaaS long-session OPEN | Desktop + SaaS work = **yes** | **Yes** if desktop sold | **Yes** | INCIDENT-003 route/DNS + INCIDENT-004 20–30 min SaaS soak | Waive desktop/SaaS support? |
 | **G2** | Client app compatibility | **PARTIAL** | Happ/Hiddify/Streisand = Auto-equivalent; Karing/Clash/v2rayN stripped | Non-Happ clients | Non-Happ for paid | Non-Happ at scale | Happ primary; Hiddify diagnostic only; freeze Karing | Hiddify as official fallback? |
 | **G3** | Telegram registration / 90d | **DONE** | Code + policy PT-01; trial provision path | No | No | No | Keep monitoring trial abuse | — |
 | **G4** | Web/email fallback / TG bind | **BLOCKED** | Web 1d trial works; **TG bind FAIL** (`funnel_bot_start bind:*` = 0) | **Yes** if email growth pushed | **Yes** | **Yes** | Retest bind per TELEGRAM-BIND-FLOW §9; or disable email path in campaigns | Waive bind or fix first? |
@@ -214,6 +215,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | 1 | **P0** | **Billing live smokes + reconcile key fix** (G6 PARTIAL) — [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md) | Automated paid pilot, open launch |
 | 2 | **P0** | **TG bind FAIL** — web→TG migration unproven (G4) | Email fallback growth, referral migration |
 | 3 | **P0** | **Desktop sleep/resume unresolved** (INCIDENT-003, G1) | Desktop commercial support |
+| 3b | **P0** | **Browser SaaS long-session drops** (INCIDENT-004, G1) | Desktop document/chat SaaS positioning |
 | 4 | **P1** | **No admin user lookup / revoke-replace path** (G7, G8) | Commercial support at scale |
 | 5 | **P1** | **No automated monitoring/alerting for profile integrity + billing** (G9) | Open launch |
 | 6 | **P1** | **Copy false promises** — `device_rule` self-service new config (G10) | External traffic |

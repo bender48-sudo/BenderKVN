@@ -17,6 +17,7 @@
 | **Confidence shift** | **Higher** for **Happ/OS TUN-route-DNS sleep-resume failure (A)** and **profile×client interaction (8)** |
 | **Prod fix justified now?** | **NO** — need route/DNS snapshots + comparison matrix |
 | **INCIDENT-002 interim stable** | Compatible — active browsing may work; **sleep/resume is separate failure mode** |
+| **INCIDENT-004 (browser SaaS)** | **OPEN** — long-session SaaS drops may share TUN lifecycle; see [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md) |
 
 ---
 
@@ -255,5 +256,6 @@ Only with correlated evidence + §11 approval phrase. **Not justified now.**
 ## 14. References
 
 - INCIDENT-002: [`INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md`](INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md)
+- INCIDENT-004: [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md)
 - Script: [`ops/diagnose_windows_vpn_resume.ps1`](../ops/diagnose_windows_vpn_resume.ps1)
 - Skill: `vpn-incident-tg-only-ru` — RST / routing analysis

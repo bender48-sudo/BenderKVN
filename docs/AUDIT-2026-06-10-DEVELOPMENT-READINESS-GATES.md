@@ -48,6 +48,8 @@ G5  Public/partner scale
 
 **INCIDENT-003 (2026-06-10):** Laptop **sleep/resume** — another VPN survives; BenderVPN/Happ breaks networking until reboot sometimes. Diagnostic protocol + `ops/diagnose_windows_vpn_resume.ps1`. See [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md). **No prod mutation** until route/DNS snapshots + comparison matrix.
 
+**INCIDENT-004 (2026-06-10):** Browser **SaaS long-session** drops (e.g. Claude connection banner while page loaded) — long-lived WebSocket/SSE/QUIC instability; **not disproved** by short TCP/sub probes. See [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md). **G1 desktop/browser SaaS gate** remains open.
+
 ### G1.1 Automated (done — re-run anytime)
 
 | Probe | Pass criteria | Last run |
@@ -85,6 +87,7 @@ G5  Public/partner scale
 - Constant subscription refresh by user
 - Minute-scale failure cycle
 - Post-sleep network dead until reboot
+- Browser SaaS connection banner while page loaded (Claude, GDocs, etc.)
 - DNS errors in Happ log
 
 **G1 pass criteria:** manual checklist complete on ≥1 iOS + ≥1 Android or desktop; disconnect/stall rate **materially lower** than pre-D report; OR explicit owner sign-off to proceed despite residual issues (documented).
