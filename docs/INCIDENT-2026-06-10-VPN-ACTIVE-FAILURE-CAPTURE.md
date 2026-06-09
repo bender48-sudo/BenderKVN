@@ -18,9 +18,10 @@
 | **Leading interim explanation** | **B** stale Happ import/cache may have cleared; **A** local network / client lifecycle still plausible |
 | **Prod change?** | **None** |
 | **Prod fix justified?** | **NO** — failure not reproduced; continue longer soak before closing |
-| **Incident closed?** | **NO** — 30–60 min + sleep/resume + network-switch observation pending |
+| **Incident closed?** | **NO** — extended soak + **sleep/resume** observation pending |
+| **INCIDENT-003 (sleep/resume)** | **OPEN** — owner: another VPN survives laptop sleep; BenderVPN/Happ breaks routes until reboot sometimes. See [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md) |
 
-INCIDENT-001 proved infrastructure/profile health from read-only probes but did **not** capture an owner failure window. INCIDENT-002 adds **time-correlated evidence collection** and a **controlled stabilization decision tree** — still **no mutation** until evidence + explicit approval.
+INCIDENT-001 proved infrastructure/profile health from read-only probes but did **not** capture an owner failure window. INCIDENT-002 adds **time-correlated evidence collection** and a **controlled stabilization decision tree** — still **no mutation** until evidence + explicit approval. **INCIDENT-003** narrows desktop **sleep/resume** as a distinct, higher-confidence **Happ/OS TUN-route-DNS** failure mode.
 
 ---
 
@@ -387,8 +388,8 @@ If owner failure correlates with RST on one relay IP in `report.zip` → prepare
 ### Next observation (owner)
 
 1. **30–60 minutes** normal browsing (Google, Instagram, Telegram, regular sites)
-2. **Sleep / resume** test (especially desktop if used)
-3. **Wi‑Fi ↔ LTE** switch while VPN connected
+2. **Sleep / resume** test — **INCIDENT-003** (laptop): run `ops/diagnose_windows_vpn_resume.ps1` BEFORE / AFTER-BROKEN / AFTER-RECOVERY; compare with other VPN same sleep duration
+3. **Wi‑Fi ↔ LTE** switch while VPN connected (mobile)
 4. If failure **recurs**:
    - record **exact local time + UTC**
    - note failure mode and whether Happ shows connected
@@ -406,6 +407,8 @@ If owner failure correlates with RST on one relay IP in `report.zip` → prepare
 ## 25. References
 
 - INCIDENT-001: [`INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md`](INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md)
+- INCIDENT-003: [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md)
 - Candidate D apply: [`APPLY-2026-06-10-VPN-CANDIDATE-D.md`](APPLY-2026-06-10-VPN-CANDIDATE-D.md)
 - Skill: `vpn-incident-tg-only-ru` — `report.zip` RST workflow
 - Probes: `verify_vpn_balancer_profile.py`, `relay_latency_probe.py`, `probe_subscription.py`
+- Diagnostics: `ops/diagnose_windows_vpn_resume.ps1`
