@@ -92,8 +92,8 @@ Expected rollback time: ~1–2 minutes.
 | D | Valid `ref_code` | Response `referral_linked: true` |
 | E | DB web surrogate | `users.referred_by` = **referrer ref code string** (not TG id) |
 | F | Invalid `ref_code` | Trial succeeds; `referral_linked: false`; `referred_by` NULL |
-| G | Bind web → Telegram | **Pending** — not live-exercised; TG user should get web `referred_by` only if TG had none (POSTDEPLOY §6) |
-| H | `referrals` table | **Pending** — bind test required; expect `referred_user_id` migrate web surrogate → TG id |
+| G | Bind web → Telegram | **NOT RUN** — controlled trial prepared; owner bind pending (POSTDEPLOY §9) |
+| H | `referrals` table | **NOT RUN** — verify after owner bind |
 | I | Telegram trial path | Still **90d** (`REMNA_TRIAL_DAYS`) |
 | J | Email web trial | Still **1d** (`WEB_TRIAL_DAYS`) |
 | K | Referral bonus | Not granted or promised |
