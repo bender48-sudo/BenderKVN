@@ -1,9 +1,10 @@
 # DEPLOY — P1-REF-001 Web email referral attribution
 
-**Fix commit:** `62aea49` — `fix(bot): wire web email ref_code to referred_by attribution`  
-**Deploy target:** AMS **`remna-shop-bot` only** (hot-patch host tree + `docker cp` + restart)  
-**Script:** `ops/deploy-portal-web-trial-ams.ps1`  
-**Gate:** **G1 Candidate D owner Happ soak** must be documented PASS, or owner explicitly accepts deploy risk.
+**Fix commit:** `62aea49` — `fix(bot): wire web email ref_code to referred_by attribution`
+**Deploy target:** AMS **`remna-shop-bot` only** (hot-patch host tree + `docker cp` + restart)
+**Script:** `ops/deploy-portal-web-trial-ams.ps1`
+**Post-deploy report:** [`POSTDEPLOY-2026-06-10-P1-REF-001.md`](POSTDEPLOY-2026-06-10-P1-REF-001.md) — **deployed 2026-06-09 ~13:25 UTC**
+**Gate:** G1 owner-approved PASS (verbal, 2026-06-09) per [`APPLY-2026-06-10-VPN-CANDIDATE-D.md`](APPLY-2026-06-10-VPN-CANDIDATE-D.md) §7.
 
 ---
 
@@ -46,7 +47,7 @@ From repo root on admin workstation:
 pwsh -File ops/deploy-portal-web-trial-ams.ps1
 ```
 
-Post-run smoke: `python ops/smoke_web_trial_browser.py` (optional).
+Post-run smoke: `python ops/smoke_web_trial_browser.py` (optional). On AMS host: `python3 ops/smoke_p1_ref_deploy_ams.py` (creates `p1diag-*@bendervpn-smoke.invalid` test rows).
 
 Script verifies inside container:
 
@@ -91,8 +92,8 @@ Expected rollback time: ~1–2 minutes.
 | D | Valid `ref_code` | Response `referral_linked: true` |
 | E | DB web surrogate | `users.referred_by` = **referrer ref code string** (not TG id) |
 | F | Invalid `ref_code` | Trial succeeds; `referral_linked: false`; `referred_by` NULL |
-| G | Bind web → Telegram | TG user gets web `referred_by` **only if** TG had no different `referred_by` |
-| H | `referrals` table | `referred_user_id` migrated web surrogate → TG id |
+| G | Bind web → Telegram | **Pending** — not live-exercised; TG user should get web `referred_by` only if TG had none (POSTDEPLOY §6) |
+| H | `referrals` table | **Pending** — bind test required; expect `referred_user_id` migrate web surrogate → TG id |
 | I | Telegram trial path | Still **90d** (`REMNA_TRIAL_DAYS`) |
 | J | Email web trial | Still **1d** (`WEB_TRIAL_DAYS`) |
 | K | Referral bonus | Not granted or promised |

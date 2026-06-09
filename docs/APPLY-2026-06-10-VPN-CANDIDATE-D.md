@@ -131,14 +131,21 @@
 
 | # | Test | Status | Notes |
 |---|------|--------|-------|
-| 1 | Refresh Happ sub once | **Pending owner** | Required for devices with cached 5896 B profile |
-| 2 | Confirm ~7353 B sub size | **Auto-verified** | Live fetch post-apply |
-| 3 | General browsing 10–15 min | **Pending owner** | Wi‑Fi + LTE |
-| 4 | Telegram + non-TG traffic | **Pending owner** | |
-| 5 | Sleep/lock/resume (desktop) | **Pending owner** | Primary symptom area |
-| 6 | No minute-cycle refresh loop | **Pending owner** | 48h soak metric |
+| 1 | Refresh Happ sub once | **Owner PASS** (verbal, pre–P1-REF deploy) | Owner refreshed **BenderVPN Auto** before AMS bot deploy 2026-06-09 |
+| 2 | Confirm ~7353 B sub size | **Auto-verified** | Live fetch post-apply; remained healthy at deploy time |
+| 3 | General browsing 15–30 min | **Owner PASS** (verbal) | Wi‑Fi + LTE per owner sign-off; no severe regression reported |
+| 4 | Telegram + non-TG traffic | **Owner PASS** (verbal) | No connected-but-need-refresh symptom reported |
+| 5 | Sleep/lock/resume (desktop) | **Owner PASS** (verbal, where tested) | Primary symptom area — no reboot-required reported |
+| 6 | No minute-cycle refresh loop | **Owner PASS** (verbal, at deploy gate) | Full **48h** metric log not written in repo at deploy time |
 
-**Owner action:** On each device → Happ → refresh 🔄 on **BenderVPN Auto** → run §9 checklist from [`AUDIT-2026-06-09-VPN-CANDIDATE-D-TESTPLAN.md`](AUDIT-2026-06-09-VPN-CANDIDATE-D-TESTPLAN.md).
+### G1 closure note (2026-06-09)
+
+- **Gate:** Owner approved **G1 Candidate D soak PASS** verbally before AMS deploy **P1-REF-001** (phrase: `G1 Candidate D soak PASS. approve AMS deploy P1-REF-001`).
+- **Automated Candidate D health at deploy:** sub **7353 B**, **6** proxies (relay#1 + relay#2), **INJECT_SUB_PARITY_OK**, **dns=yes**, no broadcast, no mass-refresh.
+- **Limitation:** Per-device soak log (platform, exact durations, disconnect counts) was **not fully written in repo** at deploy time. Treat as **owner-approved PASS with monitoring continuation**, not a closed 48h field soak.
+- **Follow-up:** Continue **24–48h** watch for reconnect loops, sleep/resume stalls, and “connected but sites need refresh” regressions. Append detailed device rows here if issues appear.
+
+**Owner action (ongoing):** On each device → Happ → refresh 🔄 on **BenderVPN Auto** if sub size drifts; see §9 checklist in [`AUDIT-2026-06-09-VPN-CANDIDATE-D-TESTPLAN.md`](AUDIT-2026-06-09-VPN-CANDIDATE-D-TESTPLAN.md).
 
 ---
 
@@ -180,7 +187,7 @@ print('rollback payload ready from', snap)
 | Automated verify gate | **PASS** |
 | Global template applied | **YES** |
 | Broadcast / mass refresh | **NO** (generation 102 local only) |
-| Owner device manual test | **Pending** — **48h soak may start after owner refreshes Happ and completes §7** |
+| Owner device manual test | **Owner PASS (verbal, 2026-06-09)** — **48h field soak log incomplete**; continue monitoring per §7 |
 
 ---
 

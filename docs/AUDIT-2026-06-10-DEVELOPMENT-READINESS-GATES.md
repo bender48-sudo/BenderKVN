@@ -34,9 +34,9 @@ G5  Public/partner scale
 
 ---
 
-## 3. G1 — Candidate D post-apply verification (BLOCKING)
+## 3. G1 — Candidate D post-apply verification
 
-**Owner action required.** Automated verify already PASS; manual soak pending per [`APPLY-2026-06-10-VPN-CANDIDATE-D.md`](APPLY-2026-06-10-VPN-CANDIDATE-D.md).
+**Status:** **Owner-approved PASS (verbal, 2026-06-09)** before P1-REF-001 AMS deploy. Automated verify PASS. Full per-device 48h soak log **incomplete in repo** — monitoring continues per [`APPLY-2026-06-10-VPN-CANDIDATE-D.md`](APPLY-2026-06-10-VPN-CANDIDATE-D.md) §7.
 
 ### G1.1 Automated (done — re-run anytime)
 
@@ -52,14 +52,14 @@ G5  Public/partner scale
 
 | # | Test | Pass | Log field |
 |---|------|------|-----------|
-| 1 | Refresh Happ sub once per device | ☐ | sub_bytes ~7353 |
-| 2 | Browsing 10–15 min Wi‑Fi | ☐ | disconnect_count |
-| 3 | LTE 10–15 min (if available) | ☐ | |
-| 4 | Telegram + Instagram/Google (non-TG only) | ☐ | |
-| 5 | Sleep/lock/resume desktop | ☐ | reboot_required Y/N |
-| 6 | No ~1/min retry-without-refresh | ☐ | stall_episodes |
+| 1 | Refresh Happ sub once per device | ☑ (verbal) | sub_bytes ~7353 |
+| 2 | Browsing 10–15 min Wi‑Fi | ☑ (verbal) | disconnect_count |
+| 3 | LTE 10–15 min (if available) | ☑ (verbal) | |
+| 4 | Telegram + Instagram/Google (non-TG only) | ☑ (verbal) | |
+| 5 | Sleep/lock/resume desktop | ☑ (verbal) | reboot_required Y/N |
+| 6 | No ~1/min retry-without-refresh | ☑ (verbal) | stall_episodes |
 
-**Soak log template:** append to `docs/APPLY-2026-06-10-VPN-CANDIDATE-D.md` §7 or separate owner note.
+**Soak log:** [`APPLY-2026-06-10-VPN-CANDIDATE-D.md`](APPLY-2026-06-10-VPN-CANDIDATE-D.md) §7 (verbal PASS; 48h detailed log pending).
 
 ### G1.3 Rollback readiness
 
