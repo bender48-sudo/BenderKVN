@@ -86,7 +86,9 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) | S1–S8 flows |
 | [`AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md`](AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md) | TG bind |
 | [`AUDIT-2026-06-10-DEVICE-LINKS-BALANCE-UX.md`](AUDIT-2026-06-10-DEVICE-LINKS-BALANCE-UX.md) | Device/billing UX |
-| POSTDEPLOY P1-CAB / P1-DEV / P1-REF | Deploy truth |
+| [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md) | BILL-001 / G6 money flow |
+| [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md) | USER-LIFECYCLE-001 end-to-end scenarios |
+| POSTDEPLOY P1-CAB / P1-DEV / P1-REF / BILL-FIX-001 | Deploy truth |
 | [`COMMERCIAL-BACKLOG.md`](COMMERCIAL-BACKLOG.md) | Ops/commerce baseline |
 | [`RUNBOOK-INCIDENT.md`](RUNBOOK-INCIDENT.md) | Incident runbook |
 | Code: `balance_billing.py`, `handlers.py`, `web_referral.py`, `portal_cabinet.py` | Static billing/referral/cabinet |
@@ -164,7 +166,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | **G3** | Telegram registration / 90d | **DONE** | Code + policy PT-01; trial provision path | No | No | No | Keep monitoring trial abuse | — |
 | **G4** | Web/email fallback / TG bind | **BLOCKED** | Web 1d trial works; **TG bind FAIL** (`funnel_bot_start bind:*` = 0) | **Yes** if email growth pushed | **Yes** | **Yes** | Retest bind per TELEGRAM-BIND-FLOW §9; or disable email path in campaigns | Waive bind or fix first? |
 | **G5** | Referral attribution | **PARTIAL** | Web `ref_code` deployed PASS; TG `ref_*` code exists; bind migration FAIL; ledger admin missing | Tracking-only OK | Bonus = no | Growth = yes | P1-ADM-002 ledger; fix bind | Referral campaigns allowed? |
-| **G6** | Billing/payment money flow | **PARTIAL** | BILL-001 audit — [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md); reconcile `yk:`/`yookassa:` mismatch; live smokes missing | Manual whitelist only | **Yes** (automated) | **Yes** | BILL-FIX-001 + BILL-SMOKE-001..004 | Manual pilot waiver? |
+| **G6** | Billing/payment money flow | **PARTIAL** | BILL-001 + BILL-FIX-001 deployed (`yk:`); USER-LIFECYCLE-001 D/E scenarios; live smokes missing | Manual whitelist only | **Yes** (automated) | **Yes** | BILL-SMOKE-001..004 + PAY-AUTO-001 | Manual pilot waiver? |
 | **G7** | Device/config lifecycle | **PARTIAL** | P1-DEV-001 read-only count/list deployed; **no revoke/replace/enforce** | Support manual OK | Weak | **Yes** | Admin revoke path; copy fix `device_rule` | Option A strict vs B multi-device |
 | **G8** | Admin/support operations | **PARTIAL** | Admin flow test exists; **no user lookup by TG/email**; RUNBOOK-001 incomplete | Manual owner OK | **Yes** | **Yes** | P1-ADM-001 lookup; sleep/resume runbook | — |
 | **G9** | Monitoring/alerting | **PARTIAL** | Read-only probes + `monitor.sh`; no automated profile alert; no VLESS functional probe; no billing job alert | Acceptable F&F | Partial | **Yes** | Profile integrity cron + alert channel | — |

@@ -26,6 +26,8 @@ G5  Public/partner scale
 
 **BILL-FIX-001:** `shop_bot/payment_idempotency.py` + reconcile dry-run/`--apply`; canonical `yk:{payment_id}`. **Deployed AMS 2026-06-09** — [`POSTDEPLOY-2026-06-10-BILL-FIX-001.md`](POSTDEPLOY-2026-06-10-BILL-FIX-001.md). **No reconcile `--apply`** — BILL-SMOKE still required for G6.
 
+**USER-LIFECYCLE-001 (2026-06-10):** [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md) — S0–S12 states; scenarios A–H; REG-001 / PAY-001 / WEB-001 gates; F&F **GO**, soft **SOFT-LAUNCH ONLY**, paid/open/referral **NO-GO**.
+
 ---
 
 ## 2. G0 — Audit complete ✅

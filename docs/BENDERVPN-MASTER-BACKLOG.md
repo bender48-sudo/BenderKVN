@@ -55,11 +55,12 @@
 
 1. **LAUNCH-001** — INCIDENT-003 sleep/resume owner diagnostics (G1 desktop)
 2. ~~**BILL-FIX-001**~~ — reconcile idempotency `yk:` (**DONE** — deploy [`POSTDEPLOY-2026-06-10-BILL-FIX-001.md`](POSTDEPLOY-2026-06-10-BILL-FIX-001.md); BILL-SMOKE before prod `--apply`)
-3. **BILL-SMOKE-001..004** — live billing/payment smokes on AMS (G6)
-4. **LAUNCH-002** — TG bind retest or waiver (G4)
-4. **LAUNCH-005** — Copy truth sweep (device_rule, referral, bot labels)
-5. **LAUNCH-006** — P1-ADM-001 admin user lookup
-6. **Phase 2** — REG-001, trial 90→30 switch prep, metrics (before 300 active configs)
+3. ~~**USER-LIFECYCLE-001**~~ — end-to-end scenario audit (**DONE** — [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md))
+4. **COPY-TRUTH-001** / **LAUNCH-005** — ghost labels + `device_rule` copy sweep (soft launch)
+5. **LAUNCH-002** — TG bind retest or waiver (G4)
+6. **BILL-SMOKE-001..004** — live billing/payment smokes on AMS (G6)
+7. **LAUNCH-006** — P1-ADM-001 admin user lookup
+8. **Phase 2** — REG-001, trial 90→30 switch prep, metrics (before 300 active configs)
 
 ---
 
@@ -146,6 +147,7 @@
 |----|-----|------|-------|---------|----------|-------|--------|----------|---------------|------------|--------|---------|--------|------------|--------|
 | BILL-001 | P1 | Billing/topup | Billing commercial readiness audit | Trial vs wallet; money flow; idempotency; paid pilot gates | **Accepted** | 1 | Payment trust | [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md) | bot, webhook, scheduler | Audit doc; BILL-FIX-001 + smokes before automated paid | BILL-SMOKE-001 | No | No | — | **DONE** (audit) — implementation OPEN |
 | BILL-FIX-001 | P0 | Billing/topup | Reconcile idempotency `yk:` alignment | Webhook `yk:` vs reconcile `yookassa:` double-credit risk | **Accepted** | 1 | Payment integrity | BILL-001 §7.1 | `payment_idempotency.py`, `payment_queue.py`, reconcile | Canonical key shared; dry-run default; legacy skip | unittest + AMS import | Yes | No | — | **DONE** — [`POSTDEPLOY-2026-06-10-BILL-FIX-001.md`](POSTDEPLOY-2026-06-10-BILL-FIX-001.md) |
+| USER-LIFECYCLE-001 | P1 | Product/lifecycle | End-to-end user scenario audit | Launch gates need scenario matrix | **Accepted** | 1 | Launch readiness | Commercial audit + policy | docs, bot, portal | Scenarios A–H; REG/PAY/WEB gates; go/no-go | — | No | No | — | **DONE** — [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md) |
 | DEC-IMPL-013 | P1 | Cabinet/account | Cabinet API `billing_profile` / trial-wallet | `portal_cabinet.py` missing fields `portal.js` expects | **Accepted** | 1 | Cabinet truth | Full Product Audit + [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) | `portal_cabinet.py`, `portal.js` | API returns trial/wallet/legacy/expired + billing_note | py_compile; `tests/test_portal_cabinet_billing.py` | Yes | No | — | **DONE** — deploy [`POSTDEPLOY-2026-06-10-P1-CAB-001.md`](POSTDEPLOY-2026-06-10-P1-CAB-001.md) |
 | PROD-005 | P1 | Bot UX/copy | Ghost button labels | «Начать бесплатно», «Мой VPN» in errors | **Accepted** | 1 | Onboarding confusion | Audit | `subscription_resolve.py`, `portal_cabinet.py` | Labels match live menu | py_compile | Yes | No | — | OPEN |
 | DEC-IMPL-003 | P1 | Bot UX/copy | Bot/API label alignment | Same as PROD-005 | **Accepted** | 1 | Support load | Policy Phase 1 | bot handlers | All user strings match keyboards | grep labels | Yes | No | — | OPEN |
