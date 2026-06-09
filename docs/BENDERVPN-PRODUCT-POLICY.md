@@ -196,6 +196,20 @@ If approved in a future policy revision:
 - Panel `deviceLimit`, HWID, subscription telemetry.
 - Policy trigger for second device: paid add-on (+6,67 ₽/day per extra active config) — **not decided**; see §12.
 
+### 6.3.1 Architecture decision — **pending owner** (DEVICE-ARCH-001)
+
+**Audit:** [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md) (2026-06-10).
+
+| Item | Proposed direction | Status |
+|------|-------------------|--------|
+| **Target model** | **MODEL A** — one tracked config per device; billing coefficient per active billable device | **Pending owner approval** |
+| **MODEL B** (one sub, N devices, block 8th) | **NOT READY** — Remna HWID/session enforcement unproven in bot | Do not promise in copy |
+| **Pricing coefficient** | `6,67 ₽/день × active_billable_device_count` | **Pending OD-03** — no silent billing change |
+| **Trial** | One trial device only until wallet path proven | Recommended in arch doc |
+| **Manual Remna configs** | **Prohibited** without matching app DB row | Support policy |
+
+Until owner approves MODEL A: MVP remains **one active billable config** + support **tracked** replace (not vague support-only).
+
 ### 6.4 Backend reality (audit)
 
 - Multiple `vpn_keys` per user may exist today — **policy is one active config**; technical consolidation/enforcement is implementation, not copy change.

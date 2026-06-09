@@ -28,6 +28,8 @@ G5  Public/partner scale
 
 **USER-LIFECYCLE-001 (2026-06-10):** [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md) — S0–S12 states; scenarios A–H; REG-001 / PAY-001 / WEB-001 gates; F&F **GO**, soft **SOFT-LAUNCH ONLY**, paid/open/referral **NO-GO**.
 
+**DEVICE-ARCH-001 (2026-06-10):** [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md) — **MODEL A** recommended (tracked config per device, billing × N); **MODEL B NOT READY**; L2 minimum for soft launch; DEVICE-BILL-001 blocked until BILL-SMOKE + owner.
+
 ---
 
 ## 2. G0 — Audit complete ✅

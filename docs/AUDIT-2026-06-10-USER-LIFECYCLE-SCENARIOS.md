@@ -51,7 +51,7 @@ BenderVPN has **two parallel acquisition paths** with different rules:
 | **S9** Active single config | `vpn_keys` active=1 | `menu_get_setup` reuses URL | `active_config_count=1` | One sub URL | **CONFIRMED** |
 | **S10** Multi-config anomaly | `vpn_keys` active>1 | No auto-fix | `multiple_configs_anomaly` flag | Multiple subs | **PARTIAL** — support-only |
 | **S11** Referral-linked | `referred_by`, `referrals` table | `ref_*` / web `ref_code` | `referral_preserve_note` copy | N/A | **PARTIAL** — bind migration unproven |
-| **S12** Device replacement needed | Same key row | `menu_get_setup` = same URL | `btn-new-device` → bot | No new key issued | **BLOCKED** — no self-service replace |
+| **S12** Device replacement needed | Same key row | `menu_get_setup` = same URL | `btn-new-device` → bot | No new key issued | **BLOCKED** — see [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md) — target **MODEL A** |
 
 **Transitions (confirmed in code):**
 
@@ -355,7 +355,8 @@ Ordered — **one surface per commit**; prod/money mutations need explicit appro
 
 | Order | ID | Why | Files likely | Tests | Deploy? | Prod risk | Prerequisite | Approval phrase |
 |-------|-----|-----|--------------|-------|---------|-----------|--------------|-----------------|
-| 1 | **COPY-TRUTH-001** | Ghost labels block soft launch UX | `subscription_resolve.py`, `user_messages.py`, `ru.json` | grep forbidden | Yes LV+bot | Low | — | approve deploy COPY-TRUTH-001 |
+| 0 | **DEVICE-ARCH-001** | Multi-device model decision | [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md) | — | No | None | — | owner approve MODEL A |
+| 1 | **COPY-TRUTH-001** / **DEVICE-COPY-001** | Ghost labels + `device_rule` | `subscription_resolve.py`, `user_messages.py`, `ru.json` | grep forbidden | Yes LV+bot | Low | DEVICE-ARCH-001 | approve deploy COPY-TRUTH-001 |
 | 2 | **G4-BIND-RETEST** | WEB-001 BLOCKED | — (manual) | POSTDEPLOY §9 checklist | No | None | Owner clean TG account | owner retest bind in Telegram app |
 | 3 | **BILL-SMOKE-001** | Paid gate G6 | `ops/smoke_billing_commercial_ams.py` | controlled user | AMS exec | **Money** | BILL-FIX-001 deployed | approve BILL-SMOKE-001 controlled top-up |
 | 4 | **BILL-SMOKE-002** | Duplicate credit proof | same | webhook replay read-only | AMS | Medium | 001 | approve BILL-SMOKE-002 |
