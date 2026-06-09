@@ -12,10 +12,11 @@
 
 | Item | Status |
 |------|--------|
-| **Failure reproduced in this ops pass?** | **NO** — owner correlated test not yet run |
-| **Server/profile regression?** | **None observed** in baseline window |
-| **Next required step** | Owner executes §3 protocol; ops runs §4 watch window at agreed UTC time |
-| **Prod change this pass?** | **None** |
+| **Failure reproduced in ops watch #1?** | **NO** — no owner failure timestamp reported; server probes green |
+| **Owner test window #1** | **IN PROGRESS / outcome pending** — owner started fresh Happ protocol; ops watch **2026-06-09 20:49–20:52 UTC** |
+| **Server/profile regression?** | **None** during watch #1 |
+| **Prod change?** | **None** |
+| **Prod fix justified?** | **NO** — await owner outcome + optional `report.zip` / Hiddify A/B |
 
 INCIDENT-001 proved infrastructure/profile health from read-only probes but did **not** capture an owner failure window. INCIDENT-002 adds **time-correlated evidence collection** and a **controlled stabilization decision tree** — still **no mutation** until evidence + explicit approval.
 
@@ -116,12 +117,12 @@ Repo tooling (`relay_latency_probe.py`, `tspu_block_probe_ru.py`) uses **TCP con
 
 | # | Test | Status | Result | Classification hint |
 |---|------|--------|--------|---------------------|
-| 1 | Happ fresh import, owner device | **PENDING** | — | Owner §3 |
-| 2 | Happ after failure, no refresh | **PENDING** | — | false-connected? |
+| 1 | Happ fresh import, owner device | **RUNNING** | outcome pending | Owner §3 |
+| 2 | Happ after failure, no refresh | **N/A** | no failure time reported | — |
 | 3 | Happ after TUN off/on | **PENDING** | — | tunnel lifecycle? |
-| 4 | Hiddify same URL (owner consent) | **PENDING** | — | A vs D |
-| 5 | Server-side sub fetch same window | **BASELINE OK** | 7353 B stable ×20 | not F |
-| 6 | Relay probes same window | **BASELINE OK** | 30/30 OK both relays | not E (baseline) |
+| 4 | Hiddify same URL (owner consent) | **NOT RUN** | — | A vs D |
+| 5 | Server-side sub fetch watch #1 | **PASS** | 7353 B stable ×25, 0 HTTP fails | **not F** |
+| 6 | Relay probes watch #1 | **PASS** | relay#1 **40/40**, relay#2 **40/40** TCP OK | **not E** (watch window) |
 
 ---
 
@@ -146,11 +147,13 @@ Captured before owner correlated test. **Not a failure window.**
 
 | UTC / local | Event | Evidence |
 |-------------|-------|----------|
-| _pending_ | Owner announces test start | device, Happ version |
-| _pending_ | Profile delete + reimport | screenshot optional |
-| _pending_ | 10–15 min browsing test | failure log |
-| _pending_ | Ops watch window | §6 updated row |
+| ~20:49 UTC | Owner begins fresh Happ test (per prompt) | ops watch started |
+| _pending_ | Profile delete + reimport complete | owner confirm |
+| _pending_ | 10–15 min browsing test ends | failure log or PASS |
+| 20:49–20:52 UTC | Ops watch window #1 | §22 |
 | _pending_ | Optional Hiddify A/B | comparison result |
+
+**During watch #1:** subscription edge log shows **Happ iOS 4.11.0** client fetch **HTTP 200** from external IP (shortUuid **redacted** in logs). Likely owner/correlated refresh; response byte size not logged on that line.
 
 ---
 
@@ -158,18 +161,18 @@ Captured before owner correlated test. **Not a failure window.**
 
 | Field | Value |
 |-------|-------|
-| Device / OS | **NOT COLLECTED** |
-| Happ version | **NOT COLLECTED** |
-| Fresh import completed? | **NOT COLLECTED** |
-| One Auto host visible? | **Expected if UX normal** |
-| Failure reproduced? | **NOT YET** |
+| Device / OS | **NOT COLLECTED** (owner to confirm) |
+| Happ version | **4.11.0 iOS** inferred from edge log during watch #1 only — not confirmed by owner |
+| Fresh import completed? | **LIKELY** (Happ fetch during window) — owner to confirm |
+| One Auto host visible? | **Expected UX** |
+| Failure reproduced? | **NOT REPORTED** during watch #1 |
 | `report.zip` | **NOT COLLECTED** |
 
 ---
 
 ## 9. Happ fresh import result
 
-**NOT TESTED** — awaiting owner §3 run.
+**IN PROGRESS** — owner running §3 during watch #1. Edge log shows Happ iOS fetch **HTTP 200** during window. **Browsing outcome and failure mode not yet reported.**
 
 ---
 
@@ -179,11 +182,19 @@ Captured before owner correlated test. **Not a failure window.**
 
 ---
 
-## 11. Server logs during failure window
+## 11. Server logs during failure window (watch #1)
 
-**NOT CORRELATED** — no owner failure timestamp yet.
+**Window:** 2026-06-09 20:49–20:52 UTC · **no 5xx** in tail · all sampled Happ probe fetches **200 / 7353 B**
 
-Baseline (§6): subscription edge healthy; no container restarts; Happ-class fetches return full JSON size.
+| Signal | Result |
+|--------|--------|
+| `remnawave-subscription-page` | **running**, restarts=0 |
+| Happ UA fetches (ops + edge) | HTTP **200**; probe-sized responses **7353 B** |
+| Happ iOS client during window | HTTP **200** (external IP; uuid redacted in repo doc) |
+| Internal non-Happ probes | **344 B** strip (expected) |
+| Caddy/Remna errors | **None** in sampled tail |
+
+**Correlation:** No owner failure timestamp to align. If owner reports failure after watch, compare local time to this UTC window.
 
 ---
 
@@ -191,25 +202,26 @@ Baseline (§6): subscription edge healthy; no container restarts; Happ-class fet
 
 **Hypothesis test:** If owner fails while server fetch stays **7353 B / stable** → **not F** (edge serving wrong profile globally).
 
-**Baseline:** stable. **Failure-window:** pending.
+**Watch #1:** **7353 B stable ×25**, `VPN_BALANCER_PROFILE_OK`, dns=4 servers. **Classification if owner fails:** likely **not F** unless per-account server fetch differs (ops can verify owner account server-side on report — redacted).
 
 ---
 
 ## 13. Relay probes during failure
 
-**Baseline:** 30/30 TCP OK both relays. **Failure-window:** pending.
+**Watch #1 (20:49:59–20:51:44 UTC):** relay#1 **40/40 OK**, relay#2 **40/40 OK** TCP; `TSPU_BLOCK_PROBE_RU_OK` after soak.
 
-If failure correlates with RST on one relay IP in `report.zip` → prepare **E** mitigation proposal (bias/exclude relay path).
+If owner failure correlates with RST on one relay IP in `report.zip` → prepare **E** (`approve INCIDENT-002 relay bias relay#1` or `relay#2`). **No relay bias justified from watch #1 alone.**
 
 ---
 
 ## 14. DNS / VLESS evidence
 
-| Layer | Baseline | Failure window |
-|-------|----------|----------------|
-| DoH in live sub | Present (4 DNS servers) | pending |
-| TCP relay probes | PASS | pending |
-| VLESS handshake | **No automated prod probe** | `report.zip` or Hiddify A/B |
+| Layer | Baseline | Watch #1 |
+|-------|----------|----------|
+| DoH in live sub | Present (4 DNS servers) | **confirmed** (dns_servers=4) |
+| TCP relay probes | PASS | **PASS** 40/40 each |
+| TSPU edge from relays | — | **PASS** |
+| VLESS handshake | **No safe automated prod probe** | needs `report.zip` or Hiddify A/B if owner fails |
 
 ---
 
@@ -232,9 +244,11 @@ If failure correlates with RST on one relay IP in `report.zip` → prepare **E**
 
 | Verdict | Detail |
 |---------|--------|
-| **Overall** | **UNKNOWN** — owner failure not captured |
-| **Server/profile** | **No regression** in baseline |
-| **Leading hypothesis** | **A/B/D** pending owner window — stale client cache, Happ tunnel behavior, or VLESS-layer intermittent |
+| **Overall** | **UNKNOWN** — owner browsing outcome not reported; **server healthy during watch #1** |
+| **Server/profile (watch #1)** | **No regression** — not F, not E, not G |
+| **If owner reports failure after fresh import** | Preliminary: **A/B/C/D** (client/tunnel/VLESS) — **not F** unless per-account sub diverges from 7353 B |
+| **Prod fix justified?** | **NO** |
+| **Approval phrase needed now?** | **None** |
 
 ---
 
@@ -304,7 +318,26 @@ If failure correlates with RST on one relay IP in `report.zip` → prepare **E**
 
 ---
 
-## 22. References
+## 22. Watch window #1 — ops record (read-only)
+
+**UTC:** 2026-06-09 20:49:30 – 20:52:00 (approx)
+
+| Probe | Result |
+|-------|--------|
+| `VPN_BALANCER_PROFILE_OK` | PASS |
+| Subscription fetch ×25 | **0 fails**, **7353–7353 B**, dns=4 |
+| Relay soak ×40 | r1 **40/40**, r2 **40/40** |
+| `TSPU_BLOCK_PROBE_RU_OK` | PASS |
+| AMS containers | remnawave, subscription-page, caddy, shop-bot — **running**, 0 restarts |
+| LV remnanode | **running**, 0 restarts |
+| Subscription edge logs | Happ iOS **4.11.0** external fetch **HTTP 200** during window; ops Happ probes **7353 B**; **no 5xx** |
+| VLESS functional probe | **Not available** — TCP-only tooling |
+
+**Owner failure during window:** **not reported to ops.**
+
+---
+
+## 23. References
 
 - INCIDENT-001: [`INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md`](INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md)
 - Candidate D apply: [`APPLY-2026-06-10-VPN-CANDIDATE-D.md`](APPLY-2026-06-10-VPN-CANDIDATE-D.md)
