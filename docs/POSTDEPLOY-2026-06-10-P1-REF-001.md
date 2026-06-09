@@ -91,7 +91,7 @@ Run on AMS after deploy via `ops/smoke_p1_ref_deploy_ams.py`:
 
 ## 9. TG bind verification (controlled)
 
-**Status:** **FAIL** (2026-06-09 ~15:25 UTC AMS read) — owner reported Telegram bind completed; **DB does not show bind** for prepared `p1bind-` trial.
+**Status:** **FAIL** (latest AMS read **2026-06-09 ~15:30 UTC**) — owner reported Telegram bind completed (second attempt); **DB still does not show bind** for prepared `p1bind-` trial.
 
 ### Preparation (completed)
 
@@ -127,6 +127,29 @@ python3 /tmp/smoke_p1_ref_tg_bind_ams.py verify --email-prefix p1bind-
 | Container logs (tail) | No stack traces; no import errors; no secrets observed |
 
 **Conclusion:** Web email referral attribution **PASS** remains valid. **TG bind migration path not verified live** — bind either did not persist, used a different token/trial, or failed silently in bot (e.g. `both_have_keys`, `already_bound_other`, invalid token).
+
+### Verification attempt 2 (2026-06-09 ~15:30 UTC)
+
+Owner message: *«TG bind completed for p1bind- test»* (retry after first FAIL).
+
+Command on AMS:
+
+```bash
+python3 /tmp/smoke_p1_ref_tg_bind_ams.py verify --email-prefix p1bind-
+```
+
+**Result:** `P1_BIND_VERIFY_PENDING` / **NOT_BOUND** (same email as prepare)
+
+| DB check | Observed |
+|----------|----------|
+| `web_trial_claims.telegram_id` | **NULL** |
+| `web_trial_claims.bound_at` | **NULL** |
+| Web surrogate user row | **Still exists** |
+| `user_actions` `funnel_bot_start` with `bind:*` | **None** (no bind link opened on AMS bot DB) |
+| `user_actions` `web_tg_bind` | **None** |
+| Container logs (bind-related) | No `merge_web` / bind success lines; scheduler clean |
+
+**Likely causes:** bind URL not opened in `@Bender_KVN_bot`, wrong/expired token, or bind attempted with Telegram account that already has VPN keys (`both_have_keys` — would not write `web_trial_claims.telegram_id`). **Use a clean test Telegram account** with no existing keys.
 
 ### Owner retry (required to close §9)
 
@@ -169,4 +192,4 @@ No mass user action required.
 
 **P1-REF-001 AMS deploy: SUCCESS.** Web email `ref_code` attribution is **live** on AMS.
 
-**TG bind referral migration:** **FAIL** on AMS DB check after owner bind report — see POSTDEPLOY §9. Web trial referral attribution remains **PASS**.
+**TG bind referral migration:** **FAIL** on AMS DB check after two owner bind reports — see POSTDEPLOY §9. Web trial referral attribution remains **PASS**. Device/balance UX audit: [`AUDIT-2026-06-10-DEVICE-LINKS-BALANCE-UX.md`](AUDIT-2026-06-10-DEVICE-LINKS-BALANCE-UX.md).
