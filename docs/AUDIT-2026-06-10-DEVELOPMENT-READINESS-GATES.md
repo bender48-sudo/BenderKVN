@@ -87,7 +87,7 @@ G5  Public/partner scale
 
 | Gate | Deliverable | Verify |
 |------|-------------|--------|
-| **G2-A** | Web `ref_code` → `referred_by` end-to-end | E2E: `/setup/?ref=x` → trial row has referrer |
+| **G2-A** | Web `ref_code` → `referred_by` end-to-end | E2E: `/setup/?ref=x` → trial row has referrer; AMS deploy: [`DEPLOY-P1-REF-001.md`](DEPLOY-P1-REF-001.md) (includes **`web_referral.py`**) |
 | **G2-B** | Cabinet API `billing_profile` + trial fields | Mini App shows trial vs wallet correctly |
 | **G2-C** | Remove/gate hidden +3d referral purchase bonus | Policy PT-07 |
 | **G2-D** | Admin user lookup (TG ID / email hint) | Admin command smoke |

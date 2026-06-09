@@ -209,7 +209,8 @@ See §3 above.
 
 ### 9. Recommended first development surface
 
-**Bot webhook + `portal_web_trial.py`** — web referral attribution (P1-REF-001).
+**Bot webhook + `portal_web_trial.py` + `web_referral.py`** — web referral attribution (P1-REF-001).
+**AMS deploy (after G1 + approval):** `ops/deploy-portal-web-trial-ams.ps1` — see [`DEPLOY-P1-REF-001.md`](DEPLOY-P1-REF-001.md).
 
 ### 10. Explicit go/no-go for development
 

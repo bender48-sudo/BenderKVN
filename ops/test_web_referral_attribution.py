@@ -107,6 +107,16 @@ def _static_checks() -> None:
         if needle not in (webhook + trial + bind + referral):
             raise AssertionError(f"static check failed: {label} ({needle!r})")
 
+    deploy_ps1 = (ROOT / "ops" / "deploy-portal-web-trial-ams.ps1").read_text(encoding="utf-8")
+    for needle, label in (
+        ("bot_src\\web_referral.py", "deploy script includes web_referral.py"),
+        ("bot_src\\webhook_server\\app.py", "deploy script uses full webhook app.py"),
+        ("web_referral.py.before-web-trial", "deploy rollback backs up web_referral.py"),
+        ("docker cp /tmp/web_referral.py", "deploy docker cp web_referral.py"),
+    ):
+        if needle not in deploy_ps1:
+            raise AssertionError(f"deploy static check failed: {label} ({needle!r})")
+
     if "grant_referrer_bonus" in trial:
         raise AssertionError("portal_web_trial must not grant referral bonus")
 
