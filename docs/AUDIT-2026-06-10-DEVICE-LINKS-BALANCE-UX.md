@@ -335,19 +335,33 @@ Read-only AMS check on owner account (TG id redacted; internal ops id ending …
 
 **Recommendation for current pilot:** **Option A.** Do not ship self-service second config until revoke + policy enforcement exist.
 
-### 14.6 Required cabinet/API fields (later — do not implement in this pass)
+### 14.6 Cabinet/API fields
 
-**Implemented (P1-CAB-001, 2026-06-10):** `billing_profile`, `access_profile`, `is_billable_now`, `next_charge_applicable`, `access_expires_at`, `billing_note` / `billing_note_code`, `active_config_count`, `billable_config_count`, `legacy_manual_access`. See [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) §5.5.
+**Implemented (P1-CAB-001, deployed 2026-06-09):** `billing_profile`, `access_profile`, `is_billable_now`, `next_charge_applicable`, `access_expires_at`, `billing_note` / `billing_note_code`, `billable_config_count`, `legacy_manual_access`. See [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) §5.5.
 
-**Still out of scope (P1-DEV-001+):**
+**Implemented (P1-DEV-001, repo 2026-06-10 — deploy pending):** read-only config visibility in `build_billing_fields()` / cabinet snapshot:
 
 ```text
-active_configs[]:
-  - key_id, label, created_at, expires_at, active, platform (if known)
-  - subscription_url_masked
-can_revoke: false
+active_config_count: int
+configurations[]:
+  - key_id, id (CFG-{key_id}), label
+  - status: active | expired; active: bool
+  - created_at, created_at_iso; expires / expires_at / expires_at_iso
+  - has_subscription_url: bool; subscription_url_masked: null (no full URLs)
+  - is_primary, is_current (newest active expiry; else newest overall)
+  - billable: true only for wallet + single active + primary row
+multiple_configs_anomaly: active_count > 1
+support_required_for_extra_configs: active_count > 1
+```
+
+**Still out of scope (P1-DEV-002+):**
+
+```text
+can_revoke: false (no API field yet)
 can_replace_device: false
-support_required: true
+self-service add device: false
+platform per key: not exposed
+full subscription_url in cabinet: not exposed
 ```
 
 ### 14.7 Proposed copy (later — do not edit `ru.json` now)
@@ -363,7 +377,7 @@ support_required: true
 | ID | Scope | Depends on |
 |----|-------|------------|
 | **P1-CAB-001** | `billing_profile` + legacy/wallet messaging in cabinet API + UI | **DONE** — deployed 2026-06-09 [`POSTDEPLOY-2026-06-10-P1-CAB-001.md`](POSTDEPLOY-2026-06-10-P1-CAB-001.md) |
-| **P1-DEV-001** | Cabinet `active_config_count` + `active_configs[]` read-only from `vpn_keys` + Remna | P1-CAB-001 |
+| **P1-DEV-001** | Cabinet `active_config_count` + `configurations[]` read-only from `vpn_keys` (no Remna) | **DONE** — repo 2026-06-10; deploy pending |
 | **P1-DEV-002** | Admin/support revoke: disable Remna user + delete/archive `vpn_keys` row | ops runbook |
 | **P1-DEV-003** | Self-service **replace device** (revoke old + issue one new) — not additive multi-device | P1-DEV-002 + product sign-off |
 | **PROD-004** | Enforce max 1 active config per account (or explicit N after Option B) | policy decision |
@@ -374,7 +388,7 @@ support_required: true
 ### 14.9 No-go before changing copy/UI
 
 - Do not promise «выпусти новую настройку» self-service until **P1-DEV-003** or support path is explicit.
-- Do not show config count without **P1-DEV-001** backend fields.
+- Do not deploy config list UI without **P1-DEV-001** backend on the same host (AMS bot + LV portal static).
 - Do not add revoke button without **P1-DEV-002** Remna+DB lifecycle.
 - Do not imply 6.67 ₽ × N until **P1-BILL-002** shipped and tested.
 - Do not change legacy owner balance display without **`access_profile: legacy`**.
@@ -383,9 +397,9 @@ support_required: true
 
 **Order:**
 
-1. **P1-CAB-001** — `billing_profile` + legacy balance explanation (fixes owner 187 ₽ confusion).
-2. **P1-DEV-001** — read-only config count/list in cabinet (answers «how many links» without revoke).
+1. ~~**P1-CAB-001**~~ — deployed.
+2. ~~**P1-DEV-001**~~ — implemented in repo; **deploy** AMS `portal_cabinet.py` + LV portal `v=28`.
 3. **P1-DEV-002 + PROD-004** — support/admin revoke + one-config enforcement.
-4. **P2-COPY-DEVICE-001** — honest copy after backend truth exists.
+4. **P2-COPY-DEVICE-001** — honest setup/cabinet/FAQ copy after backend truth (guide layout separate).
 
 **Not next:** multi-device self-service (Option B) or UI-only copy fixes alone.

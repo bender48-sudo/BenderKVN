@@ -26,7 +26,11 @@ _db = importlib.import_module("database")
 sys.modules["shop_bot.data_manager.database"] = _db
 _dm.database = _db
 
-from shop_bot.portal_cabinet import build_billing_fields, cabinet_snapshot  # noqa: E402
+from shop_bot.portal_cabinet import (  # noqa: E402
+    build_billing_fields,
+    build_configuration_fields,
+    cabinet_snapshot,
+)
 
 
 def _future(days: int) -> str:
@@ -92,6 +96,57 @@ class TestBuildBillingFields(unittest.TestCase):
         self.assertFalse(doc["is_billable_now"])
 
 
+class TestBuildConfigurationFields(unittest.TestCase):
+    def test_no_keys(self) -> None:
+        doc = build_configuration_fields([], "expired")
+        self.assertEqual(doc["active_config_count"], 0)
+        self.assertEqual(doc["configurations"], [])
+        self.assertFalse(doc["multiple_configs_anomaly"])
+
+    def test_one_active_key(self) -> None:
+        keys = [{"key_id": 10, "key_email": "u-key1-trial@x", "expiry_date": _future(30), "created_date": _past(1)}]
+        doc = build_configuration_fields(keys, "trial")
+        self.assertEqual(doc["active_config_count"], 1)
+        self.assertEqual(len(doc["configurations"]), 1)
+        cfg = doc["configurations"][0]
+        self.assertTrue(cfg["active"])
+        self.assertEqual(cfg["status"], "active")
+        self.assertTrue(cfg["is_primary"])
+        self.assertTrue(cfg["has_subscription_url"])
+        self.assertIsNone(cfg["subscription_url_masked"])
+        self.assertFalse(cfg["billable"])
+
+    def test_expired_key_listed(self) -> None:
+        keys = [{"key_id": 11, "key_email": "u@x", "expiry_date": _past(5)}]
+        doc = build_configuration_fields(keys, "expired")
+        self.assertEqual(doc["active_config_count"], 0)
+        self.assertEqual(doc["configurations"][0]["status"], "expired")
+        self.assertFalse(doc["configurations"][0]["active"])
+
+    def test_multiple_active_anomaly(self) -> None:
+        keys = [
+            {"key_id": 1, "key_email": "a@x", "expiry_date": _future(10)},
+            {"key_id": 2, "key_email": "b@x", "expiry_date": _future(20)},
+        ]
+        doc = build_configuration_fields(keys, "trial")
+        self.assertEqual(doc["active_config_count"], 2)
+        self.assertTrue(doc["multiple_configs_anomaly"])
+        primaries = [c for c in doc["configurations"] if c["is_primary"]]
+        self.assertEqual(len(primaries), 1)
+        self.assertEqual(primaries[0]["key_id"], 2)
+
+    def test_wallet_one_active_billable(self) -> None:
+        keys = [{"key_id": 7, "key_email": "w@x", "expiry_date": _future(15)}]
+        doc = build_configuration_fields(keys, "wallet")
+        self.assertTrue(doc["configurations"][0]["billable"])
+
+    def test_legacy_one_active(self) -> None:
+        keys = [{"key_id": 3, "key_email": "legacy@x", "expiry_date": "2099-12-31T00:00:00+00:00"}]
+        doc = build_configuration_fields(keys, "legacy")
+        self.assertEqual(doc["active_config_count"], 1)
+        self.assertFalse(doc["configurations"][0]["billable"])
+
+
 class TestCabinetSnapshotBackwardCompat(unittest.TestCase):
     def test_snapshot_keeps_legacy_fields(self) -> None:
         user = {
@@ -113,6 +168,8 @@ class TestCabinetSnapshotBackwardCompat(unittest.TestCase):
         self.assertIn("daily_rate", doc)
         self.assertIn("billing_profile", doc)
         self.assertIn("billing_note", doc)
+        self.assertIn("configurations", doc)
+        self.assertIsInstance(doc["configurations"], list)
 
 
 if __name__ == "__main__":

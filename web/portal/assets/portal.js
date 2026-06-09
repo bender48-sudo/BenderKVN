@@ -1412,23 +1412,69 @@
     }
     var cfgPanel = $("cabinet-configs-panel");
     var cfgList = $("cabinet-configs-list");
+    var cfgSummary = $("cabinet-configs-summary");
     if (cfgPanel && cfgList && (isTelegramMiniApp() || isCabinetDedicatedPage())) {
       cfgList.innerHTML = "";
       var configs = doc.configurations || [];
+      var activeCount =
+        typeof doc.active_config_count === "number"
+          ? doc.active_config_count
+          : configs.filter(function (c) {
+              return c.active || c.status === "active";
+            }).length;
+      if ($("cabinet-configs-title")) {
+        var countFmt = cab.configs_active_count || "Активные настройки: {count}";
+        $("cabinet-configs-title").textContent = countFmt.replace("{count}", String(activeCount));
+      }
+      if (cfgSummary) {
+        if (doc.multiple_configs_anomaly || activeCount > 1) {
+          cfgSummary.textContent =
+            cab.configs_multi_anomaly ||
+            "Обнаружено несколько активных настроек — напишите в поддержку.";
+          cfgSummary.classList.remove("hidden");
+        } else if (activeCount === 1) {
+          cfgSummary.textContent =
+            cab.configs_mvp_note ||
+            "Сейчас используется одна активная настройка. Для нового устройства — поддержка.";
+          cfgSummary.classList.remove("hidden");
+        } else if (activeCount === 0) {
+          cfgSummary.textContent = cab.configs_empty || "";
+          cfgSummary.classList.remove("hidden");
+        } else {
+          cfgSummary.textContent = "";
+          cfgSummary.classList.add("hidden");
+        }
+      }
       if (!configs.length) {
         var li0 = document.createElement("li");
-        li0.textContent = cab.configs_empty || "";
+        li0.textContent = cab.configs_empty || "Активных настроек нет.";
         cfgList.appendChild(li0);
       } else {
         configs.forEach(function (c) {
           var li = document.createElement("li");
-          li.textContent = (c.label || "Конфигурация") + " · до " + (c.expires || "—");
+          var parts = [(c.label || "Конфигурация") + " · до " + (c.expires || c.expires_at || "—")];
+          if (c.is_current || c.is_primary) {
+            parts.push(cab.config_primary_badge || "текущая");
+          }
+          li.textContent = parts.join(" · ");
           var st = document.createElement("span");
           st.className = "config-list__status";
-          st.textContent = c.active ? "активна" : "истекла";
+          var isActive = c.active || c.status === "active";
+          st.textContent = isActive
+            ? cab.config_status_active || "активна"
+            : cab.config_status_expired || "истекла";
           li.appendChild(st);
           cfgList.appendChild(li);
         });
+      }
+      if ($("cabinet-device-rule")) {
+        if (doc.multiple_configs_anomaly || activeCount > 1) {
+          $("cabinet-device-rule").textContent = cab.configs_multi_anomaly || "";
+        } else if (activeCount === 1) {
+          $("cabinet-device-rule").textContent = cab.configs_mvp_note || cab.configs_device_rule || "";
+        } else {
+          $("cabinet-device-rule").textContent = cab.configs_device_rule || "";
+        }
       }
       cfgPanel.classList.remove("hidden");
     }

@@ -59,6 +59,85 @@ def _format_expiry_display(dt: datetime | None) -> tuple[str | None, str | None]
     return dt.strftime("%d.%m.%Y"), dt.astimezone(timezone.utc).isoformat()
 
 
+def _format_created_display(raw: str | None) -> tuple[str | None, str | None]:
+    if raw is None:
+        return None, None
+    if isinstance(raw, datetime):
+        dt = raw
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+    else:
+        dt = _parse_key_expiry(str(raw))
+    if not dt:
+        return None, None
+    return dt.strftime("%d.%m.%Y"), dt.astimezone(timezone.utc).isoformat()
+
+
+def _primary_key_id(keys: list[dict], now: datetime | None = None) -> int | None:
+    """Key shown in setup: newest expiry among active, else newest overall."""
+    now = now or datetime.now(timezone.utc)
+    active = _active_keys(keys, now)
+    pool = active if active else keys
+    if not pool:
+        return None
+    primary = max(pool, key=lambda k: k.get("expiry_date") or "")
+    kid = primary.get("key_id")
+    return int(kid) if kid is not None else None
+
+
+def build_configuration_fields(
+    keys: list[dict],
+    billing_profile: str,
+    *,
+    now: datetime | None = None,
+) -> dict:
+    """
+    Read-only vpn_keys summary for cabinet UI (P1-DEV-001).
+    No Remna calls; no subscription URLs.
+    """
+    now = now or datetime.now(timezone.utc)
+    active = _active_keys(keys, now)
+    primary_id = _primary_key_id(keys, now)
+    active_count = len(active)
+    configurations: list[dict] = []
+
+    for key in sorted(keys, key=lambda k: int(k.get("key_id") or 0)):
+        kid = key.get("key_id")
+        exp = _parse_key_expiry(key.get("expiry_date"))
+        is_active = bool(exp and exp > now)
+        exp_disp, exp_iso = _format_expiry_display(exp)
+        created_disp, created_iso = _format_created_display(key.get("created_date"))
+        is_primary = primary_id is not None and int(kid or 0) == primary_id
+        billable = billing_profile == "wallet" and is_active and is_primary and active_count <= 1
+
+        configurations.append(
+            {
+                "key_id": kid,
+                "id": f"CFG-{kid}" if kid is not None else None,
+                "label": f"Настройка #{kid}" if kid is not None else "Настройка",
+                "active": is_active,
+                "status": "active" if is_active else "expired",
+                "created_at": created_disp,
+                "created_at_iso": created_iso,
+                "expires": exp_disp,
+                "expires_at": exp_disp,
+                "expires_at_iso": exp_iso,
+                "has_subscription_url": is_active,
+                "subscription_url_masked": None,
+                "is_primary": is_primary,
+                "is_current": is_primary,
+                "billable": billable,
+            }
+        )
+
+    return {
+        "active_config_count": active_count,
+        "configurations": configurations,
+        "multiple_configs_anomaly": active_count > 1,
+        "support_required_for_extra_configs": active_count > 1,
+    }
+
+
 def _daily_charge_action_for(now: datetime | None = None) -> str:
     now = now or datetime.now(timezone.utc)
     return f"daily_balance:{now.strftime('%Y-%m-%d')}"
@@ -96,9 +175,10 @@ def build_billing_fields(
     else:
         billing_profile = "unknown"
 
-    active_config_count = len(active)
+    config_fields = build_configuration_fields(keys, billing_profile, now=now)
+    active_config_count = config_fields["active_config_count"]
     billable_config_count = (
-        1 if billing_profile == "wallet" and active_config_count > 0 else 0
+        1 if billing_profile == "wallet" and active_config_count == 1 else 0
     )
 
     is_billable_now = (
@@ -165,6 +245,7 @@ def build_billing_fields(
         "billable_config_count": billable_config_count,
         "legacy_manual_access": profile_kind == "legacy"
         or is_legacy_manual_panel(keys, panel_expire_iso),
+        **config_fields,
     }
 
 
