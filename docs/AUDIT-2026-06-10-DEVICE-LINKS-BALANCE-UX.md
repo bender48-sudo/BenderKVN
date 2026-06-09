@@ -339,7 +339,7 @@ Read-only AMS check on owner account (TG id redacted; internal ops id ending …
 
 **Implemented (P1-CAB-001, deployed 2026-06-09):** `billing_profile`, `access_profile`, `is_billable_now`, `next_charge_applicable`, `access_expires_at`, `billing_note` / `billing_note_code`, `billable_config_count`, `legacy_manual_access`. See [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) §5.5.
 
-**Implemented (P1-DEV-001, repo 2026-06-10 — deploy pending):** read-only config visibility in `build_billing_fields()` / cabinet snapshot:
+**Implemented (P1-DEV-001, deployed 2026-06-09):** read-only config visibility in `build_billing_fields()` / cabinet snapshot (see [`POSTDEPLOY-2026-06-10-P1-DEV-001.md`](POSTDEPLOY-2026-06-10-P1-DEV-001.md)):
 
 ```text
 active_config_count: int
@@ -377,7 +377,7 @@ full subscription_url in cabinet: not exposed
 | ID | Scope | Depends on |
 |----|-------|------------|
 | **P1-CAB-001** | `billing_profile` + legacy/wallet messaging in cabinet API + UI | **DONE** — deployed 2026-06-09 [`POSTDEPLOY-2026-06-10-P1-CAB-001.md`](POSTDEPLOY-2026-06-10-P1-CAB-001.md) |
-| **P1-DEV-001** | Cabinet `active_config_count` + `configurations[]` read-only from `vpn_keys` (no Remna) | **DONE** — repo 2026-06-10; deploy pending |
+| **P1-DEV-001** | Cabinet `active_config_count` + `configurations[]` read-only from `vpn_keys` (no Remna) | **DONE** — deployed 2026-06-09 [`POSTDEPLOY-2026-06-10-P1-DEV-001.md`](POSTDEPLOY-2026-06-10-P1-DEV-001.md) |
 | **P1-DEV-002** | Admin/support revoke: disable Remna user + delete/archive `vpn_keys` row | ops runbook |
 | **P1-DEV-003** | Self-service **replace device** (revoke old + issue one new) — not additive multi-device | P1-DEV-002 + product sign-off |
 | **PROD-004** | Enforce max 1 active config per account (or explicit N after Option B) | policy decision |
@@ -398,7 +398,7 @@ full subscription_url in cabinet: not exposed
 **Order:**
 
 1. ~~**P1-CAB-001**~~ — deployed.
-2. ~~**P1-DEV-001**~~ — implemented in repo; **deploy** AMS `portal_cabinet.py` + LV portal `v=28`.
+2. ~~**P1-DEV-001**~~ — deployed 2026-06-09.
 3. **P1-DEV-002 + PROD-004** — support/admin revoke + one-config enforcement.
 4. **P2-COPY-DEVICE-001** — honest setup/cabinet/FAQ copy after backend truth (guide layout separate).
 
