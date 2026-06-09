@@ -40,6 +40,8 @@ G5  Public/partner scale
 
 **INCIDENT-001 (2026-06-10):** Read-only prod audit — Candidate D **still active** (7353 B / 6 proxy / DoH / parity OK); owner disconnect reports **not reproduced** by server probes. See [`INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md`](INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md). **G1 remains open** until owner device evidence (Happ refresh/reimport + failure mode log; **one Auto host in Happ UI is expected** — 6 paths are server-side).
 
+**INCIDENT-002 (2026-06-10):** Active failure capture protocol — owner correlated test + ops watch window. See [`INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md`](INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md). **No prod mutation** until evidence + explicit approval phrase.
+
 ### G1.1 Automated (done — re-run anytime)
 
 | Probe | Pass criteria | Last run |
