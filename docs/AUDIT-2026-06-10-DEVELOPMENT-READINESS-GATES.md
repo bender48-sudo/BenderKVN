@@ -38,6 +38,8 @@ G5  Public/partner scale
 
 **Final audit phase:** **COMPLETE** — no remaining broad audits; only implementation/smoke/proof/owner decisions.
 
+**COMMERCIAL-UX-DEVICE-MVP-001 (2026-06-10):** Portal cabinet/setup + bot COPY-TRUTH toward **MODEL A** — one device = one setting; add/replace CTAs gated to support; link-first setup; **no** per-device billing, **no** DEVICE-ENFORCE claims, **no** self-service add-device backend. Repo only — **LV portal deploy** + **AMS bot deploy** pending owner approval. Paid/open remains **NO-GO**.
+
 ---
 
 ## 2. G0 — Audit complete ✅ (frozen 2026-06-10)

@@ -68,14 +68,15 @@
 
 ### Tomorrow queue (TRACK 0 + prep)
 
-1. **DEVICE-COPY-001** — portal `ru.json` (`device_rule`, referral note)
-2. **COPY-TRUTH-001** — bot ghost labels + NL/LV removal
-3. **P1-REF-002** / **REF-COPY-001** — gate hidden +3d (separate commit)
-4. **SETUP-UX-001** — link-first setup page
-5. **CABINET-TYPE-001** — typography (if time)
-6. **G4-BIND-RETEST** — owner in-app bind (no code unless bug)
-7. **BILL-UT-001/002** — unit tests (repo only)
-8. **BILL-SMOKE-001 prep** — script skeleton only
+1. ~~**COMMERCIAL-UX-DEVICE-MVP-001**~~ — portal cabinet/setup MODEL A UX (**DONE** repo `product-referral-cabinet-ui-v1`, not deployed)
+2. ~~**DEVICE-COPY-001**~~ — portal `ru.json` MODEL A copy (**DONE** in COMMERCIAL-UX-DEVICE-MVP-001)
+3. ~~**COPY-TRUTH-001**~~ — bot ghost labels + NL/LV removal (**DONE** repo, not deployed)
+4. ~~**SETUP-UX-001**~~ — link-first setup page (**DONE** in COMMERCIAL-UX-DEVICE-MVP-001)
+5. ~~**CABINET-TYPE-001**~~ — balance typography (**DONE** in COMMERCIAL-UX-DEVICE-MVP-001)
+6. **P1-REF-002** / **REF-COPY-001** — gate hidden +3d (separate commit; **not started**)
+7. **G4-BIND-RETEST** — owner in-app bind (no code unless bug)
+8. **BILL-UT-001/002** — unit tests (repo only)
+9. **BILL-SMOKE-001 prep** — script skeleton only
 
 ### Completed audits (frozen — do not re-audit)
 

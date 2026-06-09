@@ -115,10 +115,11 @@ Legend: **DONE** = audit/impl complete · **PARTIAL** · **BLOCKED** · **MONITO
 
 | Gate | Status | F&F | Soft | Paid | Open | Referral | Next surface |
 |------|--------|-----|------|------|------|----------|--------------|
-| COPY-TRUTH-001 | **READY_FOR_IMPLEMENTATION** | No | **Yes** | **Yes** | **Yes** | No | Bot + portal copy |
-| G10 device_rule | **READY_FOR_IMPLEMENTATION** | No | **Yes** | **Yes** | **Yes** | No | `setup.device_rule` |
-| Setup link-first UX | **READY_FOR_IMPLEMENTATION** | No | Partial | Partial | Partial | No | `setup.html/js` |
-| Cabinet typography | **READY_FOR_IMPLEMENTATION** | No | Partial | No | No | No | portal CSS |
+| COPY-TRUTH-001 | **IMPLEMENTED** (repo) | No | **Yes** deploy | **Yes** deploy | **Yes** deploy | No | Bot ghost labels fixed; LV deploy pending |
+| G10 device_rule / MODEL A cabinet | **IMPLEMENTED** (repo) | No | **Yes** deploy | **Yes** deploy | **Yes** deploy | No | `COMMERCIAL-UX-DEVICE-MVP-001` — gated add/replace CTAs |
+| Setup link-first UX | **IMPLEMENTED** (repo) | No | Partial deploy | Partial deploy | Partial deploy | No | Link primary, QR secondary (`setup.html/js` v30) |
+| Cabinet typography | **IMPLEMENTED** (repo) | No | Partial deploy | No | No | No | Balance amount/days split |
+| COMMERCIAL-UX-DEVICE-MVP-001 | **IMPLEMENTED** (repo) | No | Deploy LV portal | Deploy | Deploy | No | MODEL A UX; backend add/replace/billing still gated |
 
 ### G. Admin / support
 
@@ -192,11 +193,12 @@ All paid pilot blockers plus:
 
 | ID | P | Status | Blocker | Owner? | Summary |
 |----|---|--------|---------|--------|---------|
-| **COPY-TRUTH-001** | P0 | OPEN | Soft+paid copy | No | Ghost bot labels; NL/LV removal |
-| **DEVICE-COPY-001** | P0 | OPEN | G10 | No | `setup.device_rule` honest support path |
+| **COMMERCIAL-UX-DEVICE-MVP-001** | P0 | **DONE** (repo) | MODEL A UX | No | Portal cabinet/setup; gated add/replace; no billing/enforce |
+| **COPY-TRUTH-001** | P0 | **DONE** (repo) | Soft+paid copy deploy | No | Ghost bot labels; NL/LV removal — deploy pending |
+| **DEVICE-COPY-001** | P0 | **DONE** (repo) | G10 deploy | No | Merged into COMMERCIAL-UX-DEVICE-MVP-001 |
 | **REF-COPY-001** / **P1-REF-002** | P0 | OPEN | Soft+referral | No | Gate hidden +3d; soften preserve note |
-| **SETUP-UX-001** | P1 | OPEN | Soft UX | No | Link-first, QR secondary, layout fix |
-| **CABINET-TYPE-001** | P2 | OPEN | Polish | No | Balance typography if owner flags |
+| **SETUP-UX-001** | P1 | **DONE** (repo) | Soft UX deploy | No | Merged into COMMERCIAL-UX-DEVICE-MVP-001 |
+| **CABINET-TYPE-001** | P2 | **DONE** (repo) | Polish deploy | No | Merged into COMMERCIAL-UX-DEVICE-MVP-001 |
 
 ### TRACK 1 — Bind / referral entrypoint
 
