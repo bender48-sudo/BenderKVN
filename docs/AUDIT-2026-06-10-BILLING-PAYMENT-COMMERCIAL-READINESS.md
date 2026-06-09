@@ -21,7 +21,7 @@
 
 **Bottom line:** Core money path is **engineered with idempotency layers**, but **commercial readiness requires live smokes + reconciliation tooling + support runbooks** before automated paid traffic.
 
-**BILL-FIX-001 (repo):** Reconcile script aligned to canonical `yk:{payment_id}` via `shop_bot/payment_idempotency.py`; default **dry-run**; legacy `yookassa:` skip preserved. **Prod not mutated** — do **not** run `--apply` on production without separate explicit approval.
+**BILL-FIX-001:** Reconcile aligned to canonical `yk:{payment_id}` via `shop_bot/payment_idempotency.py`; default **dry-run**; legacy `yookassa:` skip preserved. **Deployed AMS 2026-06-09** — [`POSTDEPLOY-2026-06-10-BILL-FIX-001.md`](POSTDEPLOY-2026-06-10-BILL-FIX-001.md). **No reconcile `--apply` run** — separate explicit approval still required.
 
 ---
 
@@ -164,7 +164,7 @@ No user IDs in output.
 
 | Risk | Severity | Evidence | Impact | Mitigation | Paid blocker? | Open blocker? |
 |------|----------|----------|--------|------------|---------------|---------------|
-| **Double credit via reconcile script** | ~~**P0**~~ **Fixed in repo** | Was `yookassa:{id}` vs webhook `yk:{id}` | Duplicate balance if reconcile run after webhook | **BILL-FIX-001** — `payment_idempotency.py`; dry-run default | No (if fixed deployed) | No (if fixed deployed) |
+| **Double credit via reconcile script** | ~~**P0**~~ **Mitigated (deployed)** | Was `yookassa:{id}` vs webhook `yk:{id}` | Duplicate balance if reconcile run after webhook | **BILL-FIX-001** deployed AMS | No (if no `--apply`) | No (if no `--apply`) |
 | **Duplicate webhook double credit** | P1 | `process_topup_payment` + `claim_webhook_delivery` | Unlikely if queue works | `BILL-SMOKE-002` | **Yes** until smoke | Yes |
 | **Balance credited, access not extended** | **P0** | `process_topup_payment` adds balance before sync; returns False on sync fail | Paid user, no VPN | Support runbook; alert on sync fail | **Yes** | **Yes** |
 | **Missed billing day (no catch-up)** | P1 | Idempotent per day only; no backfill | Under-billing | Policy doc; monitor scheduler | Partial | Yes |
@@ -178,13 +178,13 @@ No user IDs in output.
 | **BOT_PAYMENTS_LIVE misconfig** | P1 | All billing skipped if false | No revenue / wrong state | Deploy checklist | **Yes** | **Yes** |
 | **Secret exposure in logs** | P2 | `payload_redact.py` exists | Compliance | Log audit | Partial | Yes |
 
-### 7.1 Reconcile idempotency mismatch — **BILL-FIX-001 (repo fixed)**
+### 7.1 Reconcile idempotency mismatch — **BILL-FIX-001 (deployed)**
 
 **Was:** reconcile used `yookassa:{pid}` while webhook recorded `yk:{pid}`.
 
 **Fix:** `shop_bot/payment_idempotency.py` — `yookassa_topup_action_key()`; reconcile + webhook queue share it; legacy `yookassa:` rows still skip reconcile.
 
-**Still required before prod reconcile:** deploy fix to AMS; explicit owner approval for `--apply`; live smokes BILL-SMOKE-001..004.
+**Deploy:** AMS `2026-06-09` — [`POSTDEPLOY-2026-06-10-BILL-FIX-001.md`](POSTDEPLOY-2026-06-10-BILL-FIX-001.md). **Still required before prod reconcile `--apply`:** explicit owner approval; live smokes BILL-SMOKE-001..004.
 
 ---
 
@@ -192,7 +192,7 @@ No user IDs in output.
 
 | Order | ID | Surface | Why |
 |-------|-----|---------|-----|
-| 1 | ~~**BILL-FIX-001**~~ | `payment_idempotency.py` + reconcile | **DONE in repo** — deploy + approval before `--apply` |
+| 1 | ~~**BILL-FIX-001**~~ | `payment_idempotency.py` + reconcile | **DONE** — deployed AMS; approval before `--apply` |
 | 2 | **BILL-UT-001/002** | `tests/test_balance_billing.py` | Daily debit + topup idempotency unit tests |
 | 3 | **BILL-SMOKE-001..004** | `ops/smoke_billing_commercial_ams.py` | Live money-path proof on smoke users |
 | 4 | **BILL-RUNBOOK-001** | docs | Payment succeeded, access not extended |
@@ -230,7 +230,7 @@ Before **automated paid pilot**, support must be able to:
 1. Owner whitelist ≤10 paying users
 2. Owner manually verifies each YooKassa payment in provider dashboard
 3. Cross-check `user_actions` topup + balance before declaring success
-4. **Do not** run `reconcile_yookassa_topups_ams.py` until BILL-FIX-001
+4. **Do not** run `reconcile_yookassa_topups_ams.py --apply` without explicit owner approval (BILL-FIX-001 deployed; dry-run still calls YooKassa read API)
 5. Support runbook for S10 (sync fail) in hand
 6. `BOT_PAYMENTS_LIVE=1` confirmed on AMS
 
@@ -242,7 +242,7 @@ Before **automated paid pilot**, support must be able to:
 - BILL-UT-001..002 in CI
 - P1-ADM-003 reconciliation view
 - BILL-RUNBOOK-001 published
-- BILL-FIX-001 deployed
+- ~~BILL-FIX-001 deployed~~ ✅
 
 ### Open paid launch
 
@@ -252,7 +252,7 @@ Before **automated paid pilot**, support must be able to:
 
 ## 11. Exact next prompts / surfaces
 
-1. **BILL-FIX-001** — *«Fix reconcile_yookassa idempotency key to match yk: prefix»*
+1. ~~**BILL-FIX-001**~~ — deployed [`POSTDEPLOY-2026-06-10-BILL-FIX-001.md`](POSTDEPLOY-2026-06-10-BILL-FIX-001.md)
 2. **BILL-UT-001** — *«Add unit tests for charge_daily_balance_if_due and topup idempotency»*
 3. **BILL-SMOKE-001** — *«Create ops/smoke_billing_commercial_ams.py read-only + controlled top-up verify»*
 4. **BILL-RUNBOOK-001** — *«Write runbook: payment made but VPN not active»*
@@ -271,7 +271,7 @@ Before **automated paid pilot**, support must be able to:
 | `bot_src/webhook_server/payment_queue.py` | Webhook idempotency queue |
 | `bot_src/scheduler.py` | Daily billing trigger |
 | `bot_src/portal_cabinet.py` | Cabinet billing_profile |
-| `ops/reconcile_yookassa_topups_ams.py` | **Risk:** key mismatch |
+| `ops/reconcile_yookassa_topups_ams.py` | Reconcile — canonical `yk:`; dry-run default (deployed) |
 | [`POSTDEPLOY-2026-06-10-P1-CAB-001.md`](POSTDEPLOY-2026-06-10-P1-CAB-001.md) | Cabinet deploy |
 | [`RUNBOOK-COMMERCE-GO-LIVE.md`](RUNBOOK-COMMERCE-GO-LIVE.md) | Historical go-live |
 | [`BENDERVPN-PRODUCT-POLICY.md`](BENDERVPN-PRODUCT-POLICY.md) | PT-08, PT-09 |

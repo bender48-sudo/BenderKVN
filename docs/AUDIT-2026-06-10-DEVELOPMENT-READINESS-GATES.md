@@ -24,7 +24,7 @@ G5  Public/partner scale
 
 **BILL-001 / LAUNCH-003 (2026-06-10):** [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md) — G6 **PARTIAL**; automated paid pilot **NO-GO**; manual whitelist pilot **CONDITIONAL**.
 
-**BILL-FIX-001 (repo):** `shop_bot/payment_idempotency.py` + reconcile dry-run/`--apply`; canonical `yk:{payment_id}`. **Prod reconcile not run** — deploy + BILL-SMOKE still required.
+**BILL-FIX-001:** `shop_bot/payment_idempotency.py` + reconcile dry-run/`--apply`; canonical `yk:{payment_id}`. **Deployed AMS 2026-06-09** — [`POSTDEPLOY-2026-06-10-BILL-FIX-001.md`](POSTDEPLOY-2026-06-10-BILL-FIX-001.md). **No reconcile `--apply`** — BILL-SMOKE still required for G6.
 
 ---
 
