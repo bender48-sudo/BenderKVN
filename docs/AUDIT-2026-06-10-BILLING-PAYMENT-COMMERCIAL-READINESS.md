@@ -19,7 +19,9 @@
 | **Automated paid pilot** | **NO-GO** |
 | **Open paid launch** | **NO-GO** |
 
-**Bottom line:** Core money path is **engineered with idempotency layers**, but **commercial readiness requires live smokes + reconciliation tooling + support runbooks** before automated paid traffic. Do **not** run `reconcile_yookassa_topups_ams.py` without fixing idempotency key alignment (§7.1).
+**Bottom line:** Core money path is **engineered with idempotency layers**, but **commercial readiness requires live smokes + reconciliation tooling + support runbooks** before automated paid traffic.
+
+**BILL-FIX-001 (repo):** Reconcile script aligned to canonical `yk:{payment_id}` via `shop_bot/payment_idempotency.py`; default **dry-run**; legacy `yookassa:` skip preserved. **Prod not mutated** — do **not** run `--apply` on production without separate explicit approval.
 
 ---
 
@@ -162,7 +164,7 @@ No user IDs in output.
 
 | Risk | Severity | Evidence | Impact | Mitigation | Paid blocker? | Open blocker? |
 |------|----------|----------|--------|------------|---------------|---------------|
-| **Double credit via reconcile script** | **P0** | `reconcile_yookassa_topups_ams.py` uses `yookassa:{id}` but webhook uses `yk:{id}` | Duplicate balance if reconcile run after webhook | Align keys to `yk:`; never run reconcile without fix | **Yes** | **Yes** |
+| **Double credit via reconcile script** | ~~**P0**~~ **Fixed in repo** | Was `yookassa:{id}` vs webhook `yk:{id}` | Duplicate balance if reconcile run after webhook | **BILL-FIX-001** — `payment_idempotency.py`; dry-run default | No (if fixed deployed) | No (if fixed deployed) |
 | **Duplicate webhook double credit** | P1 | `process_topup_payment` + `claim_webhook_delivery` | Unlikely if queue works | `BILL-SMOKE-002` | **Yes** until smoke | Yes |
 | **Balance credited, access not extended** | **P0** | `process_topup_payment` adds balance before sync; returns False on sync fail | Paid user, no VPN | Support runbook; alert on sync fail | **Yes** | **Yes** |
 | **Missed billing day (no catch-up)** | P1 | Idempotent per day only; no backfill | Under-billing | Policy doc; monitor scheduler | Partial | Yes |
@@ -176,15 +178,13 @@ No user IDs in output.
 | **BOT_PAYMENTS_LIVE misconfig** | P1 | All billing skipped if false | No revenue / wrong state | Deploy checklist | **Yes** | **Yes** |
 | **Secret exposure in logs** | P2 | `payload_redact.py` exists | Compliance | Log audit | Partial | Yes |
 
-### 7.1 Critical: reconcile idempotency mismatch
+### 7.1 Reconcile idempotency mismatch — **BILL-FIX-001 (repo fixed)**
 
-```python
-# webhook: payment_queue.idempotency_key_yookassa → "yk:{payment_id}"
-# reconcile_yookassa_topups_ams.py line 51 → "yookassa:{pid}"
-```
+**Was:** reconcile used `yookassa:{pid}` while webhook recorded `yk:{pid}`.
 
-If webhook credited with `yk:abc` action, reconcile checks `yookassa:abc` → **not found** → **second credit**.  
-**Do not run reconcile script in production until fixed.**
+**Fix:** `shop_bot/payment_idempotency.py` — `yookassa_topup_action_key()`; reconcile + webhook queue share it; legacy `yookassa:` rows still skip reconcile.
+
+**Still required before prod reconcile:** deploy fix to AMS; explicit owner approval for `--apply`; live smokes BILL-SMOKE-001..004.
 
 ---
 
@@ -192,7 +192,7 @@ If webhook credited with `yk:abc` action, reconcile checks `yookassa:abc` → **
 
 | Order | ID | Surface | Why |
 |-------|-----|---------|-----|
-| 1 | **BILL-FIX-001** | `ops/reconcile_yookassa_topups_ams.py` | Align idempotency key to `yk:` |
+| 1 | ~~**BILL-FIX-001**~~ | `payment_idempotency.py` + reconcile | **DONE in repo** — deploy + approval before `--apply` |
 | 2 | **BILL-UT-001/002** | `tests/test_balance_billing.py` | Daily debit + topup idempotency unit tests |
 | 3 | **BILL-SMOKE-001..004** | `ops/smoke_billing_commercial_ams.py` | Live money-path proof on smoke users |
 | 4 | **BILL-RUNBOOK-001** | docs | Payment succeeded, access not extended |

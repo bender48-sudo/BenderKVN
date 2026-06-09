@@ -24,6 +24,12 @@ from shop_bot.webhook_server.payment_amount_verify import (
 
 logger = logging.getLogger(__name__)
 
+from shop_bot.payment_idempotency import (  # noqa: E402
+    LEGACY_YOOKASSA_RECONCILE_PREFIX,
+    YOOKASSA_TOPUP_ACTION_PREFIX,
+    yookassa_topup_action_key,
+)
+
 PaymentProcessor = Callable[..., Awaitable[None]]
 
 
@@ -38,7 +44,7 @@ def idempotency_key_yookassa(event_json: dict[str, Any]) -> str | None:
     obj = event_json.get("object") or {}
     pay_id = obj.get("id")
     if pay_id:
-        return f"yk:{pay_id}"
+        return yookassa_topup_action_key(str(pay_id))
     return None
 
 

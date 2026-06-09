@@ -54,7 +54,7 @@
 **Commercial launch audit (2026-06-10):** [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md) — see **LAUNCH-001…023** ordered surfaces.
 
 1. **LAUNCH-001** — INCIDENT-003 sleep/resume owner diagnostics (G1 desktop)
-2. **BILL-FIX-001** — reconcile idempotency key `yk:` alignment (G6 P0)
+2. ~~**BILL-FIX-001**~~ — reconcile idempotency `yk:` (**DONE in repo**) — deploy + BILL-SMOKE before prod `--apply`
 3. **BILL-SMOKE-001..004** — live billing/payment smokes on AMS (G6)
 4. **LAUNCH-002** — TG bind retest or waiver (G4)
 4. **LAUNCH-005** — Copy truth sweep (device_rule, referral, bot labels)
