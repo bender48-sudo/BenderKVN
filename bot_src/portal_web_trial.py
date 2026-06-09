@@ -49,6 +49,7 @@ def _parse_expire_iso(expire_iso: str) -> datetime | None:
 async def issue_web_trial(
     contact_email: str,
     contact_phone: str | None = None,
+    ref_code: str | None = None,
 ) -> dict:
     """Create panel user + short web trial subscription for a new web-only customer."""
     em = normalize_contact_email(contact_email)
@@ -94,6 +95,10 @@ async def issue_web_trial(
     record_web_trial_claim(em, web_uid, panel_email, contact_phone)
     bind_token = ensure_bind_token(web_uid)
 
+    from shop_bot.web_referral import apply_web_referral
+
+    referral_linked = apply_web_referral(ref_code, web_uid)
+
     return {
         "ok": True,
         "sub_url": sub_url,
@@ -104,6 +109,7 @@ async def issue_web_trial(
         "bind_token": bind_token,
         "bind_url": telegram_bind_url(bind_token),
         "telegram_bound": False,
+        "referral_linked": referral_linked,
     }
 
 

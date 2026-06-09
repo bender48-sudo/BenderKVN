@@ -95,10 +95,11 @@ def create_webhook_app(bot, payment_processor):
         data = request.get_json(silent=True) or {}
         email = (data.get("email") or "").strip()
         phone = (data.get("phone") or "").strip() or None
+        ref_code = (data.get("ref_code") or "").strip() or None
         try:
             from shop_bot.portal_web_trial import issue_web_trial
 
-            result = _run_async(issue_web_trial(email, phone))
+            result = _run_async(issue_web_trial(email, phone, ref_code))
             code = 200 if result.get("ok") else 400
             if result.get("error") == "trial_already_claimed":
                 code = 409

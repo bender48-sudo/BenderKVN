@@ -70,6 +70,17 @@ def merge_web_user_to_telegram(web_uid: int, tg_id: int, username: str) -> dict:
             if web_user and web_user.get("agreed_to_terms"):
                 conn.execute("UPDATE users SET agreed_to_terms = 1 WHERE telegram_id = ?", (tg_id,))
 
+            web_ref = (web_user or {}).get("referred_by") if web_user else None
+            if web_ref and tg_user and not tg_user.get("referred_by"):
+                conn.execute(
+                    "UPDATE users SET referred_by = ? WHERE telegram_id = ?",
+                    (web_ref, tg_id),
+                )
+            conn.execute(
+                "UPDATE referrals SET referred_user_id = ? WHERE referred_user_id = ?",
+                (tg_id, web_uid),
+            )
+
             web_gen = int(web_user.get("sub_refresh_notified_generation") or 0) if web_user else 0
             tg_gen = int(tg_user.get("sub_refresh_notified_generation") or 0) if tg_user else 0
             conn.execute(
