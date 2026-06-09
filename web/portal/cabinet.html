@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#09090b">
   <title>Личный кабинет — BenderVPN</title>
-  <link rel="stylesheet" href="/portal/assets/portal.css?v=28">
+  <link rel="stylesheet" href="/portal/assets/portal.css?v=30">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
-  <script src="/portal/assets/qrcode.min.js?v=26" defer></script>
-  <script src="/portal/assets/portal-shared.js?v=28" defer></script>
+  <script src="/portal/assets/qrcode.min.js?v=30" defer></script>
+  <script src="/portal/assets/portal-shared.js?v=30" defer></script>
   <script>window.BVPN_FOCUS_ACCOUNT = true;</script>
-  <script src="/portal/assets/portal.js?v=28" defer></script>
+  <script src="/portal/assets/portal.js?v=30" defer></script>
 </head>
 <body class="cosmic cabinet-page">
   <div class="cosmic-bg" aria-hidden="true"></div>
@@ -57,11 +57,18 @@
         <p class="muted hidden" id="cabinet-web-notify"></p>
 
         <div class="sheet sheet--nested glass hidden" id="cabinet-configs-panel">
-          <p class="sheet__label" id="cabinet-configs-title">Конфигурации</p>
+          <p class="sheet__label" id="cabinet-configs-title">Мои устройства / настройки</p>
           <p class="muted cabinet-configs-summary" id="cabinet-configs-summary"></p>
           <ul class="config-list" id="cabinet-configs-list"></ul>
+          <p class="callout callout--info muted hidden" id="cabinet-devices-billing-note" role="note"></p>
           <p class="callout callout--warn" id="cabinet-device-rule" role="note"></p>
-          <a class="btn btn--secondary btn--block" id="btn-new-device" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
+          <p class="muted cabinet-device-reuse-note hidden" id="cabinet-device-reuse-note" role="note"></p>
+          <div class="cabinet-device-actions">
+            <a class="btn btn--primary btn--block" id="btn-add-device" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
+            <p class="muted cabinet-device-action-hint" id="add-device-hint"></p>
+            <a class="btn btn--secondary btn--block" id="btn-replace-device" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
+            <p class="muted cabinet-device-action-hint" id="replace-device-hint"></p>
+          </div>
         </div>
 
         <div class="sheet__actions cabinet-panel__bot">

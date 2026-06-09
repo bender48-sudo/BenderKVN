@@ -1265,11 +1265,40 @@
     if ($("cabinet-device-rule")) {
       $("cabinet-device-rule").textContent = cab.configs_device_rule || "";
     }
-    if ($("btn-new-device")) {
-      $("btn-new-device").textContent = cab.new_device_cta || "Новое устройство";
-      $("btn-new-device").href = botUrlWithReferral();
-      bindExternalLink($("btn-new-device"));
+    var reuseNote = $("cabinet-device-reuse-note");
+    if (reuseNote) {
+      if (cab.configs_reuse_warning) {
+        reuseNote.textContent = cab.configs_reuse_warning;
+        reuseNote.classList.remove("hidden");
+      } else {
+        reuseNote.classList.add("hidden");
+      }
     }
+    var billingFuture = $("cabinet-devices-billing-note");
+    if (billingFuture) {
+      if (cab.configs_billing_future) {
+        billingFuture.textContent = cab.configs_billing_future;
+        billingFuture.classList.remove("hidden");
+      } else {
+        billingFuture.classList.add("hidden");
+      }
+    }
+    var addDev = $("btn-add-device");
+    if (addDev) {
+      addDev.textContent = cab.add_device_cta || cab.new_device_cta || "Добавить устройство";
+      addDev.href = botUrlWithReferral();
+      bindExternalLink(addDev);
+    }
+    var addHint = $("add-device-hint");
+    if (addHint) addHint.textContent = cab.add_device_hint || "";
+    var replaceDev = $("btn-replace-device");
+    if (replaceDev) {
+      replaceDev.textContent = cab.replace_device_cta || "Заменить устройство";
+      replaceDev.href = botUrlWithReferral();
+      bindExternalLink(replaceDev);
+    }
+    var replaceHint = $("replace-device-hint");
+    if (replaceHint) replaceHint.textContent = cab.replace_device_hint || "";
     if ($("cabinet-page-title")) {
       $("cabinet-page-title").textContent = cab.title || "Личный кабинет BenderVPN";
     }
@@ -1370,10 +1399,19 @@
       }
       return;
     }
-    var fmt = cab.balance_format || "{balance} ₽ · ~{days} дн.";
-    balEl.textContent = fmt
-      .replace("{balance}", String(Math.round(doc.balance_rub)))
-      .replace("{days}", String(doc.days_left));
+    var amount = String(Math.round(doc.balance_rub));
+    var days = String(doc.days_left);
+    var daysSuffix = (cab.balance_days_suffix || "хватит ~{days} дн.").replace(
+      "{days}",
+      days
+    );
+    balEl.innerHTML =
+      '<span class="cabinet-balance__amount">' +
+      amount +
+      " ₽</span>" +
+      '<span class="cabinet-balance__days">' +
+      daysSuffix +
+      "</span>";
     var hint = $("cabinet-balance-hint");
     if (hint) {
       if (doc.billing_note || doc.billing_note_text) {
@@ -1423,22 +1461,25 @@
               return c.active || c.status === "active";
             }).length;
       if ($("cabinet-configs-title")) {
-        var countFmt = cab.configs_active_count || "Активные настройки: {count}";
-        $("cabinet-configs-title").textContent = countFmt.replace("{count}", String(activeCount));
+        $("cabinet-configs-title").textContent =
+          cab.configs_title || "Мои устройства / настройки";
       }
       if (cfgSummary) {
+        var countFmt = cab.configs_active_count || "Активные настройки: {count}";
+        var countLine = countFmt.replace("{count}", String(activeCount));
         if (doc.multiple_configs_anomaly || activeCount > 1) {
           cfgSummary.textContent =
-            cab.configs_multi_anomaly ||
-            "Обнаружено несколько активных настроек — напишите в поддержку.";
+            countLine +
+            ". " +
+            (cab.configs_multi_anomaly ||
+              "Обнаружено несколько активных настроек — напишите в поддержку.");
           cfgSummary.classList.remove("hidden");
-        } else if (activeCount === 1) {
+        } else if (activeCount >= 1) {
           cfgSummary.textContent =
-            cab.configs_mvp_note ||
-            "Сейчас используется одна активная настройка. Для нового устройства — поддержка.";
+            countLine + ". " + (cab.configs_mvp_note || "");
           cfgSummary.classList.remove("hidden");
         } else if (activeCount === 0) {
-          cfgSummary.textContent = cab.configs_empty || "";
+          cfgSummary.textContent = cab.configs_empty || countLine;
           cfgSummary.classList.remove("hidden");
         } else {
           cfgSummary.textContent = "";
@@ -1470,11 +1511,19 @@
       if ($("cabinet-device-rule")) {
         if (doc.multiple_configs_anomaly || activeCount > 1) {
           $("cabinet-device-rule").textContent = cab.configs_multi_anomaly || "";
-        } else if (activeCount === 1) {
-          $("cabinet-device-rule").textContent = cab.configs_mvp_note || cab.configs_device_rule || "";
         } else {
           $("cabinet-device-rule").textContent = cab.configs_device_rule || "";
         }
+      }
+      var reuseEl = $("cabinet-device-reuse-note");
+      if (reuseEl && cab.configs_reuse_warning && activeCount >= 1) {
+        reuseEl.textContent = cab.configs_reuse_warning;
+        reuseEl.classList.remove("hidden");
+      }
+      var billNote = $("cabinet-devices-billing-note");
+      if (billNote && cab.configs_billing_future && doc.billing_profile === "wallet") {
+        billNote.textContent = cab.configs_billing_future;
+        billNote.classList.remove("hidden");
       }
       cfgPanel.classList.remove("hidden");
     }

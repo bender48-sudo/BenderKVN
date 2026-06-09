@@ -411,7 +411,7 @@
     var linkEl = $("setup-link");
     if (linkEl) linkEl.textContent = norm;
     var linkFold = $("setup-link-fold");
-    if (linkFold) linkFold.open = false;
+    if (linkFold) linkFold.open = true;
     var openBtn = $("btn-open-happ");
     if (openBtn) {
       openBtn.href = buildHappDeepLink(norm);
@@ -419,6 +419,30 @@
     }
     var devRule = $("setup-device-rule");
     if (devRule && s.device_rule) devRule.textContent = s.device_rule;
+    var devRuleExtra = $("setup-device-rule-extra");
+    if (devRuleExtra) {
+      if (s.device_rule_extra) {
+        devRuleExtra.textContent = s.device_rule_extra;
+        showEl(devRuleExtra);
+      } else {
+        hide(devRuleExtra);
+      }
+    }
+    if ($("setup-link-section-title")) {
+      $("setup-link-section-title").textContent = s.link_section_title || "Подключение в Happ";
+    }
+    if ($("setup-link-section-lead")) {
+      var linkLead = $("setup-link-section-lead");
+      if (s.link_section_lead) {
+        linkLead.textContent = s.link_section_lead;
+        showEl(linkLead);
+      } else {
+        hide(linkLead);
+      }
+    }
+    if ($("setup-qr-toggle")) {
+      $("setup-qr-toggle").textContent = s.qr_section_title || "QR-код для другого устройства";
+    }
     var instr = $("btn-setup-instruction");
     if (instr) {
       instr.href = "/portal/guide.html?v=27";
@@ -756,7 +780,7 @@
     if (consent) consent.textContent = s.signup_consent_note || "";
     bindLegalConsent();
     var linkToggle = $("setup-link-toggle");
-    if (linkToggle) linkToggle.textContent = s.show_link || "Показать ссылку";
+    if (linkToggle) linkToggle.textContent = s.show_link || "Ссылка подписки";
     $("btn-signup-submit").textContent = s.signup_submit;
     $("btn-recover-submit").textContent = s.recover_submit;
     $("signup-note").textContent = s.signup_note;
