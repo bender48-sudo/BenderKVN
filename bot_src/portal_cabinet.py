@@ -1,8 +1,11 @@
-"""Read-only web cabinet snapshot (P3-FLOW-15)."""
+"""Read-only web cabinet snapshot (P3-FLOW-15, P1-CAB-001 billing_profile)."""
 from __future__ import annotations
 
-from shop_bot.config import DAILY_RATE, balance_to_days
-from shop_bot.data_manager.database import get_user
+from datetime import datetime, timezone
+
+from shop_bot.config import BOT_PAYMENTS_LIVE, DAILY_RATE, balance_to_days
+from shop_bot.data_manager.database import get_user, get_user_keys, has_action
+from shop_bot.subscription_profile import access_profile, is_legacy_manual_panel
 from shop_bot.web_trial_db import (
     format_customer_id,
     get_claim_by_customer_id,
@@ -17,6 +20,160 @@ def _bot_open_url() -> str:
 
     username = (os.getenv("TELEGRAM_BOT_USERNAME") or "Bender_KVN_bot").strip().lstrip("@")
     return f"https://t.me/{username}"
+
+
+def _parse_key_expiry(raw: str | None) -> datetime | None:
+    if not raw:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except ValueError:
+        return None
+
+
+def _active_keys(keys: list[dict], now: datetime | None = None) -> list[dict]:
+    now = now or datetime.now(timezone.utc)
+    out: list[dict] = []
+    for key in keys:
+        exp = _parse_key_expiry(key.get("expiry_date"))
+        if exp and exp > now:
+            out.append(key)
+    return out
+
+
+def _latest_key_expiry(keys: list[dict]) -> datetime | None:
+    best: datetime | None = None
+    for key in keys:
+        exp = _parse_key_expiry(key.get("expiry_date"))
+        if exp and (best is None or exp > best):
+            best = exp
+    return best
+
+
+def _format_expiry_display(dt: datetime | None) -> tuple[str | None, str | None]:
+    if not dt:
+        return None, None
+    return dt.strftime("%d.%m.%Y"), dt.astimezone(timezone.utc).isoformat()
+
+
+def _daily_charge_action_for(now: datetime | None = None) -> str:
+    now = now or datetime.now(timezone.utc)
+    return f"daily_balance:{now.strftime('%Y-%m-%d')}"
+
+
+def build_billing_fields(
+    user_id: int,
+    user: dict,
+    keys: list[dict] | None = None,
+    *,
+    now: datetime | None = None,
+) -> dict:
+    """
+    Read-only billing/access classification for cabinet UI.
+    Does not mutate balance, keys, or Remna panel.
+    """
+    now = now or datetime.now(timezone.utc)
+    keys = keys if keys is not None else get_user_keys(user_id)
+    balance = float(user.get("balance") or 0)
+    active = _active_keys(keys, now)
+    latest_expiry = _latest_key_expiry(active or keys)
+    panel_expire_iso = latest_expiry.isoformat() if latest_expiry else None
+    expiry_display, expiry_iso = _format_expiry_display(latest_expiry)
+
+    profile_kind = access_profile(user_id, keys, user, panel_expire_iso)
+
+    if profile_kind == "legacy":
+        billing_profile = "legacy"
+    elif profile_kind == "wallet":
+        billing_profile = "wallet" if active else "expired"
+    elif profile_kind == "trial":
+        billing_profile = "trial" if active else "expired"
+    elif not active:
+        billing_profile = "expired"
+    else:
+        billing_profile = "unknown"
+
+    active_config_count = len(active)
+    billable_config_count = (
+        1 if billing_profile == "wallet" and active_config_count > 0 else 0
+    )
+
+    is_billable_now = (
+        billing_profile == "wallet"
+        and active_config_count > 0
+        and balance >= DAILY_RATE
+    )
+
+    daily_action = _daily_charge_action_for(now)
+    already_charged_today = has_action(user_id, daily_action)
+    next_charge_applicable = (
+        is_billable_now
+        and BOT_PAYMENTS_LIVE
+        and not already_charged_today
+    )
+
+    billing_note_code = billing_profile
+    billing_note = ""
+
+    if billing_profile == "legacy":
+        billing_note_code = "legacy_manual"
+        when = expiry_display or "—"
+        billing_note = (
+            f"Доступ активен вручную до {when}. "
+            "Баланс сохранён и сейчас не списывается."
+        )
+    elif billing_profile == "wallet":
+        billing_note_code = "wallet_daily"
+        billing_note = (
+            f"Баланс: {balance:.0f} ₽. Списание: {DAILY_RATE:.2f} ₽/день за аккаунт."
+        )
+        if not is_billable_now and balance > 0:
+            billing_note += " Сейчас баланса не хватает на следующий день."
+        elif not BOT_PAYMENTS_LIVE:
+            billing_note += " Автосписание временно отключено."
+        elif already_charged_today:
+            billing_note += " Сегодня списание уже учтено."
+        elif next_charge_applicable:
+            billing_note += " Следующее списание — по расписанию сервиса."
+    elif billing_profile == "trial":
+        billing_note_code = "trial_active"
+        when = expiry_display or "—"
+        billing_note = f"Пробный доступ активен до {when}. Списания с баланса нет."
+    elif billing_profile == "expired":
+        billing_note_code = "access_expired"
+        billing_note = (
+            "Доступ истёк. Пополните баланс в боте или обратитесь в поддержку."
+        )
+    else:
+        billing_note_code = "unknown"
+        billing_note = "Статус доступа уточняется. Если что-то не так — напишите в поддержку."
+
+    return {
+        "billing_profile": billing_profile,
+        "access_profile": billing_profile,
+        "is_billable_now": is_billable_now,
+        "next_charge_applicable": next_charge_applicable,
+        "access_expires_at": expiry_display,
+        "access_expires_at_iso": expiry_iso,
+        "billing_note_code": billing_note_code,
+        "billing_note": billing_note,
+        "billing_note_text": billing_note,
+        "active_config_count": active_config_count,
+        "billable_config_count": billable_config_count,
+        "legacy_manual_access": profile_kind == "legacy"
+        or is_legacy_manual_panel(keys, panel_expire_iso),
+    }
+
+
+def _enrich_cabinet_response(user_id: int, user: dict, base: dict) -> dict:
+    keys = get_user_keys(user_id)
+    billing = build_billing_fields(user_id, user, keys)
+    out = dict(base)
+    out.update(billing)
+    return out
 
 
 def _cabinet_for_telegram(telegram_id: int) -> dict:
@@ -41,7 +198,7 @@ def _cabinet_for_telegram(telegram_id: int) -> dict:
         }
     balance = float(user.get("balance") or 0)
     days = balance_to_days(balance)
-    return {
+    base = {
         "ok": True,
         "customer_id": f"TG-{telegram_id}",
         "balance_rub": round(balance, 2),
@@ -51,6 +208,7 @@ def _cabinet_for_telegram(telegram_id: int) -> dict:
         "web_only": False,
         "source": "telegram",
     }
+    return _enrich_cabinet_response(telegram_id, user, base)
 
 
 def cabinet_snapshot(
@@ -67,8 +225,6 @@ def cabinet_snapshot(
     claim = None
     em = normalize_contact_email(email)
     if em:
-        from shop_bot.web_trial_db import get_web_trial_claim
-
         claim = get_web_trial_claim(em)
     if not claim and customer_id:
         claim = get_claim_by_customer_id(customer_id)
@@ -77,12 +233,14 @@ def cabinet_snapshot(
 
     web_uid = int(claim["web_user_id"])
     user = get_user(web_uid)
+    billing_uid = web_uid
     if not user and claim.get("telegram_id"):
-        user = get_user(int(claim["telegram_id"]))
+        billing_uid = int(claim["telegram_id"])
+        user = get_user(billing_uid)
     balance = float(user["balance"]) if user and user.get("balance") is not None else 0.0
     days = balance_to_days(balance)
     tg_bound = bool(claim.get("telegram_id"))
-    out = {
+    base = {
         "ok": True,
         "customer_id": format_customer_id(web_uid),
         "balance_rub": round(balance, 2),
@@ -92,5 +250,7 @@ def cabinet_snapshot(
         "web_only": is_web_surrogate_id(web_uid) and not tg_bound,
     }
     if not tg_bound and is_web_surrogate_id(web_uid):
-        out["needs_telegram_bind"] = True
-    return out
+        base["needs_telegram_bind"] = True
+    if user:
+        return _enrich_cabinet_response(billing_uid, user, base)
+    return base

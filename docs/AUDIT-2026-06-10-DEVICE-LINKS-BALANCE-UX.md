@@ -337,21 +337,17 @@ Read-only AMS check on owner account (TG id redacted; internal ops id ending …
 
 ### 14.6 Required cabinet/API fields (later — do not implement in this pass)
 
-Proposed `cabinet_snapshot` extensions for G2-B / device management:
+**Implemented (P1-CAB-001, 2026-06-10):** `billing_profile`, `access_profile`, `is_billable_now`, `next_charge_applicable`, `access_expires_at`, `billing_note` / `billing_note_code`, `active_config_count`, `billable_config_count`, `legacy_manual_access`. See [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) §5.5.
+
+**Still out of scope (P1-DEV-001+):**
 
 ```text
-access_profile: wallet | trial | legacy | expired
-balance_rub, daily_rate, days_left
-active_config_count
-billable_config_count        # 0 for legacy/trial; 1 for MVP wallet
 active_configs[]:
   - key_id, label, created_at, expires_at, active, platform (if known)
-  - subscription_url_masked  # never full secret in list API
-  - billable: bool
-can_revoke: false            # true only when revoke endpoint exists
-can_replace_device: false     # true when replace flow shipped
-support_required: true       # MVP default for second device
-legacy_access_note: string    # e.g. manual access; balance not draining
+  - subscription_url_masked
+can_revoke: false
+can_replace_device: false
+support_required: true
 ```
 
 ### 14.7 Proposed copy (later — do not edit `ru.json` now)

@@ -253,6 +253,7 @@
     "new_device_cta": "Запросить настройку для нового устройства",
     "access_active": "Доступ активен",
     "access_trial": "Бесплатный период",
+    "access_legacy": "Ручной доступ",
     "access_expired": "Доступ завершён",
     "actions_title": "Действия",
     "action_setup": "Получить настройку",

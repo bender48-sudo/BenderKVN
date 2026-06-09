@@ -1376,15 +1376,19 @@
       .replace("{days}", String(doc.days_left));
     var hint = $("cabinet-balance-hint");
     if (hint) {
-      if (doc.billing_profile === "trial" && cab.balance_hint_trial) {
+      if (doc.billing_note || doc.billing_note_text) {
+        hint.textContent = doc.billing_note || doc.billing_note_text;
+      } else if (doc.billing_profile === "trial" && cab.balance_hint_trial) {
         hint.textContent = cab.balance_hint_trial;
-      } else if (doc.billing_note) {
-        hint.textContent = doc.billing_note;
       } else {
         hint.textContent = cab.balance_hint || "";
       }
     }
-    if (doc.days_left <= 3) {
+    var lowBalance =
+      doc.billing_profile === "wallet" &&
+      typeof doc.days_left === "number" &&
+      doc.days_left <= 3;
+    if (lowBalance) {
       balEl.classList.add("cabinet-balance--low");
     } else {
       balEl.classList.remove("cabinet-balance--low");
@@ -1393,8 +1397,15 @@
     if (accessEl) {
       if (doc.billing_profile === "trial") {
         accessEl.textContent = cab.access_trial || "Бесплатный период";
-      } else if (doc.days_left <= 0 && doc.balance_rub <= 0) {
+      } else if (doc.billing_profile === "legacy") {
+        accessEl.textContent = cab.access_legacy || "Ручной доступ";
+      } else if (
+        doc.billing_profile === "expired" ||
+        (doc.days_left <= 0 && doc.balance_rub <= 0 && doc.billing_profile !== "legacy")
+      ) {
         accessEl.textContent = cab.access_expired || "Доступ завершён";
+      } else if (doc.billing_profile === "wallet") {
+        accessEl.textContent = cab.access_active || "Доступ активен";
       } else {
         accessEl.textContent = cab.access_active || "Доступ активен";
       }
