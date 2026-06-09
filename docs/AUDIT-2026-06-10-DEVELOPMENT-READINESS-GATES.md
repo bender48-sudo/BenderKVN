@@ -38,6 +38,8 @@ G5  Public/partner scale
 
 **Status:** **Owner-approved PASS (verbal, 2026-06-09)** before P1-REF-001 AMS deploy. Automated verify PASS. Full per-device 48h soak log **incomplete in repo** — monitoring continues per [`APPLY-2026-06-10-VPN-CANDIDATE-D.md`](APPLY-2026-06-10-VPN-CANDIDATE-D.md) §7.
 
+**INCIDENT-001 (2026-06-10):** Read-only prod audit — Candidate D **still active** (7353 B / 6 proxy / DoH / parity OK); owner disconnect reports **not reproduced** by server probes. See [`INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md`](INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md). **G1 remains open** until owner device evidence (Happ 6-node confirm + failure mode log).
+
 ### G1.1 Automated (done — re-run anytime)
 
 | Probe | Pass criteria | Last run |

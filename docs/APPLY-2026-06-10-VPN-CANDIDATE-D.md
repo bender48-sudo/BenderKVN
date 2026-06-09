@@ -188,6 +188,8 @@ print('rollback payload ready from', snap)
 | Global template applied | **YES** |
 | Broadcast / mass refresh | **NO** (generation 102 local only) |
 | Owner device manual test | **Owner PASS (verbal, 2026-06-09)** — **48h field soak log incomplete**; continue monitoring per §7 |
+| INCIDENT-001 re-verify (2026-06-10) | **PASS** — Candidate D still active; see [`INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md`](INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md) |
+| Owner ongoing disconnect reports | **OPEN** — not reproduced by server probes; Happ device diagnostics required |
 
 ---
 
