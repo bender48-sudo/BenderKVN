@@ -83,7 +83,7 @@ Run on AMS after deploy via `ops/smoke_p1_ref_deploy_ams.py`:
 
 | Gap | Status |
 |-----|--------|
-| **TG bind migration** (web surrogate → TG user, `referrals` row migrate) | **FAIL** — bind never reached bot handler; see §9 + [`AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md`](AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md) |
+| **TG bind migration** (web surrogate → TG user, `referrals` row migrate) | **FAIL** — `p1bind2-` retest 2026-06-09; zero `funnel_bot_start bind:*`; see §9 |
 | **Telegram `/start ref_*` path** | **Not re-tested live** this deploy; code path unchanged. |
 | **G1 48h detailed device log** | **Incomplete in repo** — owner verbal PASS at deploy gate; continue 24–48h VPN monitoring. |
 
@@ -91,7 +91,7 @@ Run on AMS after deploy via `ops/smoke_p1_ref_deploy_ams.py`:
 
 ## 9. TG bind verification (controlled)
 
-**Status:** **FAIL** (latest AMS read **2026-06-09 ~15:30 UTC**) — owner reported Telegram bind completed (second attempt); **DB still does not show bind** for prepared `p1bind-` trial.
+**Status:** **FAIL** (latest AMS read **2026-06-09 post–p1bind2- retest**) — owner reported bind completed for **`p1bind2-`** fresh trial; **DB still does not show bind**; **`funnel_bot_start bind:*` remains 0 (all time)**.
 
 ### Preparation (completed)
 
@@ -151,18 +151,60 @@ python3 /tmp/smoke_p1_ref_tg_bind_ams.py verify --email-prefix p1bind-
 
 **Likely causes:** bind URL not opened in `@Bender_KVN_bot` **Telegram app**, wrong/expired token, or bind attempted with Telegram account that already has VPN keys (`both_have_keys` — would still log `funnel_bot_start bind:***` if link opened). **Use a clean test Telegram account** with no existing keys.
 
-**Dedicated bind-flow audit (2026-06-09):** [`AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md`](AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md) — **conclusion: bind never reached prod `/start bind_*` handler** (zero `funnel_bot_start bind:*` all time; token still valid). **Not** a migration-code defect until bot entry is proven.
+**Dedicated bind-flow audit (2026-06-09):** [`AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md`](AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md) — bind never reached prod `/start bind_*` handler on prior attempts. **Not** a migration-code defect until bot entry is proven.
+
+### Fresh retest — prepare (p1bind2-, 2026-06-09 ~15:46 UTC)
+
+| Field | Value (redacted) |
+|-------|------------------|
+| Test email | `p1bind2-1781019986458956739@bendervpn-smoke.invalid` (prefix **`p1bind2-`**) |
+| Trial API | HTTP 200, `ok: true`, **`referral_linked: true`**, **`days: 1`** |
+| Referrer ref prefix | `jHGK****` |
+| Web `referred_by` before bind | **Matched referrer ref code string** |
+| `bind_token` | prefix `6f90a8****` |
+| Token expiry | `2026-06-10T15:46:26Z` (valid at verify time) |
+| Bot username in link | `Bender_KVN_bot` |
+
+### Verification attempt 3 — p1bind2- (2026-06-09, after owner «TG bind completed»)
+
+Owner message: *«TG bind completed for p1bind2- test. verify AMS bind migration.»*
+
+Command on AMS:
+
+```bash
+python3 /tmp/smoke_p1_ref_tg_bind_ams.py verify --email-prefix p1bind2-
+```
+
+**Result:** `P1_BIND_VERIFY_PENDING` / **NOT_BOUND**
+
+| Check | Observed |
+|-------|----------|
+| `funnel_bot_start` `bind:*` (all time) | **0 rows** — bind `/start` never logged on AMS |
+| `funnel_bot_start` after p1bind2 prepare (≥15:46 UTC) | **0 rows** |
+| `web_tg_bind` | **0 rows (all time)** |
+| `web_trial_claims.telegram_id` | **NULL** |
+| `web_trial_claims.bound_at` | **NULL** |
+| `bind_token` | **Still present** (prefix `6f90a8****` — not consumed) |
+| Web surrogate user row | **Still exists** |
+| `referrals.referred_user_id` → TG id | **Not migrated** |
+| Referral bonus / balance change | **None** |
+| `WEB_TRIAL_DAYS` / `REMNA_TRIAL_DAYS` | **1** / **90** (unchanged) |
+| Container logs | Scheduler clean; no bind merge lines; no secrets observed |
+| Owner bot response text | **Not provided** — cannot classify conflict/invalid/terms |
+
+**Conclusion:** Third owner bind report; **same failure mode as `p1bind-`** — Telegram deep link did not produce a recorded `/start bind_*` on prod bot. Web email referral attribution **PASS** unchanged. §9 **not closed**.
 
 ### Owner retry (required to close §9)
 
 1. Use **dedicated test Telegram account** — no existing VPN keys; no conflicting `referred_by` unless accepting PARTIAL PASS.
-2. Re-open bind link for **`p1bind-` trial** (same token prefix `ef549b****` if still valid, or run fresh `prepare` for new `p1bind-*` email).
-3. Confirm bot shows bind success message (not conflict/invalid).
-4. Re-run on AMS:
+2. Open **fresh** bind link from latest `prepare` (prefix **`p1bind2-`** or new `p1bind3-` if token ages out).
+3. Open link **inside Telegram app** (not browser preview); tap **Start**; accept terms if prompted.
+4. **Send exact bot reply text** (or screenshot) + UTC timestamp to operator before DB verify.
+5. Re-run on AMS:
    ```bash
-   python3 /tmp/smoke_p1_ref_tg_bind_ams.py verify --email-prefix p1bind-
+   python3 /tmp/smoke_p1_ref_tg_bind_ams.py verify --email-prefix p1bind2-
    ```
-   Expect: **`P1_BIND_VERIFY_OK`**.
+   Expect: **`P1_BIND_VERIFY_OK`** only after step 4 shows success message.
 
 ### Expected after successful bind
 
@@ -194,4 +236,4 @@ No mass user action required.
 
 **P1-REF-001 AMS deploy: SUCCESS.** Web email `ref_code` attribution is **live** on AMS.
 
-**TG bind referral migration:** **FAIL** on AMS DB check after two owner bind reports — see POSTDEPLOY §9. Web trial referral attribution remains **PASS**. Device/balance UX audit: [`AUDIT-2026-06-10-DEVICE-LINKS-BALANCE-UX.md`](AUDIT-2026-06-10-DEVICE-LINKS-BALANCE-UX.md).
+**TG bind referral migration:** **FAIL** on AMS DB after **`p1bind2-` retest** — see POSTDEPLOY §9. Web trial referral attribution remains **PASS**. Device/balance UX audit: [`AUDIT-2026-06-10-DEVICE-LINKS-BALANCE-UX.md`](AUDIT-2026-06-10-DEVICE-LINKS-BALANCE-UX.md).

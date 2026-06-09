@@ -92,8 +92,8 @@ Expected rollback time: ~1–2 minutes.
 | D | Valid `ref_code` | Response `referral_linked: true` |
 | E | DB web surrogate | `users.referred_by` = **referrer ref code string** (not TG id) |
 | F | Invalid `ref_code` | Trial succeeds; `referral_linked: false`; `referred_by` NULL |
-| G | Bind web → Telegram | **FAIL** — two owner bind reports; AMS DB still NOT_BOUND; no `web_tg_bind` actions (POSTDEPLOY §9) |
-| H | `referrals` table | **FAIL** — migration not observed; clean-account bind retry required |
+| G | Bind web → Telegram | **FAIL** — `p1bind2-` retest NOT_BOUND; zero bind funnel actions (POSTDEPLOY §9) |
+| H | `referrals` table | **FAIL** — migration not observed; owner must provide bot reply + clean-account retest |
 | I | Telegram trial path | Still **90d** (`REMNA_TRIAL_DAYS`) |
 | J | Email web trial | Still **1d** (`WEB_TRIAL_DAYS`) |
 | K | Referral bonus | Not granted or promised |

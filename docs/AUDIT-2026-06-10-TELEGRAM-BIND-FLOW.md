@@ -43,6 +43,25 @@ Owner reported bind completed twice; **AMS DB and instrumentation show no bind a
 
 ---
 
+## 2.1 Fresh retest — p1bind2- (2026-06-09)
+
+Controlled prepare at ~15:46 UTC; owner reported bind completed; AMS verify immediately after.
+
+| Check | Result |
+|-------|--------|
+| Email prefix | **`p1bind2-`** (`p1bind2-1781019986458956739@bendervpn-smoke.invalid`) |
+| Token prefix | `6f90a8****` (still present — not consumed) |
+| Token expiry at verify | **Not expired** (`2026-06-10T15:46:26Z`) |
+| Smoke verify | `NOT_BOUND` · `P1_BIND_VERIFY_PENDING` |
+| `funnel_bot_start` `bind:*` (all time) | **0** |
+| `funnel_bot_start` after prepare | **0** |
+| `web_tg_bind` | **0** |
+| Owner bot response | **Not provided** to operator |
+
+**Same failure mode as `p1bind-`:** bind deep link did not produce recorded `/start bind_*` on prod bot. **Do not patch migration code** until bot entry is proven with owner-supplied success/conflict message + non-zero funnel row.
+
+---
+
 ## 3. Code path map
 
 ### 3.1 Link generation
