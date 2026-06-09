@@ -273,7 +273,7 @@ def _cabinet_for_telegram(telegram_id: int) -> dict:
             "error": "terms_required",
             "message": (
                 "Сначала в боте примите условия («Принимаю»), "
-                "затем «Начать бесплатно» или «Мой VPN»."
+                "затем «Получить настройку» или «Пополнить баланс»."
             ),
             "bot_url": _bot_open_url(),
         }

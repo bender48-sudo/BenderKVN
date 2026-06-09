@@ -334,7 +334,7 @@ async def _poll_vpn_user(bot: Bot, session, user_entry: dict) -> tuple[int, bool
                 hrs = max(1, int(hours_left))
                 txt = (
                     f"Пробный период заканчивается примерно через {hrs} ч.\n\n"
-                    "Пополни баланс, чтобы продолжить — кнопка «Мой VPN» в боте."
+                    "Пополни баланс, чтобы продолжить — кнопка «Пополнить баланс» в боте."
                 )
                 await bot.send_message(user_id, txt)
                 bot_logger.notification(user_id, "EXPIRY_6H", True)
