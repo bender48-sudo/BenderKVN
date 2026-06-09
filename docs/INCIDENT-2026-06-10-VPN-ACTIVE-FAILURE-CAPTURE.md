@@ -12,11 +12,13 @@
 
 | Item | Status |
 |------|--------|
-| **Failure reproduced in ops watch #1?** | **NO** — no owner failure timestamp reported; server probes green |
-| **Owner test window #1** | **IN PROGRESS / outcome pending** — owner started fresh Happ protocol; ops watch **2026-06-09 20:49–20:52 UTC** |
-| **Server/profile regression?** | **None** during watch #1 |
+| **Failure reproduced?** | **NO** — ops watch #1 green; **owner reports no disconnects after fresh import** (interim) |
+| **Owner test window #1** | **INTERIM PASS** — fresh delete/reimport; ops watch **2026-06-09 20:49–20:52 UTC** |
+| **Server/profile regression?** | **Not confirmed** |
+| **Leading interim explanation** | **B** stale Happ import/cache may have cleared; **A** local network / client lifecycle still plausible |
 | **Prod change?** | **None** |
-| **Prod fix justified?** | **NO** — await owner outcome + optional `report.zip` / Hiddify A/B |
+| **Prod fix justified?** | **NO** — failure not reproduced; continue longer soak before closing |
+| **Incident closed?** | **NO** — 30–60 min + sleep/resume + network-switch observation pending |
 
 INCIDENT-001 proved infrastructure/profile health from read-only probes but did **not** capture an owner failure window. INCIDENT-002 adds **time-correlated evidence collection** and a **controlled stabilization decision tree** — still **no mutation** until evidence + explicit approval.
 
@@ -117,9 +119,9 @@ Repo tooling (`relay_latency_probe.py`, `tspu_block_probe_ru.py`) uses **TCP con
 
 | # | Test | Status | Result | Classification hint |
 |---|------|--------|--------|---------------------|
-| 1 | Happ fresh import, owner device | **RUNNING** | outcome pending | Owner §3 |
-| 2 | Happ after failure, no refresh | **N/A** | no failure time reported | — |
-| 3 | Happ after TUN off/on | **PENDING** | — | tunnel lifecycle? |
+| 1 | Happ fresh import, owner device | **INTERIM PASS** | no disconnects after fresh import so far | **B** cache cleared? |
+| 2 | Happ after failure, no refresh | **N/A** | no failure observed | — |
+| 3 | Happ after TUN off/on | **PENDING** | longer soak | tunnel lifecycle? |
 | 4 | Hiddify same URL (owner consent) | **NOT RUN** | — | A vs D |
 | 5 | Server-side sub fetch watch #1 | **PASS** | 7353 B stable ×25, 0 HTTP fails | **not F** |
 | 6 | Relay probes watch #1 | **PASS** | relay#1 **40/40**, relay#2 **40/40** TCP OK | **not E** (watch window) |
@@ -148,12 +150,14 @@ Captured before owner correlated test. **Not a failure window.**
 | UTC / local | Event | Evidence |
 |-------------|-------|----------|
 | ~20:49 UTC | Owner begins fresh Happ test (per prompt) | ops watch started |
-| _pending_ | Profile delete + reimport complete | owner confirm |
-| _pending_ | 10–15 min browsing test ends | failure log or PASS |
+| watch #1 | Profile delete + reimport | owner completed fresh import |
+| post-watch #1 | Initial browsing after fresh import | **owner: no disconnects observed so far** |
 | 20:49–20:52 UTC | Ops watch window #1 | §22 |
+| _pending_ | Extended soak 30–60 min | §24 |
+| _pending_ | Sleep/resume + Wi‑Fi↔LTE | §24 |
 | _pending_ | Optional Hiddify A/B | comparison result |
 
-**During watch #1:** subscription edge log shows **Happ iOS 4.11.0** client fetch **HTTP 200** from external IP (shortUuid **redacted** in logs). Likely owner/correlated refresh; response byte size not logged on that line.
+**During watch #1:** subscription edge log shows **Happ iOS 4.11.0** client fetch **HTTP 200** from external IP (shortUuid **redacted** in logs). Correlates with owner fresh import window.
 
 ---
 
@@ -161,18 +165,29 @@ Captured before owner correlated test. **Not a failure window.**
 
 | Field | Value |
 |-------|-------|
-| Device / OS | **NOT COLLECTED** (owner to confirm) |
-| Happ version | **4.11.0 iOS** inferred from edge log during watch #1 only — not confirmed by owner |
-| Fresh import completed? | **LIKELY** (Happ fetch during window) — owner to confirm |
+| Device / OS | **NOT SPECIFIED** by owner (iOS inferred from edge log only) |
+| Happ version | **4.11.0 iOS** inferred from edge log — owner verbal not specifying version |
+| Network | **NOT SPECIFIED** by owner |
+| Soak duration so far | **≥ initial post-import window** (exact minutes not logged) |
+| Fresh import completed? | **YES** (owner report) |
 | One Auto host visible? | **Expected UX** |
-| Failure reproduced? | **NOT REPORTED** during watch #1 |
-| `report.zip` | **NOT COLLECTED** |
+| Failure reproduced? | **NO** (owner interim report) |
+| `report.zip` | **NOT COLLECTED** (not needed while stable) |
 
 ---
 
 ## 9. Happ fresh import result
 
-**IN PROGRESS** — owner running §3 during watch #1. Edge log shows Happ iOS fetch **HTTP 200** during window. **Browsing outcome and failure mode not yet reported.**
+**INTERIM STABLE** — owner reports **no VPN disconnects after fresh delete/reimport** so far.
+
+| Signal | Result |
+|--------|--------|
+| Fresh import | **Completed** |
+| Initial browsing | **No disconnects observed** (owner verbal) |
+| One Auto profile | **Expected** — not a regression signal |
+| Prior constant disconnects | **Not reproduced** in this soak window |
+
+**Caveat:** prior symptoms may have been **stale cached profile (B)** or **intermittent client/network (A)**. Interim stability does **not** close the incident without longer soak.
 
 ---
 
@@ -244,9 +259,11 @@ If owner failure correlates with RST on one relay IP in `report.zip` → prepare
 
 | Verdict | Detail |
 |---------|--------|
-| **Overall** | **UNKNOWN** — owner browsing outcome not reported; **server healthy during watch #1** |
-| **Server/profile (watch #1)** | **No regression** — not F, not E, not G |
-| **If owner reports failure after fresh import** | Preliminary: **A/B/C/D** (client/tunnel/VLESS) — **not F** unless per-account sub diverges from 7353 B |
+| **Overall** | **INTERIM STABLE** — failure **not reproduced** after fresh import; incident **open** pending longer soak |
+| **Server/profile regression** | **Not confirmed** — watch #1 green; Candidate D active |
+| **Most plausible interim cause of prior pain** | **B** stale/partial Happ import; **A** client/network lifecycle still possible |
+| **Less likely now** | **F** subscription edge (7353 B stable); **E** relay TCP failure (40/40); **G** infra crash |
+| **If failure recurs** | Start **Watch Window #2** at exact timestamp; collect `report.zip`; optional Hiddify A/B |
 | **Prod fix justified?** | **NO** |
 | **Approval phrase needed now?** | **None** |
 
@@ -281,12 +298,21 @@ If owner failure correlates with RST on one relay IP in `report.zip` → prepare
 
 | Priority | Action | Owner? | Ops? |
 |----------|--------|--------|------|
-| **1** | Run §3 owner protocol at agreed time | **YES** | coordinate watch |
-| **2** | Collect `report.zip` on failure | **YES** | analyze RST |
-| **3** | Optional Hiddify A/B | **YES** (consent) | classify A vs D |
-| **4** | Prod template change | **NO** until §15 rules + approval phrase | — |
+| **1** | Continue §24 extended soak | **YES** | — |
+| **2** | On recurrence: exact timestamp + `report.zip` | **YES** | Watch Window #2 |
+| **3** | Optional Hiddify A/B if failure returns | **YES** (consent) | classify A vs D |
+| **4** | Prod template change | **NO** — failure not reproduced | — |
 
-**Prod fix justified now?** **NO** — insufficient correlated evidence.
+**Prod fix justified now?** **NO**.
+
+### Decision (interim)
+
+| Action | Verdict |
+|--------|---------|
+| Rollback Candidate D | **NO** |
+| Re-apply Candidate D | **NO** — no drift |
+| Template / Caddy / Remna mutation | **NO** |
+| Prod fix | **NO** until failure reproduced with evidence |
 
 ---
 
@@ -314,7 +340,9 @@ If owner failure correlates with RST on one relay IP in `report.zip` → prepare
 
 ## 21. Product development freeze
 
-**NO-GO** for P1/P2 features, cabinet journey, billing/device work until INCIDENT-002 classification is **client-confirmed** or **server fix deployed + owner soak PASS**.
+**NO-GO** for P1/P2 features, cabinet journey, billing/device work until INCIDENT-002 reaches **extended soak PASS** or root cause is proven and fixed.
+
+**Interim:** fresh-import stability is encouraging but **insufficient to resume development** without 30–60 min + sleep/resume + network-switch checks.
 
 ---
 
@@ -337,7 +365,45 @@ If owner failure correlates with RST on one relay IP in `report.zip` → prepare
 
 ---
 
-## 23. References
+## 24. Owner interim outcome & next observation plan
+
+### Interim outcome (owner report)
+
+| Field | Value |
+|-------|-------|
+| Fresh import | **Completed** (delete + reimport from bot/cabinet) |
+| Disconnects after import | **None observed so far** |
+| Exact soak duration | **Not specified** — at least initial post-import window |
+| Device / OS | **Not specified** (iOS likely from edge logs) |
+| Network | **Not specified** |
+
+### Current read
+
+- **Server/profile regression:** **not confirmed**
+- **Fresh import may have cleared stale Happ profile/cache (B)** — aligns with prior INCIDENT-001 hypothesis
+- **Local network / client lifecycle (A)** remains plausible until longer soak
+- **No server-side fix justified** while stable
+
+### Next observation (owner)
+
+1. **30–60 minutes** normal browsing (Google, Instagram, Telegram, regular sites)
+2. **Sleep / resume** test (especially desktop if used)
+3. **Wi‑Fi ↔ LTE** switch while VPN connected
+4. If failure **recurs**:
+   - record **exact local time + UTC**
+   - note failure mode and whether Happ shows connected
+   - collect **`report.zip`** if possible
+   - notify ops → start **Watch Window #2** correlated to timestamp
+
+### Ops if failure recurs
+
+- Re-run §4 read-only watch at failure time
+- Verify owner account server-side sub still **7353 B** (redacted)
+- No prod mutation without §19 approval phrase
+
+---
+
+## 25. References
 
 - INCIDENT-001: [`INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md`](INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md)
 - Candidate D apply: [`APPLY-2026-06-10-VPN-CANDIDATE-D.md`](APPLY-2026-06-10-VPN-CANDIDATE-D.md)
