@@ -88,7 +88,7 @@ G5  Public/partner scale
 | Gate | Deliverable | Verify |
 |------|-------------|--------|
 | **G2-A** | Web `ref_code` → `referred_by` end-to-end | E2E web trial **PASS**; TG bind **FAIL** — `p1bind2-` retest NOT_BOUND; `funnel_bot_start bind:*` = 0 (POSTDEPLOY §9, [`AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md`](AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md)) |
-| **G2-B** | Cabinet API `billing_profile` + trial fields | Mini App shows trial vs wallet correctly |
+| **G2-B** | Cabinet API `billing_profile` + trial fields | Mini App shows trial vs wallet correctly; setup reuse vs new key — [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) |
 | **G2-C** | Remove/gate hidden +3d referral purchase bonus | Policy PT-07 |
 | **G2-D** | Admin user lookup (TG ID / email hint) | Admin command smoke |
 | **G2-E** | Referral ledger export or admin view | Query `referrals` table |

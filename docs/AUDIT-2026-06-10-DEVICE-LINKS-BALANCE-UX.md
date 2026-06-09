@@ -3,7 +3,7 @@
 **Date:** 2026-06-09 (verification pass)  
 **Mode:** Read-only audit — no code, billing, or UI changes  
 **Branch context:** `product-referral-cabinet-ui-v1` (local ahead of origin; see final report)  
-**Related:** [`BENDERVPN-PRODUCT-POLICY.md`](BENDERVPN-PRODUCT-POLICY.md), [`POSTDEPLOY-2026-06-10-P1-REF-001.md`](POSTDEPLOY-2026-06-10-P1-REF-001.md)
+**Related:** [`BENDERVPN-PRODUCT-POLICY.md`](BENDERVPN-PRODUCT-POLICY.md), [`POSTDEPLOY-2026-06-10-P1-REF-001.md`](POSTDEPLOY-2026-06-10-P1-REF-001.md), [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) (button paths → same subscription link)
 
 ---
 
