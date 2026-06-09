@@ -83,7 +83,7 @@ Run on AMS after deploy via `ops/smoke_p1_ref_deploy_ams.py`:
 
 | Gap | Status |
 |-----|--------|
-| **TG bind migration** (web surrogate → TG user, `referrals` row migrate) | **NOT RUN** — preparation complete 2026-06-09; **owner Telegram bind pending** (see §9) |
+| **TG bind migration** (web surrogate → TG user, `referrals` row migrate) | **FAIL** — owner reported bind complete; AMS DB still **NOT_BOUND** (see §9) |
 | **Telegram `/start ref_*` path** | **Not re-tested live** this deploy; code path unchanged. |
 | **G1 48h detailed device log** | **Incomplete in repo** — owner verbal PASS at deploy gate; continue 24–48h VPN monitoring. |
 
@@ -91,30 +91,53 @@ Run on AMS after deploy via `ops/smoke_p1_ref_deploy_ams.py`:
 
 ## 9. TG bind verification (controlled)
 
-**Status:** **NOT RUN** (2026-06-09) — agent cannot complete Telegram UI bind without owner session.
+**Status:** **FAIL** (2026-06-09 ~15:25 UTC AMS read) — owner reported Telegram bind completed; **DB does not show bind** for prepared `p1bind-` trial.
 
 ### Preparation (completed)
 
 | Field | Value (redacted) |
 |-------|------------------|
 | Timestamp | 2026-06-09 ~14:18 UTC (AMS) |
-| Test email | `p1bind-****@bendervpn-smoke.invalid` |
-| Web surrogate | negative `web_user_id` (smoke) |
+| Test email | `p1bind-1781014699209728980@bendervpn-smoke.invalid` (prefix `p1bind-`) |
+| Web surrogate | `web_user_id` negative (smoke) |
 | Referrer ref prefix | `jHGK****` |
-| Web `referred_by` | **Matches referrer ref code string** before bind |
+| Web `referred_by` before bind | **Matched referrer ref code string** |
 | Trial API | HTTP 200, `ok: true`, **`referral_linked: true`**, **`days: 1`** |
 | `bind_token` | prefix `ef549b****` (full token not stored in repo) |
 
-### Owner action required
+### Verification attempt (2026-06-09 ~15:25 UTC)
 
-1. Use an **owner-controlled Telegram account** with **no existing VPN keys** and **no conflicting `referred_by`** (or accept PARTIAL PASS if guard blocks overwrite).
-2. Open the bot bind deep link: `https://t.me/Bender_KVN_bot?start=bind_<token>` (token from AMS prepare output only — not committed).
-3. Complete bind in Telegram (`/start bind_*` flow).
-4. On AMS, verify DB:
+Owner message: *«TG bind completed for p1bind- test. verify AMS bind migration.»*
+
+Command on AMS:
+
+```bash
+python3 /tmp/smoke_p1_ref_tg_bind_ams.py verify --email-prefix p1bind-
+```
+
+**Result:** `P1_BIND_VERIFY_PENDING` / **NOT_BOUND**
+
+| DB check | Observed |
+|----------|----------|
+| `web_trial_claims.telegram_id` | **NULL** |
+| `web_trial_claims.bound_at` | **NULL** |
+| Web surrogate user row | **Still exists** |
+| `referrals` migration to TG id | **Not observed** |
+| Other `*@bendervpn-smoke.invalid` trials | Also unbound (`p1diag-*`) |
+| Container logs (tail) | No stack traces; no import errors; no secrets observed |
+
+**Conclusion:** Web email referral attribution **PASS** remains valid. **TG bind migration path not verified live** — bind either did not persist, used a different token/trial, or failed silently in bot (e.g. `both_have_keys`, `already_bound_other`, invalid token).
+
+### Owner retry (required to close §9)
+
+1. Use **dedicated test Telegram account** — no existing VPN keys; no conflicting `referred_by` unless accepting PARTIAL PASS.
+2. Re-open bind link for **`p1bind-` trial** (same token prefix `ef549b****` if still valid, or run fresh `prepare` for new `p1bind-*` email).
+3. Confirm bot shows bind success message (not conflict/invalid).
+4. Re-run on AMS:
    ```bash
    python3 /tmp/smoke_p1_ref_tg_bind_ams.py verify --email-prefix p1bind-
    ```
-   Expect: web surrogate deleted, TG user has `referred_by`, `referrals.referred_user_id` on TG id.
+   Expect: **`P1_BIND_VERIFY_OK`**.
 
 ### Expected after successful bind
 
@@ -126,7 +149,7 @@ Run on AMS after deploy via `ops/smoke_p1_ref_deploy_ams.py`:
 
 ### If TG user already has different `referred_by`
 
-Record **PARTIAL PASS** — guard must not overwrite; full migration path not exercised.
+Record **PARTIAL PASS** — guard must not overwrite; document limitation.
 
 ---
 
@@ -146,4 +169,4 @@ No mass user action required.
 
 **P1-REF-001 AMS deploy: SUCCESS.** Web email `ref_code` attribution is **live** on AMS.
 
-**TG bind referral migration:** preparation **complete**; **live bind NOT RUN** — owner Telegram session required (POSTDEPLOY §9).
+**TG bind referral migration:** **FAIL** on AMS DB check after owner bind report — see POSTDEPLOY §9. Web trial referral attribution remains **PASS**.

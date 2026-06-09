@@ -87,7 +87,7 @@ G5  Public/partner scale
 
 | Gate | Deliverable | Verify |
 |------|-------------|--------|
-| **G2-A** | Web `ref_code` → `referred_by` end-to-end | E2E web trial **PASS** (POSTDEPLOY §5); TG bind migration **NOT RUN** (POSTDEPLOY §9) |
+| **G2-A** | Web `ref_code` → `referred_by` end-to-end | E2E web trial **PASS**; TG bind migration **FAIL** on AMS DB verify (POSTDEPLOY §9) |
 | **G2-B** | Cabinet API `billing_profile` + trial fields | Mini App shows trial vs wallet correctly |
 | **G2-C** | Remove/gate hidden +3d referral purchase bonus | Policy PT-07 |
 | **G2-D** | Admin user lookup (TG ID / email hint) | Admin command smoke |
