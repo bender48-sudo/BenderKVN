@@ -51,7 +51,7 @@ BenderVPN has **two parallel acquisition paths** with different rules:
 | **S9** Active single config | `vpn_keys` active=1 | `menu_get_setup` reuses URL | `active_config_count=1` | One sub URL | **CONFIRMED** |
 | **S10** Multi-config anomaly | `vpn_keys` active>1 | No auto-fix | `multiple_configs_anomaly` flag | Multiple subs | **PARTIAL** — support-only |
 | **S11** Referral-linked | `referred_by`, `referrals` table | `ref_*` / web `ref_code` | `referral_preserve_note` copy | N/A | **PARTIAL** — bind migration unproven |
-| **S12** Device replacement needed | Same key row | `menu_get_setup` = same URL | `btn-new-device` → bot | No new key issued | **BLOCKED** — see [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md) — target **MODEL A** |
+| **S12** Device replacement needed | Same key row | `menu_get_setup` = same URL | `btn-new-device` → bot | No new key issued | **BLOCKED** — [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md) — MODEL A + **DEVICE-ENFORCE-001** |
 
 **Transitions (confirmed in code):**
 
@@ -322,7 +322,7 @@ BenderVPN has **two parallel acquisition paths** with different rules:
 | G4 Web/TG bind | **BLOCKED** | S4 transition unproven live |
 | G5 Referral | PARTIAL | S11 partial |
 | G6 Billing | **PARTIAL** | BILL-FIX-001 deployed; smokes open |
-| G7 Device | PARTIAL | S12 support-only |
+| G7 Device | PARTIAL | S12 support-only; same-sub reuse undetected — **DEVICE-ENFORCE-001** paid/open blocker |
 | G8 Admin | PARTIAL | No lookup |
 | G9 Monitoring | PARTIAL | — |
 | G10 Copy | PARTIAL | §7 issues |

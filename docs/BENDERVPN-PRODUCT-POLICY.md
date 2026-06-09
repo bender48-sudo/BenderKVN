@@ -221,8 +221,9 @@ Until owner approves OPTION 3: existing bot-only share link remains in productio
 | **Pricing coefficient** | `6,67 ₽/день × active_billable_device_count` | **Pending OD-03** — no silent billing change |
 | **Trial** | One trial device only until wallet path proven | Recommended in arch doc |
 | **Manual Remna configs** | **Prohibited** without matching app DB row | Support policy |
+| **Reuse detection** | **DEVICE-ENFORCE-001** — detect same active sub URL on 2nd physical device | **Pending** — paid/open blocker; MODEL A incomplete without it |
 
-Until owner approves MODEL A: MVP remains **one active billable config** + support **tracked** replace (not vague support-only).
+Until owner approves MODEL A: MVP remains **one active billable config** + support **tracked** replace (not vague support-only). **Per-device configs alone do not stop URL sharing** — **DEVICE-ENFORCE-001** (reuse detection) or proven Remna HWID/session alternative required before paid/open multi-device claims (PT-12). Audit wave closed — [`AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md`](AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md).
 
 ### 6.4 Backend reality (audit)
 

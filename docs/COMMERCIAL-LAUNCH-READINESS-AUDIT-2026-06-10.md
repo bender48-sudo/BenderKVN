@@ -167,7 +167,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | **G4** | Web/email fallback / TG bind | **BLOCKED** | Web 1d trial works; **TG bind FAIL** (`funnel_bot_start bind:*` = 0) | **Yes** if email growth pushed | **Yes** | **Yes** | Retest bind per TELEGRAM-BIND-FLOW §9; or disable email path in campaigns | Waive bind or fix first? |
 | **G5** | Referral attribution | **PARTIAL** | Web `ref_code` PASS; TG `ref_*` exists; share URL **bot-only** (REFERRAL-ARCH-001 → portal hybrid); bind FAIL; no admin ledger | Tracking-only OK | Bonus = no | Growth = yes | REF-PORTAL-001 + G4 bind + REF-ADMIN-001 | Owner: approve portal-first share? |
 | **G6** | Billing/payment money flow | **PARTIAL** | BILL-001 + BILL-FIX-001 deployed (`yk:`); USER-LIFECYCLE-001 D/E scenarios; live smokes missing | Manual whitelist only | **Yes** (automated) | **Yes** | BILL-SMOKE-001..004 + PAY-AUTO-001 | Manual pilot waiver? |
-| **G7** | Device/config lifecycle | **PARTIAL** | P1-DEV-001 read-only count/list; **DEVICE-ARCH-001** recommends **MODEL A** (tracked config/device, billing × N); MODEL B **NOT READY**; no revoke/enforce | Support manual OK | Weak | **Yes** | DEVICE-COPY-001 + DEVICE-ADMIN-001 + DEVICE-BILL-001 | Owner: approve MODEL A ([`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md)) |
+| **G7** | Device/config lifecycle | **PARTIAL** | P1-DEV-001 read-only; **MODEL A** + **DEVICE-ENFORCE-001** (reuse detection); same-sub sharing **undetected**; L2 soft min only; paid/open needs L3/L4 | Support manual OK | Weak | **Yes** | DEVICE-ENFORCE-001 + DEVICE-COPY-001 + DEVICE-ADMIN-001 | Owner: approve MODEL A + enforce path ([`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md) §14) |
 | **G8** | Admin/support operations | **PARTIAL** | Admin flow test exists; **no user lookup by TG/email**; RUNBOOK-001 incomplete | Manual owner OK | **Yes** | **Yes** | P1-ADM-001 lookup; sleep/resume runbook | — |
 | **G9** | Monitoring/alerting | **PARTIAL** | Read-only probes + `monitor.sh`; no automated profile alert; no VLESS functional probe; no billing job alert | Acceptable F&F | Partial | **Yes** | Profile integrity cron + alert channel | — |
 | **G10** | Legal/copy/FAQ truth | **PARTIAL** | Policy v1 fresh; portal mostly aligned; **setup `device_rule` false promise**; FAQ stale | Minor | **Yes** (device/billing) | **Yes** | Copy sweep; FAQ sync | — |
@@ -218,13 +218,16 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | 2 | **P0** | **TG bind FAIL** — web→TG migration unproven (G4) | Email fallback growth, referral migration |
 | 3 | **P0** | **Desktop sleep/resume unresolved** (INCIDENT-003, G1) | Desktop commercial support |
 | 3b | **P0** | **Browser SaaS long-session drops** (INCIDENT-004, G1) | Desktop document/chat SaaS positioning |
-| 4 | **P1** | **No admin user lookup / revoke-replace path** (G7, G8) | Commercial support at scale |
-| 5 | **P1** | **No automated monitoring/alerting for profile integrity + billing** (G9) | Open launch |
-| 6 | **P1** | **Copy false promises** — `device_rule` self-service new config (G10) | External traffic |
-| 7 | **P1** | **No CI / secret scanning** (G11) | Multi-contributor / open launch |
-| 8 | **P1** | **Policy enforcement gaps** — invite/30k/one-device copy-only (G12) | Public scale |
-| 9 | **P2** | **VLESS functional probe gap** — TCP OK ≠ VLESS OK | Open launch confidence |
-| 10 | **P2** | **Referral ledger / reconciliation missing** (G14) | Referral growth, paid disputes |
+| 4 | **P0** | **DEVICE-ENFORCE-001** — same-sub URL reuse undetected (G7) | Paid/open; referral at scale |
+| 5 | **P1** | **No admin user lookup / revoke-replace path** (G7, G8) | Commercial support at scale |
+| 6 | **P1** | **No automated monitoring/alerting for profile integrity + billing** (G9) | Open launch |
+| 7 | **P1** | **Copy false promises** — `device_rule` self-service new config (G10) | External traffic — **TRACK 0 tomorrow** |
+| 8 | **P1** | **No CI / secret scanning** (G11) | Multi-contributor / open launch |
+| 9 | **P1** | **Policy enforcement gaps** — invite/30k/one-device copy-only (G12) | Public scale |
+| 10 | **P2** | **VLESS functional probe gap** — TCP OK ≠ VLESS OK | Open launch confidence |
+| 11 | **P2** | **Referral ledger / reconciliation missing** (G14) | Referral growth, paid disputes |
+
+**Audit closeout:** [`AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md`](AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md) — audits frozen; implementation TRACK 0 starts 2026-06-11.
 
 ---
 
@@ -232,7 +235,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 
 - Soft invite-only positioning without hard gate (pilot policy)
 - 30k cap as badge only without live counter
-- One device = policy + support, not HWID enforcement
+- One device = policy + support; same-sub reuse **undetected** — **DEVICE-ENFORCE-001** required for paid/open (L3/L4)
 - Legacy/manual users with frozen balance display
 - Happ shows one Auto host (not 6 nodes)
 - Interim VPN stability on mobile after fresh import (INCIDENT-002)

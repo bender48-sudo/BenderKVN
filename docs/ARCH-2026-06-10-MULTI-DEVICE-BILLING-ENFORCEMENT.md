@@ -23,6 +23,8 @@
 
 **MVP recommendation:** **MODEL A** as **target architecture**. **Immediate stopgap:** one active tracked config, honest copy, support/admin **tracked** replace — then build MODEL A in ordered gates. **Do not** launch paid multi-device on MODEL B without DEVICE-SMOKE Remna proof.
 
+**Owner clarification (2026-06-10):** Issuing one tracked config per device is **necessary but not sufficient**. Without **reuse detection** (same active subscription URL imported on a second physical device), MODEL A is **commercially incomplete**: app DB, cabinet, and billing coefficient stay at 1 while infra load scales to N. **DEVICE-ENFORCE-001** is mandatory for paid/open launch unless explicitly waived.
+
 **Billing today:** `6.67 ₽/account/day` fixed — **cannot** accumulate per device. **Target (MODEL A):** `6.67 ₽ × active_billable_device_count/day` after owner approval + BILL-SMOKE pass.
 
 ---
@@ -99,6 +101,20 @@
 | 8th device blocked | **No** |
 
 **Status:** **CONFIRMED** — unlimited import of same URL is **de facto allowed**.
+
+### 3.5 Owner clarification — reuse detection is mandatory (DEVICE-ENFORCE-001)
+
+If a user copies one active `subscriptionUrl` onto several physical devices:
+
+| Layer | What user sees | Reality |
+|-------|----------------|---------|
+| App DB | 1 `vpn_keys` row | 1 tracked config |
+| Cabinet | 1 active setting | No second device listed |
+| Billing | `6.67 ₽/account/day` | Coefficient stays 1 |
+| Remna / infra | 1 panel user | **N concurrent clients** possible |
+| Enforcement | «Одна настройка — одно устройство» copy | **No block, no alert, no violation log** |
+
+**Conclusion:** Per-device **provisioning** (MODEL A) alone does not stop **sharing one paid config**. Users can bypass per-device billing until **DEVICE-ENFORCE-001** detects and responds to reuse. Referral growth amplifies this risk (invited users may share trial/paid URLs) — see [`ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md`](ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md) §cross-device.
 
 ---
 
@@ -310,7 +326,7 @@ vpn_keys (extended) OR user_devices:
 | **Replace** | «Заменить» → revoke old → new config → no +1 billable if replace not add | DEVICE-REPLACE-001 |
 | **Remove** | Revoke → `billing_enabled=false` from next period | DEVICE-REVOKE-001 |
 | **Limit reached** | Block add; «Лимит устройств. Удалите старое или напишите в поддержку.» | `max_devices` OD-03 |
-| **Same URL copied** | Document: MODEL A = separate configs per device; sharing one URL = policy violation; detection **UNKNOWN** | DEVICE-SMOKE |
+| **Same URL copied** | Policy violation; **DEVICE-ENFORCE-001** must detect + act; separate configs alone insufficient | DEVICE-ENFORCE-001 + DEVICE-SMOKE |
 | **Trial extra device** | **Block** — «Сначала пополните баланс» | Recommended |
 | **Expired** | Block add; existing configs expire with panel | Current |
 | **Legacy** | List devices; `billing_enabled=false`; support replace only | Current + schema |
@@ -335,22 +351,24 @@ devices[]: extended configurations
 | Level | Description | Current | MODEL A target | MODEL B need |
 |-------|-------------|---------|----------------|--------------|
 | **L0** | Copy/policy only | **YES** | Insufficient paid | Insufficient |
-| **L1** | One tracked config; same URL reuse undetected | **YES** | Stopgap only | — |
-| **L2** | Tracked configs + support revoke | **PARTIAL** (list yes, revoke no) | **MVP minimum** | — |
-| **L3** | + Remna session/online monitoring | **NO** | Recommended | Optional |
-| **L4** | Hard session/device limit | **NO** | Optional add-on | **Required** |
-| **L5** | Full unique device identity | **NO** | Ideal long-term | MODEL B core |
+| **L1** | One tracked config; same URL reuse undetected | **YES** | F&F stopgap only | — |
+| **L2** | Tracked configs + support revoke | **PARTIAL** (list yes, revoke no) | **Soft-launch minimum** | — |
+| **L3** | + Remna session/online monitoring; suspicious reuse signals | **NO** | **Paid/open minimum** (monitoring path) | Partial |
+| **L4** | Hard reuse block (HWID / deviceLimit / session cap) | **NO** | **Paid/open minimum** (enforcement path) | **Required** |
+| **L5** | Full unique device identity + low false-positive tuning | **NO** | Ideal long-term | MODEL B core |
 
-**Launch minimum (owner premise):**
+**Owner rule (2026-06-10):** **MODEL A is not commercially complete** without reuse detection **or** a proven Remna/session enforcement alternative. L2 alone is **soft-launch minimum only**. Paid/open launch requires **L3 or L4 evidence** (tracking/monitoring **or** hard block of same-sub reuse).
 
-| Launch type | Minimum level |
-|-------------|---------------|
-| F&F | L1 + honest copy |
-| Soft launch | **L2** + DEVICE-COPY-001 |
-| Paid pilot | **L2** + DEVICE-ADMIN-001 + DEVICE-BILL-001 (if multi-device enabled) |
-| Open launch | **L3** + billing proof + abuse monitoring |
+**Launch minimum (owner premise + DEVICE-ENFORCE-001):**
 
-**Paid/open with only L0–L1:** **NO-GO**.
+| Launch type | Minimum level | DEVICE-ENFORCE-001 |
+|-------------|---------------|-------------------|
+| F&F | L1 + honest copy | Not required (manual support) |
+| Soft launch | **L2** + DEVICE-COPY-001 | **PARTIAL** — monitor-only acceptable with honest copy |
+| Paid pilot | **L3 or L4** + DEVICE-ADMIN-001 + billing proof | **Required** unless waived |
+| Open launch | **L3 + L4** + billing proof + abuse monitoring | **Required** unless waived |
+
+**Paid/open with only L0–L2:** **NO-GO**.
 
 ---
 
@@ -368,6 +386,7 @@ devices[]: extended configurations
 | **DEVICE-ADMIN-001** | **BLOCKED** | No | **Yes** | **Yes** | **Yes** | P1-ADM + device ops |
 | **DEVICE-COPY-001** | **NOT_STARTED** | No | **Yes** | **Yes** | **Yes** | COPY-TRUTH-001 |
 | **DEVICE-SMOKE-001** | **NOT_STARTED** | No | **Yes** | **Yes** | **Yes** | Same-sub multi-device lab |
+| **DEVICE-ENFORCE-001** | **NOT_STARTED** | No | Partial | **Yes** | **Yes** | Reuse detection + consequences — **paid/open blocker** |
 | **DEVICE-MIGRATE-001** | **NOT_STARTED** | No | No | Yes | Yes | Classify existing keys |
 | **DEVICE-UX-001** | **NOT_STARTED** | No | Partial | Yes | Yes | Cabinet charge display |
 
@@ -380,6 +399,7 @@ devices[]: extended configurations
 | 1 | DEVICE-ARCH-001 | Architecture decision | docs | No | None | — | Owner: «approve MODEL A target» |
 | 2 | DEVICE-COPY-001 | Honest device copy | `ru.json`, `subscription_resolve.py` | Yes | Low | — | approve deploy COPY-TRUTH-001 |
 | 3 | DEVICE-SMOKE-001 | Remna multi-device proof | `ops/smoke_device_*` read-only | AMS/LV read | Low | — | approve DEVICE-SMOKE-001 lab |
+| 3b | DEVICE-ENFORCE-001 | Reuse detection design + smoke | docs, `ops/smoke_device_reuse_*`, panel read | AMS/LV read | Medium | SMOKE-001 HWID proof | approve DEVICE-ENFORCE-001 |
 | 4 | DEVICE-DATA-001 | Schema + status enum | `database.py`, `schema_migrations.py` | Yes | Medium | ARCH approved | approve DEVICE-DATA-001 schema |
 | 5 | DEVICE-ADMIN-001 | Support lookup/revoke/create | `admin_handlers.py`, `remnawave_api.py` | Yes AMS | Medium | DATA-001 | approve DEVICE-ADMIN-001 |
 | 6 | DEVICE-REPLACE-001 | Tracked replace flow | handlers, admin | Yes | Medium | ADMIN-001 | approve DEVICE-REPLACE-001 |
@@ -406,6 +426,8 @@ devices[]: extended configurations
 | 6 | **Max devices cap** | e.g. 3 / 5 / 7 | Owner pick before ADD-001 |
 | 7 | **MODEL B investment** | Run DEVICE-SMOKE or abandon | **Smoke first** if B considered |
 | 8 | **Manual Remna policy** | Ban untracked configs | **Mandatory** — support runbook |
+| 9 | **DEVICE-ENFORCE-001 waiver** | Require L3/L4 for paid/open vs waive | **No waiver** without written owner accept of abuse risk |
+| 10 | **Enforcement copy** | Claim hard block vs honest monitoring | **No hard claim** until DEVICE-ENFORCE-001 PASS |
 
 ---
 
@@ -418,19 +440,121 @@ devices[]: extended configurations
 - Manual Remna user creation without `vpn_keys` row.
 - DEVICE-BILL-001 before BILL-SMOKE-001..004.
 - Per-device billing during **trial** without owner approval.
+- Paid/open launch claiming MODEL A «complete» without **DEVICE-ENFORCE-001** (reuse detection or proven Remna alternative).
+- Hard enforcement copy before DEVICE-ENFORCE-001 smoke PASS (PT-12).
 
 ---
 
-## 14. What can be done immediately (no money mutation)
+## 14. DEVICE-ENFORCE-001 — Detect reuse of active config on another device
+
+**Gate ID:** DEVICE-ENFORCE-001  
+**Status:** **NOT_STARTED** (architecture in this section)  
+**Paid/open launch:** **BLOCKER** unless owner waives in writing  
+**Prerequisite:** DEVICE-SMOKE-001 (Remna HWID / telemetry proof)
+
+### 14.1 Audit questions (B1)
+
+| # | Question | Status | Evidence / gap |
+|---|----------|--------|----------------|
+| 1 | Can Remna/Xray/Happ expose device identity (HWID, client ID, session ID, import fingerprint)? | **PARTIAL** | Panel API has `subscription-settings.hwidSettings`; `HWIDMaxDevicesExceeded` / `HWIDNotSupported` remark strings in `ops/patch_subscription_custom_remarks.py`; **bot never sets** `hwidSettings`; **no** HWID in `bot_src/`; Happ→Remna HWID wire **UNKNOWN** — needs lab smoke |
+| 2 | Can the same subscription URL be tied to first-seen device? | **PARTIAL** | Remna HWID **may** bind first HWID per panel user if Happ sends it on sub fetch — **not configured, not proven** |
+| 3 | Can subsequent use from another device be detected? | **CONFIRMED NO** today | Same URL on 2 phones works; no bot/panel hook |
+| 4 | Can we distinguish reconnect vs new device vs abuse? | **UNKNOWN** | Same device / IP change / reinstall / new device / concurrent sessions — needs DEVICE-SMOKE matrix; reinstall may change HWID → **false positive risk** |
+| 5 | Can we block only the second/extra device without blocking the original? | **PARTIAL** | Remna `hwidSettings` max-devices model **may** allow this — **UNKNOWN** until smoke; concurrent-session cap blocks **all** or **newest** depending on panel semantics |
+| 6 | Can we notify user with clear message? | **PARTIAL** | `HWIDMaxDevicesExceeded` Russian copy exists in remark patch — **inactive** until panel enforces |
+| 7 | Can support reset/rebind config to new device? | **BLOCKED** | No admin rebind API; manual Remna breaks `vpn_keys` accounting (§3.3) |
+| 8 | Can we record violation attempts in admin/support logs? | **CONFIRMED NO** | No `device_violations` table, no admin command, no `user_actions` type for reuse |
+| 9 | Can we implement consequences without unacceptable false positives? | **UNKNOWN** | Depends on HWID stability (OS update, Happ reinstall, emulator); requires staged rollout + owner threshold |
+
+### 14.2 Scenario discrimination matrix (target)
+
+| Scenario | Expected signal | False positive risk | Target handling |
+|----------|-----------------|---------------------|-----------------|
+| Same device reconnect | Same HWID / same client | Low | Allow |
+| Same device, new IP/network | Same HWID, new IP | Low | Allow |
+| App reinstall, same device | HWID may change | **Medium** | Warn once; support rebind path |
+| Different physical device | New HWID + concurrent or sequential | Low if HWID reliable | Enforce |
+| Concurrent sessions (2 devices) | 2 HWIDs or 2 online nodes | Medium without HWID | Flag suspicious → enforce |
+| Shared subscription abuse | N imports, N HWIDs, 1 billable config | Low at scale | Enforce + audit |
+
+### 14.3 Detection sources (ranked)
+
+| Source | Confidence | False positive risk | Fits MODEL A | Fits L1 stopgap |
+|--------|------------|---------------------|--------------|-----------------|
+| **A. Remna HWID** (`hwidSettings`, per-user max) | **UNKNOWN** → target **HIGH** if smoke PASS | Medium (reinstall) | **Yes** — blocks reuse of **one** sub URL | **Yes** |
+| **B. Panel `deviceLimit` on user** | **UNKNOWN** | Medium | Yes if limit=1 per config | Yes |
+| **C. `onlineAt` / concurrent connection monitoring** | **PARTIAL** (ops scripts only) | **High** — concurrent ≠ unique device; VPN reconnect noise | L3 monitoring only | Suspicious flag only |
+| **D. Traffic anomaly heuristics** | **LOW** | **High** | Not recommended MVP | Not recommended |
+| **E. Separate config per device (MODEL A alone)** | **N/A** | N/A — does **not** detect URL sharing | Insufficient alone | Insufficient |
+
+**Recommended path:** Prove **A** (HWID) via DEVICE-SMOKE-001; pair with **C** as L3 suspicious signal only until A is tuned.
+
+### 14.4 Consequences model (design only)
+
+| Stage | Trigger | Action | User copy (safe) | Admin visibility |
+|-------|---------|--------|------------------|------------------|
+| **0 — observe** | L3: concurrent online / 2nd HWID pending proof | Log `device_reuse_suspect`; no block | — | Admin flag in ledger |
+| **1 — warning** | First confirmed 2nd HWID on 1 billable config | Mark user `device_abuse_warned`; Happ remark / bot message | «Похоже, эта настройка используется на втором устройстве. Одна настройка — одно устройство.» | `user_actions` + support queue |
+| **2 — enforce** | Confirmed 2nd physical device (smoke-defined) | Block **new** HWID or suspend config until resolved | «Достигнут лимит устройств. Отключите лишнее или напишите в поддержку.» (existing remark text) | Violation row + TG id |
+| **3 — repeat abuse** | 2+ enforce events in window | Revoke config; require support + identity check | «Настройка отключена. Напишите в поддержку.» | Full audit trail |
+| **Support recovery** | Owner-verified legitimate replace | Admin **rebind**: clear HWID list / issue new `key_email` + tracked row | «Настройка перенесена на новое устройство.» | DEVICE-ADMIN-001 |
+
+**PT-12 rule:** If detection is not technically reliable after smoke, **do not claim hard enforcement** in copy — stay at honest policy + support.
+
+### 14.5 Architecture output summary
+
+| Dimension | Design |
+|-----------|--------|
+| **Detection source** | Primary: Remna `hwidSettings` + Happ HWID (prove in smoke); secondary: `onlineAt` suspicious (L3) |
+| **Confidence level** | **UNKNOWN** today → target **MEDIUM–HIGH** after DEVICE-SMOKE-001 + 2-device lab |
+| **False positive risks** | Happ reinstall, OS update, emulator, shared family iPad; mitigate via warn→enforce staging + support rebind |
+| **Enforcement action** | Staged: suspect log → user warn → block new HWID / suspend → revoke on repeat |
+| **Support recovery** | DEVICE-ADMIN-001: admin rebind HWID / tracked replace; **ban** untracked manual Remna |
+| **Admin visibility** | `device_violations` or `user_actions` types; `/admin device <tg_id>`; ops export |
+| **User-facing copy** | Use existing `HWIDMaxDevicesExceeded` strings when active; no «автоматически заблокируем» until PASS |
+| **Tests/smokes** | `DEVICE-SMOKE-001`: read `hwidSettings`; import same sub on 2 lab devices; verify block/remark; reinstall false-positive matrix |
+| **Launch blocker** | **Paid/open: YES** unless waived; **Soft: PARTIAL** (monitor + honest copy); **F&F: NO** |
+
+### 14.6 Data model sketch (design only)
+
+```text
+device_violations:
+  id
+  user_id / telegram_id
+  key_id
+  detection_source     -- hwid | online_concurrent | manual_support
+  hwid_hash            -- redacted / hashed if stored
+  severity             -- suspect | warn | enforce | revoke
+  created_at
+  resolved_at
+  resolved_by_admin_id
+  notes_redacted
+
+users / vpn_keys extensions:
+  device_abuse_warned_at
+  device_enforce_count
+  last_hwid_seen_hash  -- optional cache
+```
+
+### 14.7 Gate status
+
+| Gate | F&F | Soft | Paid | Open | Required action |
+|------|-----|------|------|------|-----------------|
+| **DEVICE-ENFORCE-001** | No | Partial | **BLOCKER** | **BLOCKER** | DEVICE-SMOKE-001 → design apply path → owner approve enforcement strictness |
+
+---
+
+## 15. What can be done immediately (no money mutation)
 
 1. **DEVICE-COPY-001** — fix `setup.device_rule`, ghost labels.
 2. **DEVICE-SMOKE-001** — read-only Remna: `hwidSettings`, same-sub 2-device lab, panel user list fields.
-3. **DEVICE-ARCH-001** — owner sign-off on MODEL A (this document).
-4. **Support runbook draft** — «manual Remna forbidden; use admin device tool when ready».
+3. **DEVICE-ENFORCE-001** — architecture review (this §14); owner approve consequences model.
+4. **DEVICE-ARCH-001** — owner sign-off on MODEL A + enforce dependency (this document).
+5. **Support runbook draft** — «manual Remna forbidden; use admin device tool when ready».
 
 ---
 
-## 15. What requires prod / Remna proof
+## 16. What requires prod / Remna proof
 
 | Proof | Test |
 |-------|------|
@@ -439,10 +563,12 @@ devices[]: extended configurations
 | 8th device block | Lab import with limit=7 |
 | `onlineAt` per user | Panel API sample → cabinet `last_seen_at` |
 | Same URL on 2 phones | Traffic/online indicators differ or not |
+| 2nd HWID blocked, 1st still works | DEVICE-ENFORCE-001 acceptance test |
+| Reinstall same device | HWID change rate / false positive rate |
 
 ---
 
-## 16. References
+## 17. References
 
 | Artifact | Role |
 |----------|------|

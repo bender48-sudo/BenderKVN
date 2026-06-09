@@ -28,21 +28,24 @@ G5  Public/partner scale
 
 **USER-LIFECYCLE-001 (2026-06-10):** [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md) — S0–S12 states; scenarios A–H; REG-001 / PAY-001 / WEB-001 gates; F&F **GO**, soft **SOFT-LAUNCH ONLY**, paid/open/referral **NO-GO**.
 
-**DEVICE-ARCH-001 (2026-06-10):** [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md) — **MODEL A** recommended (tracked config per device, billing × N); **MODEL B NOT READY**; L2 minimum for soft launch; DEVICE-BILL-001 blocked until BILL-SMOKE + owner.
+**DEVICE-ARCH-001 (2026-06-10):** [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md) — **MODEL A** recommended (tracked config per device, billing × N); **MODEL B NOT READY**; L2 soft-launch minimum only; **DEVICE-ENFORCE-001** (reuse detection) **paid/open blocker**; paid/open requires L3/L4; DEVICE-BILL-001 blocked until BILL-SMOKE + owner.
 
 **REFERRAL-ARCH-001 (2026-06-10):** [`ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md`](ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md) — **OPTION 3 Hybrid** (portal referral landing primary); bot-only share today; G4 bind BLOCKED; referral growth **NO-GO**.
 
+**AUDIT-CLOSEOUT-001 (2026-06-10):** [`AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md`](AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md) — **G0 audit wave CLOSED**; backlog frozen; **implementation GO** for TRACK 0; no new broad audits.
+
 ---
 
-## 2. G0 — Audit complete ✅
+## 2. G0 — Audit complete ✅ (frozen 2026-06-10)
 
 | Check | Status |
 |-------|--------|
-| Waves 1–10 synthesized | ✅ this pass |
-| Consolidated risk map | ✅ |
-| Prioritized backlog | ✅ |
+| Waves 1–10 synthesized | ✅ |
+| Commercial + lifecycle + device + referral + billing audits | ✅ **CLOSED** per AUDIT-CLOSEOUT-001 |
+| DEVICE-ENFORCE-001 architecture | ✅ design in DEVICE-ARCH §14 |
+| Backlog frozen into TRACK 0–5 | ✅ |
 | No prod mutation in audit pass | ✅ |
-| Candidate D treated as verification, not new dev | ✅ |
+| Implementation may resume TRACK 0 | ✅ tomorrow |
 
 ---
 
@@ -145,7 +148,7 @@ G5  Public/partner scale
 | **G4-B** | Invite push | Hard or soft invite gate implemented |
 | **G4-C** | 30k approach | Issuance stop + waitlist UX |
 | **G4-D** | Support volume | RUNBOOK-001 complete |
-| **G4-E** | Device abuse | HWID or Remna deviceLimit policy |
+| **G4-E** | Device abuse / sub reuse | **DEVICE-ENFORCE-001** — HWID or Remna deviceLimit; paid/open blocker |
 
 ---
 

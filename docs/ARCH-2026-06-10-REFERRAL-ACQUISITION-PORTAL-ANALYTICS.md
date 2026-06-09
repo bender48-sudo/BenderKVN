@@ -27,6 +27,8 @@
 
 **Referral-driven growth launch:** **NO-GO** until G4 bind PASS + REF-ADMIN-001 + REF-COPY-001.
 
+**Cross-device context (DEVICE-ENFORCE-001):** Referral invites increase users who may **share one subscription URL** across devices. Without reuse detection, referral growth scales **infra load** without matching attribution, billing, or enforcement — see [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md) §14. Paid/open referral campaigns require **DEVICE-ENFORCE-001** (or waiver) in addition to REF-* gates.
+
 ---
 
 ## 2. Owner concern
@@ -343,6 +345,7 @@ referral_events (optional audit trail):
 | **REF-BONUS-001** | NOT_STARTED | No | No | No | No | Owner OD-02 |
 | **REF-FRAUD-001** | NOT_STARTED | No | No | Partial | Yes | Phase 3 |
 | **REF-METRICS-001** | NOT_STARTED | No | No | Yes | Yes | Conversion funnel |
+| **DEVICE-ENFORCE-001** | NOT_STARTED | No | Partial | **Yes** | **Yes** | Shared-sub abuse; blocks paid referral campaigns |
 
 ---
 

@@ -1,6 +1,6 @@
 # BenderVPN Master Backlog
 
-**Status:** canonical · **Created:** 2026-06-09
+**Status:** canonical · **FROZEN:** 2026-06-10 ([`AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md`](AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md))
 **Branch:** `product-referral-cabinet-ui-v1`
 **Purpose:** single source of truth for product, technical, audit, UX, ops, and deferred decisions — nothing lost between sessions.
 
@@ -43,31 +43,42 @@
 | Risk | Severity | Why |
 |------|----------|-----|
 | **VPN reconnect instability** | P0/P1 | Direct user pain; may be routing/sub/Happ — patch without audit risks repeat of gen-13→20 incidents |
-| **Web referral attribution drop** | P0/P1 | Product promise breach; growth data wrong |
+| **TG bind / referral migration** | P0 | G4 BLOCKED; web attr fixed but bind unproven |
+| **Same-sub URL reuse undetected** | P0 | DEVICE-ENFORCE-001; bypasses billing × N |
 | **Policy vs code gaps** | P1 | Invite-only, 30k cap, one-device are copy-only |
 | **No admin visibility** | P1/P2 | Cannot scale invites, detect fraud, or hit 300-config threshold safely |
 | **REG-001 not designed** | P2 | Recovery, fraud, legal reconciliation deferred |
 | **Legal/privacy final review** | P2 | REG-001 and support visibility not reconciled |
 
-### Next recommended work order
+### Audit closeout (2026-06-10)
 
-**Commercial launch audit (2026-06-10):** [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md) — see **LAUNCH-001…023** ordered surfaces.
+**AUDIT-CLOSEOUT-001:** [`AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md`](AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md) — audits **closed**; implementation starts **TRACK 0** tomorrow.
 
-1. **LAUNCH-001** — INCIDENT-003 sleep/resume owner diagnostics (G1 desktop)
-2. ~~**BILL-FIX-001**~~ — reconcile idempotency `yk:` (**DONE** — deploy [`POSTDEPLOY-2026-06-10-BILL-FIX-001.md`](POSTDEPLOY-2026-06-10-BILL-FIX-001.md); BILL-SMOKE before prod `--apply`)
-3. ~~**USER-LIFECYCLE-001**~~ — end-to-end scenario audit (**DONE** — [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md))
-4. ~~**DEVICE-ARCH-001**~~ — multi-device architecture (**DONE** — [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md); owner approve MODEL A)
-5. ~~**REFERRAL-ARCH-001**~~ — referral acquisition architecture (**DONE** — [`ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md`](ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md); owner approve OPTION 3)
-6. **DEVICE-COPY-001** / **COPY-TRUTH-001** — honest device copy (`device_rule`, ghost labels)
-7. **REF-COPY-001** / **P1-REF-002** — gate hidden +3d; soften referral preserve note
-8. **REF-PORTAL-001** — portal-first referral share URL (after owner approve OPTION 3)
-9. **DEVICE-SMOKE-001** — Remna same-sub / HWID proof (read-only lab)
-10. **LAUNCH-002** / **REF-BIND-001** — TG bind retest (G4)
-11. **BILL-SMOKE-001..004** — live billing/payment smokes on AMS (G6)
-12. **REF-COUNTER-001** → **REF-ADMIN-001** — user counter + admin ledger
-13. **DEVICE-DATA-001** → **DEVICE-ADMIN-001** → **DEVICE-BILL-001** (after owner + smokes)
-14. **LAUNCH-006** — P1-ADM-001 admin user lookup
-15. **Phase 2** — REG-001, trial 90→30 switch prep, metrics (before 300 active configs)
+### Frozen implementation tracks (priority order)
+
+| Track | Focus | Tomorrow? |
+|-------|-------|-----------|
+| **TRACK 0** | Copy/UX hygiene — COPY-TRUTH, DEVICE-COPY, REF-COPY, SETUP-UX | **Yes** |
+| **TRACK 1** | Bind + referral — G4-BIND-RETEST, REF-PORTAL, REF-ADMIN | Partial tomorrow |
+| **TRACK 2** | Billing proof — BILL-UT, BILL-SMOKE prep | BILL-UT tomorrow |
+| **TRACK 3** | Device — SMOKE, ENFORCE, DATA, ADMIN, BILL | After TRACK 0–2 |
+| **TRACK 4** | VPN stability — INCIDENT-003/004 owner proof | Owner-led |
+| **TRACK 5** | Monitoring / CI / runbooks | After soft blockers |
+
+### Tomorrow queue (TRACK 0 + prep)
+
+1. **DEVICE-COPY-001** — portal `ru.json` (`device_rule`, referral note)
+2. **COPY-TRUTH-001** — bot ghost labels + NL/LV removal
+3. **P1-REF-002** / **REF-COPY-001** — gate hidden +3d (separate commit)
+4. **SETUP-UX-001** — link-first setup page
+5. **CABINET-TYPE-001** — typography (if time)
+6. **G4-BIND-RETEST** — owner in-app bind (no code unless bug)
+7. **BILL-UT-001/002** — unit tests (repo only)
+8. **BILL-SMOKE-001 prep** — script skeleton only
+
+### Completed audits (frozen — do not re-audit)
+
+~~BILL-FIX-001~~ · ~~USER-LIFECYCLE-001~~ · ~~DEVICE-ARCH-001~~ · ~~DEVICE-ENFORCE-001 design~~ · ~~REFERRAL-ARCH-001~~ · ~~BILL-001~~ · ~~P1-CAB/DEV/REF deploys~~
 
 ---
 
@@ -117,8 +128,8 @@
 
 | ID | Sev | Area | Title | Problem | Decision | Phase | Impact | Evidence | Files/modules | Acceptance | Checks | Deploy? | Owner? | Blocked by | Status |
 |----|-----|------|-------|---------|----------|-------|--------|----------|---------------|------------|--------|---------|--------|------------|--------|
-| PROD-003 | P0 | Referral | Web `ref_code` dropped | Email fallback loses referral before `issue_web_trial` | **Accepted:** fix end-to-end | 1 | Attribution integrity | Full Product Audit | `portal_web_trial.py`, `portal.js` | Web signup records `referred_by` | py_compile; manual ref test | Yes | No | — | OPEN |
-| DEC-IMPL-002 | P0 | Referral | Web referral attribution fix | Same as PROD-003 | **Accepted** | 1 | Growth data | Policy §5.1 | `portal_web_trial.py`, `database.py` | `ref_code` preserved through chain | integration test | Yes | No | — | OPEN |
+| PROD-003 | P0 | Referral | Web `ref_code` dropped | Email fallback loses referral before `issue_web_trial` | **Accepted:** fix end-to-end | 1 | Attribution integrity | P1-REF-001 | `web_referral.py` | Web signup records `referred_by` | smoke PASS | Yes | No | — | **DONE** — [`POSTDEPLOY-2026-06-10-P1-REF-001.md`](POSTDEPLOY-2026-06-10-P1-REF-001.md) |
+| DEC-IMPL-002 | P0 | Referral | Web referral attribution fix | Same as PROD-003 | **Accepted** | 1 | Growth data | Policy §5.1 | `portal_web_trial.py`, `database.py` | `ref_code` preserved through chain | smoke PASS | Yes | No | — | **DONE** — P1-REF-001 |
 | DEC-IMPL-006 | P1 | Admin/reporting | Referral ledger | No who→whom report | **Accepted** | 1 | Invite scale | Policy §10.1 | admin, DB queries | Export/list inviter→invitee | manual admin | No | No | — | OPEN |
 | DEC-IMPL-017 | P3 | Referral | Referral bonus later | No reward implemented | **Deferred** OD-02 | 3 | Economics | Policy §5.3 | bot, billing | Small time credit after active/paid only | fraud review | Yes | **Yes** | OD-02 | DEFERRED |
 | AF-001 | P2 | Anti-fraud | Fraud signals baseline | No IP/email cluster detection | **Accepted** Phase 2 | 2 | Abuse before scale | Policy §10.2 | admin, logs | Same-IP/email flags visible | audit | No | No | DEC-IMPL-006 | OPEN |
@@ -143,7 +154,7 @@
 |----|-----|------|-------|---------|----------|-------|--------|----------|---------------|------------|--------|---------|--------|------------|--------|
 | P1-DEV-001 | P1 | Device/config | Cabinet read-only config count/list | User cannot see active links count | **Accepted:** Option A MVP; read-only; no revoke | 1 | Trust + support load | [`AUDIT-2026-06-10-DEVICE-LINKS-BALANCE-UX.md`](AUDIT-2026-06-10-DEVICE-LINKS-BALANCE-UX.md) §14.6 | `portal_cabinet.py`, `portal.js`, `ru.json` | API+UI show count, list, primary badge; multi-key anomaly | `tests/test_portal_cabinet_billing.py` | Yes | No | P1-CAB-001 | **DONE** — deploy [`POSTDEPLOY-2026-06-10-P1-DEV-001.md`](POSTDEPLOY-2026-06-10-P1-DEV-001.md) |
 | PROD-004 | P1 | Device/config | One device not enforced | Multiple `vpn_keys` allowed | **Accepted:** 1 active config; support for new device | 1 policy / 3 enforce | Fairness + capacity | Audit | panel, `database.py` | Policy documented; no false HWID claim | AUDIT-006 | No | No | — | OPEN |
-| DEC-IMPL-014 | P2 | Device/config | Device enforcement design | No deviceLimit/HWID | **Accepted** evaluate Phase 3 | 3 | Link sharing abuse | Policy §6.3 | panel, Remna | Design doc; no prod PATCH in audit | AUDIT-006 | No | **Yes** | OD-03 | OPEN |
+| DEC-IMPL-014 | P0 | Device/config | Device enforcement design | No deviceLimit/HWID; URL sharing bypass | **Accepted** evaluate | 1 | Link sharing abuse | DEVICE-ENFORCE-001 §14 | panel, Remna | Design in DEVICE-ARCH-001 §14; smoke before PATCH | DEVICE-SMOKE-001 | No | **Yes** | OD-03, G7 | OPEN — superseded by DEVICE-ENFORCE-001 |
 | PROD-007 | P1 | Trial policy | Post-trial invite copy alignment | Post-trial text may not match §3 | **Accepted** | 1 | Policy consistency | Audit | `handlers.py`, `ru.json` | Copy matches soft invite-first | forbidden-copy rg | Yes | No | — | OPEN |
 | DEC-IMPL-010 | P2 | Trial policy | Trial 90d→30d after 300 active configs | Code still 90d only | **Accepted** | 4 | Economics | Policy §7; `config.py` | `REMNA_TRIAL_DAYS`, bot | New trials 30d; grandfather 90d | env + announce | Yes | **Yes** | 300 configs | DEFERRED |
 | OD-03 | P3 | Device/config | Second device paid SKU | Not decided | **Deferred** | 3+ | Revenue | Policy OD-03 | billing, bot | Owner decision | — | — | **Yes** | — | BLOCKED |
@@ -156,6 +167,7 @@
 | BILL-FIX-001 | P0 | Billing/topup | Reconcile idempotency `yk:` alignment | Webhook `yk:` vs reconcile `yookassa:` double-credit risk | **Accepted** | 1 | Payment integrity | BILL-001 §7.1 | `payment_idempotency.py`, `payment_queue.py`, reconcile | Canonical key shared; dry-run default; legacy skip | unittest + AMS import | Yes | No | — | **DONE** — [`POSTDEPLOY-2026-06-10-BILL-FIX-001.md`](POSTDEPLOY-2026-06-10-BILL-FIX-001.md) |
 | USER-LIFECYCLE-001 | P1 | Product/lifecycle | End-to-end user scenario audit | Launch gates need scenario matrix | **Accepted** | 1 | Launch readiness | Commercial audit + policy | docs, bot, portal | Scenarios A–H; REG/PAY/WEB gates; go/no-go | — | No | No | — | **DONE** — [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md) |
 | DEVICE-ARCH-001 | P0 | Device/config | Multi-device architecture + billing coefficient | Vague support-only insufficient | **Accepted** evaluate | 1 | Infra cost honesty | USER-LIFECYCLE-001 §G | docs, schema, billing, Remna | MODEL A recommended; MODEL B NOT READY; gates DEVICE-* | DEVICE-SMOKE-001 | No | **Yes** | OD-03, BILL-SMOKE | **DONE** (arch) — owner approve MODEL A |
+| DEVICE-ENFORCE-001 | P0 | Device/config | Detect reuse of active config on 2nd device | URL sharing bypasses billing × N | **Accepted** evaluate | 1 | Abuse + infra honesty | DEVICE-ARCH-001 §14 | Remna HWID, panel, admin | L3/L4 for paid/open; staged consequences | DEVICE-SMOKE-001 | No | **Yes** | G7, OD-03 | OPEN — paid/open blocker |
 | REFERRAL-ARCH-001 | P0 | Referral/growth | Referral entrypoint + portal role + analytics | Bot-only share contradicts two-path acquisition | **Accepted** evaluate | 1 | Growth clarity | USER-LIFECYCLE-001 §H | docs, portal, bot, admin | OPTION 3 hybrid; G4 bind BLOCKED; gates REF-* | REF-BIND-001 | No | **Yes** | G4, OD-02 | **DONE** (arch) — owner approve OPTION 3 |
 | DEC-IMPL-013 | P1 | Cabinet/account | Cabinet API `billing_profile` / trial-wallet | `portal_cabinet.py` missing fields `portal.js` expects | **Accepted** | 1 | Cabinet truth | Full Product Audit + [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) | `portal_cabinet.py`, `portal.js` | API returns trial/wallet/legacy/expired + billing_note | py_compile; `tests/test_portal_cabinet_billing.py` | Yes | No | — | **DONE** — deploy [`POSTDEPLOY-2026-06-10-P1-CAB-001.md`](POSTDEPLOY-2026-06-10-P1-CAB-001.md) |
 | PROD-005 | P1 | Bot UX/copy | Ghost button labels | «Начать бесплатно», «Мой VPN» in errors | **Accepted** | 1 | Onboarding confusion | Audit | `subscription_resolve.py`, `portal_cabinet.py` | Labels match live menu | py_compile | Yes | No | — | OPEN |
