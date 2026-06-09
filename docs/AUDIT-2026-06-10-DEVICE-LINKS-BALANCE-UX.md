@@ -362,7 +362,7 @@ support_required: true
 
 | ID | Scope | Depends on |
 |----|-------|------------|
-| **P1-CAB-001** | `billing_profile` + legacy/wallet messaging in cabinet API + UI | G2-B |
+| **P1-CAB-001** | `billing_profile` + legacy/wallet messaging in cabinet API + UI | **DONE** — deployed 2026-06-09 [`POSTDEPLOY-2026-06-10-P1-CAB-001.md`](POSTDEPLOY-2026-06-10-P1-CAB-001.md) |
 | **P1-DEV-001** | Cabinet `active_config_count` + `active_configs[]` read-only from `vpn_keys` + Remna | P1-CAB-001 |
 | **P1-DEV-002** | Admin/support revoke: disable Remna user + delete/archive `vpn_keys` row | ops runbook |
 | **P1-DEV-003** | Self-service **replace device** (revoke old + issue one new) — not additive multi-device | P1-DEV-002 + product sign-off |
