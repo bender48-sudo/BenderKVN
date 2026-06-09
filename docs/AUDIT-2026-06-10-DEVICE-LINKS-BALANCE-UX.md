@@ -16,8 +16,9 @@
 | New device journey | **Policy = support-only**; copy in setup/cabinet **over-promises** self-service second config | P1 product truth |
 | Balance display | Stored `users.balance`; owner **186.66 ₽** stable ~2 weeks is **consistent with legacy panel bypass** after two daily charges | P1 trust/clarity |
 | Multi-config billing | **6.67 ₽ × N not implemented** — one `DAILY_RATE` debit per account per UTC day regardless of key rows | Documented MVP gap |
+| **Active config visibility** | Setup/cabinet show **one subscription URL/QR**; **no count**, **no list**, **no revoke** in UI or cabinet API | **P1 product truth** |
 
-**Recommendation:** Do not start multi-device or billing “fixes” until product decision + G2-B cabinet truth. Close TG bind with a **clean test Telegram account** (no existing keys) before P1-REF-002.
+**Recommendation:** Do not start multi-device or billing “fixes” until product decision + G2-B cabinet truth. Pilot policy: **Option A (MVP strict)** — see §14. Implement **`billing_profile` in cabinet before** device self-service or copy changes.
 
 ---
 
@@ -176,6 +177,7 @@ Read-only AMS check on owner account (TG id redacted; internal ops id ending …
 2. Setup copy suggests self-issue for new device; FAQ says support → **contradiction**.
 3. “Get new link” vs “refresh subscription in Happ” not distinguished.
 4. Cabinet `new_device_cta` opens bot without explaining support-only policy.
+5. **No active-config count or revoke** on setup/cabinet — user cannot see or delete links (see §14).
 
 ---
 
@@ -233,3 +235,161 @@ Read-only AMS check on owner account (TG id redacted; internal ops id ending …
 5. **P1-REF-002** — hidden +3d referral bonus gate (after G2-A bind PASS).
 
 **Priority rationale:** Backend billing truth and TG bind gate outweigh pure CSS; referral bonus is next only if live code path confirmed risky.
+
+---
+
+## 14. Active config visibility and revoke/delete gap
+
+**Audit date:** 2026-06-09 (device/config management pass)  
+**Trigger:** User on setup/cabinet screen saw QR, subscription link, «Скопировать ссылку», «Инструкция по устройству», and warning *«Одна конфигурация — одно устройство. Для нового устройства выпусти новую настройку в личном кабинете или боте.»* — then asked: how many active links, how to delete, and whether a second device doubles daily charge.
+
+### 14.1 Current user confusion
+
+| Question | User expectation | Current product reality |
+|----------|------------------|------------------------|
+| How many active links/configs do I have? | A visible count or list | **Not shown** on setup; cabinet list **empty stub** (API gap) |
+| How to delete/revoke a link? | Self-service revoke | **No user-facing revoke**; support/admin only |
+| Second device → 6.67 ₽ × 2? | Per-device billing | **No** — one `DAILY_RATE`/account/day; multi-key not billed × N |
+| Balance ~187 ₽ with 78-year access | Balance should drain daily | **Legacy profile bypasses drain**; UI does not explain |
+
+### 14.2 Exact UI surface and copy
+
+**Primary screen (user report):** **`/setup/` token success state** — not a config manager.
+
+| Element | File | ID / key |
+|---------|------|----------|
+| Page | `web/portal/setup.html` | `#setup-content.setup-ready` |
+| Logic | `web/portal/assets/setup.js` | `showSetupResult()` |
+| QR | `#setup-qr` | single canvas |
+| Subscription URL | `#setup-link` in `#setup-link-fold` | one URL from trial/recover/token |
+| «Скопировать ссылку» | `#btn-copy` | `ru.json` → `setup.copy` |
+| «Инструкция по устройству» | `#btn-setup-instruction` | `setup.instruction_link` → `/portal/guide.html` |
+| Device rule warning | `#setup-device-rule` | `setup.device_rule` — *«…выпусти новую настройку в личном кабинете или боте»* |
+| Device pick (instructions only) | `#setup-device-grid` | links to guide per platform — **not** new config issuance |
+
+**Also relevant:**
+
+| Surface | Files | What it shows |
+|---------|-------|---------------|
+| **Cabinet** (Mini App / `cabinet.html`) | `portal.js`, `cabinet.html` | `#cabinet-configs-list` — expects `doc.configurations[]` |
+| **Cabinet CTA** | `#btn-new-device` | `cabinet.new_device_cta` → bot URL |
+| **Bot** | `handlers.py` `menu_get_setup` | Returns **same** setup URL (existing sub), not new Remna key |
+| **FAQ** | `ru.json` `cabinet.faq` | Second device → **support** (contradicts `setup.device_rule`) |
+
+**What UI lacks today:**
+
+- Active config **count** (e.g. «Активна 1 настройка»)
+- **List** of configs with id, created, expiry, status
+- **Revoke/delete** control
+- **Replace device** vs **add device** distinction
+- **`billing_profile`** / legacy manual access explanation
+- Clarification that displayed link is **current** subscription, not a catalog of links
+
+### 14.3 Backend source of truth
+
+| Layer | Location | Notes |
+|-------|----------|-------|
+| **Local DB** | `vpn_keys` table (`bot_src/database.py`) | `key_id`, `user_id`, `vless_uuid`, `key_email`, `expiry_date`, `created_date` |
+| **Remna panel** | `remnawave_api.provision_key()` | One Remna user per `key_email`; subscription URL derived from panel user |
+| **Subscription URL cache** | `subscription_resolve.py`, `setup_url_service.py` | Resolves **one** URL per Telegram user (first key / panel lookup) |
+| **Cabinet API** | `portal_cabinet.cabinet_snapshot()` | Returns balance, days, daily_rate — **no** `configurations`, **no** `billing_profile`, **no** count |
+| **Portal UI (expects more)** | `portal.js` `applyCabinetDoc()` | Reads `doc.configurations`, `doc.billing_profile` — **fields not returned by backend today** → list stays empty |
+
+**What defines “active”:**
+
+- Handlers filter: `expiry_date > now` (`handlers.py` profile/active_keys)
+- DB stats: `COUNT(*) FROM vpn_keys WHERE expiry_date > CURRENT_TIMESTAMP` (`database.py`)
+- **No** separate `status=revoked` column; row deleted only when Remna sync finds missing remote user (`update_key_status_from_server` → `DELETE`)
+
+**Enforcement:**
+
+| Question | Answer |
+|----------|--------|
+| Multiple `vpn_keys` rows per account? | **Yes, technically** (`add_new_key` on each trial/purchase/admin action; `get_next_key_number = len(keys)+1`) |
+| One active config enforced? | **No** in code — policy only ([`BENDERVPN-PRODUCT-POLICY.md`](BENDERVPN-PRODUCT-POLICY.md) PT-06, PROD-004) |
+| Device name/platform stored? | **No** on `vpn_keys` row |
+| Last used / last connected? | **Not in shop DB** (would be Remna/panel telemetry if available) |
+| User-safe revoke/delete API? | **No** |
+| Admin revoke path? | Implicit delete on Remna sync miss; **no** documented user/admin «revoke key» flow in bot |
+
+### 14.4 Multi-device billing (read-only confirmation)
+
+| Question | Answer |
+|----------|--------|
+| Billing unit today | **Per account** (Telegram `user_id`), not per key |
+| 6.67 ₽ × N implemented? | **No** |
+| Actual charge | `charge_daily_balance_if_due(user_id, DAILY_RATE)` once per UTC day when `access_profile == wallet` |
+| Two `vpn_keys` rows today | Still **one** daily debit; `sync_panel_from_balance` uses **`keys[0]`** only |
+| Legacy / manual (e.g. expiry ≥2030) | **`legacy` profile → no wallet drain** (see §7) |
+| Self-service «new device» before policy fix | **High billing/copy mismatch risk** |
+
+**Product decision required before multi-device:** approve Option B (paid N configs + enforcement + billing change) or stay on Option A.
+
+### 14.5 Safe product options (pilot)
+
+| Option | Summary | Pilot fit |
+|--------|---------|-----------|
+| **A — MVP strict** (recommended) | One active config/account; «new device» = **replace** via support until safe revoke; **no** extra billing; setup link = **refresh current** sub | **Matches current policy + code** |
+| **B — Multi-device paid** | N configs; 6.67 ₽ × N/day; cabinet shows count+cost; revoke required; backend enforcement | **Not ready** — billing + API + Remna lifecycle missing |
+| **C — Same URL multi-device** | One sub on many devices | **Contradicts** current copy and fair-use; needs policy reversal |
+
+**Recommendation for current pilot:** **Option A.** Do not ship self-service second config until revoke + policy enforcement exist.
+
+### 14.6 Required cabinet/API fields (later — do not implement in this pass)
+
+Proposed `cabinet_snapshot` extensions for G2-B / device management:
+
+```text
+access_profile: wallet | trial | legacy | expired
+balance_rub, daily_rate, days_left
+active_config_count
+billable_config_count        # 0 for legacy/trial; 1 for MVP wallet
+active_configs[]:
+  - key_id, label, created_at, expires_at, active, platform (if known)
+  - subscription_url_masked  # never full secret in list API
+  - billable: bool
+can_revoke: false            # true only when revoke endpoint exists
+can_replace_device: false     # true when replace flow shipped
+support_required: true       # MVP default for second device
+legacy_access_note: string    # e.g. manual access; balance not draining
+```
+
+### 14.7 Proposed copy (later — do not edit `ru.json` now)
+
+| Instead of | Use later |
+|------------|-----------|
+| «выпусти новую настройку в личном кабинете или боте» | «Скопировать **текущую** ссылку» + «Новое устройство — через поддержку» |
+| Silent balance display for legacy | «Баланс не списывается: у вас ручной доступ до …» |
+| Implied multi-config | «Активна **1** настройка» or «Дополнительные устройства пока не поддерживаются» |
+
+### 14.8 Backlog items (device/config management)
+
+| ID | Scope | Depends on |
+|----|-------|------------|
+| **P1-CAB-001** | `billing_profile` + legacy/wallet messaging in cabinet API + UI | G2-B |
+| **P1-DEV-001** | Cabinet `active_config_count` + `active_configs[]` read-only from `vpn_keys` + Remna | P1-CAB-001 |
+| **P1-DEV-002** | Admin/support revoke: disable Remna user + delete/archive `vpn_keys` row | ops runbook |
+| **P1-DEV-003** | Self-service **replace device** (revoke old + issue one new) — not additive multi-device | P1-DEV-002 + product sign-off |
+| **PROD-004** | Enforce max 1 active config per account (or explicit N after Option B) | policy decision |
+| **P1-BILL-002** | If Option B: `DAILY_RATE × billable_config_count` + tests | product approval only |
+| **P2-COPY-DEVICE-001** | Align setup/cabinet/FAQ to chosen option | after P1-CAB-001 truth |
+| **P2-UX-GUIDE-001** | Guide button layout (§2) | independent |
+
+### 14.9 No-go before changing copy/UI
+
+- Do not promise «выпусти новую настройку» self-service until **P1-DEV-003** or support path is explicit.
+- Do not show config count without **P1-DEV-001** backend fields.
+- Do not add revoke button without **P1-DEV-002** Remna+DB lifecycle.
+- Do not imply 6.67 ₽ × N until **P1-BILL-002** shipped and tested.
+- Do not change legacy owner balance display without **`access_profile: legacy`**.
+
+### 14.10 Suggested next implementation surface
+
+**Order:**
+
+1. **P1-CAB-001** — `billing_profile` + legacy balance explanation (fixes owner 187 ₽ confusion).
+2. **P1-DEV-001** — read-only config count/list in cabinet (answers «how many links» without revoke).
+3. **P1-DEV-002 + PROD-004** — support/admin revoke + one-config enforcement.
+4. **P2-COPY-DEVICE-001** — honest copy after backend truth exists.
+
+**Not next:** multi-device self-service (Option B) or UI-only copy fixes alone.
