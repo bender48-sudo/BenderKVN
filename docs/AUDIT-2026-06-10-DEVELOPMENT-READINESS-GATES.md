@@ -22,6 +22,8 @@ G5  Public/partner scale
 
 **Commercial launch audit (2026-06-10):** [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md) — F&F **GO**; soft launch **SOFT-LAUNCH ONLY**; paid/open/referral **NO-GO**.
 
+**BILL-001 / LAUNCH-003 (2026-06-10):** [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md) — G6 **PARTIAL**; automated paid pilot **NO-GO**; manual whitelist pilot **CONDITIONAL**; reconcile `yookassa:` vs `yk:` key mismatch **P0**.
+
 ---
 
 ## 2. G0 — Audit complete ✅

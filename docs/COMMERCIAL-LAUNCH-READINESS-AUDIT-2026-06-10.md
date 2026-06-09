@@ -163,7 +163,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | **G3** | Telegram registration / 90d | **DONE** | Code + policy PT-01; trial provision path | No | No | No | Keep monitoring trial abuse | — |
 | **G4** | Web/email fallback / TG bind | **BLOCKED** | Web 1d trial works; **TG bind FAIL** (`funnel_bot_start bind:*` = 0) | **Yes** if email growth pushed | **Yes** | **Yes** | Retest bind per TELEGRAM-BIND-FLOW §9; or disable email path in campaigns | Waive bind or fix first? |
 | **G5** | Referral attribution | **PARTIAL** | Web `ref_code` deployed PASS; TG `ref_*` code exists; bind migration FAIL; ledger admin missing | Tracking-only OK | Bonus = no | Growth = yes | P1-ADM-002 ledger; fix bind | Referral campaigns allowed? |
-| **G6** | Billing/payment money flow | **NOT_STARTED** | Core code exists (6.67₽/day, YooKassa webhook, autopay); **no commercial audit** | Low $ manual | **Yes** | **Yes** | BILL-001 full audit + wallet/expired smokes | Enable paid pilot when? |
+| **G6** | Billing/payment money flow | **PARTIAL** | BILL-001 audit — [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md); reconcile `yk:`/`yookassa:` mismatch; live smokes missing | Manual whitelist only | **Yes** (automated) | **Yes** | BILL-FIX-001 + BILL-SMOKE-001..004 | Manual pilot waiver? |
 | **G7** | Device/config lifecycle | **PARTIAL** | P1-DEV-001 read-only count/list deployed; **no revoke/replace/enforce** | Support manual OK | Weak | **Yes** | Admin revoke path; copy fix `device_rule` | Option A strict vs B multi-device |
 | **G8** | Admin/support operations | **PARTIAL** | Admin flow test exists; **no user lookup by TG/email**; RUNBOOK-001 incomplete | Manual owner OK | **Yes** | **Yes** | P1-ADM-001 lookup; sleep/resume runbook | — |
 | **G9** | Monitoring/alerting | **PARTIAL** | Read-only probes + `monitor.sh`; no automated profile alert; no VLESS functional probe; no billing job alert | Acceptable F&F | Partial | **Yes** | Profile integrity cron + alert channel | — |
@@ -181,7 +181,8 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | **DONE** | 2 (G3, G13) |
 | **PARTIAL** | 9 (G1, G2, G5, G7, G8, G9, G10, G11, G15) |
 | **BLOCKED** | 1 (G4) |
-| **NOT_STARTED** | 3 (G6, G12, G14) |
+| **NOT_STARTED** | 2 (G12, G14) |
+| **PARTIAL (was NOT_STARTED)** | 1 (G6 — BILL-001 done) |
 | **NEEDS_OWNER_DECISION** | 5 (G1 desktop, G2 Hiddify, G4 bind waiver, G5 campaigns, G7 device policy) |
 
 ---
@@ -210,7 +211,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 
 | # | Severity | Blocker | Blocks |
 |---|----------|---------|--------|
-| 1 | **P0** | **Billing/payment commercial audit not done** (G6) | Paid pilot, open launch |
+| 1 | **P0** | **Billing live smokes + reconcile key fix** (G6 PARTIAL) — [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md) | Automated paid pilot, open launch |
 | 2 | **P0** | **TG bind FAIL** — web→TG migration unproven (G4) | Email fallback growth, referral migration |
 | 3 | **P0** | **Desktop sleep/resume unresolved** (INCIDENT-003, G1) | Desktop commercial support |
 | 4 | **P1** | **No admin user lookup / revoke-replace path** (G7, G8) | Commercial support at scale |
