@@ -167,13 +167,15 @@ Server emits correct Candidate D profile. Owner symptoms (~1/min failures, conne
 
 | Hypothesis | Evidence for | Evidence against | Likelihood |
 |------------|--------------|------------------|------------|
-| **Happ stale cached 5896 B / 3-proxy profile** | Owner refreshes often; pre-D required refresh; Happ known to cache | Live server always returns 7353 B now | **High** if owner device not refreshed post-D |
+| **Stale cached profile despite server-side Candidate D** | Owner refreshes often; pre-D required refresh; Happ known to cache | Live server always returns 7353 B / 6-proxy now | **High** if client did not fully refresh/reimport |
 | **Happ false-connected / DNS cache** | Owner: pages fail until refresh while tunnel shows connected | Server DNS split OK; DoH in profile | **High** |
 | **Happ sleep/resume / Wi-Fi↔LTE** | Owner reports all platforms; desktop sleep worst | Server paths stable; multipath should help | **Medium** |
 | **Server profile still broken** | Owner symptom severity | All automated gates PASS; 5/5 user samples identical | **Low** |
 | **VLESS handshake intermittent** | TG-only RU incidents historically VLESS-layer | TCP probes green; needs report.zip / alternate client A/B | **Medium** |
 
-**Happ remains primary recommendation** while incident open — but owner **must verify device has 7353 B / 6 nodes** after refresh.
+**Happ remains primary recommendation** while incident open — but owner **must confirm the profile was refreshed/reimported after Candidate D**. Happ may display **one Auto host/profile**; this is expected if the app abstracts internal relay paths.
+
+**Happ UX note:** The **6 relay paths** are verified **server-side** in subscription JSON / profile parser (`verify_vpn_balancer_profile.py`, `probe_subscription.py`). They **may not appear as six selectable nodes** in Happ. The user does **not** manually choose relay nodes.
 
 **Alternate-client comparison recommended** (diagnostic only): same URL in **Hiddify** on same network — if stable in Hiddify but not Happ → client issue; if both fail → server/path issue.
 
@@ -211,9 +213,15 @@ Server emits correct Candidate D profile. Owner symptoms (~1/min failures, conne
 
 ### Top 3 likely causes
 
-1. **Happ client stale/partial profile cache** (owner device not fully on 7353 B / 6 nodes) — **Medium–High confidence**
+1. **Stale cached profile despite server-side Candidate D** — client did not fully refresh/reimport current subscription — **Medium–High confidence**
 2. **Happ false-connected + DNS/routing cache** (connected UI, sites need refresh) — **Medium confidence**
 3. **VLESS-layer intermittent failure** not visible in TCP probes — **Medium confidence**, needs owner report.zip or Hiddify A/B
+
+### Happ diagnostic decision rules
+
+- **Do not** classify **one visible Happ Auto host** as regression — Happ abstracts internal 6 relay paths into one Auto profile.
+- **Regression** only if server-side subscription for that user returns old **5896 B / 3-proxy** profile, or if a local exported/imported profile proves old structure.
+- If Happ shows **one Auto host** but server-side sub is **7353 B / 6 proxies**, classify UI as **expected** and continue client-behavior diagnostics (refresh/reimport, false-connected, sleep/resume, `report.zip`).
 
 ---
 
@@ -249,26 +257,29 @@ Server emits correct Candidate D profile. Owner symptoms (~1/min failures, conne
 
 ### Happ refresh verification (all devices)
 
-1. Open Happ → select **🚀 BenderVPN Auto**
-2. **Pull to refresh** subscription (or use refresh button)
-3. Confirm **6 nodes/routes** visible (relay pool, not 3)
-4. If still **3 nodes** or odd behavior:
+1. Open Happ → **🚀 BenderVPN Auto**
+2. **Refresh subscription** (pull-to-refresh or refresh button)
+3. Confirm the profile was **refreshed/reimported after Candidate D**. Happ may show **one Auto host/profile** — this is **expected**; internal relay paths are not necessarily visible as selectable nodes.
+4. If instability remains:
    - **Delete** the BenderVPN profile completely
-   - Re-import from bot/setup link (fresh import)
+   - **Reimport** from bot or cabinet setup link
+   - Confirm the app shows the expected **single Auto profile/host**
 5. TUN **off → on**
-6. Test **Instagram + Google + Telegram** (not Telegram alone)
-7. Note exact time if failure recurs
+6. Test **Google + Instagram + Telegram** (not Telegram alone)
+7. Record **exact failure time** and whether Happ still shows **connected**
+
+**Server-side check (ops, not owner):** 6 relay paths are verified in subscription JSON via `probe_subscription.py` / `verify_vpn_balancer_profile.py` — not by counting nodes in Happ UI.
 
 ### Evidence to collect
 
 | Item | Why |
 |------|-----|
 | Happ version + OS version | Platform-specific bugs |
-| Screenshot of node list after refresh | Confirm 6 vs 3 proxies |
+| Screenshot of **profile screen** after refresh | Confirm single Auto profile UX; not a node-count check |
 | Whether Happ shows "connected" during failure | False-connected detection |
 | Failure mode (DNS / all traffic / TG-only / after sleep) | Root cause branch |
 | `report.zip` from Happ (if available) | VLESS RST analysis per `vpn-incident-tg-only-ru` skill |
-| Hiddify test same URL same network | Client vs server classification |
+| Hiddify test same URL same network | Client vs server classification (diagnostic only) |
 
 ### Optional comparison test
 
@@ -283,7 +294,7 @@ Server emits correct Candidate D profile. Owner symptoms (~1/min failures, conne
 
 **Not recommended.** Candidate D is healthy on all automated gates.
 
-If owner device proves **5896 B / 3-proxy** after full refresh → investigate **client cache** first, not template rollback.
+If **server-side** subscription for the owner account returns **5896 B / 3-proxy** after Candidate D, or a **local exported/imported profile** proves old structure → investigate cache/import first, not template rollback. **One visible Auto host in Happ is not evidence of regression.**
 
 Emergency template rollback path: [`APPLY-2026-06-10-VPN-CANDIDATE-D.md`](APPLY-2026-06-10-VPN-CANDIDATE-D.md) §8.
 
@@ -299,7 +310,7 @@ Emergency template rollback path: [`APPLY-2026-06-10-VPN-CANDIDATE-D.md`](APPLY-
 | Owner Happ diagnostics | **YES** — required next step |
 | Monitoring | **YES** — 24–48h disconnect log |
 
-**Next step if fix needed:** Owner completes §15 → share node count screenshot + failure mode → then request targeted approval if server fix proven.
+**Next step if fix needed:** Owner completes §15 → share profile-screen screenshot + failure mode + `report.zip` if available → ops can verify server-side sub size for that account → request targeted approval only if server/profile regression is proven.
 
 ---
 
