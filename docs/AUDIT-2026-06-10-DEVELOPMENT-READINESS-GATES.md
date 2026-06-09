@@ -34,6 +34,10 @@ G5  Public/partner scale
 
 **AUDIT-CLOSEOUT-001 (2026-06-10):** [`AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md`](AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md) — **G0 audit wave CLOSED**; backlog frozen; **implementation GO** for TRACK 0; no new broad audits.
 
+**SUPPORT-AI-ARCH-001 (2026-06-10):** [`ARCH-2026-06-10-AI-SUPPORT-TRIAGE-BOT.md`](ARCH-2026-06-10-AI-SUPPORT-TRIAGE-BOT.md) — AI support triage; L0–L4 permissions; internal copilot MVP; **FINAL-AUDIT-COMPLETE-001** closes audit phase.
+
+**Final audit phase:** **COMPLETE** — no remaining broad audits; only implementation/smoke/proof/owner decisions.
+
 ---
 
 ## 2. G0 — Audit complete ✅ (frozen 2026-06-10)

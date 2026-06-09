@@ -64,6 +64,7 @@
 | **TRACK 3** | Device — SMOKE, ENFORCE, DATA, ADMIN, BILL | After TRACK 0–2 |
 | **TRACK 4** | VPN stability — INCIDENT-003/004 owner proof | Owner-led |
 | **TRACK 5** | Monitoring / CI / runbooks | After soft blockers |
+| **TRACK 6** | Support AI / technical triage | After P1-ADM + runbooks; not F&F blocker |
 
 ### Tomorrow queue (TRACK 0 + prep)
 
@@ -78,7 +79,24 @@
 
 ### Completed audits (frozen — do not re-audit)
 
-~~BILL-FIX-001~~ · ~~USER-LIFECYCLE-001~~ · ~~DEVICE-ARCH-001~~ · ~~DEVICE-ENFORCE-001 design~~ · ~~REFERRAL-ARCH-001~~ · ~~BILL-001~~ · ~~P1-CAB/DEV/REF deploys~~
+~~BILL-FIX-001~~ · ~~USER-LIFECYCLE-001~~ · ~~DEVICE-ARCH-001~~ · ~~DEVICE-ENFORCE-001 design~~ · ~~REFERRAL-ARCH-001~~ · ~~SUPPORT-AI-ARCH-001~~ · ~~BILL-001~~ · ~~P1-CAB/DEV/REF deploys~~ · ~~AUDIT-CLOSEOUT-001~~
+
+### TRACK 6 — Support AI / technical triage
+
+| ID | P | Status | Launch blocker | Owner? | Summary |
+|----|---|--------|----------------|--------|---------|
+| **SUPPORT-AI-ARCH-001** | P1 | **DONE** | None (F&F) | LLM deferred | [`ARCH-2026-06-10-AI-SUPPORT-TRIAGE-BOT.md`](ARCH-2026-06-10-AI-SUPPORT-TRIAGE-BOT.md) — internal copilot MVP |
+| **SUPPORT-TICKET-001** | P1 | OPEN | Paid partial | No | Ticket schema |
+| **SUPPORT-DIAG-001** | P1 | OPEN | Paid partial | No | Read-only diag pack |
+| **SUPPORT-CURSOR-HANDOFF-001** | P1 | OPEN | Paid partial | No | Escalation prompts |
+| **SUPPORT-REPLY-001** | P1 | OPEN | Paid partial | No | Human-style drafts |
+| **SUPPORT-SECURITY-001** | P1 | OPEN | Paid partial | No | Redaction + permissions |
+| **SUPPORT-RAG-001** | P2 | OPEN | Open | No | Docs/runbook index |
+| **SUPPORT-ADMIN-001** | P2 | OPEN | Open | No | Operator queue |
+| **SUPPORT-SMOKE-001** | P2 | OPEN | Auto gate | No | Simulated cases |
+| **SUPPORT-AUTO-001** | P2 | OPEN | User bot | **Yes** | After smokes only |
+
+**Rule:** AI support does not replace P1-ADM-001 or LAUNCH-004 runbooks.
 
 ---
 
@@ -169,6 +187,7 @@
 | DEVICE-ARCH-001 | P0 | Device/config | Multi-device architecture + billing coefficient | Vague support-only insufficient | **Accepted** evaluate | 1 | Infra cost honesty | USER-LIFECYCLE-001 §G | docs, schema, billing, Remna | MODEL A recommended; MODEL B NOT READY; gates DEVICE-* | DEVICE-SMOKE-001 | No | **Yes** | OD-03, BILL-SMOKE | **DONE** (arch) — owner approve MODEL A |
 | DEVICE-ENFORCE-001 | P0 | Device/config | Detect reuse of active config on 2nd device | URL sharing bypasses billing × N | **Accepted** evaluate | 1 | Abuse + infra honesty | DEVICE-ARCH-001 §14 | Remna HWID, panel, admin | L3/L4 for paid/open; staged consequences | DEVICE-SMOKE-001 | No | **Yes** | G7, OD-03 | OPEN — paid/open blocker |
 | REFERRAL-ARCH-001 | P0 | Referral/growth | Referral entrypoint + portal role + analytics | Bot-only share contradicts two-path acquisition | **Accepted** evaluate | 1 | Growth clarity | USER-LIFECYCLE-001 §H | docs, portal, bot, admin | OPTION 3 hybrid; G4 bind BLOCKED; gates REF-* | REF-BIND-001 | No | **Yes** | G4, OD-02 | **DONE** (arch) — owner approve OPTION 3 |
+| SUPPORT-AI-ARCH-001 | P1 | Support/AI | AI support triage + Cursor handoff | Support scale; diagnostic quality | **Accepted** evaluate | 1 | Support efficiency | AUDIT-CLOSEOUT TRACK 6 | docs, ops read-only | Option D+B MVP; L0–L3; no mutation | SUPPORT-DIAG-001 | No | **Yes** LLM | P1-ADM-001 | **DONE** (arch) — internal copilot first |
 | DEC-IMPL-013 | P1 | Cabinet/account | Cabinet API `billing_profile` / trial-wallet | `portal_cabinet.py` missing fields `portal.js` expects | **Accepted** | 1 | Cabinet truth | Full Product Audit + [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) | `portal_cabinet.py`, `portal.js` | API returns trial/wallet/legacy/expired + billing_note | py_compile; `tests/test_portal_cabinet_billing.py` | Yes | No | — | **DONE** — deploy [`POSTDEPLOY-2026-06-10-P1-CAB-001.md`](POSTDEPLOY-2026-06-10-P1-CAB-001.md) |
 | PROD-005 | P1 | Bot UX/copy | Ghost button labels | «Начать бесплатно», «Мой VPN» in errors | **Accepted** | 1 | Onboarding confusion | Audit | `subscription_resolve.py`, `portal_cabinet.py` | Labels match live menu | py_compile | Yes | No | — | OPEN |
 | DEC-IMPL-003 | P1 | Bot UX/copy | Bot/API label alignment | Same as PROD-005 | **Accepted** | 1 | Support load | Policy Phase 1 | bot handlers | All user strings match keyboards | grep labels | Yes | No | — | OPEN |

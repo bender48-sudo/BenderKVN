@@ -3,7 +3,8 @@
 **ID:** AUDIT-CLOSEOUT-001  
 **Date:** 2026-06-10  
 **Branch:** `product-referral-cabinet-ui-v1`  
-**Repo HEAD:** `4f74631` (synced with `origin`)  
+**Repo HEAD:** `08bf3f6` (closeout); see FINAL-AUDIT-COMPLETE-001 for push state
+**Final audit phase:** **COMPLETE** after SUPPORT-AI-ARCH-001 (FINAL-AUDIT-COMPLETE-001)
 **Mode:** final audit consolidation + backlog freeze · **no implementation** · **no prod mutation**
 
 **Purpose:** Close the 2026-06-10 audit wave; freeze implementation-ready backlog; define tomorrow's work queue.
@@ -48,6 +49,7 @@ The **2026-06-10 commercial launch audit wave is complete** for architecture and
 | **P1-REF-001** | **CLOSED + DEPLOYED** | Web `ref_code` attribution PASS | TG bind migration FAIL | Postdeploy REF | Smoke (bind) |
 | **DEVELOPMENT-READINESS-GATES** | **CLOSED** | G0–G5 hierarchy | Per-gate implementation | Gates doc | Implementation |
 | **VPN-REL-001 / VPN-ARCH-001** | **SUPERSEDED** | Candidate D applied | INCIDENT-003/004 desktop | Incident docs | Owner proof |
+| **SUPPORT-AI-ARCH-001** | **CLOSED** | AI triage bot architecture; L0–L4 permissions | SUPPORT-TICKET/DIAG impl | [`ARCH-2026-06-10-AI-SUPPORT-TRIAGE-BOT.md`](ARCH-2026-06-10-AI-SUPPORT-TRIAGE-BOT.md) | Implementation |
 
 **Audit-complete definition:** Architecture, gates, risks, and ordered surfaces are documented. **Not** audit-complete: live smokes, Remna HWID proof, bind retest, billing `--apply`, enforcement PATCH.
 
@@ -252,6 +254,23 @@ All paid pilot blockers plus:
 | **LAUNCH-004 runbooks** | P1 | NOT_STARTED | Soft+paid |
 | **LAUNCH-015 checklist** | P2 | PARTIAL | Open launch |
 
+### TRACK 6 — Support AI / technical triage
+
+| ID | P | Status | Blocker | Notes |
+|----|---|--------|---------|-------|
+| **SUPPORT-AI-ARCH-001** | P1 | **DONE** (arch) | — | Not F&F blocker |
+| **SUPPORT-TICKET-001** | P1 | NOT_STARTED | Paid partial | Ticket schema |
+| **SUPPORT-DIAG-001** | P1 | NOT_STARTED | Paid partial | Needs P1-ADM read-only |
+| **SUPPORT-CURSOR-HANDOFF-001** | P1 | NOT_STARTED | Paid partial | Cursor escalation |
+| **SUPPORT-REPLY-001** | P1 | NOT_STARTED | Paid partial | Reply drafts |
+| **SUPPORT-SECURITY-001** | P1 | NOT_STARTED | Paid partial | Redaction ACL |
+| **SUPPORT-RAG-001** | P2 | NOT_STARTED | Open | Docs index |
+| **SUPPORT-ADMIN-001** | P2 | NOT_STARTED | Open | Operator queue |
+| **SUPPORT-SMOKE-001** | P2 | NOT_STARTED | Auto gate | Simulated cases |
+| **SUPPORT-AUTO-001** | P2 | NOT_STARTED | User bot | After smokes |
+
+**TRACK 6 rules:** Internal copilot **recommended** before paid/open scale; **not** prerequisite for tomorrow TRACK 0. AI must **not** bypass missing P1-ADM / LAUNCH-004 runbooks.
+
 ---
 
 ## 6. Tomorrow implementation plan (2026-06-11)
@@ -437,7 +456,26 @@ All paid pilot blockers plus:
 | [`ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md`](ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md) | Referral OPTION 3 |
 | [`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md) | Frozen tracks §1.1 |
 | [`AUDIT-2026-06-10-DEVELOPMENT-READINESS-GATES.md`](AUDIT-2026-06-10-DEVELOPMENT-READINESS-GATES.md) | G0–G5 |
+| [`ARCH-2026-06-10-AI-SUPPORT-TRIAGE-BOT.md`](ARCH-2026-06-10-AI-SUPPORT-TRIAGE-BOT.md) | SUPPORT-AI-ARCH-001 |
 
 ---
 
-**AUDIT-CLOSEOUT-001 complete.** Backlog frozen. Implementation may begin TRACK 0 tomorrow.
+## 12. Final audit phase registry (FINAL-AUDIT-COMPLETE-001)
+
+| Phase | ID | Status |
+|-------|-----|--------|
+| Commercial launch | COMMERCIAL-LAUNCH-READINESS | **CLOSED** |
+| Billing | BILL-001 | **CLOSED** |
+| Lifecycle | USER-LIFECYCLE-001 | **CLOSED** |
+| Device | DEVICE-ARCH-001 + DEVICE-ENFORCE-001 design | **CLOSED** |
+| Referral | REFERRAL-ARCH-001 | **CLOSED** |
+| Support AI | SUPPORT-AI-ARCH-001 | **CLOSED** |
+| Backlog freeze | AUDIT-CLOSEOUT-001 | **CLOSED** |
+
+**Remaining broad audits:** **none identified** (scan 2026-06-10).
+
+**Remaining work types:** implementation (TRACK 0–6) · smoke/proof · owner decisions · documentation cleanup (e.g. «Получить доступ» glossary → COPY-TRUTH).
+
+---
+
+**AUDIT-CLOSEOUT-001 complete.** Audit phase **closed**. Implementation may begin TRACK 0.
