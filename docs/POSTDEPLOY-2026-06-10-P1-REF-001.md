@@ -83,7 +83,7 @@ Run on AMS after deploy via `ops/smoke_p1_ref_deploy_ams.py`:
 
 | Gap | Status |
 |-----|--------|
-| **TG bind migration** (web surrogate → TG user, `referrals` row migrate) | **FAIL** — owner reported bind complete; AMS DB still **NOT_BOUND** (see §9) |
+| **TG bind migration** (web surrogate → TG user, `referrals` row migrate) | **FAIL** — bind never reached bot handler; see §9 + [`AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md`](AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md) |
 | **Telegram `/start ref_*` path** | **Not re-tested live** this deploy; code path unchanged. |
 | **G1 48h detailed device log** | **Incomplete in repo** — owner verbal PASS at deploy gate; continue 24–48h VPN monitoring. |
 
@@ -149,7 +149,9 @@ python3 /tmp/smoke_p1_ref_tg_bind_ams.py verify --email-prefix p1bind-
 | `user_actions` `web_tg_bind` | **None** |
 | Container logs (bind-related) | No `merge_web` / bind success lines; scheduler clean |
 
-**Likely causes:** bind URL not opened in `@Bender_KVN_bot`, wrong/expired token, or bind attempted with Telegram account that already has VPN keys (`both_have_keys` — would not write `web_trial_claims.telegram_id`). **Use a clean test Telegram account** with no existing keys.
+**Likely causes:** bind URL not opened in `@Bender_KVN_bot` **Telegram app**, wrong/expired token, or bind attempted with Telegram account that already has VPN keys (`both_have_keys` — would still log `funnel_bot_start bind:***` if link opened). **Use a clean test Telegram account** with no existing keys.
+
+**Dedicated bind-flow audit (2026-06-09):** [`AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md`](AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md) — **conclusion: bind never reached prod `/start bind_*` handler** (zero `funnel_bot_start bind:*` all time; token still valid). **Not** a migration-code defect until bot entry is proven.
 
 ### Owner retry (required to close §9)
 
