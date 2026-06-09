@@ -57,13 +57,17 @@
 2. ~~**BILL-FIX-001**~~ — reconcile idempotency `yk:` (**DONE** — deploy [`POSTDEPLOY-2026-06-10-BILL-FIX-001.md`](POSTDEPLOY-2026-06-10-BILL-FIX-001.md); BILL-SMOKE before prod `--apply`)
 3. ~~**USER-LIFECYCLE-001**~~ — end-to-end scenario audit (**DONE** — [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md))
 4. ~~**DEVICE-ARCH-001**~~ — multi-device architecture (**DONE** — [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md); owner approve MODEL A)
-5. **DEVICE-COPY-001** / **COPY-TRUTH-001** — honest device copy (`device_rule`, ghost labels)
-6. **DEVICE-SMOKE-001** — Remna same-sub / HWID proof (read-only lab)
-7. **LAUNCH-002** — TG bind retest or waiver (G4)
-8. **BILL-SMOKE-001..004** — live billing/payment smokes on AMS (G6)
-9. **DEVICE-DATA-001** → **DEVICE-ADMIN-001** → **DEVICE-BILL-001** (after owner + smokes)
-10. **LAUNCH-006** — P1-ADM-001 admin user lookup
-11. **Phase 2** — REG-001, trial 90→30 switch prep, metrics (before 300 active configs)
+5. ~~**REFERRAL-ARCH-001**~~ — referral acquisition architecture (**DONE** — [`ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md`](ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md); owner approve OPTION 3)
+6. **DEVICE-COPY-001** / **COPY-TRUTH-001** — honest device copy (`device_rule`, ghost labels)
+7. **REF-COPY-001** / **P1-REF-002** — gate hidden +3d; soften referral preserve note
+8. **REF-PORTAL-001** — portal-first referral share URL (after owner approve OPTION 3)
+9. **DEVICE-SMOKE-001** — Remna same-sub / HWID proof (read-only lab)
+10. **LAUNCH-002** / **REF-BIND-001** — TG bind retest (G4)
+11. **BILL-SMOKE-001..004** — live billing/payment smokes on AMS (G6)
+12. **REF-COUNTER-001** → **REF-ADMIN-001** — user counter + admin ledger
+13. **DEVICE-DATA-001** → **DEVICE-ADMIN-001** → **DEVICE-BILL-001** (after owner + smokes)
+14. **LAUNCH-006** — P1-ADM-001 admin user lookup
+15. **Phase 2** — REG-001, trial 90→30 switch prep, metrics (before 300 active configs)
 
 ---
 
@@ -152,6 +156,7 @@
 | BILL-FIX-001 | P0 | Billing/topup | Reconcile idempotency `yk:` alignment | Webhook `yk:` vs reconcile `yookassa:` double-credit risk | **Accepted** | 1 | Payment integrity | BILL-001 §7.1 | `payment_idempotency.py`, `payment_queue.py`, reconcile | Canonical key shared; dry-run default; legacy skip | unittest + AMS import | Yes | No | — | **DONE** — [`POSTDEPLOY-2026-06-10-BILL-FIX-001.md`](POSTDEPLOY-2026-06-10-BILL-FIX-001.md) |
 | USER-LIFECYCLE-001 | P1 | Product/lifecycle | End-to-end user scenario audit | Launch gates need scenario matrix | **Accepted** | 1 | Launch readiness | Commercial audit + policy | docs, bot, portal | Scenarios A–H; REG/PAY/WEB gates; go/no-go | — | No | No | — | **DONE** — [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md) |
 | DEVICE-ARCH-001 | P0 | Device/config | Multi-device architecture + billing coefficient | Vague support-only insufficient | **Accepted** evaluate | 1 | Infra cost honesty | USER-LIFECYCLE-001 §G | docs, schema, billing, Remna | MODEL A recommended; MODEL B NOT READY; gates DEVICE-* | DEVICE-SMOKE-001 | No | **Yes** | OD-03, BILL-SMOKE | **DONE** (arch) — owner approve MODEL A |
+| REFERRAL-ARCH-001 | P0 | Referral/growth | Referral entrypoint + portal role + analytics | Bot-only share contradicts two-path acquisition | **Accepted** evaluate | 1 | Growth clarity | USER-LIFECYCLE-001 §H | docs, portal, bot, admin | OPTION 3 hybrid; G4 bind BLOCKED; gates REF-* | REF-BIND-001 | No | **Yes** | G4, OD-02 | **DONE** (arch) — owner approve OPTION 3 |
 | DEC-IMPL-013 | P1 | Cabinet/account | Cabinet API `billing_profile` / trial-wallet | `portal_cabinet.py` missing fields `portal.js` expects | **Accepted** | 1 | Cabinet truth | Full Product Audit + [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) | `portal_cabinet.py`, `portal.js` | API returns trial/wallet/legacy/expired + billing_note | py_compile; `tests/test_portal_cabinet_billing.py` | Yes | No | — | **DONE** — deploy [`POSTDEPLOY-2026-06-10-P1-CAB-001.md`](POSTDEPLOY-2026-06-10-P1-CAB-001.md) |
 | PROD-005 | P1 | Bot UX/copy | Ghost button labels | «Начать бесплатно», «Мой VPN» in errors | **Accepted** | 1 | Onboarding confusion | Audit | `subscription_resolve.py`, `portal_cabinet.py` | Labels match live menu | py_compile | Yes | No | — | OPEN |
 | DEC-IMPL-003 | P1 | Bot UX/copy | Bot/API label alignment | Same as PROD-005 | **Accepted** | 1 | Support load | Policy Phase 1 | bot handlers | All user strings match keyboards | grep labels | Yes | No | — | OPEN |

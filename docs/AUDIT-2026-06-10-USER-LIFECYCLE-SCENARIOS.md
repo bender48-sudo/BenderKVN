@@ -29,7 +29,7 @@ BenderVPN has **two parallel acquisition paths** with different rules:
 | Closed soft launch | **SOFT-LAUNCH ONLY** | Happ mobile-first; no email-growth push; ghost copy fix recommended |
 | Paid commercial pilot | **NO-GO** | BILL-SMOKE missing; autopay UI unwired; admin lookup missing |
 | Open commercial launch | **NO-GO** | G1/G4/G8/G9/G12/G14 open |
-| Referral-driven growth | **NO-GO** | G4 bind BLOCKED; bonus not implemented; hidden +3d code risk |
+| Referral-driven growth | **NO-GO** | G4 bind BLOCKED; REF-PORTAL-001; REF-ADMIN-001; see [`ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md`](ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md) |
 
 **BILL-FIX-001** deployed — reconcile idempotency `yk:{payment_id}` aligned. **Do not run reconcile `--apply`** without separate owner approval.
 

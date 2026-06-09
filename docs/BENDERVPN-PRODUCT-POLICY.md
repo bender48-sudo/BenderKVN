@@ -145,7 +145,7 @@ If user refuses phone and email on Telegram path:
 | Channel | Requirement |
 |---------|-------------|
 | Telegram `ref_` | Must record inviter → invitee |
-| Web `ref_code` | **Must be fixed end-to-end** — currently dropped before `issue_web_trial`; policy requires fix |
+| Web `ref_code` | **Fixed** (P1-REF-001) — `apply_web_referral` at email trial; bind migration **unproven** (G4 BLOCKED) |
 | Storage | `referred_by` / equivalent must be queryable in admin |
 
 ### 5.2 User-facing rewards (MVP)
@@ -171,6 +171,20 @@ If approved in a future policy revision:
 - Attribution completeness metric before scaling invites.
 - Manual pause / suspicious flag on referral chains.
 - No automated payout at MVP.
+
+### 5.5 Acquisition entrypoint — **pending owner** (REFERRAL-ARCH-001)
+
+**Audit:** [`ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md`](ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md) (2026-06-10).
+
+| Item | Current | Proposed target | Status |
+|------|---------|-----------------|--------|
+| **Public share URL** | Telegram `t.me/...?start=ref_{code}` only | **Portal landing** `{origin}/portal/?ref={code}` primary; bot link secondary CTA | **Pending owner approval** |
+| **Portal role** | Captures `?ref=` if user visits; no share URL | Primary referral landing + path choice (TG / email) | Pending |
+| **Email referral growth** | Web attribution at signup works | **Not growth channel** until G4 TG bind PASS | **NO-GO** until bind |
+| **Referral counter** | Bot invite screen only | Bot + cabinet (tracking-only) | Pending REF-COUNTER-001 |
+| **Admin ledger** | None | P1-ADM-002 / REF-ADMIN-001 | Pending |
+
+Until owner approves OPTION 3: existing bot-only share link remains in production; **do not run referral growth campaigns**.
 
 ---
 

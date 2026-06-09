@@ -30,6 +30,8 @@ G5  Public/partner scale
 
 **DEVICE-ARCH-001 (2026-06-10):** [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md) — **MODEL A** recommended (tracked config per device, billing × N); **MODEL B NOT READY**; L2 minimum for soft launch; DEVICE-BILL-001 blocked until BILL-SMOKE + owner.
 
+**REFERRAL-ARCH-001 (2026-06-10):** [`ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md`](ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md) — **OPTION 3 Hybrid** (portal referral landing primary); bot-only share today; G4 bind BLOCKED; referral growth **NO-GO**.
+
 ---
 
 ## 2. G0 — Audit complete ✅
