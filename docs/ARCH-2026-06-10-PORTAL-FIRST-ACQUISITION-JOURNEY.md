@@ -451,6 +451,7 @@ Proposed names (repo style, `bot_src/config.py` + env):
 | `ops/capacity_snapshot.py` | Ops capacity proxy |
 | [`ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md`](ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md) | Referral analytics |
 | [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md) | Device = config, billing coefficient |
+| [`ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md`](ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md) | Scenario matrix + staging harness before ACQ features ship |
 
 ---
 

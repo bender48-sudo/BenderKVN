@@ -9,6 +9,8 @@
 
 **Acquisition journey (slots, trial cap, temp/paid paths):** [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md)
 
+**QA sandbox (journey scenarios, staging parity):** [`ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md`](ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md)
+
 **Owner concern:** Referral share link goes **directly to Telegram bot**, weakening portal’s acquisition role and contradicting two-path product logic (Telegram 90d + email 1d fallback).
 
 **Evidence method:** code + docs + postdeploy only. Status: **CONFIRMED** / **PARTIAL** / **BLOCKED** / **UNKNOWN**.

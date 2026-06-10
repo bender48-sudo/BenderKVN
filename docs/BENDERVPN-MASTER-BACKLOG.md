@@ -11,6 +11,7 @@
 | [`BENDERVPN-PRODUCT-POLICY.md`](BENDERVPN-PRODUCT-POLICY.md) | Accepted owner decisions (policy v1) |
 | [`STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md`](STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md) | Positioning, copy workflow, 10k growth model, capacity gates |
 | [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md) | Portal-first referral acquisition, slots, trial cap, temp access, paid conversion (ACQUISITION-JOURNEY-001) |
+| [`ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md`](ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md) | QA/staging sandbox for customer journey scenarios (QA-SANDBOX-001) |
 | [`BENDERVPN-PRODUCT-QUALITY-PLAN.md`](BENDERVPN-PRODUCT-QUALITY-PLAN.md) | Portal UX execution log (Batches 1–3 done) |
 | [`BENDERVPN-AUDIT-ROADMAP.md`](BENDERVPN-AUDIT-ROADMAP.md) | Ordered audit sequence |
 | [`BACKLOG-QUEUE.md`](BACKLOG-QUEUE.md) | Linear ops Q001+ queue (infra phases closed) |
@@ -98,6 +99,24 @@ See [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORT
 | **ACQ-PAID-CONVERT-001** | P1 | OPEN | Paid start + temp→paid same config |
 | **ACQ-BOT-BIND-001** | P0 | OPEN | G4 bind + portal lead merge |
 | **ACQ-SLOTS-001** | P2 | OPEN | Active config count; 30k slots; public badge gate |
+
+### QA-SANDBOX-001 backlog (architecture done — implementation gated)
+
+See [`ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md`](ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md). Staging/local only; production-identical code paths; mocks at YooKassa/Remna boundaries only.
+
+| ID | P | Status | Summary |
+|----|---|--------|---------|
+| **QA-SANDBOX-001** | P1 | **DONE** (doc) | Architecture — this document |
+| **QA-GUARD-001** | P0 | OPEN | `BVPN_ENV` fail-closed; no prod DB/Remna in QA |
+| **QA-STAGING-BOT-001** | P1 | OPEN | Staging bot + isolated DB + portal origin runbook |
+| **QA-DB-SEED-001** | P1 | OPEN | Seed/reset 20 scenario profiles |
+| **QA-BOT-FAKE-TG-001** | P1 | OPEN | Synthetic telegram_id handler harness |
+| **QA-REMNA-DRYRUN-001** | P1 | OPEN | Dry-run `provision_key` boundary |
+| **QA-PAYMENT-DRYRUN-001** | P1 | OPEN | Fake YooKassa + webhook simulator |
+| **QA-PORTAL-FIXTURES-001** | P1 | OPEN | Gate/slot/trial-cap fixtures; local API proxy |
+| **QA-SCENARIO-MATRIX-001** | P1 | OPEN | Matrix runner + drift report |
+| **QA-E2E-001** | P2 | OPEN | Playwright portal→cabinet smokes |
+| **QA-OWNER-PREVIEW-001** | P2 | OPEN | Owner «show me as…» staging commands |
 
 ### Completed audits (frozen — do not re-audit)
 
