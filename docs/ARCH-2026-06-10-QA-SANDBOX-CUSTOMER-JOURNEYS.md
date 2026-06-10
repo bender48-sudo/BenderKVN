@@ -115,7 +115,29 @@
 - **Does not mutate balances** — `process_topup_payment` / webhook success path still requires separate fixture or simulator (QA-PAYMENT-WEBHOOK-001)
 - **Not verified without real YooKassa:** capture/void/refund, `Payment.find_one` in webhook verify, shop credentials, production callback signatures
 
-**Tests:** `ops/test_runtime_env_guards.py`, `ops/test_remna_dryrun.py`, `ops/test_yookassa_dryrun.py`
+**DB seed/reset (QA-DB-SEED-001 — implemented):**
+
+- Script: `ops/qa_seed_scenarios.py`
+- Enable: `BVPN_ENV=staging|local|test` + `BVPN_QA_TOOLS_ENABLED=1`
+- Target DB: `SHOP_BOT_DB_PATH` or `BVPN_QA_DB_PATH` (default repo: `data/shop_bot_qa.db`)
+- Guards: `require_non_production`, `require_qa_tooling_enabled`, `assert_db_path_allowed_for_qa`
+- Prints target DB path before any write; rejects `BVPN_PROD_DB_PATH` and known prod paths
+- Synthetic identities: `telegram_id` 900000001+, `qa_*` usernames, `qa+{scenario}@sandbox.invalid`, `QA_REF_*` ref codes
+- CLI: `--reset`, `--seed-all`, `--seed NAME`, `--list`
+- Manifest: `ops/qa_scenario_manifest.json` (no secrets, no real URLs)
+- Reset scope: QA synthetic users only — does not delete arbitrary non-QA rows
+
+**Scenario support (repo today):**
+
+| Support | Scenarios |
+|---------|-----------|
+| **full** (16) | `new_no_referral`, `new_from_referral`, `existing_tg_user`, `web_lead_without_tg_bind`, `temporary_1d_active`, `temporary_1d_expired`, `paid_wallet_user`, `insufficient_balance_user`, `expired_stopped_user`, `legacy_manual_user`, `user_without_config`, `user_one_active_config`, `user_multiple_device_configs`, `referral_inviter_view`, `referral_invitee_view`, `referrer_reward_not_live` |
+| **partial** | `trial_eligible_before_cap` (no trial-cap DB), `temporary_converted_to_paid` (wallet seeded directly — webhook simulator OPEN) |
+| **blocked** | `after_trial_cap` (ACQ-TRIAL-CAP-001), `slots_counter_states` (QA-PORTAL-FIXTURES-001) |
+
+**Owner preview (one Telegram account):** seed scenario → open portal/cabinet with `?tid={seed_id}` or email from manifest; bot menus for synthetic id via QA-OWNER-PREVIEW-001 / second TG account.
+
+**Tests:** `ops/test_runtime_env_guards.py`, `ops/test_remna_dryrun.py`, `ops/test_yookassa_dryrun.py`, `ops/test_qa_seed_scenarios.py`
 
 ---
 
@@ -330,7 +352,7 @@ Every sandbox run (CI or owner preview) should append a **drift report**:
 |----|---|---------|-----------|---------|
 | **QA-SANDBOX-001** | P1 | docs | This architecture | — |
 | **QA-GUARD-001** | P0 | bot | `BVPN_ENV` fail-closed guards | QA-SANDBOX-001 — **DONE** repo |
-| **QA-DB-SEED-001** | P1 | ops | Seed/reset synthetic users + 20 scenarios | QA-GUARD-001 |
+| **QA-DB-SEED-001** | P1 | ops | `qa_seed_scenarios.py` — seed/reset 20 scenarios — **DONE** repo | QA-GUARD-001 |
 | **QA-BOT-FAKE-TG-001** | P1 | bot/ops | Handler harness with synthetic `telegram_id` | QA-DB-SEED-001 |
 | **QA-REMNA-DRYRUN-001** | P1 | bot | Dry-run `provision_key` at boundary | QA-GUARD-001 — **DONE** repo |
 | **QA-PAYMENT-DRYRUN-001** | P1 | bot | Dry-run `payment_create` at boundary — **DONE** repo | QA-GUARD-001 |
