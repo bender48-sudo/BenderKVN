@@ -115,7 +115,7 @@ See [`ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md`](ARCH-2026-06-10-QA-SANDB
 | **QA-PAYMENT-DRYRUN-001** | P1 | **DONE** (repo) | `yookassa_dryrun.py`; `ops/test_yookassa_dryrun.py` — `payment_create` only |
 | **QA-PAYMENT-WEBHOOK-001** | P1 | OPEN | Staging payment success webhook simulator |
 | **QA-PORTAL-FIXTURES-001** | P1 | **DONE** (repo) | `qa_portal_fixtures.py`; `qa_serve_portal_preview.py`; `ops/test_qa_portal_fixtures.py` |
-| **QA-SCENARIO-MATRIX-001** | P1 | OPEN | Matrix runner + drift report |
+| **QA-SCENARIO-MATRIX-001** | P1 | **DONE** (repo) | `qa_scenario_matrix.py`; `ops/test_qa_scenario_matrix.py` |
 | **QA-E2E-001** | P2 | OPEN | Playwright portal→cabinet smokes |
 | **QA-OWNER-PREVIEW-001** | P2 | OPEN | Owner «show me as…» staging commands |
 

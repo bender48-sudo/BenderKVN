@@ -48,6 +48,8 @@ G5  Public/partner scale
 
 **QA-PORTAL-FIXTURES-001 (2026-06-10):** `ops/qa_portal_fixtures.py` + `ops/qa_serve_portal_preview.py` — portal/cabinet/setup preview URLs + cabinet API fixtures from QA DB — **implemented repo, not deployed**. Trial-cap/slot gate API gaps documented.
 
+**QA-SCENARIO-MATRIX-001 (2026-06-10):** `ops/qa_scenario_matrix.py` — chains seed → portal fixtures → bot harness → drift report for all 20 customer-journey scenarios; `full` / `partial` / `blocked` classification — **implemented repo, not deployed**. Feeds QA-OWNER-PREVIEW-001 and QA-E2E-001; no prod Telegram/YooKassa/Remna.
+
 **AUDIT-CLOSEOUT-001 (2026-06-10):** [`AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md`](AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md) — **G0 audit wave CLOSED**; backlog frozen; **implementation GO** for TRACK 0; no new broad audits.
 
 **SUPPORT-AI-ARCH-001 (2026-06-10):** [`ARCH-2026-06-10-AI-SUPPORT-TRIAGE-BOT.md`](ARCH-2026-06-10-AI-SUPPORT-TRIAGE-BOT.md) — AI support triage; L0–L4 permissions; internal copilot MVP; **FINAL-AUDIT-COMPLETE-001** closes audit phase.

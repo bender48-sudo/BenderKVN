@@ -21,7 +21,7 @@
 | **Existing partial harness** | `admin_flow_test.py` (prod read-only + copy preview), `ops/test_web_referral_attribution.py` (temp DB + mock Remna), `.playwright-review/serve_portal.py` (static portal :8765) |
 | **Staging bot** | Separate `@BotFather` token + `BVPN_ENV=staging` + isolated DB — **recommended** for owner E2E |
 | **QA-GUARD-001** | **IMPLEMENTED** (repo) — `bot_src/runtime_env.py`; boundary guards in Remna/YooKassa |
-| **Implementation** | **PARTIAL** — guards only; seed/fixtures/dry-run providers backlog §12 |
+| **Implementation** | **PARTIAL** — guards, seed, bot harness, portal fixtures, **scenario matrix** (repo); staging E2E + owner preview OPEN |
 
 ---
 
@@ -162,14 +162,29 @@
 - **Partial/blocked:** `after_trial_cap` (ACQ-TRIAL-CAP-001 placeholder), `slots_counter_states` (fixture param only until gate API ships)
 - Preview index: `ops/qa_portal_preview_index.json` (generated; not committed by default)
 
+**Scenario matrix runner (QA-SCENARIO-MATRIX-001 — implemented):**
+
+- Script: `ops/qa_scenario_matrix.py`
+- Chains: DB seed/reset → portal/cabinet/setup URLs → fake-TG harness (where applicable) → runnable classification → production-parity drift report
+- Enable: `BVPN_ENV=staging|local|test` + `BVPN_QA_TOOLS_ENABLED=1` + isolated `SHOP_BOT_DB_PATH`
+- CLI:
+  - `python ops/qa_scenario_matrix.py --list`
+  - `python ops/qa_scenario_matrix.py --run-all`
+  - `python ops/qa_scenario_matrix.py --scenario paid_wallet_user`
+  - `python ops/qa_scenario_matrix.py --run-all --out screenshots/qa-preview/matrix-report.md --json-out screenshots/qa-preview/matrix-report.json`
+- **Runnable status:** `full` = seed + cabinet checks (+ bot harness when applicable) passed; `partial` = testable subset with documented blocker; `blocked` = not faked as passed (`after_trial_cap`, `slots_counter_states`)
+- **Drift report buckets:** `production_identical` (handlers, cabinet schema, DB seed, portal JS); `dry_run_mocked` (TG capture, YooKassa/Remna dry-run, sandbox URLs); `not_verified_without_staging_or_prod` (real Mini App, 3DS, RU ISP, Caddy edge)
+- **Feeds QA-OWNER-PREVIEW-001:** matrix markdown/JSON is the pre-flight checklist before owner visual walkthrough on staging
+- Generated reports/transcripts go to user-provided paths (e.g. `screenshots/qa-preview/`); **not committed by default**
+
 **Workflow:**
 ```text
-python ops/qa_seed_scenarios.py --reset --seed-all
+python ops/qa_scenario_matrix.py --run-all --out screenshots/qa-preview/matrix-report.md
 python ops/qa_serve_portal_preview.py
-python ops/qa_portal_fixtures.py --scenario paid_wallet_user --print-urls
+# open portal/cabinet URLs printed in matrix report
 ```
 
-**Tests:** `ops/test_runtime_env_guards.py`, `ops/test_remna_dryrun.py`, `ops/test_yookassa_dryrun.py`, `ops/test_qa_seed_scenarios.py`, `ops/test_qa_bot_fake_tg.py`, `ops/test_qa_portal_fixtures.py`
+**Tests:** `ops/test_runtime_env_guards.py`, `ops/test_remna_dryrun.py`, `ops/test_yookassa_dryrun.py`, `ops/test_qa_seed_scenarios.py`, `ops/test_qa_bot_fake_tg.py`, `ops/test_qa_portal_fixtures.py`, `ops/test_qa_scenario_matrix.py`
 
 ---
 
@@ -390,7 +405,7 @@ Every sandbox run (CI or owner preview) should append a **drift report**:
 | **QA-PAYMENT-DRYRUN-001** | P1 | bot | Dry-run `payment_create` at boundary — **DONE** repo | QA-GUARD-001 |
 | **QA-PAYMENT-WEBHOOK-001** | P1 | webhook | Staging-only payment success simulator | QA-PAYMENT-DRYRUN-001 |
 | **QA-PORTAL-FIXTURES-001** | P1 | portal/ops | `qa_portal_fixtures.py` + `qa_serve_portal_preview.py` — **DONE** repo | QA-DB-SEED-001 |
-| **QA-SCENARIO-MATRIX-001** | P1 | ops | Runnable matrix runner + drift report | QA-DB-SEED-001 |
+| **QA-SCENARIO-MATRIX-001** | P1 | ops | `qa_scenario_matrix.py` — matrix runner + drift report — **DONE** repo | QA-DB-SEED-001 |
 | **QA-E2E-001** | P2 | playwright | Portal→API→cabinet smokes on staging | QA-PORTAL-FIXTURES-001 |
 | **QA-OWNER-PREVIEW-001** | P2 | bot admin | Owner-friendly staging preview commands | QA-DB-SEED-001 |
 | **QA-STAGING-BOT-001** | P1 | ops | Staging bot + DB + portal origin setup runbook | Owner BotFather |
