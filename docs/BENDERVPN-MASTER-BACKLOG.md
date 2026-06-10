@@ -9,6 +9,7 @@
 | Document | Role |
 |----------|------|
 | [`BENDERVPN-PRODUCT-POLICY.md`](BENDERVPN-PRODUCT-POLICY.md) | Accepted owner decisions (policy v1) |
+| [`STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md`](STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md) | Positioning, copy workflow, 10k growth model, capacity gates |
 | [`BENDERVPN-PRODUCT-QUALITY-PLAN.md`](BENDERVPN-PRODUCT-QUALITY-PLAN.md) | Portal UX execution log (Batches 1–3 done) |
 | [`BENDERVPN-AUDIT-ROADMAP.md`](BENDERVPN-AUDIT-ROADMAP.md) | Ordered audit sequence |
 | [`BACKLOG-QUEUE.md`](BACKLOG-QUEUE.md) | Linear ops Q001+ queue (infra phases closed) |
@@ -53,6 +54,8 @@
 ### Audit closeout (2026-06-10)
 
 **AUDIT-CLOSEOUT-001:** [`AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md`](AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md) — audits **closed**; implementation starts **TRACK 0** tomorrow.
+
+**STRATEGY-GROWTH-001:** [`STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md`](STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md) — commercial positioning, copy standards, 10k growth + capacity planning (docs only; before large-scale copy/backend work).
 
 ### Frozen implementation tracks (priority order)
 

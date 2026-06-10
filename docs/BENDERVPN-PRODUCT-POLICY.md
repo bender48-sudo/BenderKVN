@@ -4,6 +4,7 @@
 **Supersedes:** informal copy truths in `BENDERVPN-PRODUCT-QUALITY-PLAN.md` §2 where they conflict
 **Scope:** product policy only — no implementation in this document
 **Source:** Full Product Audit + Product Decision Workshop (branch `product-referral-cabinet-ui-v1`)
+**Strategy (positioning, growth, capacity, copy workflow):** [`STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md`](STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md)
 
 ---
 
@@ -59,6 +60,7 @@ These statements are **canonical** for all user-facing copy, legal drafts, bot m
 ### 3.1 Positioning
 
 - Product is **invite-first / камерный**: growth through referrals and controlled rollout.
+- **Commercial framing:** closed digital-membership platform, not commodity «VPN за 200 ₽» — see [`STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md`](STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md) §2–3. User-facing copy must follow §4.3 copywriting workflow; prompt anchors are not final UI text.
 - Public badge: **«Доступ по приглашению · лимит 30 000»** — sufficient until a stable public counter exists.
 - **No live public counter** at MVP (`capacity_api_enabled: false` remains correct).
 

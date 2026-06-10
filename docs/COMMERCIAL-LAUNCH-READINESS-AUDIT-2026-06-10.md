@@ -6,6 +6,8 @@
 **Local HEAD:** `928a336` (3 commits ahead of `origin/product-referral-cabinet-ui-v1` @ `cfdd756`)  
 **Purpose:** full launch-decision audit for commercial readiness
 
+**Post-audit strategy (positioning + growth + capacity):** [`STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md`](STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md) — does not change launch verdicts here; frames copy and scale planning before implementation.
+
 ---
 
 ## 1. Executive summary

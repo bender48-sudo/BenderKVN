@@ -9,6 +9,8 @@
 
 **Purpose:** Close the 2026-06-10 audit wave; freeze implementation-ready backlog; define tomorrow's work queue.
 
+**Commercial strategy (post-closeout):** [`STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md`](STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md) — positioning, copy workflow, 10k growth model, capacity gates (docs only).
+
 ---
 
 ## 1. Executive summary
