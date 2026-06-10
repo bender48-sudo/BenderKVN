@@ -93,6 +93,8 @@
 | **MONITOR-FLAP-001** | OPEN | Selfsteal anti-flap — TRACK 5 / G9 |
 | **OPS-ALERT-HYGIENE-001** | OPEN | Paging vs diagnostic — TRACK 5 / G9 |
 | **ACQ-*** / **REF-*** | OPEN | См. MASTER; не дублировать OPS-CAPACITY-300 / NODE-RELAY-ADD |
+| **VPN-ARCH-001** | AWAITING APPROVAL | NL revalidation AC; ≥2 delivery-path nodes before growth |
+| **VPN-NODE-RUNBOOK-001** | OPEN | Fast node+relay bring-up template (BACKLOG-CAPACITY-NODES-001) |
 
 ---
 

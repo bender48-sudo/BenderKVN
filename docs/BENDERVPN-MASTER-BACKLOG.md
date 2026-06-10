@@ -69,7 +69,7 @@
 | **TRACK 1** | Bind + referral — G4-BIND-RETEST, REF-PORTAL, REF-ADMIN | Partial tomorrow |
 | **TRACK 2** | Billing proof — BILL-UT, BILL-SMOKE prep | BILL-UT tomorrow |
 | **TRACK 3** | Device — SMOKE, ENFORCE, DATA, ADMIN, BILL | After TRACK 0–2 |
-| **TRACK 4** | VPN stability — INCIDENT-003/004 owner proof + **CLIENT-STABILITY-001** Track A/B (partial: INCIDENT-DIAG-003-004 + Happ UI TUN daemon error) | Owner-led |
+| **TRACK 4** | VPN stability + **node capacity readiness** — INCIDENT-003/004, **VPN-ARCH-001**, **VPN-NODE-RUNBOOK-001**, NL revalidation AC | Owner-led; before growth |
 | **TRACK 5** | Monitoring / CI / runbooks — **MONITOR-FLAP-001**, **OPS-ALERT-HYGIENE-001**, G9/G11 | After soft blockers; before acquisition scale |
 | **TRACK 6** | Support AI / technical triage | After P1-ADM + runbooks; not F&F blocker |
 
@@ -94,18 +94,66 @@ See [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORT
 |----|---|--------|---------|
 | **ACQ-PORTAL-001** | P1 | OPEN | Portal referral landing, gate API, portal-first share URL |
 | **ACQ-IDENTITY-001** | P1 | OPEN | Lead schema; phone+email required; dedup |
-| **ACQ-TRIAL-CAP-001** | P1 | OPEN | 90d trial closes at 300 active configs; bot+portal sync |
+| **ACQ-TRIAL-CAP-001** | P1 | OPEN | 90d trial closes at **300 active configs/devices**; bot+portal sync — **also requires node capacity acceptance** (see §Node capacity) |
 | **ACQ-TEMP-001** | P1 | OPEN | Identity-bound 1d temp access (model B) |
 | **ACQ-PAID-CONVERT-001** | P1 | OPEN | Paid start + temp→paid same config |
 | **ACQ-BOT-BIND-001** | P0 | OPEN | G4 bind + portal lead merge |
-| **ACQ-SLOTS-001** | P2 | OPEN | Active config count; 30k slots; public badge gate |
+| **ACQ-SLOTS-001** | P2 | OPEN | Active config count; 30k slots; public badge gate — **capacity forecast + infra headroom** before badge/gate goes live |
 
 **Commercial acquisition / referral growth — do not proceed without (link existing IDs only):**
 
-- **OPS-ALERT-HYGIENE-001** + **MONITOR-FLAP-001** — paging vs diagnostic alerts; no Telegram floods during scale review
-- **ACQ-SLOTS-001** + **ACQ-TRIAL-CAP-001** — capacity/slots visibility and 300-config trial cap (not a separate OPS-CAPACITY-300 ID)
-- **VPN-ARCH-001** (+ **VPN-AUD-220** where NL edge applies) — node readiness; no **NODE-NL-REVALIDATE-001**
-- **≥2 production-capable relay/node surfaces verified** — e.g. RU relay#1 + relay#2 (**Q120** / **VPN-AUD-201 DONE**); no **NODE-RELAY-ADD-001**
+- **≥2 production-capable nodes/relays in the customer delivery path** — both must participate in auto host / generated subscriptions / routing, **or** non-participating paid server is decommissioned/replaced; **one Latvia-only path is not acceptable** for growth
+- **VPN-ARCH-001** — NL/Amsterdam revalidation acceptance (read-only first; do not blindly re-enable); **VPN-NODE-RUNBOOK-001** — fast node+relay bring-up template
+- **MONITOR-FLAP-001** + **OPS-ALERT-HYGIENE-001** — monitoring must be trustworthy before using alerts as node-quality source of truth
+- **ACQ-SLOTS-001** + **ACQ-TRIAL-CAP-001** — product + **infra** capacity gate at 300 active configs/devices (not **OPS-CAPACITY-300-001**)
+- RU relay diversity: **Q120** / **VPN-AUD-201 DONE** (historical second relay) — not **NODE-RELAY-ADD-001**
+
+### Node capacity & delivery path readiness (BACKLOG-CAPACITY-NODES-001)
+
+**Owner rule (2026-06-11):** Netherlands/Amsterdam may be paid but **not participating** in Bender auto host / subscription routing today. Before acquisition/referral growth or **300 active configs/devices**:
+
+| Requirement | IDs / evidence |
+|-------------|----------------|
+| Two verified production-capable surfaces on the **customer path** | LV node + second path (NL if revalidated, relay exit, or new node per **VPN-NODE-RUNBOOK-001**) |
+| NL participation decision | **VPN-ARCH-001** child acceptance — see below; historical **VPN-AUD-220 DONE** (2026-06-03) is not sufficient if live routing diverged |
+| Repeatable fast scale template | **VPN-NODE-RUNBOOK-001** OPEN — gaps vs `deploy-node.sh` / `THIRD-PROD-NODE-ONBOARDING.md` |
+| Alert hygiene before infra decisions | **MONITOR-FLAP-001**, **OPS-ALERT-HYGIENE-001** |
+| Infra queue (closed phases) | **Q167–Q171** node resilience DONE; **Q120** second RU relay DONE — do not reopen as new relay-add IDs |
+
+**VPN-ARCH-001 — Netherlands/Amsterdam revalidation acceptance (no NODE-NL-REVALIDATE-001):**
+
+1. Read-only: does NL/Amsterdam appear in **auto host**, **generated subscriptions**, **injectHosts/routing** for sampled users?
+2. If not participating: document why server is paid, current role, decommission vs replace decision.
+3. If candidate for production: latency, throughput, stability, selfsteal/Caddy, RU reachability (`ru-monitor`), client import/connect smoke — **controlled traffic only**.
+4. Soak before production-ready; if unstable/poor quality → **replace location/provider**, do not force NL into routing.
+5. Do **not** blindly re-enable NL from **VPN-AUD-220** verify alone.
+
+**VPN-NODE-RUNBOOK-001 — fast node + relay bring-up (not Q120 / VPN-AUD-201):**
+
+Historical **Q120** / **VPN-AUD-201** = second RU relay delivered once. **VPN-NODE-RUNBOOK-001** = reusable template for future fast capacity expansion when user influx spikes.
+
+| AC | Requirement |
+|----|-------------|
+| 1 | Documented repeatable template for adding a production-capable node/relay |
+| 2 | Defines what must be configured **before** users receive configs on the new server |
+| 3 | Minimum quality: latency, throughput, packet loss/stability, Caddy/selfsteal, RU reachability (if relevant), client import/connect smoke, monitoring alert hygiene |
+| 4 | Gradual traffic: internal smoke → owner test → small cohort → new-user-only routing → broader routing |
+| 5 | Rollback: remove from auto host/routing; stop issuing new configs; support notify; decommission if unstable |
+| 6 | Owner approval gates at routing inclusion and production-ready |
+
+**Partial existing material (link, do not duplicate):** `deploy-node.sh`, `docs/DEPLOY.md`, `docs/NODE-POLICY-LV-NL.md`, `docs/THIRD-PROD-NODE-ONBOARDING.md`, `docs/RUNBOOK-LV-DOWN-NL-FAILOVER.md` — gap = unified checklist + controlled onboarding + soak + decommission.
+
+**300 active configs/devices — capacity acceptance checklist (ACQ-TRIAL-CAP-001 / ACQ-SLOTS-001):**
+
+- Active configs/devices forecast vs **≥2** delivery-path nodes/relays
+- CPU/RAM/network headroom per node
+- Latency/throughput + packet loss / reconnect rate
+- Selfsteal/Caddy stability (post **MONITOR-FLAP-001**)
+- RU reachability where relevant
+- Monitoring alert hygiene (**OPS-ALERT-HYGIENE-001**)
+- Support incident volume baseline
+- Client connection quality (Happ smoke)
+- Rollback/failover path documented (**RUNBOOK-LV-DOWN-NL-FAILOVER.md**, **VPN-NODE-RUNBOOK-001**)
 
 ### QA-SANDBOX-001 backlog (architecture done — implementation gated)
 
@@ -142,7 +190,9 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 | **P2-CI-001/002** | P1 | NOT_STARTED | CI | G11 gitleaks / secret scan |
 | **LAUNCH-004** | P1 | NOT_STARTED | docs | Support/incident runbooks |
 
-**Done (infra, do not re-open):** `ru-monitor.py` anti-flap batch (2026-05-27); `monitor.sh` streak 3/2; **Q120** second RU relay (**VPN-AUD-201**).
+**Prerequisite for node readiness decisions:** **MONITOR-FLAP-001** + **OPS-ALERT-HYGIENE-001** — noisy alerts must be cleaned before monitoring is used as node-quality source of truth (otherwise real degradation vs false positives is indistinguishable).
+
+**Done (infra, do not re-open):** `ru-monitor.py` anti-flap batch (2026-05-27); `monitor.sh` streak 3/2; **Q120** second RU relay (**VPN-AUD-201**); **VPN-AUD-220** NL injectHosts verify (2026-06-03) — live auto-host participation must be re-verified under **VPN-ARCH-001**.
 
 ### Completed audits (frozen — do not re-audit)
 
@@ -291,7 +341,8 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 | ID | Sev | Area | Title | Problem | Decision | Phase | Impact | Evidence | Files/modules | Acceptance | Checks | Deploy? | Owner? | Blocked by | Status |
 |----|-----|------|-------|---------|----------|-------|--------|----------|---------------|------------|--------|---------|--------|------------|--------|
 | VPN-REL-001 | P0 | VPN reliability | Unstable reconnect loop diagnostic | Users report disconnect/reconnect | N/A | **Now** | Core product value | `AUDIT-2026-06-09-VPN-RELIABILITY.md` | ops probes, panel, Happ | RC-1 relay2-only SPOF; RC-2 random balancer | AUDIT-001 done | No | **Yes** for patch | Owner picks profile target | **AUDIT DONE** |
-| VPN-ARCH-001 | P1 | VPN architecture | Full VPN architecture audit | Selector/injectHosts mismatch; stealth split map | N/A | **Now** | Informed restore | `AUDIT-2026-06-09-VPN-CANDIDATE-D-TESTPLAN.md` | ops/, panel | Global apply only; test-user N/A; STOPPED | AUDIT-002 done | No | **Yes** global | VPN-REL-001 | **AWAITING APPROVAL** |
+| VPN-ARCH-001 | P1 | VPN architecture | Full VPN architecture audit + NL revalidation AC | Selector/injectHosts mismatch; NL may not participate in auto host/routing (owner 2026-06-11) | N/A | **Now** | Growth blocked on single LV path | `AUDIT-2026-06-09-VPN-CANDIDATE-D-TESTPLAN.md`; **VPN-AUD-220** historical | ops/, panel | Read-only NL participation proof; ≥2 path surfaces; no blind NL re-enable | `probe_subscription.py`; gate §1 | No | **Yes** global | VPN-REL-001; MONITOR-FLAP-001 | **AWAITING APPROVAL** |
+| VPN-NODE-RUNBOOK-001 | P1 | VPN architecture / ops | Fast node + relay bring-up template | `deploy-node.sh` + partial docs exist; no unified gradual-traffic + soak + rollback template | N/A | **Now** | Fast scale on user influx | `deploy-node.sh`, `DEPLOY.md`, `NODE-POLICY-LV-NL.md`, `THIRD-PROD-NODE-ONBOARDING.md` | docs runbook | Repeatable checklist: provider/IP/DNS/SNI/Caddy/selfsteal/Remna/monitoring/smoke/soak/routing inclusion/rollback/decommission | owner review | No | **Yes** | VPN-ARCH-001; MONITOR-FLAP-001 | **OPEN** |
 | VPN-STAB-005 | P2 | VPN reliability | xhttp Happ batch risk (historical) | xhttp causes «0 servers» in Happ | Partially done | — | Happ UX | `AUDIT-2026-05-VPN-STABILITY-RESOLUTION` | sub-page, template | batch_risk=LOW on Happ UA | diagnose_happ_import | Yes | No | — | **DONE** |
 | VPN-INC-001 | P1 | VPN reliability | Incident guardrails enforcement | Repeat PATCH without probe caused gen 13→20 outages | N/A | ongoing | Prod stability | `VPN-INCIDENT-LESSONS` | ops patches | One PATCH → probe → smoke | verify gate | No | **Yes** | — | OPEN |
 | **CLIENT-STABILITY-001** | P0 | VPN reliability | Windows Happ TUN daemon + Bender Proxy fallback | Track A: TUN daemon fails after sleep; Track B: Bender Proxy fails, other VPN Proxy works | N/A | **Now** | Desktop launch gate | Owner report + INCIDENT-DIAG-003-004 | docs, `ops/diagnose_windows_vpn_resume.ps1` | Track A/B documented; workarounds; no prod change | CLIENT-SMOKE-001..003 | No | **Yes** | — | **OPEN** — docs done |

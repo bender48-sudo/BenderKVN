@@ -184,9 +184,11 @@ G5  Public/partner scale
 
 ## 6. G4 — Scale gates (before invite push / 300 configs)
 
+**BACKLOG-CAPACITY-NODES-001:** Before acquisition/referral growth or **G4-A**, **≥2 production-capable nodes/relays** must be verified on the customer delivery path (auto host / subscription routing). One Latvia-only path is not acceptable. **VPN-ARCH-001** (NL revalidation AC), **VPN-NODE-RUNBOOK-001** (fast bring-up template), **MONITOR-FLAP-001** + **OPS-ALERT-HYGIENE-001** (monitoring SoT). See MASTER §Node capacity.
+
 | Gate | Trigger | Deliverable |
 |------|---------|-------------|
-| **G4-A** | ~300 active configs | Capacity dashboard, organic flag review |
+| **G4-A** | ~300 active configs/devices | Capacity dashboard, organic flag review, **node capacity acceptance** (forecast, CPU/RAM/network headroom, latency/throughput, selfsteal/Caddy, alert hygiene, client quality, rollback/failover) |
 | **G4-B** | Invite push | Hard or soft invite gate implemented |
 | **G4-C** | 30k approach | Issuance stop + waitlist UX |
 | **G4-D** | Support volume | RUNBOOK-001 complete |
