@@ -110,7 +110,7 @@ See [`ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md`](ARCH-2026-06-10-QA-SANDB
 | **QA-GUARD-001** | P0 | **DONE** (repo) | `runtime_env.py`; Remna/YooKassa boundary guards; `ops/test_runtime_env_guards.py` |
 | **QA-STAGING-BOT-001** | P1 | OPEN | Staging bot + isolated DB + portal origin runbook |
 | **QA-DB-SEED-001** | P1 | **DONE** (repo) | `ops/qa_seed_scenarios.py`; `ops/test_qa_seed_scenarios.py` |
-| **QA-BOT-FAKE-TG-001** | P1 | OPEN | Synthetic telegram_id handler harness |
+| **QA-BOT-FAKE-TG-001** | P1 | **DONE** (repo) | `qa_bot_fake_tg.py`; `ops/test_qa_bot_fake_tg.py` |
 | **QA-REMNA-DRYRUN-001** | P1 | **DONE** (repo) | `remna_dryrun.py`; `ops/test_remna_dryrun.py` |
 | **QA-PAYMENT-DRYRUN-001** | P1 | **DONE** (repo) | `yookassa_dryrun.py`; `ops/test_yookassa_dryrun.py` — `payment_create` only |
 | **QA-PAYMENT-WEBHOOK-001** | P1 | OPEN | Staging payment success webhook simulator |

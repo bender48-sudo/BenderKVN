@@ -44,6 +44,8 @@ G5  Public/partner scale
 
 **QA-DB-SEED-001 (2026-06-10):** `ops/qa_seed_scenarios.py` — isolated QA DB seed/reset for 20 customer-journey scenarios (`900000001+`, `sandbox.invalid`); 16 full + 2 partial + 2 blocked — **implemented repo, not deployed**. No production data or credentials.
 
+**QA-BOT-FAKE-TG-001 (2026-06-10):** `ops/qa_bot_fake_tg.py` — capture-only fake Telegram harness; real bot handlers; 13 seeded scenarios — **implemented repo, not deployed**. No production Telegram messages sent.
+
 **AUDIT-CLOSEOUT-001 (2026-06-10):** [`AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md`](AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md) — **G0 audit wave CLOSED**; backlog frozen; **implementation GO** for TRACK 0; no new broad audits.
 
 **SUPPORT-AI-ARCH-001 (2026-06-10):** [`ARCH-2026-06-10-AI-SUPPORT-TRIAGE-BOT.md`](ARCH-2026-06-10-AI-SUPPORT-TRIAGE-BOT.md) — AI support triage; L0–L4 permissions; internal copilot MVP; **FINAL-AUDIT-COMPLETE-001** closes audit phase.

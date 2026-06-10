@@ -135,9 +135,22 @@
 | **partial** | `trial_eligible_before_cap` (no trial-cap DB), `temporary_converted_to_paid` (wallet seeded directly — webhook simulator OPEN) |
 | **blocked** | `after_trial_cap` (ACQ-TRIAL-CAP-001), `slots_counter_states` (QA-PORTAL-FIXTURES-001) |
 
-**Owner preview (one Telegram account):** seed scenario → open portal/cabinet with `?tid={seed_id}` or email from manifest; bot menus for synthetic id via QA-OWNER-PREVIEW-001 / second TG account.
+**Owner preview (one Telegram account):** seed scenario → open portal/cabinet with `?tid={seed_id}` or email from manifest; bot menus for synthetic id via harness below or QA-OWNER-PREVIEW-001 / second TG account.
 
-**Tests:** `ops/test_runtime_env_guards.py`, `ops/test_remna_dryrun.py`, `ops/test_yookassa_dryrun.py`, `ops/test_qa_seed_scenarios.py`
+**Fake Telegram harness (QA-BOT-FAKE-TG-001 — implemented):**
+
+- Script: `ops/qa_bot_fake_tg.py`
+- Enable: `BVPN_ENV=staging|local|test` + `BVPN_QA_TOOLS_ENABLED=1` + isolated `SHOP_BOT_DB_PATH`
+- Invokes **real** handlers (`start_handler`, `main_menu_handler`, `menu_get_setup_handler`, `show_topup_handler`, `my_account_handler`, …)
+- **Capture-only** `CapturingBot` — no `api.telegram.org` calls; stdout and optional `--out` markdown transcript
+- CLI: `--list`, `--list-actions`, `--scenario NAME --action ACTION`, `--tg-id 900000010 --action menu`, `--fresh-start` (delete QA row before `/start`)
+- Covered scenarios (13): `new_no_referral`, `new_from_referral`, `existing_tg_user`, `trial_eligible_before_cap`, `paid_wallet_user`, `insufficient_balance_user`, `expired_stopped_user`, `legacy_manual_user`, `user_without_config`, `user_one_active_config`, `referral_inviter_view`, `referral_invitee_view`, `referrer_reward_not_live`
+- Actions: `start`, `start_with_ref`, `menu`, `get_setup`, `topup`, `cabinet`, `cabinet_link`, `help`, `status`, `invite`
+- **DB mode:** seeded row by default (`new_no_referral` = row exists, `agreed_to_terms=0` → terms screen on `/start`); `--fresh-start` simulates first `/start` without row
+- Subscription resolve mocked to `sandbox.invalid` at harness boundary; setup URL still from `portal_links` config
+- **Still needs real staging bot / 2nd TG:** inline button taps in real Telegram, Mini App WebView chrome, payment 3DS, bind flow UX
+
+**Tests:** `ops/test_runtime_env_guards.py`, `ops/test_remna_dryrun.py`, `ops/test_yookassa_dryrun.py`, `ops/test_qa_seed_scenarios.py`, `ops/test_qa_bot_fake_tg.py`
 
 ---
 
@@ -353,7 +366,7 @@ Every sandbox run (CI or owner preview) should append a **drift report**:
 | **QA-SANDBOX-001** | P1 | docs | This architecture | — |
 | **QA-GUARD-001** | P0 | bot | `BVPN_ENV` fail-closed guards | QA-SANDBOX-001 — **DONE** repo |
 | **QA-DB-SEED-001** | P1 | ops | `qa_seed_scenarios.py` — seed/reset 20 scenarios — **DONE** repo | QA-GUARD-001 |
-| **QA-BOT-FAKE-TG-001** | P1 | bot/ops | Handler harness with synthetic `telegram_id` | QA-DB-SEED-001 |
+| **QA-BOT-FAKE-TG-001** | P1 | bot/ops | `qa_bot_fake_tg.py` capture-only handler harness — **DONE** repo | QA-DB-SEED-001 |
 | **QA-REMNA-DRYRUN-001** | P1 | bot | Dry-run `provision_key` at boundary | QA-GUARD-001 — **DONE** repo |
 | **QA-PAYMENT-DRYRUN-001** | P1 | bot | Dry-run `payment_create` at boundary — **DONE** repo | QA-GUARD-001 |
 | **QA-PAYMENT-WEBHOOK-001** | P1 | webhook | Staging-only payment success simulator | QA-PAYMENT-DRYRUN-001 |
