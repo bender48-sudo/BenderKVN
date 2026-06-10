@@ -2,6 +2,19 @@
 from __future__ import annotations
 
 import os
+from typing import Any
+
+
+def payment_create(payload: dict[str, Any], idempotency_key: Any = None):
+    """Payment.create with non-prod write guard (QA-GUARD-001)."""
+    from shop_bot.runtime_env import assert_yookassa_write_allowed
+
+    assert_yookassa_write_allowed("Payment.create")
+    from yookassa import Payment
+
+    if idempotency_key is not None:
+        return Payment.create(payload, idempotency_key)
+    return Payment.create(payload)
 
 
 def yookassa_receipt(description: str, amount_value: str, user_id: int) -> dict:

@@ -20,7 +20,8 @@
 | **Not acceptable** | Fake bot flows, fake portal screens, hardcoded trial UI unrelated to gate API |
 | **Existing partial harness** | `admin_flow_test.py` (prod read-only + copy preview), `ops/test_web_referral_attribution.py` (temp DB + mock Remna), `.playwright-review/serve_portal.py` (static portal :8765) |
 | **Staging bot** | Separate `@BotFather` token + `BVPN_ENV=staging` + isolated DB — **recommended** for owner E2E |
-| **Implementation** | **NOT STARTED** — backlog §12 |
+| **QA-GUARD-001** | **IMPLEMENTED** (repo) — `bot_src/runtime_env.py`; boundary guards in Remna/YooKassa |
+| **Implementation** | **PARTIAL** — guards only; seed/fixtures/dry-run providers backlog §12 |
 
 ---
 
@@ -73,18 +74,30 @@
     YooKassa Payment.create / webhooks, real sub URLs, prod messaging
 ```
 
-### 3.3 Environment model
+### 3.3 Environment model (QA-GUARD-001 implemented)
 
 | Variable | Values | Rule |
 |----------|--------|------|
-| `BVPN_ENV` | `production` \| `staging` \| `local` | **Hard guard:** dry-run providers unless `production` |
-| `BVPN_QA_DRY_RUN_REMNA` | `1` default in staging/local | Skip real panel PATCH/POST |
-| `BVPN_QA_DRY_RUN_PAYMENTS` | `1` default in staging/local | Fake YooKassa; log synthetic payment events |
-| `DATABASE_PATH` | Staging/local path only | **Never** prod shop DB path in non-prod |
-| `TELEGRAM_BOT_TOKEN` | Staging bot token | **Never** prod token in staging harness docs |
+| `BVPN_ENV` | `production` (default) \| `staging` \| `local` \| `test` | Unset = **production** — prod deploys unchanged |
+| `BVPN_QA_DRY_RUN_REMNA` | `1` in staging/local | Required for `provision_key` / `add_extra_traffic` in non-prod |
+| `BVPN_QA_DRY_RUN_PAYMENTS` | `1` in staging/local | Required for `payment_create` in non-prod |
+| `BVPN_QA_TOOLS_ENABLED` | `1` | Required for QA seed/matrix ops scripts |
+| `BVPN_PROD_DB_PATH` | Absolute path | QA tools reject this path in non-prod |
+| `SHOP_BOT_DB_PATH` / `BVPN_QA_DB_PATH` | Staging/local DB file | Isolated DB; same schema as prod |
+| `BVPN_QA_ALLOW_BROADCAST` | `1` optional | Override broadcast guard in staging only |
+| `TELEGRAM_BOT_TOKEN` | Staging bot token | **Never** prod token in staging harness |
 | `PUBLIC_PORTAL_ORIGIN` | Staging portal URL or `http://127.0.0.1:8765` | Same portal **build**, different origin |
 
-**Fail-closed:** bot startup in `staging`/`local` **aborts** if prod Remna base URL + prod DB path detected together (QA-GUARD-001).
+**Guard module:** `shop_bot.runtime_env` — `get_bvpn_env()`, `require_non_production()`, `require_qa_tooling_enabled()`, `assert_remna_mutation_allowed()`, `assert_yookassa_write_allowed()`, `assert_broadcast_allowed()`, `assert_db_path_allowed_for_qa()`.
+
+**Wired boundaries (repo):**
+
+- `remnawave_api.provision_key`, `add_extra_traffic` → `assert_remna_mutation_allowed`
+- `yookassa_payment.payment_create` → `assert_yookassa_write_allowed` (used by `handlers.py`, `yookassa_autopay.py`)
+
+**Not yet wired:** dry-run Remna/YooKassa **providers** (QA-REMNA-DRYRUN-001, QA-PAYMENT-DRYRUN-001) — guards block real writes; stubs return dummy data next.
+
+**Tests:** `ops/test_runtime_env_guards.py`
 
 ---
 
@@ -298,7 +311,7 @@ Every sandbox run (CI or owner preview) should append a **drift report**:
 | ID | P | Surface | Objective | Depends |
 |----|---|---------|-----------|---------|
 | **QA-SANDBOX-001** | P1 | docs | This architecture | — |
-| **QA-GUARD-001** | P0 | bot | `BVPN_ENV` fail-closed guards | QA-SANDBOX-001 |
+| **QA-GUARD-001** | P0 | bot | `BVPN_ENV` fail-closed guards | QA-SANDBOX-001 — **DONE** repo |
 | **QA-DB-SEED-001** | P1 | ops | Seed/reset synthetic users + 20 scenarios | QA-GUARD-001 |
 | **QA-BOT-FAKE-TG-001** | P1 | bot/ops | Handler harness with synthetic `telegram_id` | QA-DB-SEED-001 |
 | **QA-REMNA-DRYRUN-001** | P1 | bot | Dry-run `provision_key` at boundary | QA-GUARD-001 |

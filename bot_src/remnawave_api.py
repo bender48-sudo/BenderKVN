@@ -518,6 +518,9 @@ async def set_user_access_days(
 
 
 async def provision_key(email: str, days: int | None = None, telegram_id: str = None) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+    from shop_bot.runtime_env import assert_remna_mutation_allowed
+
+    assert_remna_mutation_allowed("provision_key")
     days = days or DEFAULT_DAYS
     t0 = time.perf_counter()
     async with remna_client_session() as session:
@@ -543,6 +546,9 @@ async def provision_key(email: str, days: int | None = None, telegram_id: str = 
 async def add_extra_traffic(email: str, extra_gb: int, telegram_id: str = None) -> bool:
     """Увеличивает лимит трафика пользователю на extra_gb (ГБ) на сервере.
     Возвращает True при успехе."""
+    from shop_bot.runtime_env import assert_remna_mutation_allowed
+
+    assert_remna_mutation_allowed("add_extra_traffic")
     bytes_add = extra_gb * 1024 * 1024 * 1024
     async with remna_client_session() as session:
         user = None

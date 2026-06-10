@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path.cwd()
 DATA_DIR = PROJECT_ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)  # Создаем директорию если не существует
-DB_FILE = DATA_DIR / "shop_bot.db"
+_db_override = (os.getenv("SHOP_BOT_DB_PATH") or os.getenv("BVPN_QA_DB_PATH") or "").strip()
+DB_FILE = Path(_db_override).expanduser() if _db_override else DATA_DIR / "shop_bot.db"
 
 
 @contextmanager

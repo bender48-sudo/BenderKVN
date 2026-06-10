@@ -7,9 +7,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from yookassa import Payment
-
-from shop_bot.yookassa_payment import yookassa_receipt
+from shop_bot.yookassa_payment import payment_create, yookassa_receipt
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +31,7 @@ def create_bind_payment(user_id: int) -> tuple[str | None, str | None]:
     amount_value = f"{amount_rub:.2f}"
     description = f"BenderVPN — автоплатёж, первый месяц {amount_rub:.0f} ₽"
     try:
-        payment = Payment.create(
+        payment = payment_create(
             {
                 "amount": {"value": amount_value, "currency": "RUB"},
                 "confirmation": {"type": "redirect", "return_url": return_url()},
@@ -67,7 +65,7 @@ def create_recurring_charge(user_id: int, payment_method_id: str) -> tuple[str |
     period = datetime.now(timezone.utc).strftime("%Y-%m")
     idem = f"yk-autopay-{user_id}-{period}"
     try:
-        payment = Payment.create(
+        payment = payment_create(
             {
                 "amount": {"value": amount_value, "currency": "RUB"},
                 "capture": True,
