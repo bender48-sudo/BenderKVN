@@ -1,9 +1,9 @@
 # INCIDENT-DIAG-003-004 — Windows Sleep/Resume + Mail Access (Happ report analysis)
 
-**Task:** INCIDENT-DIAG-003-004  
-**Date:** 2026-06-10  
-**Mode:** documentation / diagnostic analysis only · no prod mutation · no deploy  
-**Source:** Happ `report.zip` (2026-06-10, owner-provided) — **not committed to repo**  
+**Task:** INCIDENT-DIAG-003-004
+**Date:** 2026-06-10
+**Mode:** documentation / diagnostic analysis only · no prod mutation · no deploy
+**Source:** Happ `report.zip` (2026-06-10, owner-provided) — **not committed to repo**
 **Related incidents:** [INCIDENT-003](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md) · [INCIDENT-004](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md) · [CLIENT-STABILITY-001](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md)
 
 ---
@@ -216,7 +216,7 @@ From `ipconfig` (redacted summary):
 
 ### 7.4 After recovery
 
-Run `ops/diagnose_windows_vpn_resume.ps1 -Phase AfterRecovery` (or same manual commands).  
+Run `ops/diagnose_windows_vpn_resume.ps1 -Phase AfterRecovery` (or same manual commands).
 Optional: same sleep test with **comparison VPN** on same laptop.
 
 **Do not collect:** subscription URLs, tokens, full Happ config export, private keys.
