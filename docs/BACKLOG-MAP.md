@@ -83,6 +83,19 @@
 
 ---
 
+## Продукт / коммерция (вне Q001+)
+
+**SoT:** [`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md) — TRACK 0–6, ACQ-*, QA-*, DEVICE-*.
+
+| ID | Статус | Комментарий |
+|----|--------|-------------|
+| **QA-OWNER-PREVIEW-FIX-002** | **DONE** repo `8a107ba` | Bot visual preview + cabinet CTA dedup |
+| **MONITOR-FLAP-001** | OPEN | Selfsteal anti-flap — TRACK 5 / G9 |
+| **OPS-ALERT-HYGIENE-001** | OPEN | Paging vs diagnostic — TRACK 5 / G9 |
+| **ACQ-*** / **REF-*** | OPEN | См. MASTER; не дублировать OPS-CAPACITY-300 / NODE-RELAY-ADD |
+
+---
+
 ## Открыто вне очереди
 
 | ID | Где | Комментарий |

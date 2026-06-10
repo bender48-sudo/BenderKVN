@@ -214,6 +214,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | QA-PORTAL-FIXTURES-001 portal scenario fixtures (`qa_portal_fixtures.py`) | ✅ repo — local preview URLs + cabinet API from QA DB |
 | QA-SCENARIO-MATRIX-001 customer journey matrix runner (`qa_scenario_matrix.py`) | ✅ repo — 20 scenarios; full/partial/blocked + drift report; feeds owner preview |
 | QA-OWNER-PREVIEW-001 owner visual preview index (`qa_owner_preview.py`) | ✅ repo — journey walkthrough Step 1–5; CTA map; Start here; transcript links fixed |
+| QA-OWNER-PREVIEW-FIX-002 bot visual preview + cabinet CTA dedup (`8a107ba`) | ✅ repo — Telegram-like bot preview HTML; `#cabinet-actions` gated for new browser users; generated preview gitignored |
 | PORTAL-LANDING-CTA-DEDUP-001 browser landing CTA clarity | ✅ repo — landing-paths primary; journey + existing-user path; no duplicate home-cta |
 | Product Policy v1 locked | ✅ |
 | Happ primary client strategy documented | ✅ |
@@ -238,7 +239,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | 3b | **P0** | **Browser SaaS long-session drops** (INCIDENT-004, G1) | Desktop document/chat SaaS positioning |
 | 4 | **P0** | **DEVICE-ENFORCE-001** — same-sub URL reuse undetected (G7) | Paid/open; referral at scale |
 | 5 | **P1** | **No admin user lookup / revoke-replace path** (G7, G8) | Commercial support at scale |
-| 6 | **P1** | **No automated monitoring/alerting for profile integrity + billing** (G9) | Open launch |
+| 6 | **P1** | **No automated monitoring/alerting for profile integrity + billing** (G9); **MONITOR-FLAP-001** selfsteal TG noise; **OPS-ALERT-HYGIENE-001** cert/digest policy | Open launch; acquisition scale review |
 | 7 | **P1** | **Copy false promises** — `device_rule` self-service new config (G10) | External traffic — **TRACK 0 tomorrow** |
 | 8 | **P1** | **No CI / secret scanning** (G11) | Multi-contributor / open launch |
 | 9 | **P1** | **Policy enforcement gaps** — invite/30k/one-device copy-only (G12) | Public scale |

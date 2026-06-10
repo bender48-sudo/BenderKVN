@@ -307,6 +307,15 @@ Assumptions for illustration: start **~500 paying users**, target **10 000**, ch
 
 Growth plan must be tied to **server capacity** and **quality thresholds**. Capacity is **not proven for 10k** today.
 
+**BACKLOG-SYNC-002 — commercial acquisition/referral growth must also wait on (existing IDs only):**
+
+- **MONITOR-FLAP-001** + **OPS-ALERT-HYGIENE-001** — alert hygiene before scale-driven ops review
+- **ACQ-SLOTS-001** + **ACQ-TRIAL-CAP-001** — slots visibility and 300-config trial cap (not OPS-CAPACITY-300)
+- **VPN-ARCH-001** / **VPN-AUD-220** — node readiness (not NODE-NL-REVALIDATE-001)
+- **≥2 verified relay/node surfaces** — RU relay#1 + relay#2 via **Q120** / **VPN-AUD-201** (not NODE-RELAY-ADD-001)
+
+Canonical list: [`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md) §ACQUISITION-JOURNEY-001 prerequisites.
+
 ### 8.2 Metrics to track (future capacity dashboard)
 
 | Metric | Why |

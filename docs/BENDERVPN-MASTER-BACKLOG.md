@@ -70,7 +70,7 @@
 | **TRACK 2** | Billing proof — BILL-UT, BILL-SMOKE prep | BILL-UT tomorrow |
 | **TRACK 3** | Device — SMOKE, ENFORCE, DATA, ADMIN, BILL | After TRACK 0–2 |
 | **TRACK 4** | VPN stability — INCIDENT-003/004 owner proof + **CLIENT-STABILITY-001** Track A/B (partial: INCIDENT-DIAG-003-004 + Happ UI TUN daemon error) | Owner-led |
-| **TRACK 5** | Monitoring / CI / runbooks | After soft blockers |
+| **TRACK 5** | Monitoring / CI / runbooks — **MONITOR-FLAP-001**, **OPS-ALERT-HYGIENE-001**, G9/G11 | After soft blockers; before acquisition scale |
 | **TRACK 6** | Support AI / technical triage | After P1-ADM + runbooks; not F&F blocker |
 
 ### Tomorrow queue (TRACK 0 + prep)
@@ -100,6 +100,13 @@ See [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORT
 | **ACQ-BOT-BIND-001** | P0 | OPEN | G4 bind + portal lead merge |
 | **ACQ-SLOTS-001** | P2 | OPEN | Active config count; 30k slots; public badge gate |
 
+**Commercial acquisition / referral growth — do not proceed without (link existing IDs only):**
+
+- **OPS-ALERT-HYGIENE-001** + **MONITOR-FLAP-001** — paging vs diagnostic alerts; no Telegram floods during scale review
+- **ACQ-SLOTS-001** + **ACQ-TRIAL-CAP-001** — capacity/slots visibility and 300-config trial cap (not a separate OPS-CAPACITY-300 ID)
+- **VPN-ARCH-001** (+ **VPN-AUD-220** where NL edge applies) — node readiness; no **NODE-NL-REVALIDATE-001**
+- **≥2 production-capable relay/node surfaces verified** — e.g. RU relay#1 + relay#2 (**Q120** / **VPN-AUD-201 DONE**); no **NODE-RELAY-ADD-001**
+
 ### QA-SANDBOX-001 backlog (architecture done — implementation gated)
 
 See [`ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md`](ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md). Staging/local only; production-identical code paths; mocks at YooKassa/Remna boundaries only.
@@ -118,7 +125,24 @@ See [`ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md`](ARCH-2026-06-10-QA-SANDB
 | **QA-SCENARIO-MATRIX-001** | P1 | **DONE** (repo) | `qa_scenario_matrix.py`; `ops/test_qa_scenario_matrix.py` |
 | **QA-E2E-001** | P2 | OPEN | Playwright portal→cabinet smokes |
 | **QA-OWNER-PREVIEW-001** | P2 | **DONE** (repo) | `qa_owner_preview.py` journey walkthrough index; FIX-001 transcripts + CTA map |
+| **QA-OWNER-PREVIEW-FIX-002** | P2 | **DONE** (repo `8a107ba`) | Bot visual preview HTML; cabinet `#cabinet-actions` CTA dedup for new browser users; raw transcript collapsible; preview artifacts gitignored |
 | **PORTAL-LANDING-CTA-DEDUP-001** | P2 | **DONE** (repo) | Browser landing: landing-paths primary, journey steps, account-fold dedup |
+
+### TRACK 5 — Monitoring / CI / ops (BACKLOG-SYNC-002)
+
+Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by default; **no LV/AMS deploy without owner approval.** No Caddy/template/prod mutation in these tasks.
+
+| ID | P | Status | Type | Summary |
+|----|---|--------|------|---------|
+| **MONITOR-FLAP-001** | P1 | OPEN | repo (`selfsteal-monitor.py`) | Latvia `www.microsoft.com` HTTP 0 down/recovered flood (~dozens/day); likely false positive — missing fail_streak/ok_streak/cooldown/quorum vs `monitor.sh` / `ru-monitor.py` |
+| **OPS-ALERT-HYGIENE-001** | P1 | OPEN | alert policy | Paging vs diagnostic channels; RU MONITOR `certificate changed` batched/digest/log-only for CDN SNI; severity tiers: silent/log · warning/digest · paging |
+| **Profile integrity alert** | P1 | NOT_STARTED | ops cron | G9 — scheduled probe + TG (see CLOSEOUT TRACK 5) |
+| **Payment callback monitor** | P1 | NOT_STARTED | ops | G9 webhook path |
+| **BILL-MON-001** | P2 | NOT_STARTED | ops | Billing job alert |
+| **P2-CI-001/002** | P1 | NOT_STARTED | CI | G11 gitleaks / secret scan |
+| **LAUNCH-004** | P1 | NOT_STARTED | docs | Support/incident runbooks |
+
+**Done (infra, do not re-open):** `ru-monitor.py` anti-flap batch (2026-05-27); `monitor.sh` streak 3/2; **Q120** second RU relay (**VPN-AUD-201**).
 
 ### Completed audits (frozen — do not re-audit)
 
@@ -281,7 +305,9 @@ See [`ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md`](ARCH-2026-06-10-QA-SANDB
 | ID | Sev | Area | Title | Problem | Decision | Phase | Impact | Evidence | Files/modules | Acceptance | Checks | Deploy? | Owner? | Blocked by | Status |
 |----|-----|------|-------|---------|----------|-------|--------|----------|---------------|------------|--------|---------|--------|------------|--------|
 | SEC-001 | P1 | Security | Full security audit | Last audit May 2025; surface grew | N/A | 2 | Breach prevention | `AUDIT-2026-05-SECURITY*.md` | bot, portal, ops | Report: secrets, auth, rate limits | AUDIT-010 | No | No | — | OPEN |
-| OBS-001 | P2 | Monitoring/observability | Monitoring audit | Status page exists; user-impact detection weak | N/A | 4 | Incident response | `MONITORING.md` | ops, status | Gap report | AUDIT-012 | No | No | — | OPEN |
+| OBS-001 | P2 | Monitoring/observability | Monitoring audit | Status page exists; user-impact detection weak; selfsteal TG noise | N/A | 4 | Incident response | `MONITORING.md`; BACKLOG-SYNC-001 | Gap report + child tasks | AUDIT-012 | No | No | — | OPEN |
+| MONITOR-FLAP-001 | P1 | Monitoring/observability | Selfsteal monitor anti-flap | `selfsteal-monitor.py` immediate TG on HTTP 0; microsoft.com flap | N/A | 4 | Alert fatigue | LV logs BACKLOG-SYNC-001 | fail_streak/ok_streak/cooldown; repo only until deploy approved | `ops/test_*` if added | No | No | OBS-001 | OPEN |
+| OPS-ALERT-HYGIENE-001 | P1 | Monitoring/observability | Alert hygiene policy | RU MONITOR cert per-target TG; paging=diagnostic mix | N/A | 4 | Ops trust at scale | `ru-monitor.py` | Digest/batch cert; severity tiers; separate paging channel | log review | No | No | OBS-001, MONITOR-FLAP-001 | OPEN |
 | PERF-001 | P3 | Metrics/analytics | Performance/load audit | Portal/bot/web-trial load unknown | N/A | 4 | Scale readiness | — | portal, bot | Approved profile only | AUDIT-013 | No | **Yes** | — | OPEN |
 | OPS-001 | P2 | Ops/deploy/release | Deploy/release safety audit | Dirty tree, stale smokes, rollback | N/A | 2 | Safe releases | `RUNBOOK-AMS-SAFE-DEPLOY` | deploy scripts | Audit report | AUDIT-015 | No | No | — | OPEN |
 

@@ -428,6 +428,7 @@ Generated `screenshots/qa-preview/`, transcripts, and matrix JSON are **gitignor
 | **QA-SCENARIO-MATRIX-001** | P1 | ops | `qa_scenario_matrix.py` — matrix runner + drift report — **DONE** repo | QA-DB-SEED-001 |
 | **QA-E2E-001** | P2 | playwright | Portal→API→cabinet smokes on staging | QA-PORTAL-FIXTURES-001 |
 | **QA-OWNER-PREVIEW-001** | P2 | ops | `qa_owner_preview.py` — owner HTML preview index — **DONE** repo | QA-SCENARIO-MATRIX-001 |
+| **QA-OWNER-PREVIEW-FIX-002** | P2 | ops/portal | Bot visual preview HTML + cabinet CTA dedup — **DONE** repo `8a107ba` | QA-OWNER-PREVIEW-001, PORTAL-LANDING-CTA-DEDUP-001 |
 | **QA-STAGING-BOT-001** | P1 | ops | Staging bot + DB + portal origin setup runbook | Owner BotFather |
 
 **Extend existing (do not replace):**
