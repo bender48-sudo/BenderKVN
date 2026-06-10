@@ -27,6 +27,37 @@ REMNA_TRIAL_DAYS = int(
 # Browser /email trial: short access only to complete Happ setup + bind Telegram (anti-abuse).
 WEB_TRIAL_DAYS = int(os.getenv("WEB_TRIAL_DAYS", "1"))
 
+# P1-REF-002: legacy hidden invitee +Nd on first legacy plan purchase (deprecated path).
+# Owner decision: target reward is +1 month to REFERRER after invitee paid conversion — not
+# extra days to invitee. Keep gated OFF; do not enable in production.
+REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_ENABLED = os.getenv(
+    "REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_ENABLED", ""
+).strip().lower() in ("1", "true", "yes")
+REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_DAYS = int(
+    os.getenv("REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_DAYS", "3")
+)
+
+# REF-BONUS-001 (future): +1 calendar month to referrer after invitee first confirmed payment.
+# Not implemented — no balance/subscription mutation. Requires REF-ADMIN-001, REF-METRICS-001,
+# anti-abuse, hold/qualification window, G4 bind confidence, idempotency, and user-facing copy.
+REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_ENABLED = os.getenv(
+    "REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_ENABLED", ""
+).strip().lower() in ("1", "true", "yes")
+REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_MONTHS = int(
+    os.getenv("REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_MONTHS", "1")
+)
+
+
+def referral_invitee_first_purchase_bonus_days(referred_by: str | None) -> int:
+    """Legacy invitee bonus gate (P1-REF-002). Returns 0 unless explicitly enabled — default OFF."""
+    if not referred_by:
+        return 0
+    if not REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_ENABLED:
+        return 0
+    if REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_DAYS <= 0:
+        return 0
+    return REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_DAYS
+
 # Оплата в боте (ЮKassa; Stars отключены). Если false — напоминания об окончании
 # пробного периода без кнопки пополнения, только поддержка.
 BOT_PAYMENTS_LIVE = os.getenv("BOT_PAYMENTS_LIVE", "").strip().lower() in ("1", "true", "yes")

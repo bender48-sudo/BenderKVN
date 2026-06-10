@@ -203,6 +203,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | P1-CAB-001 cabinet `billing_profile` | ✅ deployed |
 | P1-DEV-001 active config count/list (read-only) | ✅ deployed |
 | P1-REF-001 web email `ref_code` → `referred_by` | ✅ deployed |
+| P1-REF-002 hidden invitee +3d gated OFF; target = +1m to referrer (REF-BONUS-001 deferred) | ✅ repo, not deployed |
 | Product Policy v1 locked | ✅ |
 | Happ primary client strategy documented | ✅ |
 | Incident read-only probe suite | ✅ |
@@ -409,7 +410,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | Web `ref_code` | **Deployed PASS** |
 | Web→TG referral migration | **BLOCKED** by bind FAIL |
 | Referral ledger admin | **Missing** |
-| Referral bonus promises | **Must not promise** — PT-07; check live copy |
+| Referral bonus promises | **Must not promise** — PT-07; invitee +3d gated OFF (P1-REF-002); target reward = +1 month to **inviter** after paid conversion — not live |
 | Commercial campaigns | **Unsafe for bonus**; **tracking-only** OK on TG path |
 
 **Classification:** Safe for **tracking only** on Telegram; **unsafe for bonus**; **unsafe for email-heavy growth** until G4 fixed.

@@ -158,14 +158,29 @@ If user refuses phone and email on Telegram path:
 | Copy | **Do not promise** +1 month, balance credit, or extra days |
 | UI | No referral reward CTAs until implemented |
 
-### 5.3 Future bonus (deferred — owner pre-approval shape only)
+### 5.3 Future bonus (deferred — owner-approved target model)
 
-If approved in a future policy revision:
+**P1-REF-002 (2026-06):** Legacy hidden +3 days to **invitee** on first legacy purchase is **gated OFF** in code. Not the target reward model.
 
-| Parameter | Recommended shape |
-|-----------|-------------------|
-| Type | **Small time credit only** — not money, not +1 month |
-| Trigger | Invitee **active 7–14 days** OR **first payment** — not registration alone |
+**Target reward (REF-BONUS-001 — not live):**
+
+| Parameter | Owner-approved shape |
+|-----------|---------------------|
+| Recipient | **Referrer / inviter** — not invitee |
+| Amount | **+1 calendar month** subscription time (not balance credit at MVP) |
+| Trigger | Invitee **first confirmed paid conversion** — not registration or trial alone |
+| Enablement | `REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_ENABLED` OFF by default; separate deploy + owner approval |
+
+**Required controls before enabling referrer reward:**
+
+- Referral ledger / admin visibility (REF-ADMIN-001)
+- Anti-abuse checks and hold/qualification window
+- Clear user-facing copy; support auditability
+- Idempotency — no duplicate rewards per invitee/payment
+- G4 bind / attribution confidence for web→TG path
+
+| Parameter | Also required |
+|-----------|---------------|
 | Fraud | Same-IP clusters, disposable email, self-referral loops — admin review |
 
 ### 5.4 Abuse controls (Phase 3)

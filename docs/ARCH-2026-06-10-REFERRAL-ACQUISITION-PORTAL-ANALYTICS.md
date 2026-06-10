@@ -103,8 +103,8 @@ The product has **two acquisition paths** (Telegram 90d trial + web/email 1d fal
 | Item | Status | Evidence |
 |------|--------|----------|
 | User-facing bonus promise | **CONFIRMED absent** | `msg_referral_invite` — count + link only; policy §5.2 |
-| Hidden +3d invitee bonus | **CONFIRMED** code | `handlers.py` L1983–1989 `first_purchase` + `referred_by` → `days_to_add += 3` |
-| Referrer reward | **CONFIRMED absent** | No code |
+| Hidden +3d invitee bonus | **GATED OFF** (P1-REF-002) | `referral_invitee_first_purchase_bonus_days()` — `REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_ENABLED` default OFF |
+| Referrer reward (target) | **NOT IMPLEMENTED** | Owner model: **+1 month to inviter** after invitee first confirmed payment (`REF-BONUS-001`); flag `REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_ENABLED` OFF |
 | Portal bonus copy | **CONFIRMED absent** | `ru.json` referral welcome — no bonus |
 
 ### 3.7 Counter and admin visibility
@@ -357,7 +357,7 @@ referral_events (optional audit trail):
 | Portal referral link as share default | **NO** until REF-PORTAL-001 | Spec ready; not implemented |
 | Email fallback referral growth | **NO-GO** | G4 bind BLOCKED |
 | Referral ad campaigns | **NO-GO** | REF-ADMIN-001 + bind + metrics |
-| Bonus promises | **NO-GO** | Policy §5.2; remove hidden +3d (P1-REF-002) |
+| Bonus promises | **NO-GO** | Policy §5.2; P1-REF-002 gated invitee +3d OFF; referrer +1m not live |
 | User counter in cabinet | **NO** until REF-COUNTER-001 | Bot counter OK today |
 | Admin manual SQL report | **CONDITIONAL** | Ops script read-only |
 
@@ -371,7 +371,8 @@ referral_events (optional audit trail):
 |-------|-----|-----------|--------------|---------|--------------|----------|
 | 1 | REF-ARCH-001 | Decision doc | docs | No | — | Owner approve OPTION 3 |
 | 2 | G4-BIND-RETEST | Prove bind + migration | ops smoke | AMS read | — | owner retest bind in TG app |
-| 3 | REF-COPY-001 / P1-REF-002 | No false bonus; soften preserve note; gate +3d | `handlers.py`, `ru.json` | Yes | — | approve REF-COPY-001 |
+| 3 | ~~P1-REF-002~~ | Gate hidden invitee +3d OFF; document +1m referrer target | `config.py`, `handlers.py` | Yes | — | **DONE** repo |
+| 3b | REF-COPY-001 | Soften preserve note | `ru.json` | Yes | — | approve REF-COPY-001 |
 | 4 | REF-PORTAL-001 | Portal share URL builder + inviter copy | `handlers.py`, `portal.js`, `ru.json` | Yes LV+bot | ARCH approved | approve REF-PORTAL-001 |
 | 5 | REF-ATTR-001 | Attribution spec + bind migration test | docs, tests | No | BIND PASS | — |
 | 6 | REF-COUNTER-001 | Cabinet `referral_summary` API + UI | `portal_cabinet.py`, `portal.js` | Yes | PORTAL-001 | approve REF-COUNTER-001 |
@@ -392,9 +393,9 @@ referral_events (optional audit trail):
 | 3 | Email path on referral landing | Prominent vs hidden until bind PASS | **Hidden/caveated** until G4 |
 | 4 | Referral growth while G4 BLOCKED | Allow tracking-only TG vs pause all growth | **TG tracking-only F&F**; no campaigns |
 | 5 | Counter placement | Bot / cabinet / both | **Both** |
-| 6 | Hidden +3d legacy bonus | Remove vs gate | **Remove** (P1-REF-002) |
-| 7 | Referral campaigns | When allowed | After REF-ADMIN-001 + G4 + REF-METRICS-001 |
-| 8 | Bonus program | OD-02 deferred | **No** until explicit approval |
+| 6 | Hidden +3d invitee bonus | Remove vs gate | **Gated OFF** (P1-REF-002 DONE repo) — not target reward model |
+| 7 | Referral campaigns | When allowed | After REF-ADMIN-001 + G4 + REF-METRICS-001 + anti-abuse |
+| 8 | Bonus program | Target: +1 month to **referrer** after invitee paid conversion | **No** until REF-BONUS-001 + controls (ledger, anti-abuse, copy, idempotency) |
 
 ---
 
@@ -413,7 +414,7 @@ referral_events (optional audit trail):
 
 1. Owner approve **OPTION 3** (this document).
 2. **G4-BIND-RETEST** — controlled bind with in-app open + DB proof.
-3. **REF-COPY-001** — gate/remove hidden +3d; soften `referral_preserve_note`.
+3. ~~**P1-REF-002**~~ — hidden invitee +3d gated OFF (repo). **REF-COPY-001** — soften `referral_preserve_note`.
 4. **REF-PORTAL-001** spec review — portal URL = `{portal_origin()}/portal/?ref={code}` from `public_urls.portal_origin()`.
 5. Read-only ops script design for referral ledger (no prod mutation).
 
@@ -423,7 +424,8 @@ referral_events (optional audit trail):
 
 | Artifact | Role |
 |----------|------|
-| `bot_src/handlers.py` | `referral_invite_payload`, `start_handler ref_*`, hidden +3d |
+| `bot_src/handlers.py` | `referral_invite_payload`, `start_handler ref_*`, invitee bonus gate |
+| `bot_src/config.py` | `REFERRAL_INVITEE_*` (OFF), `REFERRAL_REFERRER_*` (future +1m, OFF) |
 | `bot_src/web_referral.py` | Web attribution |
 | `bot_src/web_tg_bind.py` | Bind migration |
 | `bot_src/database.py` | `link_referral`, `count_referrals` |

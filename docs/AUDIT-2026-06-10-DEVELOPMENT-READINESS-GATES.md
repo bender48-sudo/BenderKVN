@@ -136,7 +136,7 @@ G5  Public/partner scale
 | **G2-A** | Web `ref_code` → `referred_by` end-to-end | E2E web trial **PASS**; TG bind **FAIL** — `p1bind2-` retest NOT_BOUND; `funnel_bot_start bind:*` = 0 (POSTDEPLOY §9, [`AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md`](AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md)) |
 | **G2-B** | Cabinet API `billing_profile` + trial fields | **P1-CAB-001 deployed 2026-06-09** — [`POSTDEPLOY-2026-06-10-P1-CAB-001.md`](POSTDEPLOY-2026-06-10-P1-CAB-001.md); legacy+trial API PASS; wallet/expired UI spot-check pending |
 | **G2-G** | Cabinet API active config count/list (read-only) | **P1-DEV-001 deployed 2026-06-09** — [`POSTDEPLOY-2026-06-10-P1-DEV-001.md`](POSTDEPLOY-2026-06-10-P1-DEV-001.md); legacy+trial API PASS; wallet/expired/multi-key UI spot-check pending |
-| **G2-C** | Remove/gate hidden +3d referral purchase bonus | Policy PT-07 |
+| **G2-C** | Remove/gate hidden +3d invitee referral purchase bonus | **P1-REF-002 DONE** repo — `REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_ENABLED` default OFF; target reward = +1 month to referrer (`REF-BONUS-001` deferred); deploy pending |
 | **G2-D** | Admin user lookup (TG ID / email hint) | Admin command smoke |
 | **G2-E** | Referral ledger export or admin view | Query `referrals` table |
 | **G2-F** | Copy honesty sweep | No “ref preserved on email” until G2-A |
