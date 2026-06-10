@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import html
 import importlib
 import json
 import os
@@ -498,6 +499,134 @@ def render_transcript(result: HarnessResult, *, simulation_note: str = SEED_SIMU
     if result.expected_next:
         lines.extend(["## Expected next action", result.expected_next, ""])
     return "\n".join(lines).rstrip() + "\n"
+
+
+def _format_bot_text(text: str) -> str:
+    safe = html.escape(text or "").strip()
+    if not safe:
+        return '<span class="empty">(empty message)</span>'
+    return safe.replace("\n", "<br>\n")
+
+
+def _button_kind_label(kind: str) -> str:
+    labels = {"callback": "callback", "url": "url", "web_app": "web_app"}
+    return labels.get(kind, kind or "unknown")
+
+
+def render_bot_preview_html(
+    result: HarnessResult,
+    *,
+    simulation_note: str = SEED_SIMULATION_NOTE,
+    transcript_basename: str | None = None,
+) -> str:
+    scenario = result.scenario or "custom"
+    action = result.action
+    title = f"Bot preview — {scenario} / {action}"
+    incoming = f"Harness action: <code>{html.escape(action)}</code>"
+
+    message_blocks: list[str] = []
+    if not result.outbound:
+        message_blocks.append('<div class="tg-empty">No captured outbound messages.</div>')
+    for idx, msg in enumerate(result.outbound, 1):
+        body = _format_bot_text(msg.text)
+        meta = f"#{idx} · {html.escape(msg.method)}"
+        if msg.parse_mode:
+            meta += f" · parse_mode={html.escape(msg.parse_mode)}"
+        buttons_html = ""
+        if msg.buttons:
+            btn_rows = []
+            for btn in msg.buttons:
+                kind = _button_kind_label(btn.kind)
+                btn_rows.append(
+                    '<div class="tg-btn">'
+                    f'<span class="tg-btn__label">{html.escape(btn.label)}</span>'
+                    f'<span class="tg-btn__kind">{html.escape(kind)}</span>'
+                    f'<span class="tg-btn__value">{html.escape(btn.value)}</span>'
+                    "</div>"
+                )
+            buttons_html = '<div class="tg-keyboard">' + "".join(btn_rows) + "</div>"
+        message_blocks.append(
+            '<div class="tg-msg tg-msg--bot">'
+            f'<div class="tg-msg__meta">{meta}</div>'
+            f'<div class="tg-msg__bubble">{body}</div>'
+            f"{buttons_html}"
+            "</div>"
+        )
+
+    expected = html.escape(result.expected_next or ACTION_NEXT_HINT.get(action, "Review captured buttons"))
+    errors_block = ""
+    if result.errors:
+        errors_block = (
+            '<div class="panel panel--error"><strong>Harness errors</strong><ul>'
+            + "".join(f"<li>{html.escape(e)}</li>" for e in result.errors)
+            + "</ul></div>"
+        )
+    note_block = f'<p class="muted">{html.escape(simulation_note)}</p>'
+    if result.blocked_notes:
+        note_block += f'<p class="muted">{html.escape(result.blocked_notes)}</p>'
+
+    raw_link = ""
+    if transcript_basename:
+        raw_link = (
+            f'<p><a href="{html.escape(transcript_basename)}">Technical raw transcript (markdown)</a></p>'
+        )
+
+    return f"""<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{html.escape(title)}</title>
+<style>
+body{{font-family:system-ui,-apple-system,Segoe UI,sans-serif;margin:0;background:#0e1621;color:#e7ecf3;line-height:1.45}}
+.wrap{{max-width:520px;margin:0 auto;padding:20px 16px 40px}}
+h1{{font-size:1.15rem;margin:0 0 6px}}
+.meta{{color:#8fa3b8;font-size:.85rem;margin-bottom:16px}}
+.panel{{background:#17212b;border:1px solid #243041;border-radius:10px;padding:12px 14px;margin:12px 0}}
+.panel--next{{border-color:#2f6f4a}}
+.panel--error{{border-color:#7a3b3b;color:#ffc9c9}}
+.tg-chat{{background:#0e1621;border:1px solid #243041;border-radius:12px;padding:14px 12px}}
+.tg-msg{{margin:12px 0}}
+.tg-msg--user .tg-msg__bubble{{margin-left:auto;background:#2b5278;border-radius:14px 14px 4px 14px;max-width:88%}}
+.tg-msg--bot .tg-msg__bubble{{background:#182533;border-radius:14px 14px 14px 4px;max-width:92%}}
+.tg-msg__meta{{font-size:.72rem;color:#6d7f92;margin-bottom:4px}}
+.tg-msg__bubble{{padding:10px 12px;font-size:.95rem;word-break:break-word}}
+.tg-keyboard{{margin-top:8px;display:flex;flex-direction:column;gap:6px}}
+.tg-btn{{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;background:#232e3c;border:1px solid #2f3f50;border-radius:8px;padding:8px 10px;font-size:.82rem}}
+.tg-btn__label{{font-weight:600;color:#e7ecf3}}
+.tg-btn__kind{{background:#2a4a7a;color:#d6e6ff;padding:1px 6px;border-radius:4px;font-size:.72rem}}
+.tg-btn__value{{color:#9fb0c3;word-break:break-all;flex:1 1 100%}}
+.tg-empty,.empty{{color:#8fa3b8;font-style:italic}}
+.muted{{color:#8fa3b8;font-size:.88rem}}
+details.tech{{margin-top:16px;color:#8fa3b8;font-size:.85rem}}
+details.tech summary{{cursor:pointer}}
+a{{color:#6ab2f2}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>{html.escape(title)}</h1>
+<div class="meta">
+scenario <code>{html.escape(scenario)}</code> · tg_user_id <code>{result.tg_user_id}</code> · db_mode {html.escape(result.db_mode)}
+</div>
+<div class="tg-msg tg-msg--user">
+<div class="tg-msg__meta">Incoming (QA harness)</div>
+<div class="tg-msg__bubble">{incoming}</div>
+</div>
+<div class="tg-chat">
+{"".join(message_blocks)}
+</div>
+<div class="panel panel--next"><strong>Expected next action</strong><p>{expected}</p></div>
+{errors_block}
+<div class="panel"><strong>Simulation note</strong>{note_block}</div>
+<details class="tech"><summary>Technical raw transcript</summary>
+{raw_link}
+<p>Markdown transcript is generated alongside this preview for debugging.</p>
+</details>
+</div>
+</body>
+</html>
+"""
 
 
 def list_actions() -> None:

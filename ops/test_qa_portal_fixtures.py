@@ -59,9 +59,22 @@ def _static_checks() -> None:
         ("landing-existing-user", "existing user entry"),
         ("configureBrowserAccountFold", "account fold browser dedup"),
         ("renderExistingUserEntry", "existing user CTA"),
+        ("browserCabinetUtilityItems", "cabinet actions browser dedup"),
+        ("configureSharedSupportVisibility", "support block browser gate"),
     ):
         if needle not in (src + portal_js + (ROOT / "web" / "portal" / "content" / "ru.json").read_text(encoding="utf-8")):
             raise AssertionError(f"static check failed: {label} ({needle!r})")
+
+    if "action_tg_bot" in portal_js and "browserCabinetUtilityItems" in portal_js:
+        idx = portal_js.index("function browserCabinetUtilityItems")
+        util_fn = portal_js[idx : portal_js.index("function configureSharedSupportVisibility", idx)]
+        for bad in ("action_tg_bot", "action_email_access"):
+            if bad in util_fn:
+                raise AssertionError(f"browser cabinet actions must not repeat acquisition CTA {bad!r}")
+    render_idx = portal_js.index("function renderCabinetActions")
+    render_fn = portal_js[render_idx : portal_js.index("function updateCabinetChrome", render_idx)]
+    if "shouldShowCabinetAccountPanel()" not in render_fn:
+        raise AssertionError("renderCabinetActions must gate on shouldShowCabinetAccountPanel for browser")
 
     index_html = (ROOT / "web" / "portal" / "index.html").read_text(encoding="utf-8")
     if 'id="landing-paths"' not in index_html:

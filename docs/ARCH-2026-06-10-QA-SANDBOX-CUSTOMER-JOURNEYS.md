@@ -378,7 +378,7 @@ Every sandbox run (CI or owner preview) should append a **drift report**:
 3. python ops/qa_serve_portal_preview.py          # keep running
 4. python ops/qa_owner_preview.py --build --out screenshots/qa-preview/index.html
 5. Open screenshots/qa-preview/index.html in browser
-6. Click Portal / Cabinet / Setup per scenario; read bot transcript links where present
+6. Click Portal / Cabinet / Setup per scenario; open **Bot Visual Preview** (Step 2) where harness output exists; raw markdown under collapsible technical details
 ```
 
 CLI:
@@ -391,6 +391,8 @@ CLI:
 Index groups **20 scenarios** by runnable status: **full** / **partial** / **blocked** (labeled **Owner: visually reviewable / limited / blocked** — same counts as matrix JSON). Each card has an ordered **Journey walkthrough** (Step 1 Portal → Step 2 Bot transcript → Step 3 Cabinet → Step 4 Setup → Step 5 Final state), **CTA transition map**, and collapsible technical details.
 
 **QA-OWNER-PREVIEW-FIX-001:** Bot transcript links fixed; **Start here** section; journey walkthrough Step 1–5.
+
+**QA-OWNER-PREVIEW-FIX-002:** Step 2 links to Telegram-like **bot visual preview** HTML (`screenshots/qa-preview/bot/{scenario}-{action}.html`); raw markdown in collapsible details. Cabinet `#cabinet-actions` hidden for new browser users when `#cabinet-grace` shows acquisition CTAs; utility actions only after identity/config.
 
 **PORTAL-LANDING-CTA-DEDUP-001 (done):** Browser landing shows hero + `#landing-paths` (primary/secondary CTAs with after-click copy) + journey steps + existing-user entry; `#home-cta` hidden; `#events-card` hidden until incident; account-fold bot/setup hidden for new browser users. Rebuild preview: `python ops/qa_owner_preview.py --build` → inspect `new_no_referral` / `new_from_referral`.
 

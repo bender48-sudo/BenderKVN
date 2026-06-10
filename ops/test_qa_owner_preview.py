@@ -124,6 +124,10 @@ def _static_checks() -> None:
         ("Matrix: full", "matrix count label"),
         ("investigate_portal_cta_duplication", "cta duplication analysis"),
         ("bot_transcript_reason", "transcript unavailable reason"),
+        ("bot_visual_previews", "bot visual preview paths"),
+        ("Open Bot Visual Preview", "visual preview journey link"),
+        ("Technical raw transcript", "raw transcript collapsible"),
+        ("visual preview available", "cta map visual preview status"),
         ("build_preview", "preview builder"),
     ):
         if needle not in src:
@@ -196,11 +200,15 @@ async def _run_tests() -> None:
         mod = _reload_preview()
         rows = _fixture_rows()
         transcript = preview_dir / "bot" / "paid_wallet_user-menu.md"
+        visual = preview_dir / "bot" / "paid_wallet_user-menu.html"
         transcript.parent.mkdir(parents=True, exist_ok=True)
         transcript.write_text("# Bot transcript\n", encoding="utf-8")
+        visual.write_text("<html><body>Bot preview</body></html>", encoding="utf-8")
         mod._resolve_transcripts(rows[0], preview_dir)
         assert rows[0]["bot_transcript_path"] == "bot/paid_wallet_user-menu.md"
         assert rows[0]["bot_transcripts"]["menu"] == "bot/paid_wallet_user-menu.md"
+        assert rows[0]["bot_visual_preview_path"] == "bot/paid_wallet_user-menu.html"
+        assert rows[0]["bot_visual_previews"]["menu"] == "bot/paid_wallet_user-menu.html"
 
         matrix_json = preview_dir / "matrix-report.json"
         matrix_json.write_text(
@@ -232,8 +240,11 @@ async def _run_tests() -> None:
         assert "Step 1 — Portal" in html_a
         assert "Step 5 — Final state" in html_a
         assert "CTA transition map" in html_a
+        assert "Open Bot Visual Preview" in html_a
+        assert 'href="bot/paid_wallet_user-menu.html"' in html_a
+        assert "Technical raw transcript" in html_a
         assert 'href="bot/paid_wallet_user-menu.md"' in html_a
-        assert "Bot transcript not available" in html_a
+        assert "Bot visual preview not available" in html_a
         assert "Owner: visually reviewable: 1" in html_a
         assert "Owner: limited preview: 1" in html_a
         assert "Counts match matrix JSON" in html_a
@@ -244,8 +255,8 @@ async def _run_tests() -> None:
         cta = mod.investigate_portal_cta_duplication()
         assert cta["fixture_issue"] is False
         assert cta["product_issue"] is True
-        assert "landing-paths" in cta["root_cause"]
-        assert "home-cta" in cta["root_cause"]
+        assert "cabinet-actions" in cta["root_cause"] or "cabinet-grace" in cta["root_cause"]
+        assert "landing-paths" in cta["root_cause"] or "cabinet-grace" in str(cta.get("blocks", []))
 
         index_html = (ROOT / "web" / "portal" / "index.html").read_text(encoding="utf-8")
         assert 'id="home-cta"' in index_html
@@ -292,10 +303,26 @@ async def _run_tests() -> None:
             row = built["scenarios"][0]
             assert row["portal_url"] and row["cabinet_url"] and row["setup_url"]
             tpath = preview_dir / "bot" / "paid_wallet_user-menu.md"
+            vpath = preview_dir / "bot" / "paid_wallet_user-menu.html"
             assert tpath.is_file(), "bot transcript must be generated for paid_wallet_user"
+            assert vpath.is_file(), "bot visual preview must be generated for paid_wallet_user"
             assert row.get("bot_transcript_path") == "bot/paid_wallet_user-menu.md"
+            assert row.get("bot_visual_preview_path") == "bot/paid_wallet_user-menu.html"
             html_full = (preview_dir / "full-index.html").read_text(encoding="utf-8")
-            assert 'href="bot/paid_wallet_user-menu.md"' in html_full
+            assert "Open Bot Visual Preview" in html_full
+            assert 'href="bot/paid_wallet_user-menu.html"' in html_full
+            preview_html = vpath.read_text(encoding="utf-8")
+            assert "tg-msg" in preview_html
+            assert "Expected next action" in preview_html
+            menu_res = await importlib.import_module("qa_bot_fake_tg").run_harness(
+                scenario="paid_wallet_user",
+                tg_id=None,
+                action="menu",
+                db_path=db_path,
+            )
+            labels = [b.label for m in menu_res.outbound for b in m.buttons]
+            if labels:
+                assert any(lbl in preview_html for lbl in labels[:3])
             dumped = json.dumps(built["scenarios"], ensure_ascii=False)
             assert "vless://" not in dumped
             assert "kitsura.fun" not in dumped

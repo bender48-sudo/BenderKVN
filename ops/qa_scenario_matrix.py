@@ -393,10 +393,18 @@ async def _run_bot_actions(
             )
             payload = result.to_dict()
             if transcript_dir and (scenario in bot.SCENARIO_TG_ID or scenario in _EXTRA_BOT_TG):
-                path = transcript_dir / f"{scenario}-{action}.md"
+                md_name = f"{scenario}-{action}.md"
+                html_name = f"{scenario}-{action}.html"
+                path = transcript_dir / md_name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(bot.render_transcript(result), encoding="utf-8")
+                html_path = transcript_dir / html_name
+                html_path.write_text(
+                    bot.render_bot_preview_html(result, transcript_basename=md_name),
+                    encoding="utf-8",
+                )
                 payload["transcript_path"] = str(path)
+                payload["preview_html_path"] = str(html_path)
             results[action] = payload
         except Exception as exc:
             results[action] = {"errors": [str(exc)], "outbound": []}

@@ -69,7 +69,8 @@ GROUP_HINTS = {
     "blocked": "Fixture URLs only — scenario not end-to-end testable yet.",
 }
 
-PORTAL_CTA_DUPLICATION_BACKLOG = "PORTAL-LANDING-CTA-DEDUP-001"  # resolved repo — browser landing UX
+PORTAL_CTA_DUPLICATION_BACKLOG = "PORTAL-LANDING-CTA-DEDUP-001"  # landing UX
+PORTAL_CTA_DEDUP_ACTIONS_BACKLOG = "QA-OWNER-PREVIEW-FIX-002"  # cabinet-actions grace dedup
 
 
 def _ensure_guards(db_path: Path) -> Path:
@@ -107,33 +108,42 @@ def _user_status(row: dict[str, Any]) -> str:
 
 
 def investigate_portal_cta_duplication() -> dict[str, Any]:
-    """Document portal landing CTA duplication root cause (QA-OWNER-PREVIEW-FIX-001)."""
+    """Document portal CTA duplication root cause (landing + cabinet-actions)."""
     index_html = (ROOT / "web" / "portal" / "index.html").read_text(encoding="utf-8")
     portal_js = (ROOT / "web" / "portal" / "assets" / "portal.js").read_text(encoding="utf-8")
     blocks = []
     if 'id="landing-paths"' in index_html:
-        blocks.append("landing-paths (primary browser acquisition: Telegram + email 1d)")
+        blocks.append("landing-paths (primary browser acquisition on /start/: Telegram + email 1d)")
+    if 'id="cabinet-grace"' in (ROOT / "web" / "portal" / "cabinet.html").read_text(encoding="utf-8"):
+        blocks.append("cabinet-grace (primary browser acquisition on cabinet.html: Как получить доступ)")
+    if 'id="cabinet-actions"' in portal_js:
+        blocks.append("cabinet-actions (Действия grid — was repeating acquisition CTAs for new browser users)")
     if 'id="home-cta"' in index_html:
-        blocks.append("home-cta (legacy CTA block; hidden when landing-paths active)")
+        blocks.append("home-cta (legacy CTA block; hidden for browser)")
     if 'id="account-fold"' in index_html:
-        blocks.append("account-fold inline cabinet (bot + setup links when expanded)")
+        blocks.append("account-fold inline cabinet (gated for new browser users)")
     return {
         "root_cause": (
-            "Browser landing renders Telegram + 1-day temp CTAs in #landing-paths. "
-            "Legacy #home-cta duplicated the same labels via updateHomeCtas(); "
-            "renderLandingPaths() hides #home-cta for non-Mini-App users. "
-            "#account-fold still exposes bot/setup links below the fold — product overlap, not fixture injection."
+            "Browser acquisition CTAs (Telegram bot + 1-day temp) appeared in both the primary "
+            "acquisition block (#landing-paths on /start/ or #cabinet-grace on cabinet.html) and "
+            "#cabinet-actions «Действия», which always rendered the same labels for every browser "
+            "cabinet visit regardless of identity. "
+            "Legacy #home-cta and expanded #account-fold added further overlap on /start/."
         ),
         "fixture_issue": False,
         "product_issue": True,
         "decision": (
-            f"{PORTAL_CTA_DUPLICATION_BACKLOG} resolved in repo: "
-            "#landing-paths visible by default with after-click copy; "
-            "#home-cta hidden for browser; #events-card hidden until incident; "
-            "account-fold bot/setup hidden for new browser users."
+            f"{PORTAL_CTA_DUPLICATION_BACKLOG}: landing-paths primary on /start/; home-cta hidden; "
+            "account-fold bot/setup hidden for new browser users. "
+            f"{PORTAL_CTA_DEDUP_ACTIONS_BACKLOG}: #cabinet-actions hidden until account identity; "
+            "browser utility actions only (guide when config exists, status when loaded, support); "
+            "support-block hidden under grace panel for new browser users."
         ),
         "blocks": blocks,
-        "fixed_in_preview": "landing-paths primary + journey steps + existing-user entry; no duplicate home-cta",
+        "fixed_in_preview": (
+            "Single acquisition path in landing-paths or cabinet-grace; "
+            "Действия shows account utilities only for identified users"
+        ),
     }
 
 
@@ -170,16 +180,31 @@ def _resolve_transcripts(row: dict[str, Any], preview_dir: Path) -> None:
     scenario = row.get("scenario", "")
     bot_dir = preview_dir / "bot"
     transcripts: dict[str, str] = {}
+    visual_previews: dict[str, str] = {}
     for action in row.get("bot_actions") or []:
-        fname = f"{scenario}-{action}.md"
-        path = bot_dir / fname
-        if path.is_file():
-            transcripts[action] = f"bot/{fname}"
+        md_fname = f"{scenario}-{action}.md"
+        html_fname = f"{scenario}-{action}.html"
+        md_path = bot_dir / md_fname
+        html_path = bot_dir / html_fname
+        if md_path.is_file():
+            transcripts[action] = f"bot/{md_fname}"
+        if html_path.is_file():
+            visual_previews[action] = f"bot/{html_fname}"
     row["bot_transcripts"] = transcripts
+    row["bot_visual_previews"] = visual_previews
+    primary = row.get("bot_actions") or []
+    first_action = primary[0] if primary else None
+    if visual_previews:
+        row["bot_visual_preview_path"] = (
+            visual_previews.get(first_action or "")
+            or next(iter(visual_previews.values()))
+        )
+    else:
+        row["bot_visual_preview_path"] = None
     if transcripts:
-        primary = row.get("bot_actions") or []
-        first_action = primary[0] if primary else next(iter(transcripts))
-        row["bot_transcript_path"] = transcripts.get(first_action) or next(iter(transcripts.values()))
+        row["bot_transcript_path"] = (
+            transcripts.get(first_action or "") or next(iter(transcripts.values()))
+        )
         row["bot_transcript_reason"] = ""
     else:
         row["bot_transcript_path"] = None
@@ -308,9 +333,17 @@ def _cta_transition_map(row: dict[str, Any]) -> list[dict[str, str]]:
     hints = _journey_hints(scenario)
     ctas: list[dict[str, str]] = []
 
-    def support(clickable: bool, *, transcript: bool = False, blocked: bool = False) -> str:
+    def support(
+        clickable: bool,
+        *,
+        transcript: bool = False,
+        visual_preview: bool = False,
+        blocked: bool = False,
+    ) -> str:
         if blocked or runnable == "blocked":
             return "not implemented yet"
+        if visual_preview:
+            return "visual preview available"
         if transcript:
             return "transcript only"
         if clickable:
@@ -335,12 +368,18 @@ def _cta_transition_map(row: dict[str, Any]) -> list[dict[str, str]]:
             }
         )
     if row.get("bot_actions"):
+        has_visual = bool(row.get("bot_visual_previews"))
+        has_transcript = bool(row.get("bot_transcripts"))
         ctas.append(
             {
                 "label": "Bot menu / status / setup",
                 "source": "Telegram bot (harness)",
-                "target": "Bot handlers — see transcript",
-                "support": support(False, transcript=bool(row.get("bot_transcripts"))),
+                "target": "Bot handlers — open visual preview",
+                "support": support(
+                    False,
+                    visual_preview=has_visual,
+                    transcript=has_transcript and not has_visual,
+                ),
             }
         )
     if row.get("cabinet_url"):
@@ -383,20 +422,40 @@ def _render_journey_walkthrough(row: dict[str, Any], index_path: Path) -> str:
     parts.append(f"<div>Primary CTA: {html.escape(hints['portal_cta'])}</div>")
     parts.append(f"<div>Expected destination: {html.escape(hints['portal_dest'])}</div></li>")
 
+    visual_previews = row.get("bot_visual_previews") or {}
     transcripts = row.get("bot_transcripts") or {}
     parts.append("<li><strong>Step 2 — Bot / Telegram</strong>")
+    if visual_previews:
+        primary_links = []
+        for action in row.get("bot_actions") or visual_previews.keys():
+            rel = visual_previews.get(action)
+            if not rel:
+                continue
+            href = _rel_href(index_path, rel)
+            if href:
+                primary_links.append(
+                    f'<a href="{href}"><strong>{html.escape(f"Open Bot Visual Preview ({action})")}</strong></a>'
+                )
+        if primary_links:
+            parts.append("<div>" + " · ".join(primary_links) + "</div>")
+    elif row.get("bot_actions"):
+        reason = row.get("bot_transcript_reason") or _transcript_unavailable_reason(row)
+        parts.append(f'<div class=muted>Bot visual preview not available — {html.escape(reason)}</div>')
+    else:
+        parts.append('<div class=muted>Bot step skipped — web-only or blocked scenario</div>')
     if transcripts:
-        links = []
+        raw_links = []
         for action, rel in transcripts.items():
             href = _rel_href(index_path, rel)
             if href:
-                links.append(f'<a href="{href}">{html.escape(f"Transcript: {action}")}</a>')
-        parts.append("<div>Open transcript: " + " · ".join(links) + "</div>")
-    elif row.get("bot_actions"):
-        reason = row.get("bot_transcript_reason") or _transcript_unavailable_reason(row)
-        parts.append(f'<div class=muted>Bot transcript not available — {html.escape(reason)}</div>')
-    else:
-        parts.append('<div class=muted>Bot step skipped — web-only or blocked scenario</div>')
+                raw_links.append(
+                    f'<a href="{href}">{html.escape(f"Technical raw transcript ({action})")}</a>'
+                )
+        parts.append(
+            '<details class=tech><summary>Technical raw transcript</summary><div>'
+            + " · ".join(raw_links)
+            + "</div></details>"
+        )
     parts.append(f"<div>User receives: {html.escape(hints['bot_receives'])}</div>")
     parts.append(f"<div>Next expected action: {html.escape(hints['bot_next'])}</div></li>")
 
@@ -572,7 +631,8 @@ h2{font-size:1.15rem;margin:28px 0 8px}.hint{color:#9fb0c3;font-size:.9rem;margi
 .cta-map{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:8px}
 .cta-map th,.cta-map td{border:1px solid #2a3544;padding:6px 8px;text-align:left;vertical-align:top}
 .cta-map th{color:#9fb0c3;font-weight:600}
-.support-clickable-now{color:#b8f0d0}.support-transcript-only{color:#ffe6a8}.support-not-implemented-yet{color:#ffc9c9}
+.support-clickable-now{color:#b8f0d0}.support-visual-preview-available{color:#b8f0d0}
+.support-transcript-only{color:#ffe6a8}.support-not-implemented-yet{color:#ffc9c9}
 .support-requires-staging-bot-second-tg{color:#9fb0c3}.support-requires-staging-bot-dry-run-payment{color:#9fb0c3}
 .section{margin-top:12px}.section h4{margin:0 0 6px;font-size:.88rem;color:#9fb0c3;text-transform:uppercase;letter-spacing:.04em}
 .start-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0}
@@ -596,8 +656,8 @@ details.tech summary{cursor:pointer;color:#9fb0c3}
         '<div class=steps><strong>How to review</strong><ol>',
         "<li>Start <code>qa_serve_portal_preview.py</code>.</li>",
         "<li>Open a scenario from <strong>Start here</strong>.</li>",
-        "<li>Follow <strong>Step 1 → 5</strong> in order (portal → bot transcript → cabinet → setup → final).</li>",
-        "<li>Use CTA map to see what is clickable vs transcript-only vs blocked.</li>",
+        "<li>Follow <strong>Step 1 → 5</strong> in order (portal → bot visual preview → cabinet → setup → final).</li>",
+        "<li>Use CTA map to see visual preview vs transcript-only vs staging bot requirements.</li>",
         "</ol></div>",
         '<div class="banner banner--info"><strong>Portal CTA duplication note</strong> ',
         html.escape(cta_note["root_cause"]),
@@ -768,7 +828,11 @@ def _render_markdown_index(
         lines.append(f"- owner status: {OWNER_GROUP_LABELS.get(row.get('runnable', ''), '')}")
         lines.append(f"- matrix status: {MATRIX_GROUP_LABELS.get(row.get('runnable', ''), '')}")
         lines.append(f"1. Portal: {row.get('portal_url') or '-'}")
-        lines.append(f"2. Bot transcript: {row.get('bot_transcript_path') or row.get('bot_transcript_reason', '-')}")
+        lines.append(
+            f"2. Bot visual: {row.get('bot_visual_preview_path') or row.get('bot_transcript_reason', '-')}"
+        )
+        if row.get("bot_transcript_path"):
+            lines.append(f"   - raw transcript: {row['bot_transcript_path']}")
         lines.append(f"3. Cabinet: {row.get('cabinet_url') or '-'}")
         lines.append(f"4. Setup: {row.get('setup_url') or '-'}")
         lines.append(f"5. Final: {_final_state(row)}")
@@ -787,7 +851,7 @@ def render_scenario_detail(row: dict[str, Any], *, portal_base: str) -> str:
         "",
         "Journey:",
         f"1. Portal: {row.get('portal_url') or '-'}",
-        f"2. Bot: {row.get('bot_transcript_path') or row.get('bot_transcript_reason', '-')}",
+        f"2. Bot visual: {row.get('bot_visual_preview_path') or row.get('bot_transcript_reason', '-')}",
         f"3. Cabinet: {row.get('cabinet_url') or '-'}",
         f"4. Setup: {row.get('setup_url') or '-'}",
         f"5. Final: {_final_state(row)}",

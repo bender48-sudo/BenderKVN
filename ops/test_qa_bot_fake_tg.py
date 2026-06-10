@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import importlib
 import os
 import sys
@@ -54,6 +55,7 @@ def _static_checks() -> None:
         ("handlers.main_menu_handler", "real menu handler"),
         ("menu_get_setup_handler", "real get_setup handler"),
         ("sandbox.invalid", "fake subscription host"),
+        ("render_bot_preview_html", "telegram-like bot preview"),
     ):
         if needle not in src:
             raise AssertionError(f"static check failed: {label} ({needle!r})")
@@ -185,6 +187,13 @@ async def _async_tests() -> None:
             transcript = harness.render_transcript(setup_res)
             assert "QA bot preview" in transcript
             assert "TELEGRAM_BOT_TOKEN" not in transcript
+
+            preview_html = harness.render_bot_preview_html(setup_res, transcript_basename="setup.md")
+            assert "tg-msg" in preview_html
+            assert "Expected next action" in preview_html
+            assert "tg-btn" in preview_html or "No captured outbound" in preview_html
+            if setup_res.outbound and setup_res.outbound[0].text:
+                assert html.escape(setup_res.outbound[0].text[:20])[:10] in preview_html or setup_res.outbound[0].text[:8] in preview_html
         finally:
             _restore_env(prev)
 

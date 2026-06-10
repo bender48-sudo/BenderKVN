@@ -1178,6 +1178,36 @@
     }
   }
 
+  function browserCabinetUtilityItems() {
+    var cab = content.cabinet || {};
+    var statusHref = statusPageUrl();
+    var items = [];
+    var hasConfig = !!window.BVPN_CABINET_HAS_CONFIG || hasStoredSetup();
+    var hasLoadedAccount = !!window.BVPN_CABINET_ACCOUNT_VISIBLE;
+    if (hasConfig) {
+      items.push({ label: cab.action_guide || "Инструкция", href: "/portal/guide.html" });
+    }
+    if (hasLoadedAccount) {
+      items.push({ label: cab.action_status || "Статус", href: statusHref });
+    }
+    items.push({ label: cab.action_support || "Поддержка", href: SUPPORT_URL });
+    return items;
+  }
+
+  function configureSharedSupportVisibility() {
+    var mount = $("support-block-mount");
+    if (!mount) return;
+    if (isCabinetDedicatedPage() && !isTelegramMiniApp() && !shouldShowCabinetAccountPanel()) {
+      mount.classList.add("hidden");
+      return;
+    }
+    if (!isTelegramMiniApp() && !isCabinetDedicatedPage() && !hasStoredCabinetIdentity()) {
+      mount.classList.add("hidden");
+      return;
+    }
+    mount.classList.remove("hidden");
+  }
+
   function renderCabinetActions() {
     var cab = content.cabinet || {};
     var wrap = $("cabinet-actions");
@@ -1186,14 +1216,11 @@
       wrap.classList.add("hidden");
       return;
     }
+    if (!isTelegramMiniApp() && !shouldShowCabinetAccountPanel()) {
+      wrap.classList.add("hidden");
+      return;
+    }
     wrap.innerHTML = "";
-    var title = document.createElement("p");
-    title.className = "sheet__label";
-    title.textContent = cab.actions_title || "Действия";
-    wrap.appendChild(title);
-    var grid = document.createElement("div");
-    grid.className = "cabinet-actions__grid";
-    var statusHref = statusPageUrl();
     var items = isTelegramMiniApp()
       ? [
           { label: cab.action_setup || "Получить настройку", href: "/setup/" },
@@ -1202,19 +1229,17 @@
           { label: cab.action_invite || "Пригласить друга", href: botUrlWithReferral() },
           { label: cab.action_support || "Поддержка", href: SUPPORT_URL },
         ]
-      : [
-          {
-            label: cab.action_tg_bot || "Открыть Telegram-бота",
-            href: botUrlWithReferral(),
-          },
-          {
-            label: cab.action_email_access || "Временный доступ на 1 сутки",
-            href: SETUP_PATH,
-          },
-          { label: cab.action_guide || "Инструкция", href: "/portal/guide.html" },
-          { label: cab.action_status || "Статус", href: statusHref },
-          { label: cab.action_support || "Поддержка", href: SUPPORT_URL },
-        ];
+      : browserCabinetUtilityItems();
+    if (!items.length) {
+      wrap.classList.add("hidden");
+      return;
+    }
+    var title = document.createElement("p");
+    title.className = "sheet__label";
+    title.textContent = cab.actions_title || "Действия";
+    wrap.appendChild(title);
+    var grid = document.createElement("div");
+    grid.className = "cabinet-actions__grid";
     items.forEach(function (item) {
       var a = document.createElement("a");
       a.className = "cabinet-action-card";
@@ -1283,6 +1308,8 @@
       else recover.classList.add("hidden");
     }
     initCabinetTelegramIdHelper();
+    renderCabinetActions();
+    configureSharedSupportVisibility();
   }
 
   function showCabinetTelegramIdPanel(tid) {
@@ -1640,11 +1667,11 @@
         billNote.classList.remove("hidden");
       }
       cfgPanel.classList.remove("hidden");
+      window.BVPN_CABINET_HAS_CONFIG = activeCount >= 1;
     }
     if (isCabinetDedicatedPage()) {
       if (doc.ok) window.BVPN_CABINET_ACCOUNT_VISIBLE = true;
       updateCabinetChrome();
-      renderCabinetActions();
     }
     var botBtn = $("btn-cabinet-bot");
     if (botBtn && doc.bot_url) {
@@ -1970,6 +1997,7 @@
         BenderPortalShared.bindStatusLinks(document);
       }
       mountSharedSupport();
+      configureSharedSupportVisibility();
     })
     .catch(function () {
       showError(
