@@ -833,6 +833,15 @@
           loadTelegramSetup(0);
           return;
         }
+        if (
+          window.BenderPortalShared &&
+          BenderPortalShared.isLocalDev &&
+          BenderPortalShared.isLocalDev() &&
+          getTelegramUserId() > 0
+        ) {
+          loadTelegramSetup(0);
+          return;
+        }
         showEl($("setup-paths"));
         showEl($("setup-signup"));
         if ($("setup-recover-fold")) showEl($("setup-recover-fold"));

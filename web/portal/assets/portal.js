@@ -75,6 +75,11 @@
     return hasTelegramInitContext();
   }
 
+  function isLocalQaPreview() {
+    var h = (window.location.hostname || "").toLowerCase();
+    return h === "127.0.0.1" || h === "localhost";
+  }
+
   function isCabinetDedicatedPage() {
     if (window.BVPN_FOCUS_ACCOUNT) return true;
     return (window.location.pathname || "").toLowerCase().indexOf("cabinet.html") >= 0;
@@ -99,7 +104,10 @@
 
   function shouldAutoLoadCabinet() {
     if (isTelegramMiniApp()) return true;
-    if (isCabinetDedicatedPage()) return false;
+    if (isCabinetDedicatedPage()) {
+      if (isLocalQaPreview() && getTelegramUserId() > 0) return true;
+      return false;
+    }
     return hasStoredCabinetIdentity();
   }
 
@@ -558,6 +566,38 @@
     if (card) card.classList.add("hidden");
   }
 
+  function applyCapacityDoc(doc) {
+    var card = $("slots-card");
+    var home = content.home || {};
+    if (!card || !doc || !doc.ok) return false;
+    var val = $("slots-value");
+    var hint = $("slots-hint");
+    var cap = doc.access_cap || 30000;
+    if (!doc.registration_open) {
+      if (val) val.textContent = "0";
+      if (hint) hint.textContent = home.slots_closed || "";
+    } else {
+      var fmt = home.slots_format || "{remaining} мест";
+      if (val) {
+        val.textContent = fmt.replace("{remaining}", String(doc.remaining_slots));
+      }
+      var capNote = $("slots-cap");
+      if (capNote) {
+        var capFmt = home.slots_cap_note || "из {cap}";
+        capNote.textContent = capFmt.replace("{cap}", String(cap));
+      }
+      if (hint) {
+        var hintFmt = home.slots_hint_live || "";
+        hint.textContent = hintFmt.replace(
+          "{active}",
+          String(doc.active_configurations)
+        );
+      }
+    }
+    card.classList.remove("hidden");
+    return true;
+  }
+
   function loadCapacity() {
     var card = $("slots-card");
     var home = content.home || {};
@@ -570,6 +610,37 @@
     if ($("slots-title") && home.slots_title) {
       $("slots-title").textContent = home.slots_title;
     }
+    if (isLocalQaPreview()) {
+      var fx = new URLSearchParams(window.location.search || "").get(
+        "qa_capacity_fixture"
+      );
+      if (fx) {
+        var fixtures = {
+          slots_high: {
+            ok: true,
+            registration_open: true,
+            remaining_slots: 25000,
+            active_configurations: 5000,
+            access_cap: 30000,
+          },
+          slots_low: {
+            ok: true,
+            registration_open: true,
+            remaining_slots: 120,
+            active_configurations: 29880,
+            access_cap: 30000,
+          },
+          slots_zero: {
+            ok: true,
+            registration_open: false,
+            remaining_slots: 0,
+            active_configurations: 30000,
+            access_cap: 30000,
+          },
+        };
+        if (applyCapacityDoc(fixtures[fx])) return;
+      }
+    }
     // No live capacity API — hide counter card; hero_badge shows invite-only limit.
     if (meta.capacity_api_enabled !== true) {
       hideCapacityCard();
@@ -580,35 +651,7 @@
         return r.json();
       })
       .then(function (doc) {
-        if (!doc || !doc.ok) throw new Error("capacity");
-        var val = $("slots-value");
-        var hint = $("slots-hint");
-        var cap = doc.access_cap || 30000;
-        if (!doc.registration_open) {
-          if (val) val.textContent = "0";
-          if (hint) hint.textContent = home.slots_closed || "";
-        } else {
-          var fmt = home.slots_format || "{remaining} мест";
-          if (val) {
-            val.textContent = fmt.replace(
-              "{remaining}",
-              String(doc.remaining_slots)
-            );
-          }
-          var capNote = $("slots-cap");
-          if (capNote) {
-            var capFmt = home.slots_cap_note || "из {cap}";
-            capNote.textContent = capFmt.replace("{cap}", String(cap));
-          }
-          if (hint) {
-            var hintFmt = home.slots_hint_live || "";
-            hint.textContent = hintFmt.replace(
-              "{active}",
-              String(doc.active_configurations)
-            );
-          }
-        }
-        card.classList.remove("hidden");
+        if (!applyCapacityDoc(doc)) throw new Error("capacity");
       })
       .catch(function () {
         hideCapacityCard();

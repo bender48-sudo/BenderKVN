@@ -150,7 +150,26 @@
 - Subscription resolve mocked to `sandbox.invalid` at harness boundary; setup URL still from `portal_links` config
 - **Still needs real staging bot / 2nd TG:** inline button taps in real Telegram, Mini App WebView chrome, payment 3DS, bind flow UX
 
-**Tests:** `ops/test_runtime_env_guards.py`, `ops/test_remna_dryrun.py`, `ops/test_yookassa_dryrun.py`, `ops/test_qa_seed_scenarios.py`, `ops/test_qa_bot_fake_tg.py`
+**Portal/cabinet fixtures (QA-PORTAL-FIXTURES-001 — implemented):**
+
+- Resolver: `ops/qa_portal_fixtures.py`
+- Local preview server: `ops/qa_serve_portal_preview.py` (static `web/portal` + `/setup/api/cabinet|capacity|telegram-setup` stubs)
+- Enable: `BVPN_ENV` non-prod + `BVPN_QA_TOOLS_ENABLED=1` + seeded `SHOP_BOT_DB_PATH`
+- CLI: `--list`, `--scenario NAME --print-urls`, `--seed-preview-index`
+- URLs use `?tid=`, `?ref=`, `?qa_scenario=`, `?qa_capacity_fixture=` (localhost slots preview)
+- Cabinet data: real `portal_cabinet.cabinet_snapshot` shape from QA DB — no subscription URLs/tokens in payload
+- Localhost hooks in `portal.js` / `setup.js`: autoload cabinet/setup when `tid` present; slots card via `qa_capacity_fixture`
+- **Partial/blocked:** `after_trial_cap` (ACQ-TRIAL-CAP-001 placeholder), `slots_counter_states` (fixture param only until gate API ships)
+- Preview index: `ops/qa_portal_preview_index.json` (generated; not committed by default)
+
+**Workflow:**
+```text
+python ops/qa_seed_scenarios.py --reset --seed-all
+python ops/qa_serve_portal_preview.py
+python ops/qa_portal_fixtures.py --scenario paid_wallet_user --print-urls
+```
+
+**Tests:** `ops/test_runtime_env_guards.py`, `ops/test_remna_dryrun.py`, `ops/test_yookassa_dryrun.py`, `ops/test_qa_seed_scenarios.py`, `ops/test_qa_bot_fake_tg.py`, `ops/test_qa_portal_fixtures.py`
 
 ---
 
@@ -199,7 +218,7 @@ Telegram always sends the **real** `from.id`. Production bot cannot impersonate 
 
 ### 5.3 Local portal serve
 
-Extend `.playwright-review/serve_portal.py` to proxy `/api/*` to local bot webhook (QA-PORTAL-FIXTURES-001) so portal UI hits **real** backend on `127.0.0.1`.
+Use `ops/qa_serve_portal_preview.py` for local portal + `/setup/api/*` cabinet fixtures (QA-PORTAL-FIXTURES-001). Staging may proxy to bot webhook separately.
 
 ---
 
@@ -370,7 +389,7 @@ Every sandbox run (CI or owner preview) should append a **drift report**:
 | **QA-REMNA-DRYRUN-001** | P1 | bot | Dry-run `provision_key` at boundary | QA-GUARD-001 — **DONE** repo |
 | **QA-PAYMENT-DRYRUN-001** | P1 | bot | Dry-run `payment_create` at boundary — **DONE** repo | QA-GUARD-001 |
 | **QA-PAYMENT-WEBHOOK-001** | P1 | webhook | Staging-only payment success simulator | QA-PAYMENT-DRYRUN-001 |
-| **QA-PORTAL-FIXTURES-001** | P1 | portal/ops | Gate API fixtures; local proxy serve | ACQ-PORTAL-001 partial |
+| **QA-PORTAL-FIXTURES-001** | P1 | portal/ops | `qa_portal_fixtures.py` + `qa_serve_portal_preview.py` — **DONE** repo | QA-DB-SEED-001 |
 | **QA-SCENARIO-MATRIX-001** | P1 | ops | Runnable matrix runner + drift report | QA-DB-SEED-001 |
 | **QA-E2E-001** | P2 | playwright | Portal→API→cabinet smokes on staging | QA-PORTAL-FIXTURES-001 |
 | **QA-OWNER-PREVIEW-001** | P2 | bot admin | Owner-friendly staging preview commands | QA-DB-SEED-001 |
