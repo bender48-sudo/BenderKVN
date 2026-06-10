@@ -17,7 +17,7 @@
 | **Server/profile regression** | **Still not confirmed** — INCIDENT-001/002 short TCP/subscription probes **green**; probes **cannot prove** long-session stability |
 | **Relation to INCIDENT-003** | May share root cause (Happ false-connected / TUN-route-DNS / VLESS layer) or be **distinct** active-work failure mode |
 | **Commercial impact** | **Critical** — blocks desktop/browser SaaS positioning; **G1 remains PARTIAL/BLOCKED** |
-| **Partial diagnostic evidence** | **INCIDENT-DIAG-003-004** — mail/Google DNS **~3m40s** degraded, **~25ms** after VPN reconnect; not a SaaS soak — see [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) |
+| **Partial diagnostic evidence** | **INCIDENT-DIAG-003-004** — mail/Google DNS **~3m40s** degraded, **~25ms** after VPN reconnect; **CLIENT-STABILITY-001** — Track B: Bender Proxy fails while other VPN Proxy works (separate from TUN) — see [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md), [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md) |
 | **Prod fix justified now?** | **NO** — need correlated timestamps, browser diagnostics, comparison VPN, optional Hiddify A/B |
 
 ---
@@ -70,7 +70,8 @@
 |----------|------|
 | **INCIDENT-001** | Candidate D active; 7353 B / 6 paths / DoH / parity OK — **does not disprove** long-session drops |
 | **INCIDENT-002** | Interim stable after fresh import for **short active browsing** — **compatible** with long-session failures |
-| **INCIDENT-003** | Sleep/resume breaks networking; another VPN survives — **may share** Happ TUN lifecycle root cause |
+| **INCIDENT-003** | Sleep/resume breaks networking; another VPN survives — **may share** Happ TUN lifecycle root cause (Track A) |
+| **CLIENT-STABILITY-001 Track B** | Bender **Proxy mode** reported failing while other VPN Proxy works — **distinct** from TUN daemon failure; long-session drops may occur in either mode |
 | **Happ UX** | **One Auto host** expected — not a regression |
 
 **Hypothesis convergence:** INCIDENT-003 (idle/sleep) + INCIDENT-004 (active long session) both point to **Happ desktop tunnel lifecycle** and/or **VLESS long-flow** — server short probes insufficient.
@@ -249,6 +250,7 @@ See [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READIN
 |--------|--------------|
 | Disconnect Happ before long SaaS sessions | User habit |
 | Document VPN off/on recovery for SaaS banner | Docs only |
+| **Proxy mode as desktop fallback** | **Not until CLIENT-SMOKE-002** — Bender Proxy currently reported failing |
 | Collect `report.zip` + DevTools error names at failure | Diagnostic |
 | Hiddify comparison same sub | Diagnostic only |
 | Profile simplification canary | Requires `approve INCIDENT-003 desktop profile canary` |
@@ -293,6 +295,7 @@ See [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READIN
 ## 15. References
 
 - **INCIDENT-DIAG-003-004:** [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) — mail/Google tunnel evidence (partial)
+- **CLIENT-STABILITY-001:** [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md) — Track A/B split, Proxy smoke, workarounds
 - INCIDENT-002: [`INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md`](INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md)
 - INCIDENT-003: [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md)
 - Route/DNS script: [`ops/diagnose_windows_vpn_resume.ps1`](../ops/diagnose_windows_vpn_resume.ps1)

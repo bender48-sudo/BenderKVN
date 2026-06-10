@@ -15,7 +15,8 @@
 | **Symptom after resume** | VPN breaks; internet may not recover; traffic in broken route/tunnel; Happ shows error; **reboot sometimes required** |
 | **Server/profile regression** | **Still not confirmed** — Candidate D active; infra probes green |
 | **Confidence shift** | **Higher** for **Happ/OS TUN-route-DNS sleep-resume failure (A)** and **profile×client interaction (8)** |
-| **Diagnostic evidence** | **INCIDENT-DIAG-003-004** — Happ `report.zip` (2026-06-10): TUN crash loop + DNS failure before reboot; see [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) |
+| **Diagnostic evidence** | **INCIDENT-DIAG-003-004** — Happ `report.zip` (2026-06-10): TUN crash loop + DNS failure before reboot; **CLIENT-STABILITY-001** — Happ UI confirms «Failed to start TUN process via daemon» + service stop (2026-06-10, Happ 2.16.2) — see [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md), [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md) |
+| **Track split (CLIENT-STABILITY-001)** | **Track A (this incident):** Happ TUN/daemon failure · **Track B (separate):** Bender Proxy mode fails while other VPN Proxy works — do **not** merge root causes |
 | **Prod fix justified now?** | **NO** — need **AFTER-BROKEN** route/DNS snapshots (pre-reboot) + comparison matrix |
 | **INCIDENT-002 interim stable** | Compatible — active browsing may work; **sleep/resume is separate failure mode** |
 | **INCIDENT-004 (browser SaaS)** | **OPEN** — long-session SaaS drops may share TUN lifecycle; see [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md) |
@@ -28,8 +29,10 @@
 |-----|----------------------|
 | **Another VPN** (unspecified product) | Laptop can sleep/idle; internet **reconnects normally** on return |
 | **BenderVPN via Happ** | After sleep/idle return: connection **breaks**; internet **does not recover**; broken route/tunnel; Happ **connection error**; **reboot** sometimes required |
+| **Happ UI (2026-06-10, TUN mode)** | «Connection interrupted because Happ service stopped unexpectedly» · reason: «**Failed to start TUN process via daemon**» (Happ **2.16.2**, Windows) |
+| **Bender Proxy (separate track)** | Owner reports Bender **Proxy mode does not work**; **another VPN Proxy works** — see Track B in [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md) — **not** part of INCIDENT-003 root cause until smoke proves otherwise |
 
-**Interpretation:** Not generic “bad Wi‑Fi”. Suggests **client/OS TUN lifecycle** or **Happ + BenderVPN profile** interaction on **desktop**, distinct from server TCP/Relay health.
+**Interpretation:** Not generic “bad Wi‑Fi”. Happ UI text **confirms TUN daemon start failure** — supports **client/OS TUN lifecycle (Track A)** on desktop, distinct from server TCP/Relay health. **Do not collapse** Track B (Bender Proxy failure) into this incident.
 
 ---
 
@@ -162,6 +165,8 @@ Same three phases: BEFORE / AFTER-BROKEN / AFTER-RECOVERY. Redact secrets.
 | Active browsing | INCIDENT-002 interim OK | — | optional |
 | Sleep/resume | **FAIL reported** | **PASS reported** | pending |
 | Happ `report.zip` / happd TUN crash | **YES** — 2026-06-10 + prior 2026-06-08 pattern | — | — |
+| Happ UI TUN daemon error | **YES** — «Failed to start TUN process via daemon» (2026-06-10) | — | — |
+| Bender Proxy fallback | **FAIL reported** (Track B — separate) | other VPN Proxy **PASS** | pending CLIENT-SMOKE-002 |
 | Route/DNS snapshots (AFTER-BROKEN) | **pending** — report is post-reboot | **pending** | pending |
 | Reboot required? | **sometimes** (confirmed 2026-06-10) | no (owner) | pending |
 
@@ -189,10 +194,13 @@ Same three phases: BEFORE / AFTER-BROKEN / AFTER-RECOVERY. Redact secrets.
 
 | Option | Blast radius |
 |--------|--------------|
-| Disconnect Happ before sleep | User habit |
+| Disconnect Happ before sleep | User habit — **recommended** until Track A resolved |
+| Full Happ restart as administrator | Try before reboot |
 | Document off/on recovery | Docs only |
+| **Proxy mode fallback** | **Not recommended yet** — Bender Proxy reported failing (Track B); see CLIENT-SMOKE-002 |
 | Collect `report.zip` after broken resume | Diagnostic |
 | Hiddify comparison on same laptop | Diagnostic only |
+| Karing / alt client | CLIENT-SMOKE-003 — evaluation only |
 
 ### 10.2 Profile simplification canary (requires approval)
 
@@ -241,7 +249,7 @@ Only with correlated evidence + §11 approval phrase. **Not justified now.**
 - Whether other VPN uses TUN or different driver model
 - Whether profile simplification would fix Happ resume without harming mobile
 
-**Now known (INCIDENT-DIAG-003-004):** Windows 11 **10.0.26200**, Happ **2.16.2**, sing-box tun **1.12.12**, Xray **26.3.27**; `happd.log` shows `sing-box-tun` exit 1 + `happ-tun` not UP + DNS failure (~13:00–13:01); system reboot ~13:01:56; recovery ~13:04. Details: [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md).
+**Now known (INCIDENT-DIAG-003-004 + CLIENT-STABILITY-001):** Windows 11 **10.0.26200**, Happ **2.16.2**, sing-box tun **1.12.12**, Xray **26.3.27**; `happd.log` shows `sing-box-tun` exit 1 + `happ-tun` not UP + DNS failure (~13:00–13:01); Happ UI confirms **TUN daemon start failure** + service stop; system reboot ~13:01:56; recovery ~13:04. **Track B open:** Bender Proxy fails, other VPN Proxy works. Details: [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md), [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md).
 
 ---
 
@@ -259,6 +267,7 @@ Only with correlated evidence + §11 approval phrase. **Not justified now.**
 ## 14. References
 
 - **INCIDENT-DIAG-003-004:** [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) — Happ `report.zip` analysis (2026-06-10)
+- **CLIENT-STABILITY-001:** [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md) — Track A/B split, runbook, CLIENT-SMOKE-001..003
 - INCIDENT-002: [`INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md`](INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md)
 - INCIDENT-004: [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md)
 - Script: [`ops/diagnose_windows_vpn_resume.ps1`](../ops/diagnose_windows_vpn_resume.ps1)

@@ -63,7 +63,7 @@ G5  Public/partner scale
 
 **INCIDENT-002 (2026-06-10):** Active failure capture — interim stable after fresh import; extended soak open. See [`INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md`](INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md).
 
-**INCIDENT-003 (2026-06-10):** Laptop **sleep/resume** — another VPN survives; BenderVPN/Happ breaks networking until reboot sometimes. Diagnostic protocol + `ops/diagnose_windows_vpn_resume.ps1`. **INCIDENT-DIAG-003-004** (2026-06-10 Happ report): TUN crash loop before reboot — stronger evidence, **AFTER-BROKEN** snapshots still missing. See [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md), [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md). **No prod mutation** until pre-reboot route/DNS + comparison matrix.
+**INCIDENT-003 (2026-06-10):** Laptop **sleep/resume** — another VPN survives; BenderVPN/Happ breaks networking until reboot sometimes. **INCIDENT-DIAG-003-004** (2026-06-10 Happ report): TUN crash loop before reboot — stronger evidence, **AFTER-BROKEN** snapshots still missing. **CLIENT-STABILITY-001** (2026-06-10): Happ UI confirms TUN daemon failure; **Track B** — Bender Proxy fails while other VPN Proxy works (separate investigation). See [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md), [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md), [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md). **No prod mutation** until pre-reboot route/DNS + comparison matrix + CLIENT-SMOKE-001..003.
 
 **INCIDENT-004 (2026-06-10):** Browser **SaaS long-session** drops (e.g. Claude connection banner while page loaded) — long-lived WebSocket/SSE/QUIC instability; **not disproved** by short TCP/sub probes. Partial mail/Google tunnel evidence in INCIDENT-DIAG-003-004. See [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md). **G1 desktop/browser SaaS gate** remains open.
 
@@ -104,10 +104,26 @@ G5  Public/partner scale
 - Constant subscription refresh by user
 - Minute-scale failure cycle
 - Post-sleep network dead until reboot
+- Happ TUN daemon error: «Failed to start TUN process via daemon»
+- Bender Proxy mode fails while other VPN Proxy works (Track B)
 - Browser SaaS connection banner while page loaded (Claude, GDocs, etc.)
 - DNS errors in Happ log
 
 **G1 pass criteria:** manual checklist complete on ≥1 iOS + ≥1 Android or desktop; disconnect/stall rate **materially lower** than pre-D report; OR explicit owner sign-off to proceed despite residual issues (documented).
+
+### G1.5 CLIENT-STABILITY gate (Windows desktop — 2026-06-10)
+
+**Status:** **OPEN** — Track A (TUN) + Track B (Bender Proxy) split per CLIENT-STABILITY-001.
+
+| Smoke | Track | Pass criteria | Owner |
+|-------|-------|---------------|-------|
+| **CLIENT-SMOKE-001** | A — TUN sleep/resume | Sleep 10–30 min; internet/mail work without reboot; AFTER-BROKEN bundle if fail | Required |
+| **CLIENT-SMOKE-002** | B — Bender Proxy | Proxy mode: mail/google/IP check; parity vs other VPN Proxy | Required |
+| **CLIENT-SMOKE-003** | Fallback client | Karing or alt: same sub, proxy/TUN, sleep/resume compare | Required for fallback copy |
+
+**Runbook:** [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md)
+
+**Paid/open blocker if:** Bender Proxy fallback fails **and** no validated alt client **and** no support runbook **and** setup offers single fragile TUN path.
 
 ---
 

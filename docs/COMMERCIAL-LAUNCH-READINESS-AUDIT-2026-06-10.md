@@ -85,6 +85,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md) | INCIDENT-003 |
 | [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md) | INCIDENT-004 |
 | [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) | INCIDENT-DIAG-003-004 — Happ report analysis |
+| [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md) | CLIENT-STABILITY-001 — Track A/B split, runbook, smokes |
 | [`AUDIT-2026-06-10-VPN-CLIENT-APP-COMPATIBILITY.md`](AUDIT-2026-06-10-VPN-CLIENT-APP-COMPATIBILITY.md) | Client matrix |
 | [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) | S1–S8 flows |
 | [`AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md`](AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md) | TG bind |
@@ -164,7 +165,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 
 | Gate | Area | Status | Evidence | Soft blocker? | Paid blocker? | Open blocker? | Required action | Owner decision |
 |------|------|--------|----------|---------------|---------------|---------------|-----------------|----------------|
-| **G1** | VPN stability / Happ / sleep-resume / browser SaaS | **PARTIAL** | Candidate D active; INCIDENT-002 interim stable; INCIDENT-003 sleep OPEN; **INCIDENT-004** browser SaaS long-session OPEN | Desktop + SaaS work = **yes** | **Yes** if desktop sold | **Yes** | INCIDENT-003 route/DNS + INCIDENT-004 20–30 min SaaS soak | Waive desktop/SaaS support? |
+| **G1** | VPN stability / Happ / sleep-resume / browser SaaS / **CLIENT-STABILITY** | **PARTIAL** | Candidate D active; INCIDENT-002 interim stable; INCIDENT-003 sleep OPEN (Track A TUN daemon); **Track B** Bender Proxy fails vs other VPN Proxy; INCIDENT-004 browser SaaS OPEN | Desktop + SaaS work = **yes** | **Yes** if desktop sold | **Yes** | CLIENT-SMOKE-001..003; INCIDENT-003 AFTER-BROKEN; INCIDENT-004 SaaS soak | Waive desktop/SaaS support? |
 | **G2** | Client app compatibility | **PARTIAL** | Happ/Hiddify/Streisand = Auto-equivalent; Karing/Clash/v2rayN stripped | Non-Happ clients | Non-Happ for paid | Non-Happ at scale | Happ primary; Hiddify diagnostic only; freeze Karing | Hiddify as official fallback? |
 | **G3** | Telegram registration / 90d | **DONE** | Code + policy PT-01; trial provision path | No | No | No | Keep monitoring trial abuse | — |
 | **G4** | Web/email fallback / TG bind | **BLOCKED** | Web 1d trial works; **TG bind FAIL** (`funnel_bot_start bind:*` = 0) | **Yes** if email growth pushed | **Yes** | **Yes** | Retest bind per TELEGRAM-BIND-FLOW §9; or disable email path in campaigns | Waive bind or fix first? |
@@ -206,6 +207,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | Happ primary client strategy documented | ✅ |
 | Incident read-only probe suite | ✅ |
 | INCIDENT-003 sleep/resume diagnostic protocol + script | ✅ |
+| CLIENT-STABILITY-001 runbook + Track A/B split | ✅ |
 | Rollback snapshot for Candidate D | ✅ |
 | Basic incident runbook | ✅ |
 | Unit tests for cabinet billing/config fields | ✅ `tests/test_portal_cabinet_billing.py` |
@@ -219,7 +221,8 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 |---|----------|---------|--------|
 | 1 | **P0** | **Billing live smokes + reconcile key fix** (G6 PARTIAL) — [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md) | Automated paid pilot, open launch |
 | 2 | **P0** | **TG bind FAIL** — web→TG migration unproven (G4) | Email fallback growth, referral migration |
-| 3 | **P0** | **Desktop sleep/resume unresolved** (INCIDENT-003, G1) | Desktop commercial support |
+| 3 | **P0** | **Desktop sleep/resume unresolved** (INCIDENT-003 Track A, G1) — Happ TUN daemon failure | Desktop commercial support |
+| 3a | **P0** | **Bender Proxy fallback unverified / failing** (CLIENT-STABILITY-001 Track B) | Desktop workaround path |
 | 3b | **P0** | **Browser SaaS long-session drops** (INCIDENT-004, G1) | Desktop document/chat SaaS positioning |
 | 4 | **P0** | **DEVICE-ENFORCE-001** — same-sub URL reuse undetected (G7) | Paid/open; referral at scale |
 | 5 | **P1** | **No admin user lookup / revoke-replace path** (G7, G8) | Commercial support at scale |
@@ -252,6 +255,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 - Sending non-Happ users as primary path
 - Pushing email 1d path as substitute for 90d without TG bind fix
 - Claiming desktop VPN stable without sleep/resume evidence
+- Recommending Proxy mode fallback while Bender Proxy reported failing (Track B)
 - Karing as recommended client
 
 ---
@@ -265,6 +269,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 5. G10 copy honesty sweep (device, billing, trial, referral)
 6. G11 CI + secret scan minimum
 7. G1 desktop sleep/resume resolved or desktop excluded from SLA
+7a. CLIENT-STABILITY: Bender Proxy smoke (CLIENT-SMOKE-002) or alt client validated (CLIENT-SMOKE-003)
 8. G14 payment reconciliation / admin reporting
 9. G12 capacity dashboard before approaching 300 active configs
 10. G2 non-Happ clients excluded from commercial promises
@@ -275,7 +280,9 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 
 | Gap | Proof needed |
 |-----|--------------|
-| INCIDENT-003 sleep/resume | BEFORE/**AFTER-BROKEN** (pre-reboot) route/DNS snapshots; comparison VPN — partial: [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) |
+| INCIDENT-003 sleep/resume (Track A) | BEFORE/**AFTER-BROKEN** (pre-reboot) route/DNS snapshots; comparison VPN — partial: [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md); UI: TUN daemon error |
+| CLIENT-STABILITY Track B (Bender Proxy) | CLIENT-SMOKE-002 — Bender Proxy vs other VPN Proxy |
+| CLIENT-SMOKE-003 alt client | Karing or equivalent — fallback decision |
 | TG bind | Successful bind with `funnel_bot_start bind:*` &gt; 0 + DB `telegram_id` set |
 | Billing | Live smokes: trial→wallet, top-up, insufficient balance, duplicate callback |
 | Wallet/expired UI | Mini App spot-check post P1-CAB/DEV |
@@ -291,7 +298,9 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 
 ### Before soft launch (B)
 
-- [ ] Owner INCIDENT-003 sleep/resume test OR waive desktop in all copy
+- [ ] Owner CLIENT-SMOKE-001 sleep/resume test OR waive desktop in all copy
+- [ ] Owner CLIENT-SMOKE-002 Bender Proxy test OR document no Proxy fallback
+- [ ] Owner CLIENT-SMOKE-003 alt client evaluation OR Happ-only Windows guidance
 - [ ] Happ mobile soak 30–60 min + sleep test on ≥1 iOS/Android
 - [ ] Support intake template: device, OS, Happ version, `/id`, screenshot
 - [ ] Disable or caveat email 1d path in referral landing if TG bind still FAIL
@@ -336,7 +345,9 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 |------|--------|----------|----------|--------|
 | Candidate D active | **PASS** | 7353 B, 6 proxy, DoH, parity | No | Continue profile probes |
 | INCIDENT-001/002 | **Monitoring** — not closed | Interim stable after fresh import | No for mobile F&F | Extended soak |
-| INCIDENT-003 sleep/resume | **OPEN** | Another VPN survives; Happ+BenderVPN fails | **Yes for desktop** | `diagnose_windows_vpn_resume.ps1` |
+| INCIDENT-003 sleep/resume (Track A) | **OPEN** | Happ TUN daemon error; another VPN survives sleep | **Yes for desktop** | CLIENT-SMOKE-001 + `diagnose_windows_vpn_resume.ps1` |
+| CLIENT-STABILITY Track B (Proxy) | **OPEN** | Bender Proxy fails; other VPN Proxy works | **Yes for Proxy fallback** | CLIENT-SMOKE-002 |
+| Alt client fallback | **OPEN** | Karing not validated | **Yes if promoted** | CLIENT-SMOKE-003 |
 | Happ primary | **Yes** | Policy PT-05; client audit | No | Keep |
 | Hiddify | **Diagnostic fallback** | Same Xray JSON as Happ | No if not promoted | Owner decision |
 | Karing | **Frozen / unsupported** | LV-direct strip | Yes if recommended | Do not promote |
@@ -348,8 +359,9 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | Dimension | Readiness |
 |-----------|-----------|
 | Mobile (Happ) | **PARTIAL** — interim stable; soak incomplete |
-| Desktop (Happ) | **BLOCKED** — sleep/resume |
-| Sleep/resume | **BLOCKED** — INCIDENT-003 |
+| Desktop (Happ) | **BLOCKED** — sleep/resume + TUN daemon |
+| Bender Proxy fallback | **BLOCKED** — reported failing (Track B) |
+| Sleep/resume | **BLOCKED** — INCIDENT-003 Track A |
 | Wi‑Fi/LTE switch | **UNCONFIRMED** |
 | Client cache/import | **Risk** — fresh reimport helped INCIDENT-002 |
 | Server rollback | **Ready** — snapshot exists |
@@ -370,7 +382,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 - **Official primary:** Happ
 - **Official fallback:** None publicly; Hiddify/Streisand for power users who already have app
 - **Unsupported:** Karing (as Auto), Clash family, v2rayN as Auto, sing-box plain link
-- **Disclose:** One visible Auto host; desktop sleep issue until resolved
+- **Disclose:** One visible Auto host; desktop sleep/TUN issue until resolved; Proxy fallback **not validated**
 
 ### C. Registration, trials, access flows
 
@@ -519,7 +531,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 
 | ID | Title | Why | Surfaces | Tests | Deploy? | Risk |
 |----|-------|-----|----------|-------|---------|------|
-| **LAUNCH-001** | Close or monitor G1 sleep/resume | Desktop blocker INCIDENT-003 | docs + owner diagnostics | Route/DNS snapshots | No | Low |
+| **LAUNCH-001** | Close or monitor G1 sleep/resume + CLIENT-STABILITY | Desktop blocker INCIDENT-003 Track A + Track B | docs + owner diagnostics | CLIENT-SMOKE-001..003 | No | Low |
 | **LAUNCH-002** | TG bind retest or waiver | G4 BLOCKED | bot bind flow | `smoke_p1_ref_tg_bind_ams.py` | Maybe | Med |
 | **LAUNCH-003** | Billing/payment commercial audit | G6 NOT_STARTED | bot billing, webhook | Scenario matrix smokes | No | High if skipped |
 | **LAUNCH-004** | Support admin revoke/replace runbook | G7/G8 | docs + admin | Manual panel test | No | Med |
@@ -586,7 +598,9 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 
 ## 16. Exact next prompts / surfaces
 
-1. **Owner:** Run INCIDENT-003 sleep/resume diagnostics on laptop — *«Run ops/diagnose_windows_vpn_resume.ps1 Before/AfterBroken/AfterRecovery and share snapshots»*
+1. **Owner:** Run CLIENT-SMOKE-001 sleep/resume diagnostics on laptop — *«Run ops/diagnose_windows_vpn_resume.ps1 Before/AfterBroken/AfterRecovery and share snapshots»*
+1b. **Owner:** Run CLIENT-SMOKE-002 Bender Proxy vs comparison VPN Proxy
+1c. **Owner:** Run CLIENT-SMOKE-003 Karing/alt client evaluation (optional if Proxy passes)
 2. **Agent:** `LAUNCH-003` BILL-001 billing commercial audit (read-only) — *«Audit billing/payment money flow for commercial launch»*
 3. **Agent:** `LAUNCH-002` TG bind controlled retest — *«Retest P1-REF TG bind per TELEGRAM-BIND-FLOW §9 with owner in real Telegram app»*
 4. **Agent:** `LAUNCH-005` copy truth sweep — *«Fix setup.device_rule and referral_preserve_note; remove ghost bot labels»*

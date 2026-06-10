@@ -17,6 +17,7 @@
 | [`BACKLOG-VPN-FULL-AUDIT-2026-05-28.md`](BACKLOG-VPN-FULL-AUDIT-2026-05-28.md) | VPN infra backlog (gen/sub/routing) |
 | [`VPN-INCIDENT-LESSONS-2026-05-25.md`](VPN-INCIDENT-LESSONS-2026-05-25.md) | Hotfix guardrails |
 | [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) | INCIDENT-DIAG-003-004 — Windows Happ report (sleep/mail) |
+| [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md) | CLIENT-STABILITY-001 — TUN daemon + Bender Proxy Track A/B |
 
 ---
 
@@ -66,7 +67,7 @@
 | **TRACK 1** | Bind + referral — G4-BIND-RETEST, REF-PORTAL, REF-ADMIN | Partial tomorrow |
 | **TRACK 2** | Billing proof — BILL-UT, BILL-SMOKE prep | BILL-UT tomorrow |
 | **TRACK 3** | Device — SMOKE, ENFORCE, DATA, ADMIN, BILL | After TRACK 0–2 |
-| **TRACK 4** | VPN stability — INCIDENT-003/004 owner proof (partial: INCIDENT-DIAG-003-004 report) | Owner-led |
+| **TRACK 4** | VPN stability — INCIDENT-003/004 owner proof + **CLIENT-STABILITY-001** Track A/B (partial: INCIDENT-DIAG-003-004 + Happ UI TUN daemon error) | Owner-led |
 | **TRACK 5** | Monitoring / CI / runbooks | After soft blockers |
 | **TRACK 6** | Support AI / technical triage | After P1-ADM + runbooks; not F&F blocker |
 
@@ -232,6 +233,10 @@
 | VPN-ARCH-001 | P1 | VPN architecture | Full VPN architecture audit | Selector/injectHosts mismatch; stealth split map | N/A | **Now** | Informed restore | `AUDIT-2026-06-09-VPN-CANDIDATE-D-TESTPLAN.md` | ops/, panel | Global apply only; test-user N/A; STOPPED | AUDIT-002 done | No | **Yes** global | VPN-REL-001 | **AWAITING APPROVAL** |
 | VPN-STAB-005 | P2 | VPN reliability | xhttp Happ batch risk (historical) | xhttp causes «0 servers» in Happ | Partially done | — | Happ UX | `AUDIT-2026-05-VPN-STABILITY-RESOLUTION` | sub-page, template | batch_risk=LOW on Happ UA | diagnose_happ_import | Yes | No | — | **DONE** |
 | VPN-INC-001 | P1 | VPN reliability | Incident guardrails enforcement | Repeat PATCH without probe caused gen 13→20 outages | N/A | ongoing | Prod stability | `VPN-INCIDENT-LESSONS` | ops patches | One PATCH → probe → smoke | verify gate | No | **Yes** | — | OPEN |
+| **CLIENT-STABILITY-001** | P0 | VPN reliability | Windows Happ TUN daemon + Bender Proxy fallback | Track A: TUN daemon fails after sleep; Track B: Bender Proxy fails, other VPN Proxy works | N/A | **Now** | Desktop launch gate | Owner report + INCIDENT-DIAG-003-004 | docs, `ops/diagnose_windows_vpn_resume.ps1` | Track A/B documented; workarounds; no prod change | CLIENT-SMOKE-001..003 | No | **Yes** | — | **OPEN** — docs done |
+| **CLIENT-SMOKE-001** | P0 | VPN reliability | Happ Windows TUN sleep/resume repro | AFTER-BROKEN snapshots missing | N/A | **Now** | G1 / CLIENT-STABILITY Track A | INCIDENT-003 | owner laptop | Sleep 10–30 min; pre-reboot bundle; reboot Y/N | runbook §6 | No | **Yes** | — | OPEN |
+| **CLIENT-SMOKE-002** | P0 | VPN reliability | Bender Proxy mode connectivity | Proxy fallback unverified; owner reports Bender Proxy fail | N/A | **Now** | G1 / CLIENT-STABILITY Track B | CLIENT-STABILITY-001 | owner laptop | Bender Proxy vs other VPN Proxy on same machine | runbook §6 | No | **Yes** | — | OPEN |
+| **CLIENT-SMOKE-003** | P1 | VPN reliability | Alternative client fallback (Karing) | No validated Windows fallback if TUN/Proxy fragile | N/A | **Now** | Paid/open if Happ-only path | client compatibility audit | owner laptop | Same sub; proxy/TUN; sleep/resume compare | runbook §6–7 | No | **Yes** | CLIENT-SMOKE-001/002 | OPEN |
 | VPN-AUD-210+ | P2 | VPN architecture | Remaining VPN full audit items | geosite, DNS leak, remarks, etc. | Per infra backlog | infra | Routing quality | `BACKLOG-VPN-FULL-AUDIT-2026-05-28` | ops, panel | Per-item verify gate | probe scripts | Yes | **Yes** | VPN-REL-001 | OPEN |
 
 ### 4.9 Security / observability / performance / release
