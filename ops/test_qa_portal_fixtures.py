@@ -55,9 +55,25 @@ def _static_checks() -> None:
         ("sandbox.invalid", "sandbox-only URLs"),
         ("isLocalQaPreview", "localhost preview hook"),
         ("qa_capacity_fixture", "slots fixture param"),
+        ("landing_tg_after", "landing after-click copy"),
+        ("landing-existing-user", "existing user entry"),
+        ("configureBrowserAccountFold", "account fold browser dedup"),
+        ("renderExistingUserEntry", "existing user CTA"),
     ):
-        if needle not in (src + portal_js):
+        if needle not in (src + portal_js + (ROOT / "web" / "portal" / "content" / "ru.json").read_text(encoding="utf-8")):
             raise AssertionError(f"static check failed: {label} ({needle!r})")
+
+    index_html = (ROOT / "web" / "portal" / "index.html").read_text(encoding="utf-8")
+    if 'id="landing-paths"' not in index_html:
+        raise AssertionError("landing-paths block required")
+    if 'class="cta hidden" id="home-cta"' not in index_html:
+        raise AssertionError("home-cta must default hidden for browser dedup")
+    if 'class="status hidden" id="events-card"' not in index_html:
+        raise AssertionError("events-card must default hidden to avoid empty dot")
+    if 'class="sheet glass hidden" id="landing-paths"' in index_html:
+        raise AssertionError("landing-paths must be visible without JS")
+    if "paths && !paths.classList.contains" in portal_js:
+        raise AssertionError("journey must not hide when landing-paths visible")
     for bad in ("kitsura.fun", "YOOKASSA_SECRET", "api.telegram.org", "live_"):
         if bad in src:
             raise AssertionError(f"fixture module must not embed {bad!r}")

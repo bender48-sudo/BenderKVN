@@ -69,7 +69,7 @@ GROUP_HINTS = {
     "blocked": "Fixture URLs only — scenario not end-to-end testable yet.",
 }
 
-PORTAL_CTA_DUPLICATION_BACKLOG = "PORTAL-LANDING-CTA-DEDUP-001"
+PORTAL_CTA_DUPLICATION_BACKLOG = "PORTAL-LANDING-CTA-DEDUP-001"  # resolved repo — browser landing UX
 
 
 def _ensure_guards(db_path: Path) -> Path:
@@ -127,12 +127,13 @@ def investigate_portal_cta_duplication() -> dict[str, Any]:
         "fixture_issue": False,
         "product_issue": True,
         "decision": (
-            "Default-hide #home-cta in HTML; keep landing-paths as single primary CTA block. "
-            "Document account-fold overlap in backlog "
-            f"{PORTAL_CTA_DUPLICATION_BACKLOG} for acquisition review."
+            f"{PORTAL_CTA_DUPLICATION_BACKLOG} resolved in repo: "
+            "#landing-paths visible by default with after-click copy; "
+            "#home-cta hidden for browser; #events-card hidden until incident; "
+            "account-fold bot/setup hidden for new browser users."
         ),
         "blocks": blocks,
-        "fixed_in_preview": "home-cta default hidden + explicit show only in Telegram Mini App",
+        "fixed_in_preview": "landing-paths primary + journey steps + existing-user entry; no duplicate home-cta",
     }
 
 

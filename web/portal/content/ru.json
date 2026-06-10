@@ -1,5 +1,5 @@
 {
-  "meta": { "lang": "ru", "version": 30, "capacity_api_enabled": false },
+  "meta": { "lang": "ru", "version": 31, "capacity_api_enabled": false },
   "auto_profile": {
     "title": "Профиль в Happ",
     "lead": "В подписке один профиль — «BenderVPN Auto». Сервер и маршрут подбираются автоматически; вручную узлы и порты выбирать не нужно."
@@ -24,8 +24,15 @@
     "slots_closed": "Регистрация закрыта — лимит 30 000 участников достигнут.",
     "invite_model_note": "",
     "landing_paths_title": "Как начать",
-    "landing_tg_lead": "Основной доступ — 90 дней бесплатно в боте. Подходит, если Telegram открывается или VPN уже работает.",
-    "landing_email_lead": "По email на 1 сутки — если Telegram не открывается: включи VPN, зайди в Telegram и заверши регистрацию.",
+    "landing_tg_lead": "Основной путь — Telegram-бот: 90 дней бесплатно, пока открыт ранний доступ по приглашениям.",
+    "landing_tg_after": "После нажатия откроется Telegram-бот → прими условия → получи доступ → настрой Happ по инструкции.",
+    "landing_email_lead": "Запасной путь — если Telegram не открывается: временный доступ на 1 сутки по email (ограниченный).",
+    "landing_email_after": "После нажатия — форма email → доступ на 1 сутки → затем привяжи Telegram в боте для полного кабинета.",
+    "landing_limit_note": "Оплата и автопродление через сайт — в разработке. Сейчас пополнение и тарифы — в Telegram-боте.",
+    "landing_existing_title": "Уже есть доступ?",
+    "landing_existing_lead": "Открой личный кабинет: баланс, настройки устройства и инструкции.",
+    "landing_existing_cta": "Открыть личный кабинет",
+    "account_fold_lead_browser": "Если уже регистрировался — введи email или BVPN-ID ниже. Полный кабинет также открывается из Telegram-бота.",
     "referral_preserve_note": "Пришёл по приглашению? Ссылка сохранится при переходе в Telegram или при регистрации по email.",
     "journey_title": "Путь подключения",
     "journey_steps": [
@@ -62,7 +69,7 @@
     "setup_tg": "Открыть настройку в Happ",
     "cabinet": "Личный кабинет",
     "landing_tg": "Открыть Telegram-бота",
-    "landing_primary_tg": "Открыть Telegram-бота",
+    "landing_primary_tg": "Начать — 90 дней в Telegram",
     "landing_email": "Временный доступ на 1 сутки",
     "miniapp": "Mini App",
     "status": "Статус сервиса",

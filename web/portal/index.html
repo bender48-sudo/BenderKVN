@@ -74,13 +74,16 @@
         <p class="invite-welcome__hint muted" id="referral-welcome-hint"></p>
       </section>
 
-      <section class="sheet glass hidden" id="landing-paths" aria-labelledby="landing-paths-title">
+      <section class="sheet glass" id="landing-paths" aria-labelledby="landing-paths-title">
         <h2 class="sheet__label" id="landing-paths-title">Как начать</h2>
-        <p class="muted" id="landing-tg-lead"></p>
-        <a class="btn btn--primary btn--block" id="btn-landing-tg" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener"></a>
-        <p class="muted landing-path-note" id="landing-email-lead"></p>
-        <a class="btn btn--secondary btn--block" id="btn-landing-email" href="/setup/"></a>
+        <p class="muted" id="landing-tg-lead">Основной путь — Telegram-бот: 90 дней бесплатно, пока открыт ранний доступ.</p>
+        <a class="btn btn--primary btn--block" id="btn-landing-tg" href="https://t.me/Bender_KVN_bot" target="_blank" rel="noopener">Начать — 90 дней в Telegram</a>
+        <p class="muted landing-path-after" id="landing-tg-after"></p>
+        <p class="muted landing-path-note" id="landing-email-lead">Если Telegram не открывается — временный доступ на 1 сутки по email (ограниченный путь).</p>
+        <a class="btn btn--secondary btn--block" id="btn-landing-email" href="/setup/">Временный доступ на 1 сутки</a>
+        <p class="muted landing-path-after" id="landing-email-after"></p>
         <p class="callout callout--info hidden" id="referral-note" role="note"></p>
+        <p class="muted landing-path-limit" id="landing-limit-note"></p>
       </section>
 
       <section class="journey glass hidden" id="landing-journey" aria-labelledby="journey-title">
@@ -91,6 +94,12 @@
       <section class="why-limited glass hidden" id="why-limited" aria-labelledby="why-limited-title">
         <h2 class="section-title" id="why-limited-title" style="font-size:1.1rem;margin-top:0"></h2>
         <div class="why-limited__body muted" id="why-limited-body"></div>
+      </section>
+
+      <section class="sheet glass landing-existing hidden" id="landing-existing-user" aria-labelledby="landing-existing-title">
+        <h2 class="sheet__label" id="landing-existing-title">Уже есть доступ?</h2>
+        <p class="muted" id="landing-existing-lead"></p>
+        <button type="button" class="btn btn--ghost btn--block" id="btn-open-account-fold"></button>
       </section>
 
       <div class="banner banner--info hidden" id="tg-blocked-banner" role="note">
@@ -139,7 +148,7 @@
 
 
 
-      <div class="status" id="events-card" aria-live="polite">
+      <div class="status hidden" id="events-card" aria-live="polite">
 
         <span class="status__dot" id="events-pill" role="status"></span>
 
@@ -167,7 +176,7 @@
 
       <details class="fold" id="account-fold">
 
-        <summary id="account-fold-title">Личный кабинет</summary>
+        <summary id="account-fold-title">Уже есть доступ? Личный кабинет</summary>
 
         <section class="sheet sheet--nested" id="account-sheet" aria-labelledby="account-heading">
 
