@@ -15,7 +15,8 @@
 | **Symptom after resume** | VPN breaks; internet may not recover; traffic in broken route/tunnel; Happ shows error; **reboot sometimes required** |
 | **Server/profile regression** | **Still not confirmed** — Candidate D active; infra probes green |
 | **Confidence shift** | **Higher** for **Happ/OS TUN-route-DNS sleep-resume failure (A)** and **profile×client interaction (8)** |
-| **Prod fix justified now?** | **NO** — need route/DNS snapshots + comparison matrix |
+| **Diagnostic evidence** | **INCIDENT-DIAG-003-004** — Happ `report.zip` (2026-06-10): TUN crash loop + DNS failure before reboot; see [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) |
+| **Prod fix justified now?** | **NO** — need **AFTER-BROKEN** route/DNS snapshots (pre-reboot) + comparison matrix |
 | **INCIDENT-002 interim stable** | Compatible — active browsing may work; **sleep/resume is separate failure mode** |
 | **INCIDENT-004 (browser SaaS)** | **OPEN** — long-session SaaS drops may share TUN lifecycle; see [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md) |
 
@@ -160,8 +161,9 @@ Same three phases: BEFORE / AFTER-BROKEN / AFTER-RECOVERY. Redact secrets.
 |------|----------------|-----------|-------------------|
 | Active browsing | INCIDENT-002 interim OK | — | optional |
 | Sleep/resume | **FAIL reported** | **PASS reported** | pending |
-| Route/DNS snapshots | **pending** | **pending** | pending |
-| Reboot required? | **sometimes** | no (owner) | pending |
+| Happ `report.zip` / happd TUN crash | **YES** — 2026-06-10 + prior 2026-06-08 pattern | — | — |
+| Route/DNS snapshots (AFTER-BROKEN) | **pending** — report is post-reboot | **pending** | pending |
+| Reboot required? | **sometimes** (confirmed 2026-06-10) | no (owner) | pending |
 
 ---
 
@@ -232,13 +234,14 @@ Only with correlated evidence + §11 approval phrase. **Not justified now.**
 
 ## 12. What remains unknown
 
-- Exact Windows/macOS version and Happ desktop version on owner laptop
-- Route/DNS snapshots BEFORE vs AFTER-BROKEN
-- Whether VPN off/on or disconnect alone recovers internet
+- **AFTER-BROKEN** route/DNS snapshots **before reboot** (report captured post-recovery only)
+- Exact sleep/resume timestamp correlated to TUN crash loop
+- Whether VPN off/on or disconnect alone recovers internet **without reboot**
 - Whether Hiddify with same sub survives sleep/resume
 - Whether other VPN uses TUN or different driver model
-- VLESS handshake state after resume (needs `report.zip` or client logs)
 - Whether profile simplification would fix Happ resume without harming mobile
+
+**Now known (INCIDENT-DIAG-003-004):** Windows 11 **10.0.26200**, Happ **2.16.2**, sing-box tun **1.12.12**, Xray **26.3.27**; `happd.log` shows `sing-box-tun` exit 1 + `happ-tun` not UP + DNS failure (~13:00–13:01); system reboot ~13:01:56; recovery ~13:04. Details: [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md).
 
 ---
 
@@ -255,6 +258,7 @@ Only with correlated evidence + §11 approval phrase. **Not justified now.**
 
 ## 14. References
 
+- **INCIDENT-DIAG-003-004:** [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) — Happ `report.zip` analysis (2026-06-10)
 - INCIDENT-002: [`INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md`](INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md)
 - INCIDENT-004: [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md)
 - Script: [`ops/diagnose_windows_vpn_resume.ps1`](../ops/diagnose_windows_vpn_resume.ps1)

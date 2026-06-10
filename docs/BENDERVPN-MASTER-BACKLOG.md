@@ -16,6 +16,7 @@
 | [`BACKLOG-MAP.md`](BACKLOG-MAP.md) | Legacy doc hierarchy map |
 | [`BACKLOG-VPN-FULL-AUDIT-2026-05-28.md`](BACKLOG-VPN-FULL-AUDIT-2026-05-28.md) | VPN infra backlog (gen/sub/routing) |
 | [`VPN-INCIDENT-LESSONS-2026-05-25.md`](VPN-INCIDENT-LESSONS-2026-05-25.md) | Hotfix guardrails |
+| [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) | INCIDENT-DIAG-003-004 — Windows Happ report (sleep/mail) |
 
 ---
 
@@ -65,7 +66,7 @@
 | **TRACK 1** | Bind + referral — G4-BIND-RETEST, REF-PORTAL, REF-ADMIN | Partial tomorrow |
 | **TRACK 2** | Billing proof — BILL-UT, BILL-SMOKE prep | BILL-UT tomorrow |
 | **TRACK 3** | Device — SMOKE, ENFORCE, DATA, ADMIN, BILL | After TRACK 0–2 |
-| **TRACK 4** | VPN stability — INCIDENT-003/004 owner proof | Owner-led |
+| **TRACK 4** | VPN stability — INCIDENT-003/004 owner proof (partial: INCIDENT-DIAG-003-004 report) | Owner-led |
 | **TRACK 5** | Monitoring / CI / runbooks | After soft blockers |
 | **TRACK 6** | Support AI / technical triage | After P1-ADM + runbooks; not F&F blocker |
 

@@ -63,9 +63,9 @@ G5  Public/partner scale
 
 **INCIDENT-002 (2026-06-10):** Active failure capture — interim stable after fresh import; extended soak open. See [`INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md`](INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md).
 
-**INCIDENT-003 (2026-06-10):** Laptop **sleep/resume** — another VPN survives; BenderVPN/Happ breaks networking until reboot sometimes. Diagnostic protocol + `ops/diagnose_windows_vpn_resume.ps1`. See [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md). **No prod mutation** until route/DNS snapshots + comparison matrix.
+**INCIDENT-003 (2026-06-10):** Laptop **sleep/resume** — another VPN survives; BenderVPN/Happ breaks networking until reboot sometimes. Diagnostic protocol + `ops/diagnose_windows_vpn_resume.ps1`. **INCIDENT-DIAG-003-004** (2026-06-10 Happ report): TUN crash loop before reboot — stronger evidence, **AFTER-BROKEN** snapshots still missing. See [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md), [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md). **No prod mutation** until pre-reboot route/DNS + comparison matrix.
 
-**INCIDENT-004 (2026-06-10):** Browser **SaaS long-session** drops (e.g. Claude connection banner while page loaded) — long-lived WebSocket/SSE/QUIC instability; **not disproved** by short TCP/sub probes. See [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md). **G1 desktop/browser SaaS gate** remains open.
+**INCIDENT-004 (2026-06-10):** Browser **SaaS long-session** drops (e.g. Claude connection banner while page loaded) — long-lived WebSocket/SSE/QUIC instability; **not disproved** by short TCP/sub probes. Partial mail/Google tunnel evidence in INCIDENT-DIAG-003-004. See [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md). **G1 desktop/browser SaaS gate** remains open.
 
 ### G1.1 Automated (done — re-run anytime)
 

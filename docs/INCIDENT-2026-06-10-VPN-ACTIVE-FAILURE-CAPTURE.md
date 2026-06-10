@@ -174,7 +174,7 @@ Captured before owner correlated test. **Not a failure window.**
 | Fresh import completed? | **YES** (owner report) |
 | One Auto host visible? | **Expected UX** |
 | Failure reproduced? | **NO** (owner interim report) |
-| `report.zip` | **NOT COLLECTED** (not needed while stable) |
+| `report.zip` | **COLLECTED 2026-06-10** (Windows sleep/mail) — analyzed in [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md); raw zip not in repo |
 
 ---
 
@@ -411,6 +411,7 @@ If owner failure correlates with RST on one relay IP in `report.zip` → prepare
 - INCIDENT-001: [`INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md`](INCIDENT-2026-06-10-VPN-STABILITY-PROD-AUDIT.md)
 - INCIDENT-003: [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md)
 - INCIDENT-004: [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md)
+- INCIDENT-DIAG-003-004: [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md)
 - Candidate D apply: [`APPLY-2026-06-10-VPN-CANDIDATE-D.md`](APPLY-2026-06-10-VPN-CANDIDATE-D.md)
 - Skill: `vpn-incident-tg-only-ru` — `report.zip` RST workflow
 - Probes: `verify_vpn_balancer_profile.py`, `relay_latency_probe.py`, `probe_subscription.py`

@@ -84,6 +84,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | [`INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md`](INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md) | INCIDENT-002 |
 | [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md) | INCIDENT-003 |
 | [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md) | INCIDENT-004 |
+| [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) | INCIDENT-DIAG-003-004 — Happ report analysis |
 | [`AUDIT-2026-06-10-VPN-CLIENT-APP-COMPATIBILITY.md`](AUDIT-2026-06-10-VPN-CLIENT-APP-COMPATIBILITY.md) | Client matrix |
 | [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) | S1–S8 flows |
 | [`AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md`](AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md) | TG bind |
@@ -274,7 +275,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 
 | Gap | Proof needed |
 |-----|--------------|
-| INCIDENT-003 sleep/resume | BEFORE/AFTER-BROKEN route/DNS snapshots; comparison VPN |
+| INCIDENT-003 sleep/resume | BEFORE/**AFTER-BROKEN** (pre-reboot) route/DNS snapshots; comparison VPN — partial: [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) |
 | TG bind | Successful bind with `funnel_bot_start bind:*` &gt; 0 + DB `telegram_id` set |
 | Billing | Live smokes: trial→wallet, top-up, insufficient balance, duplicate callback |
 | Wallet/expired UI | Mini App spot-check post P1-CAB/DEV |

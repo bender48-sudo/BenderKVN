@@ -17,6 +17,7 @@
 | **Server/profile regression** | **Still not confirmed** — INCIDENT-001/002 short TCP/subscription probes **green**; probes **cannot prove** long-session stability |
 | **Relation to INCIDENT-003** | May share root cause (Happ false-connected / TUN-route-DNS / VLESS layer) or be **distinct** active-work failure mode |
 | **Commercial impact** | **Critical** — blocks desktop/browser SaaS positioning; **G1 remains PARTIAL/BLOCKED** |
+| **Partial diagnostic evidence** | **INCIDENT-DIAG-003-004** — mail/Google DNS **~3m40s** degraded, **~25ms** after VPN reconnect; not a SaaS soak — see [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) |
 | **Prod fix justified now?** | **NO** — need correlated timestamps, browser diagnostics, comparison VPN, optional Hiddify A/B |
 
 ---
@@ -279,18 +280,19 @@ See [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READIN
 
 ## 14. What remains unknown
 
-- Exact browser + Happ versions on owner device
-- Whether failure is SaaS-only or system-wide at banner time
-- WebSocket/SSE/QUIC error class
-- Correlation with Happ reconnect events
+- Whether failure is **SaaS-only** or system-wide at banner time
+- WebSocket/SSE/QUIC error class (DevTools at failure)
+- Controlled **20–30 min SaaS soak** with timestamped failure
 - Whether failure occurs without any idle (pure active 30 min)
 - Hiddify A/B on same sub for long SaaS session
-- VLESS long-flow state (needs `report.zip` or client logs)
+
+**Partially known (INCIDENT-DIAG-003-004):** Happ **2.16.2** / Chrome; mail/Google degradation + reconnect fix; tunnel connection-closed burst at manual stop (~13:10). **Not** Claude/ChatGPT banner reproduction. Details: [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md).
 
 ---
 
 ## 15. References
 
+- **INCIDENT-DIAG-003-004:** [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) — mail/Google tunnel evidence (partial)
 - INCIDENT-002: [`INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md`](INCIDENT-2026-06-10-VPN-ACTIVE-FAILURE-CAPTURE.md)
 - INCIDENT-003: [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md)
 - Route/DNS script: [`ops/diagnose_windows_vpn_resume.ps1`](../ops/diagnose_windows_vpn_resume.ps1)

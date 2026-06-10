@@ -44,8 +44,8 @@ The **2026-06-10 commercial launch audit wave is complete** for architecture and
 | **REFERRAL-ARCH-001** | **CLOSED** | OPTION 3 hybrid; REF-* gates | Owner approve OPTION 3; REF-* impl | `ARCH-REFERRAL` | Owner + Implementation |
 | **INCIDENT-001** | **MONITORING** | Prod stability read-only audit | Extended owner soak | Stability prod audit | Owner proof |
 | **INCIDENT-002** | **MONITORING** | Interim stable after fresh import | Extended soak | Active failure capture | Owner proof |
-| **INCIDENT-003** | **PARTIAL** | Sleep/resume diagnostic protocol | Owner route/DNS matrix | Laptop sleep doc | Owner proof |
-| **INCIDENT-004** | **PARTIAL** | SaaS long-session hypothesis | 20–30 min soak | Browser long-session doc | Owner proof |
+| **INCIDENT-003** | **PARTIAL** | Sleep/resume protocol + Happ report TUN crash evidence | **AFTER-BROKEN** pre-reboot snapshots | Laptop sleep doc + [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) | Owner proof |
+| **INCIDENT-004** | **PARTIAL** | SaaS hypothesis + partial mail/Google reconnect evidence | 20–30 min SaaS soak | Browser long-session doc + diag doc §5.2 | Owner proof |
 | **P1-CAB-001** | **CLOSED + DEPLOYED** | `billing_profile` cabinet API | — | Postdeploy CAB | — |
 | **P1-DEV-001** | **CLOSED + DEPLOYED** | Config count/list read-only | DEVICE-ADMIN revoke | Postdeploy DEV | Implementation |
 | **P1-REF-001** | **CLOSED + DEPLOYED** | Web `ref_code` attribution PASS | TG bind migration FAIL | Postdeploy REF | Smoke (bind) |
