@@ -6,10 +6,13 @@ from typing import Any
 
 
 def payment_create(payload: dict[str, Any], idempotency_key: Any = None):
-    """Payment.create with non-prod write guard (QA-GUARD-001)."""
+    """Payment.create with non-prod write guard (QA-GUARD-001) and dry-run (QA-PAYMENT-DRYRUN-001)."""
     from shop_bot.runtime_env import assert_yookassa_write_allowed
+    from shop_bot.yookassa_dryrun import dryrun_payment_create, should_use_payments_dry_run
 
     assert_yookassa_write_allowed("Payment.create")
+    if should_use_payments_dry_run():
+        return dryrun_payment_create(payload, idempotency_key)
     from yookassa import Payment
 
     if idempotency_key is not None:

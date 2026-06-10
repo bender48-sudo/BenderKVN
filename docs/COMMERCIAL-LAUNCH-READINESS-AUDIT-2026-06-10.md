@@ -208,6 +208,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | QA-SANDBOX-001 customer journey test harness architecture | ✅ docs — [`ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md`](ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md) |
 | QA-GUARD-001 non-prod safety guards (`runtime_env.py`) | ✅ repo — boundary guards |
 | QA-REMNA-DRYRUN-001 Remna dry-run provider (`remna_dryrun.py`) | ✅ repo — `sandbox.invalid` dummy configs only |
+| QA-PAYMENT-DRYRUN-001 payment dry-run provider (`yookassa_dryrun.py`) | ✅ repo — `payment_create` only; no balance/webhook mutation |
 | Product Policy v1 locked | ✅ |
 | Happ primary client strategy documented | ✅ |
 | Incident read-only probe suite | ✅ |

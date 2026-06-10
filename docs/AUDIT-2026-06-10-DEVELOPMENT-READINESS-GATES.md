@@ -38,7 +38,9 @@ G5  Public/partner scale
 
 **QA-GUARD-001 (2026-06-10):** `bot_src/runtime_env.py` — `BVPN_ENV` guards; Remna/YooKassa write blocks in non-prod — **implemented repo, not deployed**.
 
-**QA-REMNA-DRYRUN-001 (2026-06-10):** `bot_src/remna_dryrun.py` — dummy Remna responses at `provision_key` / `add_extra_traffic` / `set_user_access_days` when `BVPN_QA_DRY_RUN_REMNA=1` — **implemented repo, not deployed**. Payment dry-run + seed scripts remain OPEN.
+**QA-REMNA-DRYRUN-001 (2026-06-10):** `bot_src/remna_dryrun.py` — dummy Remna responses at `provision_key` / `add_extra_traffic` / `set_user_access_days` when `BVPN_QA_DRY_RUN_REMNA=1` — **implemented repo, not deployed**.
+
+**QA-PAYMENT-DRYRUN-001 (2026-06-10):** `bot_src/yookassa_dryrun.py` — dummy `payment_create` responses (`qa-pay-*` id, `https://sandbox.invalid/pay/…`) when `BVPN_QA_DRY_RUN_PAYMENTS=1`; no balance mutation — **implemented repo, not deployed**. Webhook simulator + seed scripts remain OPEN.
 
 **AUDIT-CLOSEOUT-001 (2026-06-10):** [`AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md`](AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md) — **G0 audit wave CLOSED**; backlog frozen; **implementation GO** for TRACK 0; no new broad audits.
 

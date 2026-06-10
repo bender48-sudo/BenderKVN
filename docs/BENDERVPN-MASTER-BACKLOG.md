@@ -112,7 +112,8 @@ See [`ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md`](ARCH-2026-06-10-QA-SANDB
 | **QA-DB-SEED-001** | P1 | OPEN | Seed/reset 20 scenario profiles |
 | **QA-BOT-FAKE-TG-001** | P1 | OPEN | Synthetic telegram_id handler harness |
 | **QA-REMNA-DRYRUN-001** | P1 | **DONE** (repo) | `remna_dryrun.py`; `ops/test_remna_dryrun.py` |
-| **QA-PAYMENT-DRYRUN-001** | P1 | OPEN | Fake YooKassa + webhook simulator |
+| **QA-PAYMENT-DRYRUN-001** | P1 | **DONE** (repo) | `yookassa_dryrun.py`; `ops/test_yookassa_dryrun.py` — `payment_create` only |
+| **QA-PAYMENT-WEBHOOK-001** | P1 | OPEN | Staging payment success webhook simulator |
 | **QA-PORTAL-FIXTURES-001** | P1 | OPEN | Gate/slot/trial-cap fixtures; local API proxy |
 | **QA-SCENARIO-MATRIX-001** | P1 | OPEN | Matrix runner + drift report |
 | **QA-E2E-001** | P2 | OPEN | Playwright portal→cabinet smokes |

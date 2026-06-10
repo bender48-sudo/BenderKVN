@@ -104,9 +104,18 @@
 - `add_extra_traffic` → `True`; `set_user_access_days` → synthetic `expireAt`
 - **Not verified without real Remna:** routing, HWID, panel PATCH semantics, Happ import
 
-**Not yet wired:** YooKassa dry-run provider (QA-PAYMENT-DRYRUN-001).
+**Payment dry-run (QA-PAYMENT-DRYRUN-001 — implemented):**
 
-**Tests:** `ops/test_runtime_env_guards.py`, `ops/test_remna_dryrun.py`
+- Module: `shop_bot.yookassa_dryrun`
+- Enable: `BVPN_ENV=staging|local|test` + `BVPN_QA_DRY_RUN_PAYMENTS=1`
+- Never active when `BVPN_ENV=production` (even if flag set)
+- Wired at `yookassa_payment.payment_create` only (handlers top-up/plan, `yookassa_autopay` bind/charge)
+- Returns `DryRunPayment` with `.id` (`qa-pay-{hash}`), `.status` (`pending`), `.amount`, `.confirmation.confirmation_url` (`https://sandbox.invalid/pay/{id}`) for redirect flows; no confirmation for recurring/off-session charges
+- Idempotency: same `idempotency_key` → same synthetic `payment_id`
+- **Does not mutate balances** — `process_topup_payment` / webhook success path still requires separate fixture or simulator (QA-PAYMENT-WEBHOOK-001)
+- **Not verified without real YooKassa:** capture/void/refund, `Payment.find_one` in webhook verify, shop credentials, production callback signatures
+
+**Tests:** `ops/test_runtime_env_guards.py`, `ops/test_remna_dryrun.py`, `ops/test_yookassa_dryrun.py`
 
 ---
 
@@ -195,7 +204,7 @@ Staging mode may send to **allowlisted** chat ids only.
 | Integration | Mock strategy | Production-identical core |
 |-------------|---------------|---------------------------|
 | **Remna** `provision_key` | QA-REMNA-DRYRUN-001: return dummy `expire_iso`, fake `vless://…@sandbox.invalid/...`, fake `sub_url` https://sandbox.invalid/sub/{uuid} | Still writes `vpn_keys`, runs expiry logic, scheduler hooks |
-| **YooKassa** | QA-PAYMENT-DRYRUN-001: stub `Payment.create`; inject webhook via `POST /test/payment/simulate` staging-only | Real `process_successful_payment`, idempotency, `first_purchase` |
+| **YooKassa** | QA-PAYMENT-DRYRUN-001: stub `payment_create` → `sandbox.invalid` URL + `qa-pay-*` id; webhook simulator (QA-PAYMENT-WEBHOOK-001) still OPEN | Real `process_successful_payment`, idempotency, `first_purchase` |
 | **Balance debit** | Allowed **only** on test DB | Real `charge_daily_balance_if_due` code path |
 | **Telegram send** | Capture-only local; allowlist staging | Real message **text** from templates |
 | **Subscription resolve** | Return seeded dummy URL from DB row | Real `resolve_subscription_url` lookup order |
@@ -324,7 +333,8 @@ Every sandbox run (CI or owner preview) should append a **drift report**:
 | **QA-DB-SEED-001** | P1 | ops | Seed/reset synthetic users + 20 scenarios | QA-GUARD-001 |
 | **QA-BOT-FAKE-TG-001** | P1 | bot/ops | Handler harness with synthetic `telegram_id` | QA-DB-SEED-001 |
 | **QA-REMNA-DRYRUN-001** | P1 | bot | Dry-run `provision_key` at boundary | QA-GUARD-001 — **DONE** repo |
-| **QA-PAYMENT-DRYRUN-001** | P1 | bot/webhook | Fake YooKassa + simulate webhook | QA-GUARD-001 |
+| **QA-PAYMENT-DRYRUN-001** | P1 | bot | Dry-run `payment_create` at boundary — **DONE** repo | QA-GUARD-001 |
+| **QA-PAYMENT-WEBHOOK-001** | P1 | webhook | Staging-only payment success simulator | QA-PAYMENT-DRYRUN-001 |
 | **QA-PORTAL-FIXTURES-001** | P1 | portal/ops | Gate API fixtures; local proxy serve | ACQ-PORTAL-001 partial |
 | **QA-SCENARIO-MATRIX-001** | P1 | ops | Runnable matrix runner + drift report | QA-DB-SEED-001 |
 | **QA-E2E-001** | P2 | playwright | Portal→API→cabinet smokes on staging | QA-PORTAL-FIXTURES-001 |
