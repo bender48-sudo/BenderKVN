@@ -184,7 +184,7 @@ python ops/qa_serve_portal_preview.py
 # open portal/cabinet URLs printed in matrix report
 ```
 
-**Tests:** `ops/test_runtime_env_guards.py`, `ops/test_remna_dryrun.py`, `ops/test_yookassa_dryrun.py`, `ops/test_qa_seed_scenarios.py`, `ops/test_qa_bot_fake_tg.py`, `ops/test_qa_portal_fixtures.py`, `ops/test_qa_scenario_matrix.py`
+**Tests:** `ops/test_runtime_env_guards.py`, `ops/test_remna_dryrun.py`, `ops/test_yookassa_dryrun.py`, `ops/test_qa_seed_scenarios.py`, `ops/test_qa_bot_fake_tg.py`, `ops/test_qa_portal_fixtures.py`, `ops/test_qa_scenario_matrix.py`, `ops/test_qa_owner_preview.py`
 
 ---
 
@@ -368,26 +368,40 @@ Every sandbox run (CI or owner preview) should append a **drift report**:
 
 ---
 
-## 11. Owner preview workflow (target)
+## 11. Owner preview workflow (implemented)
 
-**QA-OWNER-PREVIEW-001** — staging-only:
+**QA-OWNER-PREVIEW-001** — local/staging HTML index (`ops/qa_owner_preview.py`):
 
 ```text
-1. ops/qa_seed_scenarios.py --scenario trial_new --reset
-2. Open staging portal URL printed by script
-3. Optional: open staging bot with second TG account
-4. Admin → QA → pick scenario → shows seeded state + deep links
-5. qa_drift_report.txt — what matched prod, what was mocked
+1. BVPN_ENV=local  BVPN_QA_TOOLS_ENABLED=1  SHOP_BOT_DB_PATH=/path/to/isolated/qa.db
+2. python ops/qa_seed_scenarios.py --reset --seed-all
+3. python ops/qa_serve_portal_preview.py          # keep running
+4. python ops/qa_owner_preview.py --build --out screenshots/qa-preview/index.html
+5. Open screenshots/qa-preview/index.html in browser
+6. Click Portal / Cabinet / Setup per scenario; read bot transcript links where present
 ```
 
-| Owner command (target) | Effect |
-|------------------------|--------|
-| «Show me as new user» | Seed `new_plain`; link to staging `/start` + bot with 2nd account |
-| «Show me as trial user» | Seed `trial_open`; cabinet `?tid=900000005` |
-| «Show me as paid user» | Seed `wallet_ok` |
-| «Show me as expired user» | Seed `expired` |
-| «Show me as referral invitee» | Seed `new_referred` + portal `?ref=TESTREF01` |
-| «Show me after trial cap» | Seed `trial_cap_closed` fixture |
+CLI:
+
+- `python ops/qa_owner_preview.py --open-instructions` — print workflow
+- `python ops/qa_owner_preview.py --build` — run matrix + write HTML/MD index (default `screenshots/qa-preview/index.html`)
+- `python ops/qa_owner_preview.py --scenario paid_wallet_user` — single-scenario build + stdout detail
+- `python ops/qa_owner_preview.py --build --reuse-matrix screenshots/qa-preview/matrix-report.json` — skip matrix re-run
+
+Index groups **20 scenarios** by runnable status: **full** / **partial** / **blocked**. Each card shows identity, clickable URLs, expected user-visible behavior, drift buckets, and limitation text.
+
+| Visually reviewable now (full) | Portal landing, cabinet/setup states, wallet/expired/legacy, referral views, multi-config read path |
+| Partial | `trial_eligible_before_cap`, `temporary_converted_to_paid` — UI subset; backend gate/webhook OPEN |
+| Blocked | `after_trial_cap`, `slots_counter_states` — fixture URLs only until ACQ APIs ship |
+
+**Still requires staging / second TG / Playwright / prod approval:**
+
+- Real Telegram inline buttons and Mini App WebView
+- Staging bot E2E (QA-STAGING-BOT-001)
+- Playwright portal smokes (QA-E2E-001)
+- Real YooKassa 3DS, Remna RU ISP routing, Caddy edge
+
+Generated `screenshots/qa-preview/`, transcripts, and matrix JSON are **gitignored** — not committed by default.
 
 **Never on production.**
 
@@ -407,7 +421,7 @@ Every sandbox run (CI or owner preview) should append a **drift report**:
 | **QA-PORTAL-FIXTURES-001** | P1 | portal/ops | `qa_portal_fixtures.py` + `qa_serve_portal_preview.py` — **DONE** repo | QA-DB-SEED-001 |
 | **QA-SCENARIO-MATRIX-001** | P1 | ops | `qa_scenario_matrix.py` — matrix runner + drift report — **DONE** repo | QA-DB-SEED-001 |
 | **QA-E2E-001** | P2 | playwright | Portal→API→cabinet smokes on staging | QA-PORTAL-FIXTURES-001 |
-| **QA-OWNER-PREVIEW-001** | P2 | bot admin | Owner-friendly staging preview commands | QA-DB-SEED-001 |
+| **QA-OWNER-PREVIEW-001** | P2 | ops | `qa_owner_preview.py` — owner HTML preview index — **DONE** repo | QA-SCENARIO-MATRIX-001 |
 | **QA-STAGING-BOT-001** | P1 | ops | Staging bot + DB + portal origin setup runbook | Owner BotFather |
 
 **Extend existing (do not replace):**

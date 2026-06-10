@@ -78,6 +78,11 @@ Thumbs.db
 # Claude Code — локальные разрешения/пути (не должны попадать в публичный репозиторий)
 .claude/settings.local.json
 
+# --- QA preview artifacts (generated locally; not committed by default) ---
+screenshots/qa-preview/
+ops/qa_portal_preview_index.json
+ops/qa_scenario_manifest.json
+
 # --- Logs ---
 *.log
 
