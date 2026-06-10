@@ -206,7 +206,8 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | P1-REF-002 hidden invitee +3d gated OFF; target = +1m to referrer (REF-BONUS-001 deferred) | ✅ repo, not deployed |
 | ACQUISITION-JOURNEY-001 portal-first acquisition architecture | ✅ docs — [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md); **not implemented** |
 | QA-SANDBOX-001 customer journey test harness architecture | ✅ docs — [`ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md`](ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md) |
-| QA-GUARD-001 non-prod safety guards (`runtime_env.py`) | ✅ repo — boundary guards; dry-run providers **not implemented** |
+| QA-GUARD-001 non-prod safety guards (`runtime_env.py`) | ✅ repo — boundary guards |
+| QA-REMNA-DRYRUN-001 Remna dry-run provider (`remna_dryrun.py`) | ✅ repo — `sandbox.invalid` dummy configs only |
 | Product Policy v1 locked | ✅ |
 | Happ primary client strategy documented | ✅ |
 | Incident read-only probe suite | ✅ |

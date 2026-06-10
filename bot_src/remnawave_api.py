@@ -482,6 +482,13 @@ async def set_user_access_days(
     email: str | None = None,
 ) -> str | None:
     """Set absolute panel expiry from prepaid balance (now + days; 0 = access ends)."""
+    from shop_bot.runtime_env import assert_remna_mutation_allowed
+
+    assert_remna_mutation_allowed("set_user_access_days")
+    from shop_bot.remna_dryrun import dryrun_set_user_access_days, should_use_remna_dry_run
+
+    if should_use_remna_dry_run():
+        return dryrun_set_user_access_days(days)
     async with remna_client_session() as session:
         existing = await get_user_by_telegram_id(session, telegram_id)
         if not existing:
@@ -521,7 +528,12 @@ async def provision_key(email: str, days: int | None = None, telegram_id: str = 
     from shop_bot.runtime_env import assert_remna_mutation_allowed
 
     assert_remna_mutation_allowed("provision_key")
+    from shop_bot.remna_dryrun import dryrun_provision_key, should_use_remna_dry_run
+
     days = days or DEFAULT_DAYS
+    if should_use_remna_dry_run():
+        logger.info("provision_key dry-run email=%s days=%s", email, days)
+        return dryrun_provision_key(email, days=days, telegram_id=telegram_id)
     t0 = time.perf_counter()
     async with remna_client_session() as session:
         inbound = await get_inbound(session)
@@ -549,6 +561,11 @@ async def add_extra_traffic(email: str, extra_gb: int, telegram_id: str = None) 
     from shop_bot.runtime_env import assert_remna_mutation_allowed
 
     assert_remna_mutation_allowed("add_extra_traffic")
+    from shop_bot.remna_dryrun import dryrun_add_extra_traffic, should_use_remna_dry_run
+
+    if should_use_remna_dry_run():
+        logger.info("add_extra_traffic dry-run email=%s extra_gb=%s", email, extra_gb)
+        return dryrun_add_extra_traffic(email, extra_gb, telegram_id)
     bytes_add = extra_gb * 1024 * 1024 * 1024
     async with remna_client_session() as session:
         user = None

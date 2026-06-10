@@ -95,9 +95,18 @@
 - `remnawave_api.provision_key`, `add_extra_traffic` → `assert_remna_mutation_allowed`
 - `yookassa_payment.payment_create` → `assert_yookassa_write_allowed` (used by `handlers.py`, `yookassa_autopay.py`)
 
-**Not yet wired:** dry-run Remna/YooKassa **providers** (QA-REMNA-DRYRUN-001, QA-PAYMENT-DRYRUN-001) — guards block real writes; stubs return dummy data next.
+**Remna dry-run (QA-REMNA-DRYRUN-001 — implemented):**
 
-**Tests:** `ops/test_runtime_env_guards.py`
+- Module: `shop_bot.remna_dryrun`
+- Enable: `BVPN_ENV=staging|local|test` + `BVPN_QA_DRY_RUN_REMNA=1`
+- Never active when `BVPN_ENV=production` (even if flag set)
+- Returns same tuple shape as `provision_key`: dummy `vless://…@sandbox.invalid`, `https://sandbox.invalid/sub/qa-{id}`, synthetic `expire_iso`, deterministic `vless_uuid`
+- `add_extra_traffic` → `True`; `set_user_access_days` → synthetic `expireAt`
+- **Not verified without real Remna:** routing, HWID, panel PATCH semantics, Happ import
+
+**Not yet wired:** YooKassa dry-run provider (QA-PAYMENT-DRYRUN-001).
+
+**Tests:** `ops/test_runtime_env_guards.py`, `ops/test_remna_dryrun.py`
 
 ---
 
@@ -314,7 +323,7 @@ Every sandbox run (CI or owner preview) should append a **drift report**:
 | **QA-GUARD-001** | P0 | bot | `BVPN_ENV` fail-closed guards | QA-SANDBOX-001 — **DONE** repo |
 | **QA-DB-SEED-001** | P1 | ops | Seed/reset synthetic users + 20 scenarios | QA-GUARD-001 |
 | **QA-BOT-FAKE-TG-001** | P1 | bot/ops | Handler harness with synthetic `telegram_id` | QA-DB-SEED-001 |
-| **QA-REMNA-DRYRUN-001** | P1 | bot | Dry-run `provision_key` at boundary | QA-GUARD-001 |
+| **QA-REMNA-DRYRUN-001** | P1 | bot | Dry-run `provision_key` at boundary | QA-GUARD-001 — **DONE** repo |
 | **QA-PAYMENT-DRYRUN-001** | P1 | bot/webhook | Fake YooKassa + simulate webhook | QA-GUARD-001 |
 | **QA-PORTAL-FIXTURES-001** | P1 | portal/ops | Gate API fixtures; local proxy serve | ACQ-PORTAL-001 partial |
 | **QA-SCENARIO-MATRIX-001** | P1 | ops | Runnable matrix runner + drift report | QA-DB-SEED-001 |

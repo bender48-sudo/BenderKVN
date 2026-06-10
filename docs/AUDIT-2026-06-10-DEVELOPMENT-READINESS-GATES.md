@@ -36,7 +36,9 @@ G5  Public/partner scale
 
 **QA-SANDBOX-001 (2026-06-10):** [`ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md`](ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md) — staging/local customer journey harness; production-identical code paths; dry-run YooKassa/Remna only.
 
-**QA-GUARD-001 (2026-06-10):** `bot_src/runtime_env.py` — `BVPN_ENV` guards; Remna/YooKassa write blocks in non-prod — **implemented repo, not deployed**. Dry-run providers + seed scripts remain OPEN.
+**QA-GUARD-001 (2026-06-10):** `bot_src/runtime_env.py` — `BVPN_ENV` guards; Remna/YooKassa write blocks in non-prod — **implemented repo, not deployed**.
+
+**QA-REMNA-DRYRUN-001 (2026-06-10):** `bot_src/remna_dryrun.py` — dummy Remna responses at `provision_key` / `add_extra_traffic` / `set_user_access_days` when `BVPN_QA_DRY_RUN_REMNA=1` — **implemented repo, not deployed**. Payment dry-run + seed scripts remain OPEN.
 
 **AUDIT-CLOSEOUT-001 (2026-06-10):** [`AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md`](AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md) — **G0 audit wave CLOSED**; backlog frozen; **implementation GO** for TRACK 0; no new broad audits.
 
