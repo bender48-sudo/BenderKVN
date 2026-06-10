@@ -393,7 +393,7 @@ async def _run_bot_actions(
             )
             payload = result.to_dict()
             if transcript_dir and (scenario in bot.SCENARIO_TG_ID or scenario in _EXTRA_BOT_TG):
-                path = transcript_dir / "bot" / f"{scenario}-{action}.md"
+                path = transcript_dir / f"{scenario}-{action}.md"
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(bot.render_transcript(result), encoding="utf-8")
                 payload["transcript_path"] = str(path)

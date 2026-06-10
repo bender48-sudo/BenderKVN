@@ -50,7 +50,7 @@ G5  Public/partner scale
 
 **QA-SCENARIO-MATRIX-001 (2026-06-10):** `ops/qa_scenario_matrix.py` — chains seed → portal fixtures → bot harness → drift report for all 20 customer-journey scenarios; `full` / `partial` / `blocked` classification — **implemented repo, not deployed**. Feeds QA-OWNER-PREVIEW-001 and QA-E2E-001; no prod Telegram/YooKassa/Remna.
 
-**QA-OWNER-PREVIEW-001 (2026-06-10):** `ops/qa_owner_preview.py` — owner HTML preview index from matrix data; grouped full/partial/blocked; clickable portal/cabinet/setup URLs + bot transcript links — **implemented repo, not deployed**. Local workflow: seed → `qa_serve_portal_preview.py` → open `screenshots/qa-preview/index.html`. Staging bot / second TG / Playwright remain OPEN.
+**QA-OWNER-PREVIEW-001 (2026-06-10):** `ops/qa_owner_preview.py` — owner HTML journey walkthrough index; Step 1–5 per scenario; CTA transition map; Start here section; bot transcript relative links — **implemented repo, not deployed**. FIX-001: transcript path fix + portal CTA duplication analysis (`PORTAL-LANDING-CTA-DEDUP-001`). Staging bot / second TG / Playwright remain OPEN.
 
 **AUDIT-CLOSEOUT-001 (2026-06-10):** [`AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md`](AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md) — **G0 audit wave CLOSED**; backlog frozen; **implementation GO** for TRACK 0; no new broad audits.
 

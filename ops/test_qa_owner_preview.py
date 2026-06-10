@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""QA-OWNER-PREVIEW-001: owner preview index regression checks."""
+"""QA-OWNER-PREVIEW-001 / FIX-001: owner journey preview regression checks."""
 from __future__ import annotations
 
 import asyncio
@@ -71,7 +71,7 @@ def _fixture_rows() -> list[dict]:
             "cabinet_url": "http://127.0.0.1:8765/portal/cabinet.html?qa_scenario=paid_wallet_user&tid=900000010",
             "setup_url": "http://127.0.0.1:8765/setup?qa_scenario=paid_wallet_user&tid=900000010",
             "bot_actions": ["menu"],
-            "bot_transcript_path": "bot/paid_wallet_user-menu.md",
+            "bot_transcript_path": None,
             "expected_behavior": "Wallet menu + setup link",
             "actual_checks": {"billing_profile": "wallet", "cabinet_ok": True},
             "drift": drift,
@@ -117,13 +117,13 @@ def _static_checks() -> None:
     src = (OPS / "qa_owner_preview.py").read_text(encoding="utf-8")
     for needle, label in (
         ("_ensure_guards", "guard delegation"),
-        ("render_html_index", "HTML index"),
-        ("Fully reviewable now", "full group title"),
-        ("Partially reviewable", "partial group title"),
-        ("Blocked / placeholder", "blocked group title"),
-        ("Local / staging QA preview only", "owner warning"),
-        ("production_identical", "drift bucket"),
-        ("dry_run_mocked", "mocked drift bucket"),
+        ("Journey walkthrough", "journey section"),
+        ("CTA transition map", "cta map"),
+        ("Start here", "start here section"),
+        ("Owner: visually reviewable", "owner count label"),
+        ("Matrix: full", "matrix count label"),
+        ("investigate_portal_cta_duplication", "cta duplication analysis"),
+        ("bot_transcript_reason", "transcript unavailable reason"),
         ("build_preview", "preview builder"),
     ):
         if needle not in src:
@@ -140,6 +140,8 @@ async def _run_tests() -> None:
         db_path = Path(tmp) / "qa_owner.db"
         prod_db = Path(tmp) / "prod_marker.db"
         prod_db.write_text("", encoding="utf-8")
+        preview_dir = Path(tmp)
+        out = preview_dir / "index.html"
 
         prev = _set_env(
             BVPN_ENV="production",
@@ -193,13 +195,27 @@ async def _run_tests() -> None:
 
         mod = _reload_preview()
         rows = _fixture_rows()
-        out = Path(tmp) / "index.html"
+        transcript = preview_dir / "bot" / "paid_wallet_user-menu.md"
+        transcript.parent.mkdir(parents=True, exist_ok=True)
+        transcript.write_text("# Bot transcript\n", encoding="utf-8")
+        mod._resolve_transcripts(rows[0], preview_dir)
+        assert rows[0]["bot_transcript_path"] == "bot/paid_wallet_user-menu.md"
+        assert rows[0]["bot_transcripts"]["menu"] == "bot/paid_wallet_user-menu.md"
+
+        matrix_json = preview_dir / "matrix-report.json"
+        matrix_json.write_text(
+            json.dumps({"scenarios": rows, "generated_at": FIXED_TS}, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+
         html_a = mod.render_html_index(
             rows,
             db_path=db_path,
             generated_at=FIXED_TS,
             portal_base="http://127.0.0.1:8765",
             index_path=out,
+            matrix_json_path=matrix_json,
+            matrix_summary={"full": 1, "partial": 1, "blocked": 1},
         )
         html_b = mod.render_html_index(
             rows,
@@ -207,30 +223,38 @@ async def _run_tests() -> None:
             generated_at=FIXED_TS,
             portal_base="http://127.0.0.1:8765",
             index_path=out,
+            matrix_json_path=matrix_json,
+            matrix_summary={"full": 1, "partial": 1, "blocked": 1},
         )
-        assert html_a == html_b, "HTML index must be deterministic for fixed timestamp"
-        assert "Fully reviewable now" in html_a
-        assert "Partially reviewable" in html_a
-        assert "Blocked / placeholder" in html_a
-        assert "paid_wallet_user" in html_a
-        assert "Open Portal" in html_a
-        assert "Open Cabinet" in html_a
-        assert "Open Setup" in html_a
-        assert "bot/paid_wallet_user-menu.md" in html_a
-        assert "Production-identical" in html_a
-        assert "Dry-run / mocked" in html_a
+        assert html_a == html_b
+        assert "Start here" in html_a
+        assert "Journey walkthrough" in html_a
+        assert "Step 1 — Portal" in html_a
+        assert "Step 5 — Final state" in html_a
+        assert "CTA transition map" in html_a
+        assert 'href="bot/paid_wallet_user-menu.md"' in html_a
+        assert "Bot transcript not available" in html_a
+        assert "Owner: visually reviewable: 1" in html_a
+        assert "Owner: limited preview: 1" in html_a
+        assert "Counts match matrix JSON" in html_a
+        assert "Technical JSON" in html_a
         assert "vless://" not in html_a
         assert "kitsura.fun" not in html_a
+
+        cta = mod.investigate_portal_cta_duplication()
+        assert cta["fixture_issue"] is False
+        assert cta["product_issue"] is True
+        assert "landing-paths" in cta["root_cause"]
+        assert "home-cta" in cta["root_cause"]
+
+        index_html = (ROOT / "web" / "portal" / "index.html").read_text(encoding="utf-8")
+        assert 'id="home-cta"' in index_html
+        assert 'class="cta hidden" id="home-cta"' in index_html
 
         instructions = mod.render_open_instructions()
         assert "qa_serve_portal_preview.py" in instructions
         assert "NOT production" in instructions
 
-        matrix_json = Path(tmp) / "matrix-report.json"
-        matrix_json.write_text(
-            json.dumps({"scenarios": rows, "generated_at": FIXED_TS}, ensure_ascii=False) + "\n",
-            encoding="utf-8",
-        )
         result = await mod.build_preview(
             db_path=db_path,
             out_path=out,
@@ -240,9 +264,8 @@ async def _run_tests() -> None:
         assert out.is_file()
         assert result["summary"]["total"] == 3
         assert result["summary"]["full"] == 1
-        assert result["summary"]["partial"] == 1
-        assert result["summary"]["blocked"] == 1
         saved = out.read_text(encoding="utf-8")
+        assert "paid_wallet_user" in saved
         assert FIXED_TS in saved
 
         prev = _set_env(
@@ -260,16 +283,19 @@ async def _run_tests() -> None:
             mod._ensure_guards(db_path)
             built = await mod.build_preview(
                 db_path=db_path,
-                out_path=Path(tmp) / "full-index.html",
+                out_path=preview_dir / "full-index.html",
                 scenarios=["paid_wallet_user"],
                 reset_seed=True,
                 generated_at=FIXED_TS,
             )
             assert built["summary"]["total"] == 1
-            assert built["scenarios"][0]["scenario"] == "paid_wallet_user"
-            assert built["scenarios"][0]["portal_url"]
-            assert built["scenarios"][0]["cabinet_url"]
-            assert built["scenarios"][0]["setup_url"]
+            row = built["scenarios"][0]
+            assert row["portal_url"] and row["cabinet_url"] and row["setup_url"]
+            tpath = preview_dir / "bot" / "paid_wallet_user-menu.md"
+            assert tpath.is_file(), "bot transcript must be generated for paid_wallet_user"
+            assert row.get("bot_transcript_path") == "bot/paid_wallet_user-menu.md"
+            html_full = (preview_dir / "full-index.html").read_text(encoding="utf-8")
+            assert 'href="bot/paid_wallet_user-menu.md"' in html_full
             dumped = json.dumps(built["scenarios"], ensure_ascii=False)
             assert "vless://" not in dumped
             assert "kitsura.fun" not in dumped

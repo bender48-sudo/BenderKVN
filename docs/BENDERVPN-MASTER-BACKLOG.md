@@ -117,7 +117,8 @@ See [`ARCH-2026-06-10-QA-SANDBOX-CUSTOMER-JOURNEYS.md`](ARCH-2026-06-10-QA-SANDB
 | **QA-PORTAL-FIXTURES-001** | P1 | **DONE** (repo) | `qa_portal_fixtures.py`; `qa_serve_portal_preview.py`; `ops/test_qa_portal_fixtures.py` |
 | **QA-SCENARIO-MATRIX-001** | P1 | **DONE** (repo) | `qa_scenario_matrix.py`; `ops/test_qa_scenario_matrix.py` |
 | **QA-E2E-001** | P2 | OPEN | Playwright portal→cabinet smokes |
-| **QA-OWNER-PREVIEW-001** | P2 | **DONE** (repo) | `qa_owner_preview.py`; `ops/test_qa_owner_preview.py` |
+| **QA-OWNER-PREVIEW-001** | P2 | **DONE** (repo) | `qa_owner_preview.py` journey walkthrough index; FIX-001 transcripts + CTA map |
+| **PORTAL-LANDING-CTA-DEDUP-001** | P2 | OPEN | landing-paths vs account-fold CTA overlap on browser home |
 
 ### Completed audits (frozen — do not re-audit)
 

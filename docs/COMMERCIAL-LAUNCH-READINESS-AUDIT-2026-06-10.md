@@ -213,7 +213,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | QA-BOT-FAKE-TG-001 fake Telegram handler harness (`qa_bot_fake_tg.py`) | ✅ repo — capture-only; real handlers; no prod TG send |
 | QA-PORTAL-FIXTURES-001 portal scenario fixtures (`qa_portal_fixtures.py`) | ✅ repo — local preview URLs + cabinet API from QA DB |
 | QA-SCENARIO-MATRIX-001 customer journey matrix runner (`qa_scenario_matrix.py`) | ✅ repo — 20 scenarios; full/partial/blocked + drift report; feeds owner preview |
-| QA-OWNER-PREVIEW-001 owner visual preview index (`qa_owner_preview.py`) | ✅ repo — HTML index; portal/cabinet/setup URLs; 16 full / 2 partial / 2 blocked |
+| QA-OWNER-PREVIEW-001 owner visual preview index (`qa_owner_preview.py`) | ✅ repo — journey walkthrough Step 1–5; CTA map; Start here; transcript links fixed |
 | Product Policy v1 locked | ✅ |
 | Happ primary client strategy documented | ✅ |
 | Incident read-only probe suite | ✅ |

@@ -388,7 +388,9 @@ CLI:
 - `python ops/qa_owner_preview.py --scenario paid_wallet_user` — single-scenario build + stdout detail
 - `python ops/qa_owner_preview.py --build --reuse-matrix screenshots/qa-preview/matrix-report.json` — skip matrix re-run
 
-Index groups **20 scenarios** by runnable status: **full** / **partial** / **blocked**. Each card shows identity, clickable URLs, expected user-visible behavior, drift buckets, and limitation text.
+Index groups **20 scenarios** by runnable status: **full** / **partial** / **blocked** (labeled **Owner: visually reviewable / limited / blocked** — same counts as matrix JSON). Each card has an ordered **Journey walkthrough** (Step 1 Portal → Step 2 Bot transcript → Step 3 Cabinet → Step 4 Setup → Step 5 Final state), **CTA transition map**, and collapsible technical details.
+
+**QA-OWNER-PREVIEW-FIX-001:** Bot transcript links fixed (`bot/{scenario}-{action}.md` relative paths). **Start here** section highlights 8 priority scenarios. Portal CTA duplication documented: `#landing-paths` primary block; legacy `#home-cta` default-hidden; `#account-fold` overlap → backlog `PORTAL-LANDING-CTA-DEDUP-001`.
 
 | Visually reviewable now (full) | Portal landing, cabinet/setup states, wallet/expired/legacy, referral views, multi-config read path |
 | Partial | `trial_eligible_before_cap`, `temporary_converted_to_paid` — UI subset; backend gate/webhook OPEN |

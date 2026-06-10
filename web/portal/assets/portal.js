@@ -486,6 +486,8 @@
       if (secondary) secondary.classList.add("hidden");
       var landing = $("landing-paths");
       if (landing) landing.classList.add("hidden");
+      var homeCtaTg = $("home-cta");
+      if (homeCtaTg) homeCtaTg.classList.remove("hidden");
       if (connect) {
         connect.textContent = btns.connect || "Инструкция по устройству";
         connect.classList.remove("hidden");
@@ -767,7 +769,10 @@
     }
     panel.classList.remove("hidden");
     var homeCta = $("home-cta");
-    if (homeCta && !isTelegramMiniApp()) homeCta.classList.add("hidden");
+    if (homeCta) {
+      if (isTelegramMiniApp()) homeCta.classList.remove("hidden");
+      else homeCta.classList.add("hidden");
+    }
   }
 
   function renderPhilosophy() {
