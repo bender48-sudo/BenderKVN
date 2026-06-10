@@ -5,7 +5,10 @@
 **Mode:** architecture audit + decision design · no implementation · no prod mutation  
 **Branch:** `product-referral-cabinet-ui-v1`  
 **Repo HEAD:** `ed31440` (synced with `origin`)  
-**Parent:** [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md), [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md)  
+**Parent:** [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md), [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md)
+
+**Acquisition journey (slots, trial cap, temp/paid paths):** [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md)
+
 **Owner concern:** Referral share link goes **directly to Telegram bot**, weakening portal’s acquisition role and contradicting two-path product logic (Telegram 90d + email 1d fallback).
 
 **Evidence method:** code + docs + postdeploy only. Status: **CONFIRMED** / **PARTIAL** / **BLOCKED** / **UNKNOWN**.

@@ -13,6 +13,7 @@
 | [`BENDERVPN-PRODUCT-POLICY.md`](BENDERVPN-PRODUCT-POLICY.md) | Locked product truths (PT-01–PT-12) |
 | [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md) | MODEL A, DEVICE-ENFORCE-001 |
 | [`ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md`](ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md) | Portal-first referral (OPTION 3) |
+| [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md) | Full acquisition journey: slots, trial cap, temp/paid conversion |
 | [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md) | Launch gates (F&F / soft / paid / referral) |
 | [`AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md`](AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md) | Frozen backlog tracks |
 | [`ARCH-2026-06-10-AI-SUPPORT-TRIAGE-BOT.md`](ARCH-2026-06-10-AI-SUPPORT-TRIAGE-BOT.md) | Support scale (internal copilot, not F&F blocker) |
@@ -430,9 +431,11 @@ Growth plan must be tied to **server capacity** and **quality thresholds**. Capa
 ### 12.2 Referral growth blockers
 
 - **G4** TG bind PASS (or Telegram-only growth only).
+- **ACQ-PORTAL-001** portal-first share URL + referral landing (see ACQUISITION-JOURNEY-001).
 - **REF-ADMIN-001** admin ledger.
 - **REF-METRICS-001** funnel metrics.
-- **P1-REF-002** hidden +3d invitee bonus risk handled.
+- **P1-REF-002** hidden +3d invitee bonus gated OFF (repo).
+- **REF-BONUS-001** referrer +1 month reward — **not live** until owner approves.
 - Anti-abuse controls defined and implemented.
 - **DEVICE-ENFORCE-001** at campaign scale (or written waiver).
 

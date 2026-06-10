@@ -572,6 +572,7 @@ users / vpn_keys extensions:
 
 | Artifact | Role |
 |----------|------|
+| [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md) | Slot counter = active configs/devices; capacity gates for acquisition |
 | `bot_src/portal_cabinet.py` | `build_configuration_fields`, `billable_config_count` |
 | `bot_src/balance_billing.py` | Daily debit |
 | `bot_src/remnawave_api.py` | `provision_key`, TG merge behavior |

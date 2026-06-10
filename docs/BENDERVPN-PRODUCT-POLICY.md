@@ -6,6 +6,8 @@
 **Source:** Full Product Audit + Product Decision Workshop (branch `product-referral-cabinet-ui-v1`)
 **Strategy (positioning, growth, capacity, copy workflow):** [`STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md`](STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md)
 
+**Acquisition journey (portal-first referral, slots, trial cap, temp access):** [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md)
+
 ---
 
 ## 1. Executive summary
@@ -189,9 +191,9 @@ If user refuses phone and email on Telegram path:
 - Manual pause / suspicious flag on referral chains.
 - No automated payout at MVP.
 
-### 5.5 Acquisition entrypoint — **pending owner** (REFERRAL-ARCH-001)
+### 5.5 Acquisition entrypoint — **pending owner** (REFERRAL-ARCH-001 + ACQUISITION-JOURNEY-001)
 
-**Audit:** [`ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md`](ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md) (2026-06-10).
+**Audits:** [`ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md`](ARCH-2026-06-10-REFERRAL-ACQUISITION-PORTAL-ANALYTICS.md), [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md) (2026-06-10).
 
 | Item | Current | Proposed target | Status |
 |------|---------|-----------------|--------|

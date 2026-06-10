@@ -10,6 +10,7 @@
 |----------|------|
 | [`BENDERVPN-PRODUCT-POLICY.md`](BENDERVPN-PRODUCT-POLICY.md) | Accepted owner decisions (policy v1) |
 | [`STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md`](STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md) | Positioning, copy workflow, 10k growth model, capacity gates |
+| [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md) | Portal-first referral acquisition, slots, trial cap, temp access, paid conversion (ACQUISITION-JOURNEY-001) |
 | [`BENDERVPN-PRODUCT-QUALITY-PLAN.md`](BENDERVPN-PRODUCT-QUALITY-PLAN.md) | Portal UX execution log (Batches 1–3 done) |
 | [`BENDERVPN-AUDIT-ROADMAP.md`](BENDERVPN-AUDIT-ROADMAP.md) | Ordered audit sequence |
 | [`BACKLOG-QUEUE.md`](BACKLOG-QUEUE.md) | Linear ops Q001+ queue (infra phases closed) |
@@ -83,6 +84,20 @@
 8. **G4-BIND-RETEST** — owner in-app bind (no code unless bug)
 9. **BILL-UT-001/002** — unit tests (repo only)
 10. **BILL-SMOKE-001 prep** — script skeleton only
+
+### ACQUISITION-JOURNEY-001 backlog (architecture done — implementation gated)
+
+See [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md). **Do not implement** until owner approves per-surface commits.
+
+| ID | P | Status | Summary |
+|----|---|--------|---------|
+| **ACQ-PORTAL-001** | P1 | OPEN | Portal referral landing, gate API, portal-first share URL |
+| **ACQ-IDENTITY-001** | P1 | OPEN | Lead schema; phone+email required; dedup |
+| **ACQ-TRIAL-CAP-001** | P1 | OPEN | 90d trial closes at 300 active configs; bot+portal sync |
+| **ACQ-TEMP-001** | P1 | OPEN | Identity-bound 1d temp access (model B) |
+| **ACQ-PAID-CONVERT-001** | P1 | OPEN | Paid start + temp→paid same config |
+| **ACQ-BOT-BIND-001** | P0 | OPEN | G4 bind + portal lead merge |
+| **ACQ-SLOTS-001** | P2 | OPEN | Active config count; 30k slots; public badge gate |
 
 ### Completed audits (frozen — do not re-audit)
 
@@ -254,7 +269,7 @@
 | ID | Sev | Area | Title | Problem | Decision | Phase | Impact | Evidence | Blocked by | Status |
 |----|-----|------|-------|---------|----------|-------|--------|----------|------------|--------|
 | OD-01 | P3 | Partner channel | Partner program structure | Channel vs user referral | **Deferred** | 5 | GTM | Policy §11 | Owner | BLOCKED |
-| OD-02 | P3 | Referral | Referral bonus economics | +7d who/when | **Deferred** | 3 | Cost | Policy §11 | Owner | BLOCKED |
+| OD-02 | P3 | Referral | Referral bonus economics | +1 month to **referrer** after invitee paid conversion | **Deferred** | 3 | Cost | Policy §5.3; ACQUISITION-JOURNEY-001 | REF-BONUS-001 | BLOCKED |
 | OD-03 | P3 | Device/config | Second device paid SKU | Pricing, self-serve | **Deferred** | 3+ | Revenue | Policy §11 | Owner | BLOCKED |
 | OD-04 | P3 | Anti-fraud | Email verification timing | Signup vs topup | **Deferred** | 3 | Abuse | Policy §11 | Owner | BLOCKED |
 | OD-05 | P2 | Registration | Mandatory phone before topup | Hard vs soft | **Deferred** | 2 | Fraud | Policy §11 | Owner | BLOCKED |
