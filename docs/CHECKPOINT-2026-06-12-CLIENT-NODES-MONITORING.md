@@ -38,7 +38,7 @@ Commits from **`68e327d` → `0258d00`** (user-accepted scope). Earlier commits 
 | `187b654` | docs(vpn): record NL quality proof and smoke gates | docs-only | No | No |
 | `34f73b4` | docs(client): add proxy mode diagnostic capture runbook | client stability (docs) + tests/scripts | No | CLIENT-SMOKE-002 capture when practical |
 | `bccdbaf` | docs(incident): analyze active Happ TUN desktop failure | client stability (docs) + analyzer | No | **Pending** — owner TUN report analysis done; fix follows in `0258d00` |
-| `0258d00` | fix(client): prevent relay endpoints from Happ direct routing | client stability (scripts/tests) | **No** | **Pending** — routing profile refresh + TUN retest |
+| `0258d00` | fix(client): prevent relay endpoints from Happ direct routing | client stability (scripts/tests) | **No** | **PASS local 2026-06-12** — prod apply pending |
 
 **Read-only / no commit:** SAFEVPN-CONFIG-COMPARE-001.
 
@@ -71,10 +71,10 @@ Commits from **`68e327d` → `0258d00`** (user-accepted scope). Earlier commits 
 |---------|--------|----------|
 | **MONITOR-FLAP-001** 24h soak | Open until **after 2026-06-12 15:11 UTC** | MONITOR-FLAP-SOAK-CLOSEOUT rerun |
 | **NL A2/A4** controlled smoke | Blocked | Soak PASS + owner explicit approval |
-| **CLIENT-STABILITY DirectIp fix** | Repo done (`0258d00`); prod routing not updated | Owner 10–15 min TUN retest with refreshed profile |
-| **Prod Happ routing update** | Not approved | Owner retest PASS → then consider `patch_happ_routing.py --apply` |
+| **CLIENT-STABILITY DirectIp fix** | **Owner local retest PASS (2026-06-12)** | Prod `patch_happ_routing.py --apply` after explicit approval |
+| **Prod Happ routing update** | Prepared — see INCIDENT-DIAG-2026-06-12 §11 | Explicit `OWNER APPROVES PROD HAPP ROUTING APPLY NOW` |
 | **Proxy Track B** (CLIENT-SMOKE-002) | Open | Separate capture — Bender Proxy vs control Proxy |
-| **Desktop Windows commercial gate (G1)** | Open | TUN retest + Track A sleep/resume smokes |
+| **Desktop Windows commercial gate (G1)** | **Downgraded** — DirectIp leak mitigated locally; Track A/B + prod deploy still open | Track A sleep/resume; prod routing apply |
 
 ---
 
@@ -99,21 +99,15 @@ Commits from **`68e327d` → `0258d00`** (user-accepted scope). Earlier commits 
 - Rerun **MONITOR-FLAP-001-SOAK-CLOSEOUT** (LV logs + TG noise check).
 - If PASS → mark **MONITOR-FLAP-001** / **OPS-ALERT-HYGIENE-001** deployed+soaked DONE in backlog (docs-only).
 
-### B. When owner has **10–15 min** (stable session ends first)
+### B. Prod Happ routing apply (when owner approves)
 
-- **Do not** run `patch_happ_routing.py --apply`.
-- Owner-only local refresh:
-  ```powershell
-  cd D:\Va\projects\VPN
-  python ops/generate_happ_routing_link.py --write-json
-  python ops/generate_happ_routing_link.py --open
-  ```
-- Re-enable **BenderVPN RU** routing → TUN → 5–10 min site matrix (see [`INCIDENT-DIAG-2026-06-12-HAPP-TUN-ACTIVE-FAILURE.md`](INCIDENT-DIAG-2026-06-12-HAPP-TUN-ACTIVE-FAILURE.md) §11).
-- Verify: `python ops/happ_routing_directip_guard.py` · optional `python ops/analyze_happ_report_tun.py report.zip`.
+- Explicit approval line required: **`OWNER APPROVES PROD HAPP ROUTING APPLY NOW`**
+- Commands: `happ_routing_directip_guard.py` → `patch_happ_routing.py` dry-run → `--apply`
+- See [`INCIDENT-DIAG-2026-06-12-HAPP-TUN-ACTIVE-FAILURE.md`](INCIDENT-DIAG-2026-06-12-HAPP-TUN-ACTIVE-FAILURE.md) §11 rollback + post-apply smoke
 
-### C. If DirectIp retest **PASS**
+### C. ~~Owner DirectIp retest~~ — **DONE PASS 2026-06-12**
 
-- Owner explicitly approves → **`patch_happ_routing.py --apply`** to prod subscription settings (separate deploy task).
+Local deeplink validated; prod deploy still pending.
 
 ### D. If MONITOR-FLAP soak **PASS** + owner approval
 

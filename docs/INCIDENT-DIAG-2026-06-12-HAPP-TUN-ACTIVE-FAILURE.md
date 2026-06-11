@@ -154,7 +154,7 @@ ERROR connection upload closed: ... forcibly closed by the remote host
 | Question | Answer |
 |----------|--------|
 | Primarily A, E, or mixed? | **Mixed D+H** for report(2) active failure; **A** for report(1) daemon crashes |
-| CLIENT-STABILITY-001 still desktop blocker? | **Yes** |
+| CLIENT-STABILITY-001 still desktop blocker? | **Partially** — DirectIp leak mitigated (owner PASS); Track A/B + prod deploy remain |
 | Change NL A2/A4 smoke plan? | **No change** — desktop Happ issue is orthogonal; continue NL smoke after owner desktop path stable |
 | Relay #1 vs #2? | **Both fail**; **relay #1 ~55%** of timeout buckets vs relay #2 ~44% |
 | Profile integrity? | **OK** — full Candidate D JSON |
@@ -227,32 +227,36 @@ ERROR connection upload closed: ... forcibly closed by the remote host
 - `ops/happ_routing_directip_guard.py` — fails if `geoip:ru`, relay/LV/NL infra IPs, or missing ProxySites/DirectSites
 - `python ops/happ_routing_directip_guard.py` — CI/owner check
 
-### Owner retest (after routing profile refresh)
+### Owner retest — PASS (2026-06-12)
 
-1. Regenerate profile locally: `python ops/generate_happ_routing_link.py --write-json`
-2. Import on Windows (pick one):
-   - `python ops/generate_happ_routing_link.py --open` (happ:// deeplink), or
-   - Happ → Routing → re-import **BenderVPN RU**
-3. **Re-enable** `BenderVPN RU` routing (`useRouting=true`) — opposite of routing-OFF workaround.
-4. Connect **TUN** → BenderVPN Auto.
-5. **5–10 min site matrix:** google.com, mail.google.com, Telegram, ya.ru, vk.com, IP check.
-6. **Pass:** sites work; `tun_log` shows **`outbound/proxy`** (not only `outbound/direct` to relay IPs); ERROR rate near zero.
-7. **Fail:** export `report.zip` privately; run `python ops/analyze_happ_report_tun.py report.zip`.
+**Task:** CLIENT-STABILITY-DIRECTIP-OWNER-RETEST-001 · **Fix:** `0258d00`
 
-Compare with **routing-OFF** baseline from prior capture.
+| Field | Result |
+|-------|--------|
+| **Method** | `generate_happ_routing_link.py --write-json` + `--open` |
+| **Routing** | BenderVPN RU ON; TUN + BenderVPN Auto |
+| **Connect time** | ~30s before → **almost instant** after fix |
+| **Intl/blocked services** | **Work** |
+| **check.ru** | Did not open — **not a blocker** (RU direct by design) |
+| **Verdict** | **PASS** |
 
-### Production delivery (requires explicit approval — not done in this task)
+**Still open:** Track A (sleep/resume daemon); Track B (Proxy); prod `happRouting` deploy.
 
-Push updated `happRouting` deeplink to subscription settings:
+### Production delivery (prepared — not executed)
+
+**Requires:** `OWNER APPROVES PROD HAPP ROUTING APPLY NOW` in agent prompt.
 
 ```bash
-python ops/patch_happ_routing.py          # dry-run
-python ops/patch_happ_routing.py --apply  # after owner approves
+python ops/happ_routing_directip_guard.py
+python ops/patch_happ_routing.py                   # dry-run
+python ops/patch_happ_routing.py --apply           # prod subscription-settings.happRouting
 ```
 
-Until then, owner can use local `--open` deeplink only.
+**Rollback:** snapshot auto-written to `.secrets/snapshots/subscription-settings-before-happ-routing-<ts>.json`; restore `happRouting` from snapshot via PATCH.
 
-**Desktop remains commercial blocker until owner retest passes with routing ON.**
+**Post-apply smoke:** TUN connect; google.com, Gmail, Telegram, ya.ru, vk.com; **ipinfo.io** or **ifconfig.me** (not check.ru); report.zip only on failure.
+
+**G1 desktop gate:** DirectIp active-failure blocker **cleared on owner machine**; gate **still PARTIAL** (Track A/B + prod routing deploy).
 
 **Proxy mode (Track B)** remains separate — this fix does not address Proxy mode.
 
