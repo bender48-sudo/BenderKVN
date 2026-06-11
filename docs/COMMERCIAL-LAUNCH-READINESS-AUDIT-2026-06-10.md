@@ -240,7 +240,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | 4 | **P0** | **DEVICE-ENFORCE-001** — same-sub URL reuse undetected (G7) | Paid/open; referral at scale |
 | 5 | **P1** | **No admin user lookup / revoke-replace path** (G7, G8) | Commercial support at scale |
 | 6 | **P1** | **No automated monitoring/alerting for profile integrity + billing** (G9); **MONITOR-FLAP-001** / **OPS-ALERT-HYGIENE-001** — **DONE repo**, LV deploy pending | Open launch; acquisition scale review; **node readiness decisions** |
-| 6a | **P1** | **Single LV production path / NL not in auto host routing** (owner 2026-06-11) — **VPN-ARCH-001** NL revalidation; **VPN-NODE-RUNBOOK-001**; need **≥2** delivery-path surfaces | Acquisition/referral growth; 300 active configs/devices |
+| 6a | **P1** | **NL not in normal Bender Auto customer path** (PROOF-001 2026-06-11) — live **Candidate D relay-only×6**; NL connected but **0** in injectHosts/subs; **≥2 delivery-path nodes** required — **VPN-ARCH-001** owner A/B/C/D; **VPN-NODE-RUNBOOK-001** | Acquisition/referral growth; 300 active configs/devices |
 | 7 | **P1** | **Copy false promises** — `device_rule` self-service new config (G10) | External traffic — **TRACK 0 tomorrow** |
 | 8 | **P1** | **No CI / secret scanning** (G11) | Multi-contributor / open launch |
 | 9 | **P1** | **Policy enforcement gaps** — invite/30k/one-device copy-only (G12) | Public scale |
@@ -285,7 +285,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 7. G1 desktop sleep/resume resolved or desktop excluded from SLA
 7a. CLIENT-STABILITY: Bender Proxy smoke (CLIENT-SMOKE-002) or alt client validated (CLIENT-SMOKE-003)
 8. G14 payment reconciliation / admin reporting
-9. G12 capacity dashboard + **node capacity acceptance** (≥2 delivery-path nodes, headroom, quality, failover) before approaching 300 active configs/devices — **ACQ-SLOTS-001** / **ACQ-TRIAL-CAP-001**; **VPN-ARCH-001**; **VPN-NODE-RUNBOOK-001**
+9. G12 capacity dashboard + **node capacity acceptance** (≥2 nodes in **actual** customer delivery path — generated profiles/routing, not paid/backup alone) before approaching 300 active configs/devices — **ACQ-SLOTS-001** / **ACQ-TRIAL-CAP-001**; **VPN-ARCH-001** (PROOF-001: NL not normal Auto capacity as of 2026-06-11); **VPN-NODE-RUNBOOK-001**
 10. G2 non-Happ clients excluded from commercial promises
 
 ---
@@ -305,6 +305,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | Payment bind failures | AMS log grep + recovery path |
 | Multi-key anomaly | Admin handling procedure tested |
 | Referral web→TG | Bind success + `referrals` row migrated |
+| **NL active capacity** | **VPN-ARCH-001-NL-AUTOHOST-PROOF-001 DONE** — NL not in normal Auto path; commercial growth cannot count NL until re-included + verified; owner A/B/C/D pending |
 
 ---
 

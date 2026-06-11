@@ -45,7 +45,7 @@
 | **11** | 167–171 | **Закрыта** | LV→NL failover, backup sub **n4l8q:4433**, flow smoke gate |
 | **16** | 184–187 | **Закрыта** | inject parity gate, sub sample, autotrim runbook |
 | **17** | 188–195 | **Закрыта** | help_connect, BBR, P4-DNS docs, observatory staging, DNS cron |
-| **12** | 172–173 (VPN-AUD-210/220) | **210 REVERTED, 220 DONE** | geosite:ru NO-GO; NL :443×4 live stealth split |
+| **12** | 172–173 (VPN-AUD-210/220) | **210 REVERTED, 220 DONE (historical)** | geosite:ru NO-GO; NL :443×4 was live stealth split — **not current** (Candidate D relay-only×6 per PROOF-001) |
 
 **Сейчас:** **NEXT=—** (фазы 16–17 закрыты **2026-06-04**). Владелец: **Q032**, **O-VPN-002**, **O-VPN-009**, **P4-DNS-05**, live **P4-DNS-01** VPS.
 
@@ -93,7 +93,7 @@
 | **MONITOR-FLAP-001** | **DONE (repo)** | Selfsteal anti-flap — deploy LV pending |
 | **OPS-ALERT-HYGIENE-001** | **DONE (repo)** | Cert digest + alert tiers — deploy LV pending |
 | **ACQ-*** / **REF-*** | OPEN | См. MASTER; не дублировать OPS-CAPACITY-300 / NODE-RELAY-ADD |
-| **VPN-ARCH-001** | AWAITING APPROVAL | NL revalidation AC; ≥2 delivery-path nodes before growth |
+| **VPN-ARCH-001** | AWAITING APPROVAL | **PROOF-001 DONE** (2026-06-11): NL not normal Auto capacity; owner A/B/C/D; ≥2 delivery-path nodes before growth |
 | **VPN-NODE-RUNBOOK-001** | OPEN | Fast node+relay bring-up template (BACKLOG-CAPACITY-NODES-001) |
 
 ---

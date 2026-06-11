@@ -3,6 +3,8 @@
 **Скрипт:** `ops/lv_node_down_nl_failover.py`  
 **Verify NL sub:** `ops/verify_nl_failover_sub.py`
 
+> **Scope (2026-06-11, PROOF-001):** этот runbook — **emergency/manual failover (classification C)**, не штатная ёмкость Bender Auto. В normal mode prod = **relay-only×6**, NL **не в injectHosts**. Failover PATCH временно переводит подписку на NL-only; **не** считать это второй active prod-нодой для acquisition/referral/300 configs без owner **VPN-ARCH-001** decision.
+
 ## Что чинит / что нет
 
 | Проблема | Этот runbook |

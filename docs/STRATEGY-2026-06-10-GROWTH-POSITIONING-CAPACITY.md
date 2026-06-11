@@ -307,10 +307,16 @@ Assumptions for illustration: start **~500 paying users**, target **10 000**, ch
 
 Growth plan must be tied to **server capacity** and **quality thresholds**. Capacity is **not proven for 10k** today.
 
+**Capacity math (2026-06-11, PROOF-001):**
+
+- **Do not count** paid, connected, failover-ready, or backup-edge servers as **active capacity** unless they appear in **generated profiles/routing** and pass quality/soak gates.
+- **Relay diversity** (two RU relay IPs) improves RU reachability but **does not equal** a second geographic VPN exit if all relays terminate on **LV**.
+- Live normal path: **Candidate D relay-only×6** → effective **single LV exit**; **NL=0** in ACTIVE Happ subs.
+
 **BACKLOG-CAPACITY-NODES-001 — commercial acquisition/referral growth must also wait on (existing IDs only):**
 
-- **≥2 production-capable nodes/relays on the customer delivery path** — both must participate in auto host / generated subscriptions / routing, **or** non-participating paid server is decommissioned/replaced; **one Latvia-only path is not acceptable**
-- **VPN-ARCH-001** — NL/Amsterdam revalidation acceptance (read-only first; do not blindly re-enable); **VPN-AUD-220** historical DONE is insufficient if live routing diverged (not **NODE-NL-REVALIDATE-001**)
+- **≥2 production-capable nodes on the customer delivery path** — both must participate in auto host / generated subscriptions / routing, **or** non-participating paid server is decommissioned/replaced; **one Latvia-only exit is not acceptable**
+- **VPN-ARCH-001** — **PROOF-001 DONE** (2026-06-11): NL not normal Auto capacity; owner decision A/B/C/D pending; **VPN-AUD-220** historical DONE is insufficient (not **NODE-NL-REVALIDATE-001**)
 - **VPN-NODE-RUNBOOK-001** — fast node+relay bring-up template for influx scaling (not **Q120** / **VPN-AUD-201**, which is historical second relay)
 - **MONITOR-FLAP-001** + **OPS-ALERT-HYGIENE-001** — monitoring trustworthy before infra scale decisions
 - **ACQ-SLOTS-001** + **ACQ-TRIAL-CAP-001** — product gate at 300 active configs/devices **plus** node capacity acceptance checklist (not **OPS-CAPACITY-300-001**)

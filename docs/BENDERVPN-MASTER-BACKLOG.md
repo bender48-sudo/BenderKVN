@@ -114,19 +114,58 @@ See [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORT
 
 | Requirement | IDs / evidence |
 |-------------|----------------|
-| Two verified production-capable surfaces on the **customer path** | LV node + second path (NL if revalidated, relay exit, or new node per **VPN-NODE-RUNBOOK-001**) |
-| NL participation decision | **VPN-ARCH-001** child acceptance — see below; historical **VPN-AUD-220 DONE** (2026-06-03) is not sufficient if live routing diverged |
+| Two verified production-capable surfaces on the **customer path** | **≥2 geographic VPN exits** in generated profiles/routing (not relay-only×6 to single LV); NL if revalidated, or new node per **VPN-NODE-RUNBOOK-001** |
+| NL participation decision | **VPN-ARCH-001** owner AC — see below; **VPN-ARCH-001-NL-AUTOHOST-PROOF-001 DONE** (2026-06-11); historical **VPN-AUD-220 DONE** (2026-06-03) and **Q167–Q171** failover DONE are **not** live proof of normal Auto capacity |
 | Repeatable fast scale template | **VPN-NODE-RUNBOOK-001** OPEN — gaps vs `deploy-node.sh` / `THIRD-PROD-NODE-ONBOARDING.md` |
 | Alert hygiene before infra decisions | **MONITOR-FLAP-001**, **OPS-ALERT-HYGIENE-001** |
 | Infra queue (closed phases) | **Q167–Q171** node resilience DONE; **Q120** second RU relay DONE — do not reopen as new relay-add IDs |
 
 **VPN-ARCH-001 — Netherlands/Amsterdam revalidation acceptance (no NODE-NL-REVALIDATE-001):**
 
-1. Read-only: does NL/Amsterdam appear in **auto host**, **generated subscriptions**, **injectHosts/routing** for sampled users?
-2. If not participating: document why server is paid, current role, decommission vs replace decision.
-3. If candidate for production: latency, throughput, stability, selfsteal/Caddy, RU reachability (`ru-monitor`), client import/connect smoke — **controlled traffic only**.
-4. Soak before production-ready; if unstable/poor quality → **replace location/provider**, do not force NL into routing.
-5. Do **not** blindly re-enable NL from **VPN-AUD-220** verify alone.
+**VPN-ARCH-001-NL-AUTOHOST-PROOF-001 — DONE (read-only, 2026-06-11):**
+
+| Finding | Live evidence (2026-06-11) |
+|---------|----------------------------|
+| Normal Bender Auto customer path | **Candidate D relay-only×6** — RU relay #1 ×3 + RU relay #2 ×3 in `injectHosts`; **NL=0, LV direct=0, AMS=0** |
+| Generated ACTIVE Happ subs | 6 vless relay outbounds; **`Intl_Direct` / `Intl_Stealth`** = `RELAY6_SELECTOR` only; sampled users **NL=0** (`probe_subscription`, `transport_mux_audit`) |
+| NL panel state | **Connected/enabled**; hosts exist; **not** in live `injectHosts` or Intl selectors |
+| Effective VPN exit | **Single LV geography** behind relays — relay diversity ≠ second prod node |
+| NL roles today | **Failover/manual** (`lv_node_down_nl_failover.py`, Q167–Q171); **backup sub edge** `n4l8q:4433` — **not** active delivery capacity |
+| Amsterdam-01 | **Disconnected/disabled** — panel/sub-page; not prod VPN capacity |
+| Classification | Normal Auto/new users: **D** (documented/backup, not participating); LV-down emergency: **C** (manual/cron PATCH) |
+
+**Failover-ready or paid/connected does not equal active customer capacity.** Acquisition/referral growth and **300 active configs/devices** remain blocked until owner decision below and acceptance gates pass.
+
+**Owner decision required (pick one path before any prod routing/template mutation):**
+
+| Option | Meaning |
+|--------|---------|
+| **A** | Re-include NL in active Bender Auto routing after quality/soak gates |
+| **B** | Keep NL paid **failover-only**; accept cost; do not count NL in capacity math |
+| **C** | Decommission or repurpose NL VPS |
+| **D** | Add or replace with **another production node** first (via **VPN-NODE-RUNBOOK-001**) |
+
+Questions: Should NL return to active Auto routing? Stay failover-only? Be decommissioned/replaced? Should a third prod node be added before NL re-entry?
+
+**Required acceptance before prod routing/template mutation (all must pass):**
+
+1. **MONITOR-FLAP-001** — 24h soak on LV (post-deploy)
+2. Read-only node quality checks (`capacity_snapshot`, panel nodes/hosts)
+3. NL reachability / RU services check (`nl_reachability_probe_ru.py`, `ru-monitor`)
+4. Latency / throughput / stability check (controlled, not blind traffic flood)
+5. Controlled smoke (`verify_vpn_balancer_profile`, `probe_subscription`, `transport_mux_audit`)
+6. **Owner approval** (explicit option A/B/C/D)
+7. Rollback plan (`RUNBOOK-LV-DOWN-NL-FAILOVER.md`, template snapshot)
+8. User impact plan (`subscription_config_notify`, generation bump comms)
+9. **CLIENT-STABILITY-001** if NL re-entry affects Windows Happ quality
+
+**Remaining VPN-ARCH-001 AC (post-proof):**
+
+1. ~~Read-only: does NL appear in auto host / generated subs / injectHosts?~~ → **No (PROOF-001)**
+2. Owner picks A/B/C/D (this backlog item stays **AWAITING APPROVAL** until decided)
+3. If candidate for production (A or D): execute acceptance gates above — **controlled traffic only**
+4. Soak before production-ready; if unstable/poor quality → **replace location/provider**, do not force NL into routing
+5. Do **not** blindly re-enable NL from **VPN-AUD-220** verify alone
 
 **VPN-NODE-RUNBOOK-001 — fast node + relay bring-up (not Q120 / VPN-AUD-201):**
 
@@ -341,7 +380,7 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 | ID | Sev | Area | Title | Problem | Decision | Phase | Impact | Evidence | Files/modules | Acceptance | Checks | Deploy? | Owner? | Blocked by | Status |
 |----|-----|------|-------|---------|----------|-------|--------|----------|---------------|------------|--------|---------|--------|------------|--------|
 | VPN-REL-001 | P0 | VPN reliability | Unstable reconnect loop diagnostic | Users report disconnect/reconnect | N/A | **Now** | Core product value | `AUDIT-2026-06-09-VPN-RELIABILITY.md` | ops probes, panel, Happ | RC-1 relay2-only SPOF; RC-2 random balancer | AUDIT-001 done | No | **Yes** for patch | Owner picks profile target | **AUDIT DONE** |
-| VPN-ARCH-001 | P1 | VPN architecture | Full VPN architecture audit + NL revalidation AC | Selector/injectHosts mismatch; NL may not participate in auto host/routing (owner 2026-06-11) | N/A | **Now** | Growth blocked on single LV path | `AUDIT-2026-06-09-VPN-CANDIDATE-D-TESTPLAN.md`; **VPN-AUD-220** historical | ops/, panel | Read-only NL participation proof; ≥2 path surfaces; no blind NL re-enable | `probe_subscription.py`; gate §1 | No | **Yes** global | VPN-REL-001; MONITOR-FLAP-001 | **AWAITING APPROVAL** |
+| VPN-ARCH-001 | P1 | VPN architecture | Full VPN architecture audit + NL revalidation AC | NL not in normal Auto path; relay-only×6 → single LV exit (PROOF-001 2026-06-11) | N/A | **Now** | Growth blocked until ≥2 delivery-path nodes + owner A/B/C/D | **PROOF-001 DONE**; Candidate D live; **VPN-AUD-220** / Q167–Q171 historical only | ops/, panel | Owner decision A/B/C/D; acceptance gates before PATCH; ≥2 path surfaces | `probe_subscription.py`; gate §1 | No | **Yes** global | VPN-REL-001; MONITOR-FLAP-001 | **AWAITING APPROVAL** |
 | VPN-NODE-RUNBOOK-001 | P1 | VPN architecture / ops | Fast node + relay bring-up template | `deploy-node.sh` + partial docs exist; no unified gradual-traffic + soak + rollback template | N/A | **Now** | Fast scale on user influx | `deploy-node.sh`, `DEPLOY.md`, `NODE-POLICY-LV-NL.md`, `THIRD-PROD-NODE-ONBOARDING.md` | docs runbook | Repeatable checklist: provider/IP/DNS/SNI/Caddy/selfsteal/Remna/monitoring/smoke/soak/routing inclusion/rollback/decommission | owner review | No | **Yes** | VPN-ARCH-001; MONITOR-FLAP-001 | **OPEN** |
 | VPN-STAB-005 | P2 | VPN reliability | xhttp Happ batch risk (historical) | xhttp causes «0 servers» in Happ | Partially done | — | Happ UX | `AUDIT-2026-05-VPN-STABILITY-RESOLUTION` | sub-page, template | batch_risk=LOW on Happ UA | diagnose_happ_import | Yes | No | — | **DONE** |
 | VPN-INC-001 | P1 | VPN reliability | Incident guardrails enforcement | Repeat PATCH without probe caused gen 13→20 outages | N/A | ongoing | Prod stability | `VPN-INCIDENT-LESSONS` | ops patches | One PATCH → probe → smoke | verify gate | No | **Yes** | — | OPEN |
