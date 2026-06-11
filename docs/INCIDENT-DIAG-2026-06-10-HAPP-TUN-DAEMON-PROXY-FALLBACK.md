@@ -158,6 +158,8 @@ Subscription URLs, tokens, full Happ config export, private keys, unredacted scr
 
 ### CLIENT-SMOKE-002 — Bender Proxy mode connectivity
 
+**Capture runbook:** [`CLIENT-SMOKE-002-PROXY-CAPTURE.md`](CLIENT-SMOKE-002-PROXY-CAPTURE.md) · helper `ops/diagnose_windows_proxy_smoke.ps1` · parser `ops/analyze_happ_report_proxy.py`
+
 | Step | Action |
 |------|--------|
 | 1 | Disable TUN |
