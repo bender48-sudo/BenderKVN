@@ -91,6 +91,21 @@ def _static_checks() -> None:
         if bad in src:
             raise AssertionError(f"fixture module must not embed {bad!r}")
 
+    portal_css = (ROOT / "web" / "portal" / "assets" / "portal.css").read_text(encoding="utf-8")
+    for needle, label in (
+        ("html.tg-webapp .cabinet-balance", "Mini App cabinet balance contrast"),
+        ("html.tg-webapp .config-list li", "Mini App config list contrast"),
+        ("legacy_manual_user", "manual-access cabinet fixture"),
+    ):
+        bundle = portal_css if "cabinet-balance" in needle or "config-list" in needle else src
+        if needle not in bundle:
+            raise AssertionError(f"static check failed: {label} ({needle!r})")
+
+    init_idx = portal_js.index("function initTelegram")
+    init_fn = portal_js[init_idx : portal_js.index("function openExternal", init_idx)]
+    if 'text_color: "--text"' in init_fn or 'hint_color: "--muted"' in init_fn:
+        raise AssertionError("initTelegram must not override portal text/muted from Telegram theme")
+
 
 def _run_tests() -> None:
     _static_checks()

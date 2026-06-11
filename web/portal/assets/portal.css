@@ -1052,6 +1052,48 @@ summary:focus-visible {
   background: var(--bg);
 }
 
+/* Telegram Mini App: keep portal semantic colors on dark-glass cards (see initTelegram). */
+html.tg-webapp {
+  --text: #f4f4f5;
+  --muted: #9ca3af;
+}
+
+html.tg-webapp .glass,
+html.tg-webapp .sheet,
+html.tg-webapp .cabinet-panel,
+html.tg-webapp .cabinet-grace,
+html.tg-webapp .cabinet-actions,
+html.tg-webapp .cabinet-accordion,
+html.tg-webapp .cabinet-head,
+html.tg-webapp .support-block {
+  color: var(--text);
+}
+
+html.tg-webapp .cabinet-hero__title,
+html.tg-webapp .cabinet-balance,
+html.tg-webapp .cabinet-balance__amount,
+html.tg-webapp .cabinet-grace__title,
+html.tg-webapp .cabinet-head__title,
+html.tg-webapp .config-list li,
+html.tg-webapp .cabinet-page .cabinet-accordion > summary,
+html.tg-webapp .section-title,
+html.tg-webapp .sheet__label {
+  color: var(--text);
+}
+
+html.tg-webapp .cabinet-balance__days,
+html.tg-webapp .muted,
+html.tg-webapp .cabinet-hero__subline,
+html.tg-webapp .config-list__status,
+html.tg-webapp .cabinet-configs-summary {
+  color: var(--muted);
+}
+
+html.tg-webapp .cabinet-hero__state,
+html.tg-webapp .cabinet-head__state {
+  color: var(--cosmic-violet);
+}
+
 html.tg-webapp a:not(.btn) {
   color: var(--muted) !important;
   font-weight: 400 !important;

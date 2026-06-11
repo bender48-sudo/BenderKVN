@@ -196,27 +196,19 @@
       /* older clients */
     }
     var tp = tg.themeParams || {};
-    var cssMap = {
-      bg_color: "--bg",
-      text_color: "--text",
-      hint_color: "--muted",
-      secondary_bg_color: "--bg-card",
-    };
-    Object.keys(cssMap).forEach(function (key) {
-      if (tp[key]) {
-        document.documentElement.style.setProperty(cssMap[key], tp[key]);
-      }
-    });
-    if (typeof tg.setHeaderColor === "function" && tp.bg_color) {
+    /* Portal uses fixed dark-glass surfaces; syncing Telegram text_color/hint_color
+       (e.g. black from a light TG theme) makes cabinet copy unreadable on dark cards. */
+    var tgChromeBg = tp.bg_color || "#050508";
+    if (typeof tg.setHeaderColor === "function") {
       try {
-        tg.setHeaderColor(tp.bg_color);
+        tg.setHeaderColor(tgChromeBg);
       } catch (e) {
         /* ignore */
       }
     }
-    if (typeof tg.setBackgroundColor === "function" && tp.bg_color) {
+    if (typeof tg.setBackgroundColor === "function") {
       try {
-        tg.setBackgroundColor(tp.bg_color);
+        tg.setBackgroundColor(tgChromeBg);
       } catch (e) {
         /* ignore */
       }
