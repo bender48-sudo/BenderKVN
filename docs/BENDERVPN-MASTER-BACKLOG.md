@@ -182,8 +182,8 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 
 | ID | P | Status | Type | Summary |
 |----|---|--------|------|---------|
-| **MONITOR-FLAP-001** | P1 | OPEN | repo (`selfsteal-monitor.py`) | Latvia `www.microsoft.com` HTTP 0 down/recovered flood (~dozens/day); likely false positive — missing fail_streak/ok_streak/cooldown/quorum vs `monitor.sh` / `ru-monitor.py` |
-| **OPS-ALERT-HYGIENE-001** | P1 | OPEN | alert policy | Paging vs diagnostic channels; RU MONITOR `certificate changed` batched/digest/log-only for CDN SNI; severity tiers: silent/log · warning/digest · paging |
+| **MONITOR-FLAP-001** | P1 | **DONE (repo)** | repo (`selfsteal-monitor.py`) | fail_streak/ok_streak/cooldown/quorum + batched TG; tests `ops/test_selfsteal_monitor_antiflap.py` — **deploy LV pending owner** |
+| **OPS-ALERT-HYGIENE-001** | P1 | **DONE (repo)** | alert policy | RU cert digest batched; severity tiers in `docs/MONITORING.md` — **deploy LV pending owner** |
 | **Profile integrity alert** | P1 | NOT_STARTED | ops cron | G9 — scheduled probe + TG (see CLOSEOUT TRACK 5) |
 | **Payment callback monitor** | P1 | NOT_STARTED | ops | G9 webhook path |
 | **BILL-MON-001** | P2 | NOT_STARTED | ops | Billing job alert |
@@ -357,8 +357,8 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 |----|-----|------|-------|---------|----------|-------|--------|----------|---------------|------------|--------|---------|--------|------------|--------|
 | SEC-001 | P1 | Security | Full security audit | Last audit May 2025; surface grew | N/A | 2 | Breach prevention | `AUDIT-2026-05-SECURITY*.md` | bot, portal, ops | Report: secrets, auth, rate limits | AUDIT-010 | No | No | — | OPEN |
 | OBS-001 | P2 | Monitoring/observability | Monitoring audit | Status page exists; user-impact detection weak; selfsteal TG noise | N/A | 4 | Incident response | `MONITORING.md`; BACKLOG-SYNC-001 | Gap report + child tasks | AUDIT-012 | No | No | — | OPEN |
-| MONITOR-FLAP-001 | P1 | Monitoring/observability | Selfsteal monitor anti-flap | `selfsteal-monitor.py` immediate TG on HTTP 0; microsoft.com flap | N/A | 4 | Alert fatigue | LV logs BACKLOG-SYNC-001 | fail_streak/ok_streak/cooldown; repo only until deploy approved | `ops/test_*` if added | No | No | OBS-001 | OPEN |
-| OPS-ALERT-HYGIENE-001 | P1 | Monitoring/observability | Alert hygiene policy | RU MONITOR cert per-target TG; paging=diagnostic mix | N/A | 4 | Ops trust at scale | `ru-monitor.py` | Digest/batch cert; severity tiers; separate paging channel | log review | No | No | OBS-001, MONITOR-FLAP-001 | OPEN |
+| MONITOR-FLAP-001 | P1 | Monitoring/observability | Selfsteal monitor anti-flap | **DONE repo** — fail_streak/ok_streak/cooldown/quorum/batch; LV deploy pending | N/A | 4 | Alert fatigue | `ops/test_selfsteal_monitor_antiflap.py` | Deploy LV + 24h soak | log review | No | No | OBS-001 | **REPO DONE** |
+| OPS-ALERT-HYGIENE-001 | P1 | Monitoring/observability | Alert hygiene policy | **DONE repo** — cert digest + tiers doc | N/A | 4 | Ops trust at scale | `ops/test_ru_monitor_cert_digest.py` | Deploy LV + soak | log review | No | No | OBS-001, MONITOR-FLAP-001 | **REPO DONE** |
 | PERF-001 | P3 | Metrics/analytics | Performance/load audit | Portal/bot/web-trial load unknown | N/A | 4 | Scale readiness | — | portal, bot | Approved profile only | AUDIT-013 | No | **Yes** | — | OPEN |
 | OPS-001 | P2 | Ops/deploy/release | Deploy/release safety audit | Dirty tree, stale smokes, rollback | N/A | 2 | Safe releases | `RUNBOOK-AMS-SAFE-DEPLOY` | deploy scripts | Audit report | AUDIT-015 | No | No | — | OPEN |
 

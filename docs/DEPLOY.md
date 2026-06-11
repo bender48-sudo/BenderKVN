@@ -17,8 +17,8 @@
 | `ops/install-remnawave-backup-cron.sh` | AMS / LV | — (one-shot: `bash … ams` / `… lv`) | Crontab **`pg_dump`** / **`pull-latest-dump`** — см. **`ops/crontab-remnawave-backup.example`**. |
 | `ops/deploy-bot-config-ams.ps1` | AMS (с Windows) | hot-patch **`config.py`** | Только **`config.py`** (legacy). |
 | `ops/deploy-bot-balance-model-ams.ps1` | AMS (с Windows) | balance model | **`DAILY_RATE`**, topup UI, **`database.balance`**, scheduler. |
-| `ru-monitor.py` | LV | `/opt/scripts/ru-monitor.py` | Каждые 5 мин: SNI-reachability через RU-relay (цели из API `hosts`; минимальный порог **≥4** активных после фильтров, см. код). |
-| `selfsteal-monitor.py` | LV | `/opt/scripts/selfsteal-monitor.py` | Каждые 5 мин: Caddy selfsteal fingerprint (HTTP коды по 13 SNI). AMS-узел закомментирован на время drain'а. |
+| `ru-monitor.py` | LV | `/opt/scripts/ru-monitor.py` | Каждые 5 мин: SNI-reachability через RU-relay; DOWN/RECOVERED anti-flap; cert → digest (`docs/MONITORING.md`). |
+| `selfsteal-monitor.py` | LV | `/opt/scripts/selfsteal-monitor.py` | Каждые 5 мин: Caddy selfsteal (13 SNI); fail_streak/ok_streak/cooldown/quorum (MONITOR-FLAP-001). AMS drain — узел закомментирован. |
 | `deploy-node.sh` | LV / AMS | `/opt/scripts/deploy-node.sh` | Развёртывание новой `remnanode`. **Токен через env / argv / interactive read — никогда в `ps`**. |
 | `ops/watchdog.sh` | NL | `/opt/scripts/watchdog.sh` | Каждые 15 мин: SSH NL→LV (restricted-key) → проверка mtime двух monitor-логов; алерт «stale >30 мин» только при реальной проблеме. |
 | `ops/bvpn-watchdog-probe.sh` | LV | `/usr/local/sbin/bvpn-watchdog-probe` | Read-only probe для watchdog: возвращает три `epoch=…` строки. Вызывается через `command="…"` в `authorized_keys`. |
@@ -47,6 +47,8 @@
 # 1. Local sanity
 bash -n monitor.sh                                            # для bash
 python -c "import ast; ast.parse(open('ru-monitor.py').read())" # для python
+python ops/test_selfsteal_monitor_antiflap.py
+python ops/test_ru_monitor_cert_digest.py
 
 # (Windows PowerShell, из корня репо — один шаг вместо 2–4 ниже:)
 #   pwsh -File ops/deploy-monitor-lv.ps1

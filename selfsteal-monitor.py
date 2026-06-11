@@ -13,7 +13,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 # Strict DNS-label whitelist for SNIs that we pipe into a remote shell.
 # Anything outside this set must be rejected before going near `bash -s`.
@@ -38,6 +38,30 @@ RETRY_WARN_THRESHOLD = 5
 # heavy panel traffic; brief contention is not necessarily "probe dead".
 HTTP_ZERO_RETRIES = 3
 HTTP_ZERO_BACKOFF_BASE = 1.0
+
+# Anti-flap (aligned with monitor.sh / ru-monitor.py). Override via /etc/bvpn/balancer.env.
+DEFAULT_FAIL_STREAK = 3
+DEFAULT_OK_STREAK = 2
+DEFAULT_RE_ALERT_COOLDOWN_SEC = 900
+DEFAULT_RECOVER_NOTIFY_MIN_SEC = 3600
+QUORUM_MIN_BAD = 2
+
+# CDN-heavy decoy SNIs: brief HTTP 0 is warning/log-only until sustained or quorum.
+CDN_HEAVY_SNIS = frozenset({
+    "www.microsoft.com",
+    "www.apple.com",
+    "www.bing.com",
+})
+
+# RU/edge baseline SNIs: sustained failure pages faster (still respects streak).
+CRITICAL_BASELINE_SNIS = frozenset({
+    "ads.x5.ru",
+    "eh.vk.com",
+    "ir-3.ozone.ru",
+    "sun6-21.userapi.com",
+    "id.x5.ru",
+    "5post-gate.x5.ru",
+})
 
 # --- Amsterdam ---
 AMSTERDAM_HOST = "168.100.11.140"
@@ -145,37 +169,235 @@ def send_telegram(bot_token, chat_id, text):
         log(f"WARNING: Telegram send failed: {e}")
 
 
-def antispam_check(key, event):
-    """Return True if this alert should be sent (not suppressed)."""
-    os.makedirs(ANTISPAM_DIR, exist_ok=True)
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    safe_key = key.replace("/", "_").replace(":", "_")
-    fname = f"selfsteal_monitor_{event}_{safe_key}_{today}"
-    path = os.path.join(ANTISPAM_DIR, fname)
-    if os.path.exists(path):
-        return False
-    legacy = os.path.join(_LEGACY_ANTISPAM_DIR, fname)
-    if os.path.exists(legacy):
-        return False
+def cooldown_allows(prev, cooldown_sec):
+    """True if we may open a new DOWN after a recent RECOVERED."""
+    if not prev:
+        return True
+    until = prev.get("cooldown_until")
+    if not until:
+        return True
     try:
-        with open(path, "w") as f:
-            f.write(today)
-    except OSError:
-        pass
-    return True
+        end = datetime.fromisoformat(until.replace("Z", "+00:00"))
+        return datetime.now(timezone.utc) >= end
+    except (ValueError, TypeError):
+        return True
 
 
-def antispam_clear(key, event):
-    """Remove antispam marker so the next event of same type can fire."""
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    safe_key = key.replace("/", "_").replace(":", "_")
-    fname = f"selfsteal_monitor_{event}_{safe_key}_{today}"
-    for d in (ANTISPAM_DIR, _LEGACY_ANTISPAM_DIR):
-        path = os.path.join(d, fname)
-        try:
-            os.unlink(path)
-        except FileNotFoundError:
-            pass
+def recover_notify_allows(prev, recover_notify_min_sec):
+    """True if RECOVERED Telegram may fire (rate limit per key)."""
+    if not prev:
+        return True
+    last = prev.get("last_recover_notify")
+    if not last:
+        return True
+    try:
+        then = datetime.fromisoformat(last.replace("Z", "+00:00"))
+        elapsed = (datetime.now(timezone.utc) - then).total_seconds()
+        return elapsed >= recover_notify_min_sec
+    except (ValueError, TypeError):
+        return True
+
+
+def normalize_prev_entry(prev):
+    """Migrate legacy state entries (pre anti-flap) without crashing."""
+    if not prev:
+        return {}
+    out = dict(prev)
+    if "fail_streak" not in out:
+        out["fail_streak"] = 1 if out.get("status") == "critical" else 0
+    if "ok_streak" not in out:
+        out["ok_streak"] = 0
+    if "alerting" not in out:
+        out["alerting"] = out.get("status") == "critical"
+    return out
+
+
+def is_bad_probe(level):
+    return level == "critical"
+
+
+def evaluate_paging_down(
+    sni,
+    level,
+    code,
+    fail_streak,
+    fail_streak_need,
+    node_bad_count,
+    prev,
+    re_alert_cooldown_sec,
+):
+    """Return (should_page: bool, log_reason: str)."""
+    if not is_bad_probe(level):
+        return False, ""
+
+    quorum = node_bad_count >= QUORUM_MIN_BAD
+    is_cdn = sni in CDN_HEAVY_SNIS
+    is_baseline = sni in CRITICAL_BASELINE_SNIS
+    http_zero = code == 0
+
+    if not cooldown_allows(prev, re_alert_cooldown_sec):
+        return False, (
+            f"suppressed: cooldown active fail_streak {fail_streak}/{fail_streak_need}"
+        )
+
+    if quorum and fail_streak >= 1:
+        return True, "paging: quorum fail"
+
+    if is_baseline and fail_streak >= fail_streak_need:
+        return True, "paging: sustained fail (baseline)"
+
+    if is_cdn and http_zero:
+        if fail_streak >= fail_streak_need:
+            return True, "paging: sustained fail"
+        return False, (
+            f"warning: CDN SNI degraded; suppressed: fail_streak "
+            f"{fail_streak}/{fail_streak_need}"
+        )
+
+    if fail_streak >= fail_streak_need:
+        return True, "paging: sustained fail"
+
+    return False, f"suppressed: fail_streak {fail_streak}/{fail_streak_need}"
+
+
+def process_node_checks(
+    node_name,
+    results,
+    prev_state,
+    now_ts,
+    is_first_run,
+    *,
+    fail_streak_need,
+    ok_streak_need,
+    re_alert_cooldown_sec,
+    recover_notify_min_sec,
+):
+    """Apply anti-flap to one node's probe results.
+
+    Returns (new_state, pending_down, pending_recovered, log_lines).
+    """
+    node_bad_count = sum(1 for r in results if is_bad_probe(r["level"]))
+    new_state = {}
+    pending_down = []
+    pending_recovered = []
+    log_lines = []
+
+    for r in results:
+        sni = r["sni"]
+        code = r["code"]
+        level = r["level"]
+        reason = r["reason"]
+        retried = r["retried"]
+        key = f"{node_name}:{sni}"
+
+        prev = normalize_prev_entry(prev_state.get(key))
+        alerting = bool(prev.get("alerting"))
+        fail_streak = int(prev.get("fail_streak", 0))
+        ok_streak = int(prev.get("ok_streak", 0))
+        last_change = prev.get("last_change", now_ts)
+        cooldown_until = prev.get("cooldown_until")
+        last_recover_notify = prev.get("last_recover_notify")
+
+        if is_bad_probe(level):
+            fail_streak += 1
+            ok_streak = 0
+        else:
+            ok_streak += 1
+            fail_streak = 0
+
+        opened_down = False
+        closed_down = False
+        new_cooldown_until = cooldown_until
+
+        if (
+            is_bad_probe(level)
+            and not alerting
+            and not is_first_run
+        ):
+            should_page, page_reason = evaluate_paging_down(
+                sni,
+                level,
+                code,
+                fail_streak,
+                fail_streak_need,
+                node_bad_count,
+                prev,
+                re_alert_cooldown_sec,
+            )
+            if should_page:
+                alerting = True
+                opened_down = True
+                last_change = now_ts
+                expected_code = EXPECTATIONS[sni]["expected"]
+                pending_down.append({
+                    "sni": sni,
+                    "code": code,
+                    "reason": reason,
+                    "prev": prev,
+                    "expected": expected_code,
+                    "page_reason": page_reason,
+                })
+                log_lines.append(f"ALERT DOWN queued: {key} {page_reason} -- {reason}")
+            elif page_reason:
+                log_lines.append(f"{page_reason}: {key} code={code}")
+
+        elif not is_bad_probe(level) and alerting:
+            if ok_streak >= ok_streak_need:
+                if recover_notify_allows(prev, recover_notify_min_sec):
+                    alerting = False
+                    closed_down = True
+                    last_change = now_ts
+                    last_recover_notify = now_ts
+                    new_cooldown_until = (
+                        datetime.now(timezone.utc)
+                        + timedelta(seconds=re_alert_cooldown_sec)
+                    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+                    pending_recovered.append({
+                        "sni": sni,
+                        "code": code,
+                        "prev": prev,
+                    })
+                    log_lines.append(
+                        f"ALERT RECOVERED queued: {key} ok_streak={ok_streak}"
+                    )
+                else:
+                    log_lines.append(
+                        f"suppressed: recover notify cooldown {key} ok_streak={ok_streak}"
+                    )
+            else:
+                log_lines.append(
+                    f"suppressed: ok_streak {ok_streak}/{ok_streak_need} {key}"
+                )
+
+        elif prev.get("status") and prev.get("status") != level:
+            last_change = now_ts
+
+        if level == "warning" and prev.get("status") == "ok":
+            log_lines.append(f"WARNING: {key} code={code} ({reason})")
+
+        prev_retry_count = int(prev.get("retry_count", 0))
+        new_retry_count = prev_retry_count + 1 if retried else 0
+        if new_retry_count >= RETRY_WARN_THRESHOLD:
+            log_lines.append(
+                f"WARNING: {key} retried {new_retry_count} times consecutively"
+            )
+
+        new_state[key] = {
+            "status": level,
+            "alerting": alerting,
+            "fail_streak": fail_streak,
+            "ok_streak": ok_streak,
+            "last_check": now_ts,
+            "last_change": last_change,
+            "cooldown_until": new_cooldown_until,
+            "last_recover_notify": last_recover_notify,
+            "code": code,
+            "reason": reason,
+            "retried": retried,
+            "retry_count": new_retry_count,
+        }
+
+    return new_state, pending_down, pending_recovered, log_lines
 
 
 def load_state():
@@ -447,9 +669,52 @@ def format_alert_down(node, sni, code, prev):
         f"- systemctl status caddy (Latvia)\n"
         f"- docker ps caddy-selfsteal (Amsterdam)\n"
         f"- tail /var/log/caddy/...\n\n"
-        f"<i>Short HTTP 0 spikes can be transient (same Caddy handles panel :2053); "
-        f"retry before paging.</i>"
+        f"<i>Sustained failure or quorum required before paging (anti-flap).</i>"
     )
+
+
+def format_batch_alert_down(node, items):
+    """Batch DOWN alert for multiple SNIs on one node."""
+    n = len(items)
+    label = node_label(node)
+    lines = [
+        f"\U0001f6a8 <b>SELFSTEAL: probe failure</b> ({n} SNI on {label})\n",
+    ]
+    for item in items:
+        sni = item["sni"]
+        code = item["code"]
+        page_reason = item.get("page_reason", "paging")
+        if code == 0:
+            status = f"no response (HTTP {code})"
+        else:
+            status = f"HTTP {code} (expected {item.get('expected', '?')})"
+        lines.append(f"• <b>{sni}</b> — {status} [{page_reason}]")
+    lines.append(
+        "\nCheck Caddy selfsteal on this node.\n"
+        "<i>CDN SNI single blips are suppressed until sustained or quorum.</i>"
+    )
+    return "\n".join(lines)
+
+
+def format_batch_alert_recovered(node, items):
+    """Batch RECOVERED alert for multiple SNIs on one node."""
+    n = len(items)
+    label = node_label(node)
+    lines = [
+        f"\u2705 <b>SELFSTEAL: recovered</b> ({n} SNI on {label})\n",
+    ]
+    for item in items:
+        sni = item["sni"]
+        code = item["code"]
+        prev = item.get("prev") or {}
+        down_since_raw = prev.get("last_change", "unknown")
+        down_since = (
+            humanize_since(down_since_raw)
+            if down_since_raw != "unknown"
+            else "unknown"
+        )
+        lines.append(f"• <b>{sni}</b> — HTTP {code} OK (was down ~{down_since})")
+    return "\n".join(lines)
 
 
 def format_alert_drift(node, sni, expected, got, prev):
@@ -493,10 +758,24 @@ def main():
     try:
         time.sleep(random.randint(0, JITTER_MAX))
 
-        # Load env for Telegram
+        # Load env for Telegram + anti-flap thresholds
         balancer_env = load_env("/etc/bvpn/balancer.env")
         bot_token = balancer_env.get("BOT_TOKEN")
         chat_id = balancer_env.get("ADMIN_CHAT_ID", "924498094")
+        fail_streak_need = int(
+            balancer_env.get("SELFSTEAL_FAIL_STREAK_THRESHOLD", DEFAULT_FAIL_STREAK)
+        )
+        ok_streak_need = int(
+            balancer_env.get("SELFSTEAL_OK_STREAK_THRESHOLD", DEFAULT_OK_STREAK)
+        )
+        re_alert_cooldown_sec = int(
+            balancer_env.get("SELFSTEAL_RE_ALERT_COOLDOWN_SEC", DEFAULT_RE_ALERT_COOLDOWN_SEC)
+        )
+        recover_notify_min_sec = int(
+            balancer_env.get(
+                "SELFSTEAL_RECOVER_NOTIFY_MIN_SEC", DEFAULT_RECOVER_NOTIFY_MIN_SEC
+            )
+        )
 
         if not bot_token:
             log("FATAL: BOT_TOKEN not found in /etc/bvpn/balancer.env")
@@ -521,78 +800,42 @@ def main():
                 results = run_checks_remote(ssh_host)
 
             for r in results:
-                sni = r["sni"]
-                code = r["code"]
-                level = r["level"]
-                reason = r["reason"]
-                retried = r["retried"]
-                key = f"{node_name}:{sni}"
-
-                if level == "ok":
+                if r["level"] == "ok":
                     ok_count += 1
-                elif level == "warning":
+                elif r["level"] == "warning":
                     warning_count += 1
                 else:
                     critical_count += 1
-
-                if retried:
+                if r["retried"]:
                     retried_count += 1
 
-                prev = prev_state.get(key)
-                prev_status = prev.get("status") if prev else None
+            node_state, pending_down, pending_recovered, log_lines = process_node_checks(
+                node_name,
+                results,
+                prev_state,
+                now_ts,
+                is_first_run,
+                fail_streak_need=fail_streak_need,
+                ok_streak_need=ok_streak_need,
+                re_alert_cooldown_sec=re_alert_cooldown_sec,
+                recover_notify_min_sec=recover_notify_min_sec,
+            )
+            new_state.update(node_state)
+            transitions += len(pending_down) + len(pending_recovered)
 
-                # Detect transition (only ok <-> critical)
-                transition = None
-                if prev_status in ("ok", "warning") and level == "critical":
-                    transition = "down"
-                elif prev_status == "critical" and level in ("ok", "warning"):
-                    transition = "recovered"
-                elif prev_status is None and level == "critical" and not is_first_run:
-                    transition = "down"
+            for line in log_lines:
+                log(line)
 
-                if transition:
-                    transitions += 1
-                    expected_code = EXPECTATIONS[sni]["expected"]
-                    if transition == "down" and antispam_check(key, "critical"):
-                        if code == 0:
-                            msg = format_alert_down(node_name, sni, code, prev)
-                        else:
-                            msg = format_alert_drift(node_name, sni, expected_code, code, prev)
-                        send_telegram(bot_token, chat_id, msg)
-                        log(f"ALERT CRITICAL: {key} -- {reason}")
-                    elif transition == "recovered":
-                        msg = format_alert_recovered(node_name, sni, code, prev)
-                        send_telegram(bot_token, chat_id, msg)
-                        log(f"ALERT RECOVERED: {key}")
-                        antispam_clear(key, "critical")
-
-                # Warning: only log, no Telegram
-                if level == "warning" and prev_status == "ok":
-                    log(f"WARNING: {key} code={code} ({reason})")
-
-                # retry_count tracking
-                prev_retry_count = prev.get("retry_count", 0) if prev else 0
-                if retried:
-                    new_retry_count = prev_retry_count + 1
-                else:
-                    new_retry_count = 0
-
-                if new_retry_count >= RETRY_WARN_THRESHOLD:
-                    log(f"WARNING: {key} retried {new_retry_count} times consecutively, check upstream")
-
-                # Build new state entry
-                new_state[key] = {
-                    "status": level,
-                    "last_check": now_ts,
-                    "last_change": (
-                        now_ts if transition
-                        else (prev.get("last_change", now_ts) if prev else now_ts)
-                    ),
-                    "code": code,
-                    "reason": reason,
-                    "retried": retried,
-                    "retry_count": new_retry_count,
-                }
+            if pending_down:
+                send_telegram(
+                    bot_token, chat_id, format_batch_alert_down(node_name, pending_down)
+                )
+            if pending_recovered:
+                send_telegram(
+                    bot_token,
+                    chat_id,
+                    format_batch_alert_recovered(node_name, pending_recovered),
+                )
 
         # Save state atomically
         save_state(new_state)

@@ -6,9 +6,46 @@
 |-------|-----|-----------|
 | `monitor.sh` (LV) | cron | ноды, sub-page, docker |
 | `ru-monitor.py` (LV) | cron | RU path, injectHosts |
+| `selfsteal-monitor.py` (LV) | cron | Caddy selfsteal fingerprint (13 SNI) |
 | `daily-report.sh` | cron | сводка + AMS decom |
 | Telegram `/status` | бот admin | ручной снимок |
 | `https://k9x2m1.conntest.xyz/status` | публичный JSON | инциденты (без ops-секретов) |
+
+## Уровни алертов (MONITOR-FLAP-001 / OPS-ALERT-HYGIENE-001)
+
+| Уровень | Куда | Примеры |
+|---------|------|---------|
+| **silent / log** | `/var/log/bvpn-*.log`, state.json | одиночный HTTP 0 на CDN SNI до порога streak; cert change при cooldown digest |
+| **warning / digest** | log + опционально один TG digest | RU MONITOR cert rotation (батч ≤1/ч); CDN SNI degraded fail_streak 1/3 |
+| **paging** | Telegram 🚨 | sustained fail (fail_streak ≥3 @ */5 cron); quorum ≥2 SNI на ноде; RU TLS down batch |
+
+**Deploy на LV:** только после явного одобрения владельца (`docs/DEPLOY.md` §1). После деплоя — 24h soak: переходы остаются в логах, TG-шум падает.
+
+### selfsteal-monitor.py — anti-flap
+
+Пороги (override в `/etc/bvpn/balancer.env`):
+
+| Переменная | Default | Смысл |
+|------------|---------|--------|
+| `SELFSTEAL_FAIL_STREAK_THRESHOLD` | 3 | ~15 мин sustained fail (@ */5) перед DOWN |
+| `SELFSTEAL_OK_STREAK_THRESHOLD` | 2 | ~10 мин OK перед RECOVERED |
+| `SELFSTEAL_RE_ALERT_COOLDOWN_SEC` | 900 | cooldown после RECOVERED |
+| `SELFSTEAL_RECOVER_NOTIFY_MIN_SEC` | 3600 | не чаще 1 RECOVERED TG/час на SNI |
+
+CDN SNI (`microsoft`, `apple`, `bing`): одиночный HTTP 0 → log/warning до streak или quorum (≥2 SNI). Baseline RU SNIs (X5/VK/Ozon): paging после sustained fail. Несколько SNI в одном прогоне → один batched TG.
+
+State: `/var/lib/bvpn-selfsteal-monitor/state.json` — поля `fail_streak`, `ok_streak`, `alerting`, `cooldown_until` (legacy entries мигрируют автоматически).
+
+### ru-monitor.py — cert digest
+
+Per-target `certificate changed` заменён на **один informational digest** за прогон (cooldown `RU_CERT_DIGEST_COOLDOWN_SEC`, default 3600). CDN SNI помечаются `[CDN]`; это diagnostic, не paging. DOWN/RECOVERED anti-flap (fail_streak 3 / ok_streak 2) **без изменений**.
+
+Verify (repo):
+
+```bash
+python ops/test_selfsteal_monitor_antiflap.py
+python ops/test_ru_monitor_cert_digest.py
+```
 
 ## Бот / AMS (после phase 8)
 

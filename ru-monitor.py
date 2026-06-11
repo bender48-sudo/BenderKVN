@@ -35,6 +35,18 @@ CYCLE_WARN_SEC = 240  # log WARNING if total cycle exceeds this
 DEFAULT_FAIL_STREAK = 3  # */5 cron → ~15 min sustained fail before DOWN
 DEFAULT_OK_STREAK = 2  # ~10 min sustained OK before RECOVERED
 DEFAULT_RE_ALERT_COOLDOWN_SEC = 900
+DEFAULT_CERT_DIGEST_COOLDOWN_SEC = 3600
+
+# CDN / heavy upstream SNIs — cert rotation is informational, not paging.
+CDN_HEAVY_SNIS = frozenset({
+    "www.microsoft.com",
+    "www.apple.com",
+    "www.bing.com",
+    "api.github.com",
+    "google-analytics.com",
+    "fonts.googleapis.com",
+    "pimg.mycdn.me",
+})
 
 
 def acquire_lock():
@@ -376,16 +388,48 @@ def cooldown_allows(prev, cooldown_sec):
         return True
 
 
-def format_alert_cert_changed(r, old_fp, new_fp):
-    return (
-        f"\u26a0\ufe0f <b>RU MONITOR: certificate changed</b>\n\n"
-        f"<b>Target:</b> {r['sni']} @ {r['address']}:{r['port']}\n"
-        f"<b>Old fingerprint:</b> <code>{old_fp}</code>\n"
-        f"<b>New fingerprint:</b> <code>{new_fp}</code>\n"
-        f"<b>Checked from:</b> Russia Relay (72.56.0.145)\n\n"
-        f"Часто это ротация сертификата апстрима (CDN/магазин), не ваш Caddy. "
-        f"Для fingerprinting-узлов на relay — сравните с первым успешным прогоном. MITM не исключайте, но не паникуйте на одном смене."
+def is_cdn_heavy_sni(sni):
+    return (sni or "").lower() in CDN_HEAVY_SNIS
+
+
+def cert_digest_allows(meta, cooldown_sec, now=None):
+    """True if cert digest Telegram may fire (rate limit across runs)."""
+    if not meta:
+        return True
+    last = meta.get("last_cert_digest")
+    if not last:
+        return True
+    now = now or datetime.now(timezone.utc)
+    try:
+        then = datetime.fromisoformat(last.replace("Z", "+00:00"))
+        return (now - then).total_seconds() >= cooldown_sec
+    except (ValueError, TypeError):
+        return True
+
+
+def format_cert_digest(changes):
+    """Informational batched cert digest — not paging."""
+    n = len(changes)
+    lines = [
+        f"\u2139\ufe0f <b>RU MONITOR: certificate changes</b> ({n} target"
+        f"{'s' if n != 1 else ''})\n",
+        "<i>Diagnostic / informational — often CDN upstream rotation.</i>",
+        "<b>Checked from:</b> Russia Relay (72.56.0.145)\n",
+    ]
+    for c in changes:
+        r = c["r"]
+        tag = "CDN" if c.get("is_cdn") else "edge"
+        old_fp = c.get("old_fp") or "?"
+        new_fp = c.get("new_fp") or "?"
+        lines.append(
+            f"• [{tag}] <b>{r['sni']}</b> @ {r['address']}:{r['port']}\n"
+            f"  <code>{old_fp}</code> → <code>{new_fp}</code>"
+        )
+    lines.append(
+        "\nЧасто это ротация сертификата апстрима (CDN), не ваш Caddy. "
+        "MITM не исключайте, но не паникуйте на одной смене."
     )
+    return "\n".join(lines)
 
 
 def main():
@@ -427,6 +471,12 @@ def main():
             monitor_env.get("RU_RE_ALERT_COOLDOWN_SEC", DEFAULT_RE_ALERT_COOLDOWN_SEC)
         )
 
+        cert_digest_cooldown_sec = int(
+            monitor_env.get(
+                "RU_CERT_DIGEST_COOLDOWN_SEC", DEFAULT_CERT_DIGEST_COOLDOWN_SEC
+            )
+        )
+
         if not api_token:
             log("FATAL: REMNA_API_TOKEN not found in /etc/bvpn/ru-monitor.env")
             return
@@ -466,6 +516,8 @@ def main():
         transitions = 0
         pending_down = []
         pending_recovered = []
+        pending_cert_changes = []
+        cert_meta = dict(prev_state.get("__meta__") or {})
 
         for r in results:
             key = make_target_key(r)
@@ -531,11 +583,15 @@ def main():
             elif prev_status and prev_status != status:
                 last_change = now_ts
 
-            if cert_transition and antispam_check(key, "cert"):
-                msg = format_alert_cert_changed(r, prev_cert, cert_fp)
-                send_telegram(bot_token, chat_id, msg)
-                transitions += 1
-                log(f"ALERT CERT CHANGED: {key} {prev_cert} -> {cert_fp}")
+            if cert_transition:
+                pending_cert_changes.append({
+                    "r": r,
+                    "old_fp": prev_cert,
+                    "new_fp": cert_fp,
+                    "is_cdn": is_cdn_heavy_sni(r["sni"]),
+                })
+                kind = "CDN/log" if is_cdn_heavy_sni(r["sni"]) else "digest"
+                log(f"CERT CHANGED ({kind}): {key} {prev_cert} -> {cert_fp}")
 
             new_state[key] = {
                 "status": status,
@@ -557,6 +613,23 @@ def main():
             send_telegram(
                 bot_token, chat_id, format_batch_recovered(pending_recovered)
             )
+        if pending_cert_changes:
+            if cert_digest_allows(cert_meta, cert_digest_cooldown_sec):
+                send_telegram(
+                    bot_token, chat_id, format_cert_digest(pending_cert_changes)
+                )
+                cert_meta["last_cert_digest"] = now_ts
+                transitions += 1
+                log(
+                    f"ALERT CERT DIGEST: {len(pending_cert_changes)} target(s)"
+                )
+            else:
+                log(
+                    f"suppressed: cert digest cooldown "
+                    f"({len(pending_cert_changes)} change(s) logged only)"
+                )
+
+        new_state["__meta__"] = cert_meta
 
         # Save state atomically
         save_state(new_state)
