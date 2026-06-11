@@ -24,8 +24,11 @@ if str(_OPS) not in sys.path:
     sys.path.insert(0, str(_OPS))
 
 from patch_routing_category_ru_leak import PROXY_EXTRA_DOMAINS, PROXY_GEOSITES  # noqa: E402
-from routing_geo_common import PRIVATE_IP_CIDRS  # noqa: E402
 from ru_bypass_routing import EXTRA_DIRECT_DOMAINS  # noqa: E402
+from happ_routing_directip_guard import (  # noqa: E402
+    assert_happ_routing_directip_safe,
+    build_safe_direct_ip,
+)
 
 PROFILE_PATH = _OPS / "happ_routing_profile_ru.json"
 GEOIP_LOYAL = (
@@ -55,7 +58,9 @@ def _domain_entries(fqdns: list[str]) -> list[str]:
 def build_profile(*, use_bundled_geofiles: bool = True) -> dict:
     direct_sites = list(RU_REGEXP_DIRECT) + _domain_entries(list(EXTRA_DIRECT_DOMAINS))
     proxy_sites = list(PROXY_GEOSITES) + _domain_entries(list(PROXY_EXTRA_DOMAINS))
-    direct_ip = ["geoip:ru", *PRIVATE_IP_CIDRS]
+    # Do NOT use geoip:ru in DirectIp — Happ expands RU IPs and sends relay endpoints
+    # (RU-hosted) via outbound/direct instead of VLESS proxy outbounds (CLIENT-STABILITY).
+    direct_ip = build_safe_direct_ip()
 
     base = json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
     base["DirectSites"] = direct_sites
@@ -73,6 +78,7 @@ def build_profile(*, use_bundled_geofiles: bool = True) -> dict:
     else:
         base["Geoipurl"] = GEOIP_LOYAL
         base["Geositeurl"] = GEOSITE_LOYAL
+    assert_happ_routing_directip_safe(base)
     return base
 
 

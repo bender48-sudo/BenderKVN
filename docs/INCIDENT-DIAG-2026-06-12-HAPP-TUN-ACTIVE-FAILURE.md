@@ -205,26 +205,76 @@ ERROR connection upload closed: ... forcibly closed by the remote host
 | **1 — Client workaround now** | Routing OFF test + alt client smoke | **No** |
 | **2 — Repo fix** | This doc + `ops/analyze_happ_report_tun.py` | **No** |
 | **3 — Infra read-only** | Relay #1/#2 access log audit for UTC window | **No** |
-| **4 — Controlled experiment** | Fix `BenderVPN RU` directIp (remove relay server IPs); owner-only validate | **Requires approval** — routing asset change |
+| **4 — Controlled experiment** | ~~Fix directIp~~ → **DONE repo:** remove `geoip:ru` from Happ DirectIp; owner refresh + retest | **Requires approval** for `patch_happ_routing.py --apply` |
 
-**Product fix candidate (approval required):** Audit Happ routing profile **`BenderVPN RU`** — **remove relay endpoint /32 entries from `directIp`**; keep private RFC1918 ranges only. Re-test TUN + routing ON.
+**Product fix (repo — CLIENT-STABILITY-ROUTING-DIRECTIP-FIX-001):** Remove **`geoip:ru`** from Happ routing profile **`DirectIp`**. Root cause: Happ expands `geoip:ru` to RU IPs at runtime, including **relay #1/#2** (RU-hosted) → `outbound/direct` to relay endpoints. RU bypass stays on **`DirectSites`** (regexp `.ru` + EXTRA FQDN). Guard: `ops/happ_routing_directip_guard.py`.
 
 ---
 
-## 11. Tooling
+## 11. Fix applied (repo) + owner retest
+
+### Root cause location
+
+| Layer | Source | Issue |
+|-------|--------|-------|
+| Happ routing profile | `ops/generate_happ_routing_link.py` → `DirectIp` | **`geoip:ru`** listed alongside private CIDRs |
+| Runtime on Windows | Happ resolves `geoip:ru` → flat `/32` list in `routing.json` | Relay + infra IPs classified **direct** |
+| Not subscription template | `templateJson.routing` `geoip:ru` rule | Separate layer — unchanged by this fix |
+
+### Repo changes
+
+- `DirectIp` = **private CIDRs only** (`build_safe_direct_ip()`)
+- `ops/happ_routing_directip_guard.py` — fails if `geoip:ru`, relay/LV/NL infra IPs, or missing ProxySites/DirectSites
+- `python ops/happ_routing_directip_guard.py` — CI/owner check
+
+### Owner retest (after routing profile refresh)
+
+1. Regenerate profile locally: `python ops/generate_happ_routing_link.py --write-json`
+2. Import on Windows (pick one):
+   - `python ops/generate_happ_routing_link.py --open` (happ:// deeplink), or
+   - Happ → Routing → re-import **BenderVPN RU**
+3. **Re-enable** `BenderVPN RU` routing (`useRouting=true`) — opposite of routing-OFF workaround.
+4. Connect **TUN** → BenderVPN Auto.
+5. **5–10 min site matrix:** google.com, mail.google.com, Telegram, ya.ru, vk.com, IP check.
+6. **Pass:** sites work; `tun_log` shows **`outbound/proxy`** (not only `outbound/direct` to relay IPs); ERROR rate near zero.
+7. **Fail:** export `report.zip` privately; run `python ops/analyze_happ_report_tun.py report.zip`.
+
+Compare with **routing-OFF** baseline from prior capture.
+
+### Production delivery (requires explicit approval — not done in this task)
+
+Push updated `happRouting` deeplink to subscription settings:
+
+```bash
+python ops/patch_happ_routing.py          # dry-run
+python ops/patch_happ_routing.py --apply  # after owner approves
+```
+
+Until then, owner can use local `--open` deeplink only.
+
+**Desktop remains commercial blocker until owner retest passes with routing ON.**
+
+**Proxy mode (Track B)** remains separate — this fix does not address Proxy mode.
+
+---
+
+## 12. Tooling
 
 ```bash
 python ops/analyze_happ_report_tun.py ~/Downloads/report.zip
 python ops/analyze_happ_report_tun.py ~/Downloads/report.zip --json
+python ops/happ_routing_directip_guard.py
+python ops/generate_happ_routing_link.py --write-json
 ```
 
 Redacts secrets; reports TUN lifecycle, error storm, `directIp` overlap, track hints.
 
 ---
 
-## 12. References
+## 13. References
 
+- Guard: `ops/happ_routing_directip_guard.py`
+- Generator: `ops/generate_happ_routing_link.py`
 - Parser: `ops/analyze_happ_report_tun.py`
-- Proxy capture (separate): `ops/analyze_happ_report_proxy.py`, `docs/CLIENT-SMOKE-002-PROXY-CAPTURE.md`
 - Resume helper: `ops/diagnose_windows_vpn_resume.ps1`
 - Backlog: CLIENT-STABILITY-001, CLIENT-SMOKE-001..003, VPN-ARCH-001

@@ -9,7 +9,7 @@
   "DomesticDNSIP": "8.8.8.8",
   "Geoipurl": "",
   "Geositeurl": "",
-  "LastUpdated": "1780417969",
+  "LastUpdated": "1781213583",
   "DnsHosts": {
     "cloudflare-dns.com": "1.1.1.1",
     "dns.google": "8.8.8.8"
@@ -81,7 +81,6 @@
     "domain:pochta.com"
   ],
   "DirectIp": [
-    "geoip:ru",
     "10.0.0.0/8",
     "172.16.0.0/12",
     "192.168.0.0/16",
