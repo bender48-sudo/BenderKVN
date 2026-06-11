@@ -93,7 +93,7 @@
 | **MONITOR-FLAP-001** | **DONE (repo)** | Selfsteal anti-flap — deploy LV pending |
 | **OPS-ALERT-HYGIENE-001** | **DONE (repo)** | Cert digest + alert tiers — deploy LV pending |
 | **ACQ-*** / **REF-*** | OPEN | См. MASTER; не дублировать OPS-CAPACITY-300 / NODE-RELAY-ADD |
-| **VPN-ARCH-001** | AWAITING APPROVAL | **PROOF-001 DONE** (2026-06-11): NL not normal Auto capacity; owner A/B/C/D; ≥2 delivery-path nodes before growth |
+| **VPN-ARCH-001** | AWAITING APPROVAL | **QUALITY-PROOF-001 DONE**: NL pre-qualified; A2/A4 smoke after soak; not active capacity |
 | **VPN-NODE-RUNBOOK-001** | OPEN | Fast node+relay bring-up template (BACKLOG-CAPACITY-NODES-001) |
 
 ---

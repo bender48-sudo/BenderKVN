@@ -115,7 +115,7 @@ See [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORT
 | Requirement | IDs / evidence |
 |-------------|----------------|
 | Two verified production-capable surfaces on the **customer path** | **≥2 geographic VPN exits** in generated profiles/routing (not relay-only×6 to single LV); NL if revalidated, or new node per **VPN-NODE-RUNBOOK-001** |
-| NL participation decision | **VPN-ARCH-001** owner AC — see below; **VPN-ARCH-001-NL-AUTOHOST-PROOF-001 DONE** (2026-06-11); historical **VPN-AUD-220 DONE** (2026-06-03) and **Q167–Q171** failover DONE are **not** live proof of normal Auto capacity |
+| NL participation decision | **VPN-ARCH-001** owner AC — see below; **PROOF-001** + **QUALITY-PROOF-001 DONE** (2026-06-11); historical **VPN-AUD-220** / **Q167–Q171** are **not** live proof of normal Auto capacity |
 | Repeatable fast scale template | **VPN-NODE-RUNBOOK-001** OPEN — gaps vs `deploy-node.sh` / `THIRD-PROD-NODE-ONBOARDING.md` |
 | Alert hygiene before infra decisions | **MONITOR-FLAP-001**, **OPS-ALERT-HYGIENE-001** |
 | Infra queue (closed phases) | **Q167–Q171** node resilience DONE; **Q120** second RU relay DONE — do not reopen as new relay-add IDs |
@@ -134,7 +134,40 @@ See [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORT
 | Amsterdam-01 | **Disconnected/disabled** — panel/sub-page; not prod VPN capacity |
 | Classification | Normal Auto/new users: **D** (documented/backup, not participating); LV-down emergency: **C** (manual/cron PATCH) |
 
-**Failover-ready or paid/connected does not equal active customer capacity.** Acquisition/referral growth and **300 active configs/devices** remain blocked until owner decision below and acceptance gates pass.
+**VPN-ARCH-001-NL-QUALITY-PROOF-001 — DONE (read-only, 2026-06-11):**
+
+| Finding | Evidence |
+|---------|----------|
+| NL still **not** active delivery capacity | `usersOnline=0`; ACTIVE subs **NL outbounds=0**; live `injectHosts` **NL=0** — billable/maintained, unused for normal Auto |
+| RU reachability (customer-relevant path) | **`nl_reachability_probe_ru.py` PASS from bvpn-lv** — relay#1→NL ~60.5 ms, relay#2→NL ~54.8 ms (gate 120 ms) |
+| NL infra health | remnanode + caddy-selfsteal up; low load; **BBR/fq**; ru-monitor NL TLS alive |
+| A2/A4 tooling feasible | **`patch_add_nl_intl_gated.py`** — NL direct ×4 in **`Intl_Direct` only**; **`Intl_Stealth`** stays relay-only; no observatory; no blind **VPN-AUD-220** restore |
+| Pre-qualified, not prod-ready | **No** end-to-end Happ/VLESS through NL direct yet; **MONITOR-FLAP-001** 24h soak **pending** at proof time |
+| Tooling caveat | **`nl_node_health_probe`** may report **FAIL** pre-inclusion because it expects **`injectHosts` NL ≥4** — precondition mismatch, **not** a node-quality rejection before A2/A4 smoke |
+
+**Failover-ready or paid/connected does not equal active customer capacity.** NL **does not count** toward **`delivery_path_nodes`** until included in generated profiles/routing, **controlled smoke passes**, post-inclusion audit shows ACTIVE users with NL path, and owner accepts NL as active capacity. Acquisition/referral growth and **300 active configs/devices** remain **blocked**.
+
+**Owner path after proof (recommended, not decided):**
+
+| Option | Guidance |
+|--------|----------|
+| **Preferred** | Continue toward **A2/A4 controlled smoke** after **MONITOR-FLAP-001** 24h soak PASS + owner explicit approval — **not** blind prod PATCH |
+| **Interim B** | Failover-only acceptable **short-term** while soak completes; **does not** satisfy growth/300 gate |
+| **Not now C** | Do **not** decommission — NL healthy; backup edge + failover value |
+| **Not now D** | Pivot to another node **only** if controlled smoke fails or owner rejects NL |
+
+**Controlled smoke gates (before any `--apply` / prod template mutation):**
+
+1. **MONITOR-FLAP-001** — 24h soak **PASS** (owner TG/log sign-off)
+2. **Owner explicit approval** for **A2/A4** smoke (Option A)
+3. Template **snapshot / rollback** ready (`.secrets/snapshots/template-before-nl-intl-*.json`; **`patch_restore_6relay_stealth.py`** rollback path)
+4. **`patch_add_nl_intl_gated.py` dry-run** from **bvpn-lv** (RU probe requires relay SSH keys on LV)
+5. **Limited cohort:** owner + **1–3 internal/mobile** users only — **CLIENT-STABILITY-001** desktop **out of scope** for first cohort
+6. Post-`--apply` verify: **`verify_vpn_balancer_profile`**, **`probe_subscription`**, **`probe_routing`**
+7. **`transport_mux_audit`** — NL **> 0** for smoke cohort (not yet global)
+8. **Happ mobile** import/connect smoke; confirm **TG/IG/Meta still relay-only** via **`Intl_Stealth`**
+9. **Rollback path confirmed** before broadening traffic
+10. User impact plan: **`subscription_config_notify`**, generation bump comms
 
 **Owner decision required (pick one path before any prod routing/template mutation):**
 
@@ -147,25 +180,14 @@ See [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORT
 
 Questions: Should NL return to active Auto routing? Stay failover-only? Be decommissioned/replaced? Should a third prod node be added before NL re-entry?
 
-**Required acceptance before prod routing/template mutation (all must pass):**
-
-1. **MONITOR-FLAP-001** — 24h soak on LV (post-deploy)
-2. Read-only node quality checks (`capacity_snapshot`, panel nodes/hosts)
-3. NL reachability / RU services check (`nl_reachability_probe_ru.py`, `ru-monitor`)
-4. Latency / throughput / stability check (controlled, not blind traffic flood)
-5. Controlled smoke (`verify_vpn_balancer_profile`, `probe_subscription`, `transport_mux_audit`)
-6. **Owner approval** (explicit option A/B/C/D)
-7. Rollback plan (`RUNBOOK-LV-DOWN-NL-FAILOVER.md`, template snapshot)
-8. User impact plan (`subscription_config_notify`, generation bump comms)
-9. **CLIENT-STABILITY-001** if NL re-entry affects Windows Happ quality
-
 **Remaining VPN-ARCH-001 AC (post-proof):**
 
 1. ~~Read-only: does NL appear in auto host / generated subs / injectHosts?~~ → **No (PROOF-001)**
-2. Owner picks A/B/C/D (this backlog item stays **AWAITING APPROVAL** until decided)
-3. If candidate for production (A or D): execute acceptance gates above — **controlled traffic only**
-4. Soak before production-ready; if unstable/poor quality → **replace location/provider**, do not force NL into routing
-5. Do **not** blindly re-enable NL from **VPN-AUD-220** verify alone
+2. ~~Read-only: NL RU reachability + infra quality?~~ → **Pre-qualified (QUALITY-PROOF-001)**; controlled smoke still required
+3. **MONITOR-FLAP-001** 24h soak PASS → owner authorizes **A2/A4 controlled smoke**
+4. Owner picks A/B/C/D for long-term (stays **AWAITING APPROVAL** until smoke + decision)
+5. If smoke PASS: post-inclusion audit; NL counts toward **`delivery_path_nodes`** only then
+6. If smoke FAIL: pivot **D** or keep **B** — do **not** force NL; do **not** blindly restore **VPN-AUD-220**
 
 **VPN-NODE-RUNBOOK-001 — fast node + relay bring-up (not Q120 / VPN-AUD-201):**
 
@@ -184,7 +206,7 @@ Historical **Q120** / **VPN-AUD-201** = second RU relay delivered once. **VPN-NO
 
 **300 active configs/devices — capacity acceptance checklist (ACQ-TRIAL-CAP-001 / ACQ-SLOTS-001):**
 
-- Active configs/devices forecast vs **≥2** delivery-path nodes/relays
+- Active configs/devices forecast vs **≥2** **verified** delivery-path nodes (NL counts **only after** controlled smoke + post-inclusion audit)
 - CPU/RAM/network headroom per node
 - Latency/throughput + packet loss / reconnect rate
 - Selfsteal/Caddy stability (post **MONITOR-FLAP-001**)
@@ -380,7 +402,7 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 | ID | Sev | Area | Title | Problem | Decision | Phase | Impact | Evidence | Files/modules | Acceptance | Checks | Deploy? | Owner? | Blocked by | Status |
 |----|-----|------|-------|---------|----------|-------|--------|----------|---------------|------------|--------|---------|--------|------------|--------|
 | VPN-REL-001 | P0 | VPN reliability | Unstable reconnect loop diagnostic | Users report disconnect/reconnect | N/A | **Now** | Core product value | `AUDIT-2026-06-09-VPN-RELIABILITY.md` | ops probes, panel, Happ | RC-1 relay2-only SPOF; RC-2 random balancer | AUDIT-001 done | No | **Yes** for patch | Owner picks profile target | **AUDIT DONE** |
-| VPN-ARCH-001 | P1 | VPN architecture | Full VPN architecture audit + NL revalidation AC | NL not in normal Auto path; relay-only×6 → single LV exit (PROOF-001 2026-06-11) | N/A | **Now** | Growth blocked until ≥2 delivery-path nodes + owner A/B/C/D | **PROOF-001 DONE**; Candidate D live; **VPN-AUD-220** / Q167–Q171 historical only | ops/, panel | Owner decision A/B/C/D; acceptance gates before PATCH; ≥2 path surfaces | `probe_subscription.py`; gate §1 | No | **Yes** global | VPN-REL-001; MONITOR-FLAP-001 | **AWAITING APPROVAL** |
+| VPN-ARCH-001 | P1 | VPN architecture | Full VPN architecture audit + NL revalidation AC | NL not active; pre-qualified for A2/A4 smoke after soak (PROOF-001 + QUALITY-PROOF-001) | N/A | **Now** | Growth blocked until ≥2 verified delivery-path nodes | **QUALITY-PROOF-001 DONE**; soak + controlled smoke pending | ops/, panel | A2/A4 smoke gates; owner approval; ≥2 path surfaces post-inclusion | `nl_reachability_probe_ru.py`; gate §1 | No | **Yes** global | VPN-REL-001; MONITOR-FLAP-001 | **AWAITING APPROVAL** |
 | VPN-NODE-RUNBOOK-001 | P1 | VPN architecture / ops | Fast node + relay bring-up template | `deploy-node.sh` + partial docs exist; no unified gradual-traffic + soak + rollback template | N/A | **Now** | Fast scale on user influx | `deploy-node.sh`, `DEPLOY.md`, `NODE-POLICY-LV-NL.md`, `THIRD-PROD-NODE-ONBOARDING.md` | docs runbook | Repeatable checklist: provider/IP/DNS/SNI/Caddy/selfsteal/Remna/monitoring/smoke/soak/routing inclusion/rollback/decommission | owner review | No | **Yes** | VPN-ARCH-001; MONITOR-FLAP-001 | **OPEN** |
 | VPN-STAB-005 | P2 | VPN reliability | xhttp Happ batch risk (historical) | xhttp causes «0 servers» in Happ | Partially done | — | Happ UX | `AUDIT-2026-05-VPN-STABILITY-RESOLUTION` | sub-page, template | batch_risk=LOW on Happ UA | diagnose_happ_import | Yes | No | — | **DONE** |
 | VPN-INC-001 | P1 | VPN reliability | Incident guardrails enforcement | Repeat PATCH without probe caused gen 13→20 outages | N/A | ongoing | Prod stability | `VPN-INCIDENT-LESSONS` | ops patches | One PATCH → probe → smoke | verify gate | No | **Yes** | — | OPEN |

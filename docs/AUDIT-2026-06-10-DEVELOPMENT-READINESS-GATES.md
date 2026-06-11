@@ -184,7 +184,7 @@ G5  Public/partner scale
 
 ## 6. G4 — Scale gates (before invite push / 300 configs)
 
-**BACKLOG-CAPACITY-NODES-001:** Before acquisition/referral growth or **G4-A**, **≥2 production-capable nodes** must participate in the **actual customer delivery path** (auto host / generated subscriptions / routing). **NL is not in the normal Bender Auto customer path as of 2026-06-11** (**VPN-ARCH-001-NL-AUTOHOST-PROOF-001**). Commercial growth **cannot count NL as active capacity** until re-included and verified. One Latvia exit (relay-only×6) is not acceptable. **VPN-ARCH-001** (owner A/B/C/D), **VPN-NODE-RUNBOOK-001**, **MONITOR-FLAP-001** + **OPS-ALERT-HYGIENE-001**. See MASTER §Node capacity.
+**BACKLOG-CAPACITY-NODES-001:** Before acquisition/referral growth or **G4-A**, **≥2 production-capable nodes** must participate in the **verified customer delivery path**. **NL is not active capacity** (PROOF-001); **pre-qualified for A2/A4 controlled smoke** after **MONITOR-FLAP-001** soak (QUALITY-PROOF-001). NL counts toward **`delivery_path_nodes` only after** inclusion in generated profiles, smoke PASS, post-inclusion audit, owner acceptance. One Latvia exit (relay-only×6) is not acceptable. **VPN-ARCH-001**, **VPN-NODE-RUNBOOK-001**, **MONITOR-FLAP-001** + **OPS-ALERT-HYGIENE-001**. See MASTER §Node capacity.
 
 | Gate | Trigger | Deliverable |
 |------|---------|-------------|

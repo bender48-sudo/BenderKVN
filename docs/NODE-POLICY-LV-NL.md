@@ -1,6 +1,6 @@
 # Политика нод Latvia + Netherlands (P6-SCALE-02)
 
-> **Live vs policy (2026-06-11):** **`VPN-ARCH-001-NL-AUTOHOST-PROOF-001`** подтвердил: штатный Bender Auto = **Candidate D relay-only×6** (relay#1×3 + relay#2×3); **NL и LV direct не в `injectHosts`**; effective exit — **LV** за relay. Разделы ниже про **LV+NL в injectHosts** — **целевая политика**, не текущий прод. **VPN-AUD-220** и **Q167–Q171** — история / failover, не доказательство активной ёмкости NL. Решение владельца: **VPN-ARCH-001** (A re-include NL / B failover-only / C decom / D другая prod-нода).
+> **Live vs policy (2026-06-11):** **`VPN-ARCH-001-NL-AUTOHOST-PROOF-001`** + **`VPN-ARCH-001-NL-QUALITY-PROOF-001`**: штатный Auto = **Candidate D relay-only×6**; **NL не active delivery** (`usersOnline=0`, subs NL=0, inject NL=0). NL **pre-qualified** для **A2/A4 controlled smoke** после **MONITOR-FLAP-001** soak (RU relay→NL TCP PASS с LV; infra OK). **`nl_node_health_probe` FAIL** до inclusion — ожидаемо (ждёт inject NL≥4), не отказ по качеству. Следующий шаг: **controlled smoke**, не blind PATCH и не decom. **VPN-AUD-220** / **Q167–Q171** — история / failover. **VPN-ARCH-001**: preferred **A2/A4** after soak; interim **B** OK; **C/D** not now unless smoke fails.
 
 ## Роли нод (целевая политика)
 
@@ -10,7 +10,7 @@
 | **NL** | Production VPN (целевое) | Alt transport; warm spare / leastLoad — **сейчас failover-only, не в Auto sub** |
 | **AMS** | Панель + sub-page | **`remnanode` decom** — не в расчёте prod-ёмкости |
 
-**Live (2026-06-11):** NL **connected**, hosts в панели, **не** в live `injectHosts`; NL = manual/cron failover + backup sub edge, **не** active delivery capacity.
+**Live (2026-06-11):** NL **connected**, billable, **не** в live `injectHosts`; **не** active delivery capacity. **QUALITY-PROOF-001:** RU reachability + infra OK → **A2/A4 smoke** after soak, not decom.
 
 Клиентский **leastLoad** в Happ распределяет сессии между outbounds в подписке; **при целевой политике** обе prod-ноды должны быть в **`injectHosts`** шаблона. **Сейчас** в inject только relay×6.
 
@@ -18,7 +18,7 @@
 
 Ориентир совпадает с **`balancer.sh`** и **`ops/capacity_snapshot.py`**.
 
-**Учёт ёмкости:** считать только ноды, **участвующие в generated profiles/routing** и прошедшие quality/soak gates. **Не считать:** paid/connected NL без outbounds в подписке; backup edge; failover-only без PATCH.
+**Учёт ёмкости:** считать только ноды в **generated profiles/routing** после **controlled smoke** и post-inclusion audit. **NL сейчас = 0** в `delivery_path_nodes`. **Не считать:** paid/connected NL без outbounds в подписке; backup edge; failover-only; pre-smoke pre-qualification (**QUALITY-PROOF-001**).
 
 | Параметр | Значение |
 |----------|----------|

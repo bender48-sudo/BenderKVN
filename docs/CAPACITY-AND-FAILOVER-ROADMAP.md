@@ -2,7 +2,7 @@
 
 **Связано:** `docs/NODE-POLICY-LV-NL.md`, `docs/COMMERCIAL-BACKLOG.md` §10.1, `docs/RUNBOOK-LV-DOWN-NL-FAILOVER.md`.
 
-> **Live baseline (2026-06-11, PROOF-001):** штатный Bender Auto = **Candidate D relay-only×6**; **NL не в injectHosts**; effective VPN exit = **LV** за relay. Разделы ниже с «NL direct в inject» / «Intl relay+NL» описывают **исторический или целевой** профиль (**VPN-AUD-220**), не текущий прод. **Q167–Q171** = failover/backup edge, не active capacity.
+> **Live baseline (2026-06-11, PROOF-001 + QUALITY-PROOF-001):** штатный Auto = **Candidate D relay-only×6**; **NL не active delivery**; RU relay→NL TCP PASS с LV; **A2/A4** (`patch_add_nl_intl_gated.py`) feasible after **MONITOR-FLAP** soak + controlled smoke. Historical **VPN-AUD-220** / **Q167–Q171** — не текущий prod.
 
 ---
 
@@ -47,14 +47,14 @@
 
 ## NL как полноценная нода
 
-| Сейчас (PROOF-001, 2026-06-11) | Следующие шаги (**VPN-ARCH-001** owner A/B/C/D) |
+| Сейчас (PROOF-001 + QUALITY-PROOF-001, 2026-06-11) | Следующие шаги (**VPN-ARCH-001**) |
 |--------|----------------------------------|
-| **NL не в injectHosts**; connected; failover-only + backup edge | **A:** re-include NL после acceptance gates; **B:** keep failover-only; **C:** decom; **D:** 3-я prod-нода (**VPN-NODE-RUNBOOK-001**) |
-| Stealth: TG только relay (live) | **Не** NL в TG без A/B |
-| Relay-only×6 → single LV exit | Relay→NL :443 PoC (**VPN-AUD-275**) только после owner decision |
-| Historical: NL direct :443×4 (**VPN-AUD-220**) | **Не** считать historical DONE live proof |
+| **NL не active delivery**; connected; failover + backup edge; **pre-qualified** for A2/A4 | **Preferred:** A2/A4 **controlled smoke** after soak — **`patch_add_nl_intl_gated.py`**; **not** blind PATCH |
+| RU relay→NL ~55–61 ms TCP (LV probe) | **Interim B** OK short-term; **not C** (healthy); **not D** unless smoke fails |
+| Stealth: TG только relay (live) | Intl_Stealth остаётся relay-only; NL только Intl_Direct |
+| Relay-only×6 → single LV exit | NL в capacity math **только после** smoke + post-inclusion audit |
 
-Acceptance gates before prod PATCH: см. **`BENDERVPN-MASTER-BACKLOG.md`** §VPN-ARCH-001 (**MONITOR-FLAP-001** 24h soak, probes, owner approval, rollback).
+Controlled smoke gates: **`BENDERVPN-MASTER-BACKLOG.md`** §VPN-ARCH-001 (**MONITOR-FLAP-001** 24h soak, owner approval, mobile cohort, rollback).
 
 ---
 
