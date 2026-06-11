@@ -85,7 +85,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | [`INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md`](INCIDENT-2026-06-10-VPN-LAPTOP-SLEEP-RESUME.md) | INCIDENT-003 |
 | [`INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md`](INCIDENT-2026-06-10-VPN-BROWSER-LONG-SESSION-DROPS.md) | INCIDENT-004 |
 | [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) | INCIDENT-DIAG-003-004 — Happ report analysis |
-| [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md) | CLIENT-STABILITY-001 — Track A/B split, runbook, smokes |
+| [`INCIDENT-DIAG-2026-06-12-HAPP-TUN-ACTIVE-FAILURE.md`](INCIDENT-DIAG-2026-06-12-HAPP-TUN-ACTIVE-FAILURE.md) | CLIENT-STABILITY-ACTIVE-FAILURE — TUN up + relay directIp error storm; owner mitigation |
 | [`AUDIT-2026-06-10-VPN-CLIENT-APP-COMPATIBILITY.md`](AUDIT-2026-06-10-VPN-CLIENT-APP-COMPATIBILITY.md) | Client matrix |
 | [`AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md`](AUDIT-2026-06-10-TELEGRAM-ACCESS-SCENARIOS.md) | S1–S8 flows |
 | [`AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md`](AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md) | TG bind |
@@ -165,7 +165,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 
 | Gate | Area | Status | Evidence | Soft blocker? | Paid blocker? | Open blocker? | Required action | Owner decision |
 |------|------|--------|----------|---------------|---------------|---------------|-----------------|----------------|
-| **G1** | VPN stability / Happ / sleep-resume / browser SaaS / **CLIENT-STABILITY** | **PARTIAL** | Candidate D active; INCIDENT-002 interim stable; INCIDENT-003 sleep OPEN (Track A TUN daemon); **Track B** Bender Proxy fails vs other VPN Proxy; INCIDENT-004 browser SaaS OPEN | Desktop + SaaS work = **yes** | **Yes** if desktop sold | **Yes** | CLIENT-SMOKE-001..003; INCIDENT-003 AFTER-BROKEN; INCIDENT-004 SaaS soak | Waive desktop/SaaS support? |
+| **G1** | VPN stability / Happ / sleep-resume / browser SaaS / **CLIENT-STABILITY** | **PARTIAL** | Candidate D active; INCIDENT-003 sleep OPEN (Track A); **2026-06-12** active TUN failure — routing `directIp` sends relay IPs to `outbound/direct` (Track D/H); Track B Proxy OPEN | Desktop + SaaS work = **yes** | **Yes** if desktop sold | **Yes** | CLIENT-SMOKE-001..003; owner routing-OFF test; INCIDENT-DIAG-2026-06-12 | Waive desktop/SaaS support? |
 | **G2** | Client app compatibility | **PARTIAL** | Happ/Hiddify/Streisand = Auto-equivalent; Karing/Clash/v2rayN stripped | Non-Happ clients | Non-Happ for paid | Non-Happ at scale | Happ primary; Hiddify diagnostic only; freeze Karing | Hiddify as official fallback? |
 | **G3** | Telegram registration / 90d | **DONE** | Code + policy PT-01; trial provision path | No | No | No | Keep monitoring trial abuse | — |
 | **G4** | Web/email fallback / TG bind | **BLOCKED** | Web 1d trial works; **TG bind FAIL** (`funnel_bot_start bind:*` = 0) | **Yes** if email growth pushed | **Yes** | **Yes** | Retest bind per TELEGRAM-BIND-FLOW §9; or disable email path in campaigns | Waive bind or fix first? |
