@@ -262,7 +262,77 @@ python ops/patch_happ_routing.py --apply           # prod subscription-settings.
 
 ---
 
-## 12. Tooling
+## 14. Prod apply smoke failure — report(3) (CLIENT-STABILITY-PROD-SMOKE-FAIL-003)
+
+**Date:** 2026-06-12 · **Decision:** **Do NOT rollback** fixed prod `happRouting` (would reintroduce `geoip:ru` in Happ DirectIp).
+
+### Fixed prod routing confirmed (report export)
+
+| Check | Result |
+|-------|--------|
+| Routing profile | **BenderVPN RU** |
+| `directIp` count | **6** (private CIDRs only) |
+| `geoip:ru` | **Absent** |
+| Relay IP overlap | **0** (`relay_in_direct_ip=false`) |
+| TUN / system proxy | **TUN=true**, **systemProxy=false** |
+| Core profile | BenderVPN Auto — Candidate D OK (6 proxy, Intl_Direct/Intl_Stealth) |
+| In-core relay → `direct` rules | **Present** (expected anti-loop; **not** the Happ DirectIp leak) |
+
+### Session timeline (local +0300, cumulative report)
+
+| Time | Event |
+|------|-------|
+| 00:12–00:19 | Pre-fix storm — old routing still active; **2565 dial/open via `outbound/direct`** |
+| 00:47 | Owner imports fixed routing via local deeplink (`generate_happ_routing_link.py`) |
+| 00:47:50 | TUN connect **1224ms** — owner **local PASS** window |
+| ~01:03 | Prod `patch_happ_routing.py --apply` (server-side; not in zip) |
+| 01:05:28 | Subscription refresh saved; routing geo files re-downloaded briefly |
+| 01:05:41 | Post-apply TUN connect **945ms** (still fast in app log) |
+
+### Error class shift (why local PASS ≠ prod smoke feel)
+
+| Window | dial/open (DirectIp leak) | download closed (long conn) |
+|--------|---------------------------|-------------------------------|
+| Pre-fix 00:12–00:20 | **2565** | 1162 |
+| Local deeplink 00:47–01:03 | **3** | **1272** |
+| Post-prod 01:03–01:08 | **5** | **619** |
+
+**Interpretation:** Fixed Happ DirectIp **eliminated the dial/open storm**. Remaining errors are **established-connection resets** (~19s bursts), consistent with heavy Google Docs/Gmail load under Happ TUN — **not** evidence that fixed routing regressed.
+
+### Ranked hypotheses (local PASS vs prod subjective FAIL)
+
+1. **Test depth / workload (most likely)** — local retest was short and light; prod smoke hit Google Docs long-polling/WebSocket → download-closed storm while basic sites felt fine.
+2. **Cumulative session residue (likely)** — single Happ process from 00:12; pre-fix error storm + mid-session routing/subscription refresh; full quit clears state better than in-place refresh.
+3. **Different failure class masked as “same bug” (confirmed in logs)** — owner felt “magic” after fix because dial timeouts stopped; Docs slowness is **residual Track E/H**, not DirectIp leak.
+4. **Post-apply geo re-download race (possible, low)** — 01:05:30 routing geo downloading; connect at 01:05:40 after completion — minor, not primary.
+5. **Relay #1-specific (weak post-fix)** — pre-fix relay #1 ~55% dial timeouts; post-fix almost no dial errors; resets not relay-tagged in logs.
+6. **Server outage (unlikely)** — LV monitor normal 22:05–22:15 UTC; relay journals empty/inconclusive.
+
+### Core relay direct rule — do not remove blindly
+
+| Question | Answer |
+|----------|--------|
+| Why proxy endpoints need direct egress? | Xray must open TCP to relay VLESS endpoints on the **physical** path; sending relay IP via `proxy` outbound causes **routing loops**. |
+| If removed? | Risk of loop, failed handshakes, or TUN capture of proxy-to-proxy traffic. |
+| vs Happ DirectIp leak? | **Different layer.** Happ `directIp` forced **all** RU IPs (incl. relays) direct at TUN level; in-core rule targets **only** relay endpoint `/32`s inside Xray. |
+
+### Mitigation (ranked)
+
+| Option | Recommend | Notes |
+|--------|-----------|-------|
+| **D — clean session refresh** | **First** | Fully quit Happ → refresh subscription + routing → TUN → 10 min Google Docs/Gmail/Telegram/ipinfo.io |
+| **C — alt client (Karing/v2rayN)** | **Second** | Stable desktop today if D insufficient; not commercial default |
+| **A — relay #2-only owner profile** | Only if D/C fail + new capture shows relay #1 dial bias | Not prod default |
+| **B — no-mux test** | Low priority | Core mux already **off** in JSON |
+| **E — rollback happRouting** | **Do not** | Would restore `geoip:ru` DirectIp leak |
+
+### Tooling update
+
+`ops/analyze_happ_report_tun.py` now flags **`happ_directip_leak_signal`** (dial/open + direct) separately from **`long_connection_reset_signal`** and documents **expected in-core relay direct rules**.
+
+---
+
+## 15. Tooling
 
 ```bash
 python ops/analyze_happ_report_tun.py ~/Downloads/report.zip
@@ -275,7 +345,7 @@ Redacts secrets; reports TUN lifecycle, error storm, `directIp` overlap, track h
 
 ---
 
-## 13. References
+## 16. References
 
 - Guard: `ops/happ_routing_directip_guard.py`
 - Generator: `ops/generate_happ_routing_link.py`

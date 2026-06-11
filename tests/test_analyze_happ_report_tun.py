@@ -12,8 +12,10 @@ if str(_OPS) not in sys.path:
     sys.path.insert(0, str(_OPS))
 
 from analyze_happ_report_tun import (  # noqa: E402
+    analyze_core_relay_direct_rules,
     analyze_profile,
     analyze_report_zip,
+    analyze_tun_log_stream,
     check_direct_ip_overlap,
     redact_text,
 )
@@ -47,6 +49,44 @@ def test_direct_ip_overlap_detected():
     result = check_direct_ip_overlap(cfg, profile)
     assert result["relay_in_direct_ip"] is True
     assert result["overlap_count"] == 1
+    assert result["geoip_ru_in_direct_ip"] is False
+
+
+def test_geoip_ru_flagged_in_direct_ip():
+    cfg = {"outbounds": [{"tag": "proxy", "settings": {"vnext": [{"address": "203.0.113.10"}]}}]}
+    profile = {"directIp": ["geoip:ru", "10.0.0.0/8"]}
+    result = check_direct_ip_overlap(cfg, profile)
+    assert result["geoip_ru_in_direct_ip"] is True
+    assert result["relay_in_direct_ip"] is False
+
+
+def test_core_relay_direct_rules_expected():
+    cfg = {
+        "routing": {
+            "rules": [
+                {"outboundTag": "direct", "ip": ["203.0.113.10/32", "203.0.113.11/32"]},
+                {"outboundTag": "direct", "domain": ["localhost"]},
+            ]
+        }
+    }
+    result = analyze_core_relay_direct_rules(cfg)
+    assert result["core_relay_direct_expected"] is True
+    assert result["core_relay_direct_ip_count"] == 2
+
+
+def test_tun_log_distinguishes_directip_leak_vs_long_resets():
+    leak_log = "\n".join(
+        f"ERROR open connection to 203.0.113.10 using outbound/direct[direct]: dial tcp: i/o timeout"
+        for _ in range(200)
+    )
+    reset_log = "\n".join(
+        f"ERROR connection download closed: raw-read tcp forcibly closed by the remote host" for _ in range(200)
+    )
+    leak_stats = analyze_tun_log_stream(leak_log)
+    reset_stats = analyze_tun_log_stream(reset_log)
+    assert leak_stats["happ_directip_leak_signal"] is True
+    assert reset_stats["long_connection_reset_signal"] is True
+    assert reset_stats["happ_directip_leak_signal"] is False
 
 
 def test_analyze_profile_candidate_d_shape():

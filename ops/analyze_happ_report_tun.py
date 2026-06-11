@@ -153,7 +153,8 @@ def check_direct_ip_overlap(cfg: dict, routing_profile: dict | None) -> dict:
     """Detect relay server IPs listed in Happ routing directIp (Track D signal)."""
     if not routing_profile:
         return {"overlap_count": 0}
-    direct_ips = {item.split("/")[0] for item in routing_profile.get("directIp") or []}
+    direct_ip_raw = routing_profile.get("directIp") or []
+    direct_ips = {item.split("/")[0] for item in direct_ip_raw}
     relay_ips: set[str] = set()
     for ob in cfg.get("outbounds") or []:
         tag = ob.get("tag") or ""
@@ -166,11 +167,32 @@ def check_direct_ip_overlap(cfg: dict, routing_profile: dict | None) -> dict:
         if addr:
             relay_ips.add(addr)
     overlap = relay_ips & direct_ips
+    geoip_ru = any("geoip:ru" in str(item).lower() for item in direct_ip_raw)
     return {
         "direct_ip_count": len(direct_ips),
         "relay_server_ip_count": len(relay_ips),
         "overlap_count": len(overlap),
         "relay_in_direct_ip": bool(overlap),
+        "geoip_ru_in_direct_ip": geoip_ru,
+    }
+
+
+def analyze_core_relay_direct_rules(cfg: dict) -> dict:
+    """In-core Xray routing: relay/proxy server IPs routed to outbound/direct (expected anti-loop)."""
+    relay_endpoint_rules = 0
+    relay_endpoint_ip_count = 0
+    for rule in (cfg.get("routing") or {}).get("rules") or []:
+        if rule.get("outboundTag") != "direct":
+            continue
+        ips = rule.get("ip") or []
+        if not ips:
+            continue
+        relay_endpoint_rules += 1
+        relay_endpoint_ip_count += len(ips)
+    return {
+        "core_relay_direct_rule_count": relay_endpoint_rules,
+        "core_relay_direct_ip_count": relay_endpoint_ip_count,
+        "core_relay_direct_expected": relay_endpoint_rules > 0,
     }
 
 
@@ -182,6 +204,9 @@ def analyze_tun_log_stream(text: str) -> dict:
     err_by_min: Counter[str] = Counter()
     relay1_err = relay2_err = direct_err = docker_err = 0
     outbound_direct_relay = 0
+    dial_open_errors = 0
+    download_closed_errors = 0
+    upload_closed_errors = 0
     time_pat = re.compile(r"(\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}|\d{2}\.\d{2}\s+\d{2}:\d{2}:\d{2})")
     relay1_pat = re.compile(r"relay\s*#?\s*1|Relay[_\s-]*1", re.I)
     relay2_pat = re.compile(r"relay\s*#?\s*2|Relay[_\s-]*2", re.I)
@@ -217,6 +242,15 @@ def analyze_tun_log_stream(text: str) -> dict:
             direct_err += 1
         if re.search(r"outbound/direct.*relay|opening connection.*relay", line, re.I):
             outbound_direct_relay += 1
+        if re.search(r"open connection|dial tcp", ll):
+            dial_open_errors += 1
+        elif "download closed" in ll:
+            download_closed_errors += 1
+        elif "upload closed" in ll:
+            upload_closed_errors += 1
+
+    happ_directip_leak = dial_open_errors > 100 and direct_err > dial_open_errors // 2
+    long_connection_resets = download_closed_errors > 100 and dial_open_errors < 50
 
     return {
         "total_lines": total_lines,
@@ -229,6 +263,11 @@ def analyze_tun_log_stream(text: str) -> dict:
         "direct_errors": direct_err,
         "docker_local_errors": docker_err,
         "outbound_direct_to_relay": outbound_direct_relay,
+        "dial_open_errors": dial_open_errors,
+        "download_closed_errors": download_closed_errors,
+        "upload_closed_errors": upload_closed_errors,
+        "happ_directip_leak_signal": happ_directip_leak,
+        "long_connection_reset_signal": long_connection_resets,
     }
 
 
@@ -247,6 +286,7 @@ class TunAnalysisResult:
     mode: dict
     profile: dict
     routing_overlap: dict
+    core_relay_direct: dict
     tun_lifecycle: dict
     tun_log_stats: dict
     track_signals: dict
@@ -304,6 +344,7 @@ def analyze_report_zip(path: Path) -> TunAnalysisResult:
         pass
     profile = analyze_profile(sel_raw)
     routing_overlap = check_direct_ip_overlap(cfg, routing_profile)
+    core_relay_direct = analyze_core_relay_direct_rules(cfg)
     tun_stats = analyze_tun_log_stream(tun_log)
 
     tun_lifecycle = {
@@ -364,12 +405,37 @@ def analyze_report_zip(path: Path) -> TunAnalysisResult:
     notes: list[str] = []
     if tun_lifecycle["tun_crash"] and not tun_lifecycle["interface_up_ok"]:
         notes.append("Track A: TUN daemon/interface failure pattern")
-    if tun_stats["error_like_lines"] > 500 and tun_lifecycle.get("interface_up_ok"):
+    if tun_stats.get("happ_directip_leak_signal"):
+        notes.append(
+            "Track D: Happ DirectIp leak — dial/open via outbound/direct dominates "
+            "(distinct from expected in-core relay direct rules)"
+        )
+    elif tun_stats.get("long_connection_reset_signal") and tun_lifecycle.get("interface_up_ok"):
+        notes.append(
+            "Track E/H: long-lived connection download/upload resets — not Happ DirectIp dial storm "
+            "(heavy sites e.g. Google Docs may feel slow)"
+        )
+    elif tun_stats["error_like_lines"] > 500 and tun_lifecycle.get("interface_up_ok"):
         notes.append("Track E/H: TUN up but massive connection errors to relays")
+    if core_relay_direct.get("core_relay_direct_expected") and not routing_overlap.get("relay_in_direct_ip"):
+        notes.append(
+            "In-core relay endpoint → direct rules present (expected anti-loop); "
+            "do not remove without lab proof"
+        )
     if tun_stats.get("outbound_direct_to_relay", 0) > 50:
         notes.append("Track H: Xray relay egress via outbound/direct captured by TUN — possible route loop")
-    if routing_overlap.get("relay_in_direct_ip"):
-        notes.append("Track D: relay server IPs in Happ routing directIp — outbound/direct to relays")
+    if routing_overlap.get("relay_in_direct_ip") or routing_overlap.get("geoip_ru_in_direct_ip"):
+        notes.append("Track D: relay server IPs or geoip:ru in Happ routing directIp — outbound/direct to relays")
+    if (
+        tun_stats.get("happ_directip_leak_signal")
+        and not routing_overlap.get("relay_in_direct_ip")
+        and not routing_overlap.get("geoip_ru_in_direct_ip")
+        and tun_stats.get("download_closed_errors", 0) > 500
+    ):
+        notes.append(
+            "Cumulative log likely mixes pre-fix DirectIp leak session with post-fix long-connection resets — "
+            "compare dial_open vs download_closed by time window"
+        )
     if profile.get("import_ok"):
         notes.append("Profile integrity OK — not Track C")
     if local_clues["check_point_adapter"]:
@@ -381,6 +447,7 @@ def analyze_report_zip(path: Path) -> TunAnalysisResult:
         mode=mode,
         profile=profile,
         routing_overlap=routing_overlap,
+        core_relay_direct=core_relay_direct,
         tun_lifecycle=tun_lifecycle,
         tun_log_stats=tun_stats,
         track_signals=track_signals,
@@ -397,6 +464,7 @@ def result_to_dict(r: TunAnalysisResult) -> dict:
         "mode": r.mode,
         "profile": r.profile,
         "routing_overlap": r.routing_overlap,
+        "core_relay_direct": r.core_relay_direct,
         "tun_lifecycle": r.tun_lifecycle,
         "tun_log_stats": r.tun_log_stats,
         "track_signals": r.track_signals,
@@ -412,6 +480,7 @@ def print_human(r: TunAnalysisResult) -> None:
     print(f"mode: {json.dumps(r.mode, ensure_ascii=False)}")
     print(f"profile: {json.dumps(r.profile, ensure_ascii=False)}")
     print(f"routing_overlap: {json.dumps(r.routing_overlap, ensure_ascii=False)}")
+    print(f"core_relay_direct: {json.dumps(r.core_relay_direct, ensure_ascii=False)}")
     print(f"tun_lifecycle: {json.dumps(r.tun_lifecycle, ensure_ascii=False)}")
     print(f"tun_log_stats: {json.dumps(r.tun_log_stats, ensure_ascii=False, indent=2)}")
     print(f"track_signals: {json.dumps(r.track_signals, ensure_ascii=False)}")
