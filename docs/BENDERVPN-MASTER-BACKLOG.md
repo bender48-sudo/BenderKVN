@@ -143,7 +143,7 @@ See [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORT
 | RU reachability (customer-relevant path) | **`nl_reachability_probe_ru.py` PASS from bvpn-lv** — relay#1→NL ~60.5 ms, relay#2→NL ~54.8 ms (gate 120 ms) |
 | NL infra health | remnanode + caddy-selfsteal up; low load; **BBR/fq**; ru-monitor NL TLS alive |
 | A2/A4 tooling feasible | **`patch_add_nl_intl_gated.py`** — NL direct ×4 in **`Intl_Direct` only**; **`Intl_Stealth`** stays relay-only; no observatory; no blind **VPN-AUD-220** restore |
-| Pre-qualified, not prod-ready | **No** end-to-end Happ/VLESS through NL direct yet; **MONITOR-FLAP-001** 24h soak **pending** at proof time |
+| Pre-qualified, not prod-ready | **No** end-to-end Happ/VLESS through NL direct yet; **MONITOR-FLAP-001** soak **PARTIAL** (2026-06-13) — residual `microsoft.com` quorum TG; NL A2/A4 needs owner risk acceptance or tuning first |
 | Tooling caveat | **`nl_node_health_probe`** may report **FAIL** pre-inclusion because it expects **`injectHosts` NL ≥4** — precondition mismatch, **not** a node-quality rejection before A2/A4 smoke |
 
 **Failover-ready or paid/connected does not equal active customer capacity.** NL **does not count** toward **`delivery_path_nodes`** until included in generated profiles/routing, **controlled smoke passes**, post-inclusion audit shows ACTIVE users with NL path, and owner accepts NL as active capacity. Acquisition/referral growth and **300 active configs/devices** remain **blocked**.
@@ -152,14 +152,14 @@ See [`ARCH-2026-06-10-PORTAL-FIRST-ACQUISITION-JOURNEY.md`](ARCH-2026-06-10-PORT
 
 | Option | Guidance |
 |--------|----------|
-| **Preferred** | Continue toward **A2/A4 controlled smoke** after **MONITOR-FLAP-001** 24h soak PASS + owner explicit approval — **not** blind prod PATCH |
+| **Preferred** | Continue toward **A2/A4 controlled smoke** after **MONITOR-FLAP-001** soak **PARTIAL** accepted by owner (or **MONITOR-FLAP-TUNE-001** done) + explicit approval — **not** blind prod PATCH |
 | **Interim B** | Failover-only acceptable **short-term** while soak completes; **does not** satisfy growth/300 gate |
 | **Not now C** | Do **not** decommission — NL healthy; backup edge + failover value |
 | **Not now D** | Pivot to another node **only** if controlled smoke fails or owner rejects NL |
 
 **Controlled smoke gates (before any `--apply` / prod template mutation):**
 
-1. **MONITOR-FLAP-001** — 24h soak **PASS** (owner TG/log sign-off)
+1. **MONITOR-FLAP-001** — soak **PARTIAL** (2026-06-13 LV log review): legacy spam gone; residual `latvia:www.microsoft.com` quorum paging (~17 TG cycles/24h). Owner TG/log sign-off or **MONITOR-FLAP-TUNE-001** before treating alerts as clean SoT
 2. **Owner explicit approval** for **A2/A4** smoke (Option A)
 3. Template **snapshot / rollback** ready (`.secrets/snapshots/template-before-nl-intl-*.json`; **`patch_restore_6relay_stealth.py`** rollback path)
 4. **`patch_add_nl_intl_gated.py` dry-run** from **bvpn-lv** (RU probe requires relay SSH keys on LV)
@@ -244,8 +244,8 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 
 | ID | P | Status | Type | Summary |
 |----|---|--------|------|---------|
-| **MONITOR-FLAP-001** | P1 | **DONE (repo)** | repo (`selfsteal-monitor.py`) | fail_streak/ok_streak/cooldown/quorum + batched TG; tests `ops/test_selfsteal_monitor_antiflap.py` — **deploy LV pending owner** |
-| **OPS-ALERT-HYGIENE-001** | P1 | **DONE (repo)** | alert policy | RU cert digest batched; severity tiers in `docs/MONITORING.md` — **deploy LV pending owner** |
+| **MONITOR-FLAP-001** | P1 | **DEPLOYED LV + soak PARTIAL** | repo + LV (`50a6ac4`) | Anti-flap deployed; legacy CRITICAL spam **eliminated**; residual `microsoft.com` quorum TG (~17/24h). Tuning: **MONITOR-FLAP-TUNE-001** |
+| **OPS-ALERT-HYGIENE-001** | P1 | **DEPLOYED LV + soak PASS** | alert policy | Cert digest batched (6 TG/24h soak); 0 per-target cert spam; cooldown OK — `docs/MONITORING.md` |
 | **Profile integrity alert** | P1 | NOT_STARTED | ops cron | G9 — scheduled probe + TG (see CLOSEOUT TRACK 5) |
 | **Payment callback monitor** | P1 | NOT_STARTED | ops | G9 webhook path |
 | **BILL-MON-001** | P2 | NOT_STARTED | ops | Billing job alert |
@@ -419,8 +419,8 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 |----|-----|------|-------|---------|----------|-------|--------|----------|---------------|------------|--------|---------|--------|------------|--------|
 | SEC-001 | P1 | Security | Full security audit | Last audit May 2025; surface grew | N/A | 2 | Breach prevention | `AUDIT-2026-05-SECURITY*.md` | bot, portal, ops | Report: secrets, auth, rate limits | AUDIT-010 | No | No | — | OPEN |
 | OBS-001 | P2 | Monitoring/observability | Monitoring audit | Status page exists; user-impact detection weak; selfsteal TG noise | N/A | 4 | Incident response | `MONITORING.md`; BACKLOG-SYNC-001 | Gap report + child tasks | AUDIT-012 | No | No | — | OPEN |
-| MONITOR-FLAP-001 | P1 | Monitoring/observability | Selfsteal monitor anti-flap | **DONE repo** — fail_streak/ok_streak/cooldown/quorum/batch; LV deploy pending | N/A | 4 | Alert fatigue | `ops/test_selfsteal_monitor_antiflap.py` | Deploy LV + 24h soak | log review | No | No | OBS-001 | **REPO DONE** |
-| OPS-ALERT-HYGIENE-001 | P1 | Monitoring/observability | Alert hygiene policy | **DONE repo** — cert digest + tiers doc | N/A | 4 | Ops trust at scale | `ops/test_ru_monitor_cert_digest.py` | Deploy LV + soak | log review | No | No | OBS-001, MONITOR-FLAP-001 | **REPO DONE** |
+| MONITOR-FLAP-001 | P1 | Monitoring/observability | Selfsteal monitor anti-flap | **DEPLOYED LV** (`50a6ac4`); soak **PARTIAL** 2026-06-13 — residual microsoft quorum TG | N/A | 4 | Alert fatigue | LV logs 2026-06-11..12 | **MONITOR-FLAP-TUNE-001** | log review | No | No | OBS-001 | **SOAK PARTIAL** |
+| OPS-ALERT-HYGIENE-001 | P1 | Monitoring/observability | Alert hygiene policy | **DEPLOYED LV + soak PASS** — cert digest batched; 0 old cert spam | N/A | 4 | Ops trust at scale | `ops/test_ru_monitor_cert_digest.py` | Deploy LV + soak | log review | No | No | OBS-001, MONITOR-FLAP-001 | **SOAK PASS** |
 | PERF-001 | P3 | Metrics/analytics | Performance/load audit | Portal/bot/web-trial load unknown | N/A | 4 | Scale readiness | — | portal, bot | Approved profile only | AUDIT-013 | No | **Yes** | — | OPEN |
 | OPS-001 | P2 | Ops/deploy/release | Deploy/release safety audit | Dirty tree, stale smokes, rollback | N/A | 2 | Safe releases | `RUNBOOK-AMS-SAFE-DEPLOY` | deploy scripts | Audit report | AUDIT-015 | No | No | — | OPEN |
 

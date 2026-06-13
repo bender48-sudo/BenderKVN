@@ -50,7 +50,7 @@ Commits from **`68e327d` → `0258d00`** (user-accepted scope). Earlier commits 
 
 | Change | Commit | Surface | Notes |
 |--------|--------|---------|-------|
-| Selfsteal anti-flap + cert digest | `50a6ac4` | LV `/opt/scripts/selfsteal-monitor.py`, `ru-monitor.py` | Soak closeout **blocked until after 2026-06-12 15:11 UTC** |
+| Selfsteal anti-flap + cert digest | `50a6ac4` | LV `/opt/scripts/selfsteal-monitor.py`, `ru-monitor.py` | Soak closeout **PARTIAL** 2026-06-13 — see §8 |
 
 ### Not deployed (repo-only at checkpoint)
 
@@ -69,8 +69,8 @@ Commits from **`68e327d` → `0258d00`** (user-accepted scope). Earlier commits 
 
 | Blocker | Status | Unblocks |
 |---------|--------|----------|
-| **MONITOR-FLAP-001** 24h soak | Open until **after 2026-06-12 15:11 UTC** | MONITOR-FLAP-SOAK-CLOSEOUT rerun |
-| **NL A2/A4** controlled smoke | Blocked | Soak PASS + owner explicit approval |
+| **MONITOR-FLAP-001** 24h soak | **PARTIAL** (closeout 2026-06-13) | **MONITOR-FLAP-TUNE-001** or owner risk acceptance for NL A2/A4 |
+| **NL A2/A4** controlled smoke | Blocked | Soak **PARTIAL** — owner explicit approval + optional tuning first |
 | **CLIENT-STABILITY DirectIp fix** | **Owner local retest PASS (2026-06-12)** | Prod `patch_happ_routing.py --apply` after explicit approval |
 | **Prod Happ routing update** | Prepared — see INCIDENT-DIAG-2026-06-12 §11 | Explicit `OWNER APPROVES PROD HAPP ROUTING APPLY NOW` |
 | **Proxy Track B** (CLIENT-SMOKE-002) | Open | Separate capture — Bender Proxy vs control Proxy |
@@ -94,10 +94,11 @@ Commits from **`68e327d` → `0258d00`** (user-accepted scope). Earlier commits 
 
 ## 6. Next-step decision map
 
-### A. After **2026-06-12 15:11 UTC**
+### A. ~~MONITOR-FLAP soak~~ — **CLOSED PARTIAL 2026-06-13**
 
-- Rerun **MONITOR-FLAP-001-SOAK-CLOSEOUT** (LV logs + TG noise check).
-- If PASS → mark **MONITOR-FLAP-001** / **OPS-ALERT-HYGIENE-001** deployed+soaked DONE in backlog (docs-only).
+- See §8 for LV log evidence.
+- **OPS-ALERT-HYGIENE-001:** soak **PASS** (cert digest).
+- **NL A2/A4:** blocked until owner accepts PARTIAL risk or **MONITOR-FLAP-TUNE-001** lands.
 
 ### B. Prod Happ routing apply (when owner approves)
 
@@ -109,9 +110,9 @@ Commits from **`68e327d` → `0258d00`** (user-accepted scope). Earlier commits 
 
 Local deeplink validated; prod deploy still pending.
 
-### D. If MONITOR-FLAP soak **PASS** + owner approval
+### D. NL A2/A4 (after owner accepts PARTIAL soak or tuning)
 
-- Design/apply controlled **NL A2/A4** smoke per [`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md) VPN-ARCH-001.
+- Controlled smoke per [`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md) VPN-ARCH-001 — **not** automatic on soak closeout.
 
 ### E. Proxy Track B (parallel, when practical)
 
@@ -119,9 +120,10 @@ Local deeplink validated; prod deploy still pending.
 
 ### F. Safe next Cursor prompts (copy-paste)
 
-1. `MONITOR-FLAP-001-SOAK-CLOSEOUT — read-only LV log review after 2026-06-12 15:11 UTC`
-2. `CLIENT-STABILITY-ROUTING-DIRECTIP-RETEST-001 — owner Happ TUN retest after stable session ends` (owner action required)
-3. `Push product-referral-cabinet-ui-v1 — 20 commits ahead of origin` (only if owner asks)
+1. ~~`MONITOR-FLAP-001-SOAK-CLOSEOUT`~~ — **DONE PARTIAL 2026-06-13**
+2. `MONITOR-FLAP-TUNE-001 — repo: reduce microsoft CDN quorum paging + github retried log throttle`
+3. `CLIENT-STABILITY-ROUTING-DIRECTIP-RETEST-001 — owner Happ TUN retest after stable session ends` (owner action required)
+4. `Push product-referral-cabinet-ui-v1 — 20 commits ahead of origin` (only if owner asks)
 
 ---
 
@@ -134,7 +136,59 @@ Local deeplink validated; prod deploy still pending.
 
 ---
 
-## 8. Key doc links
+## 8. MONITOR-FLAP-001 soak closeout (2026-06-13)
+
+**Task:** MONITOR-FLAP-001-SOAK-CLOSEOUT · read-only LV log review · no prod mutation
+**Deploy:** `50a6ac4` on LV ~2026-06-11 14:46 UTC · soak start ~15:11 UTC
+**Window reviewed:** 2026-06-11 15:11 UTC → 2026-06-12 15:11 UTC (+ extended to 2026-06-13 16:25 UTC)
+
+### Deploy verification
+
+| Check | Result |
+|-------|--------|
+| `selfsteal-monitor.py` MD5 | `364cac90f5a5c7af0787953d56a6074b` — **match** repo/deploy report |
+| `ru-monitor.py` MD5 | `2046068c4193027cd90ad0cef35e61bb` — **match** |
+| Cron | `*/5` → `/opt/scripts/{selfsteal-monitor,ru-monitor}.py` — **unchanged** |
+| Anti-flap markers on LV | `fail_streak`, `ok_streak`, `cooldown`, `quorum`, cert digest — **present** |
+
+### selfsteal-monitor (soak 24h)
+
+| Metric | Pre-deploy (2026-06-11 before 15:11) | Soak window | Extended (+25h) |
+|--------|----------------------------------------|-------------|-----------------|
+| Legacy `ALERT CRITICAL` | **28** | **0** | **0** |
+| Legacy `ALERT RECOVERED:` | **28** | **0** | — |
+| `ALERT DOWN queued` | — | **17** (all `microsoft.com` quorum) | **+19** |
+| `ALERT RECOVERED queued` | — | **17** | **+19** |
+| Suppressed (cooldown/streak) | — | **81** | — |
+| `api.github.com` warnings (log) | — | **288** | **+302** |
+| Tracebacks | — | **0** | **0** |
+| Non-microsoft DOWN/RECOVERED | — | **0** | — |
+
+**Assessment:** Legacy 5-min CRITICAL/RECOVERED spam **stopped**. Rapid flap loops **gone** (microsoft DOWN gaps ~28–64 min). Residual TG noise: **`latvia:www.microsoft.com`** via `paging: quorum fail` (HTTP 000 when ≥2 SNIs bad). Log-only noise: **`api.github.com retried N times`** every */5 cron (~12/h). No evidence of hidden real outage (12/13 SNIs OK at soak end; baseline RU SNIs never paged).
+
+### ru-monitor (soak 24h)
+
+| Metric | Soak | Extended |
+|--------|------|----------|
+| `ALERT DOWN` / `RECOVERED` | **0** / **0** | **0** |
+| `ALERT CERT DIGEST` | **6** | **+7** |
+| Old per-target `certificate changed` (non-digest) | **0** | **0** |
+| Cert digest cooldown suppressions | **3** | — |
+| Tracebacks / FATAL | **0** | **0** |
+
+**Assessment:** Cert rotation **batched/digested**; per-target cert paging **eliminated**. **PASS.**
+
+### Decision
+
+| ID | Verdict |
+|----|---------|
+| **OPS-ALERT-HYGIENE-001** | **PASS** — deployed + soaked OK |
+| **MONITOR-FLAP-001** | **PARTIAL** — keep deployed; tune **MONITOR-FLAP-TUNE-001** (microsoft CDN quorum + github log throttle) |
+| **NL A2/A4** | **Blocked** — owner risk acceptance on PARTIAL soak required before controlled smoke |
+
+---
+
+## 9. Key doc links
 
 | Topic | Doc |
 |-------|-----|
@@ -147,6 +201,6 @@ Local deeplink validated; prod deploy still pending.
 
 ---
 
-## 9. Repo hygiene reminder
+## 10. Repo hygiene reminder
 
 Working tree is **clean for product code** except one `.cursor/skills/` edit. Large untracked QA/review artifacts are local-only; keep out of commits.

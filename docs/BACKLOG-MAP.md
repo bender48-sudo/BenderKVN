@@ -90,8 +90,8 @@
 | ID | Статус | Комментарий |
 |----|--------|-------------|
 | **QA-OWNER-PREVIEW-FIX-002** | **DONE** repo `8a107ba` | Bot visual preview + cabinet CTA dedup |
-| **MONITOR-FLAP-001** | **DONE (repo)** | Selfsteal anti-flap — deploy LV pending |
-| **OPS-ALERT-HYGIENE-001** | **DONE (repo)** | Cert digest + alert tiers — deploy LV pending |
+| **MONITOR-FLAP-001** | **DEPLOYED LV + soak PARTIAL** | Residual microsoft quorum TG; **MONITOR-FLAP-TUNE-001** or owner risk acceptance |
+| **OPS-ALERT-HYGIENE-001** | **DEPLOYED LV + soak PASS** | Cert digest batched; per-target cert spam stopped |
 | **ACQ-*** / **REF-*** | OPEN | См. MASTER; не дублировать OPS-CAPACITY-300 / NODE-RELAY-ADD |
 | **VPN-ARCH-001** | AWAITING APPROVAL | **QUALITY-PROOF-001 DONE**: NL pre-qualified; A2/A4 smoke after soak; not active capacity |
 | **VPN-NODE-RUNBOOK-001** | OPEN | Fast node+relay bring-up template (BACKLOG-CAPACITY-NODES-001) |

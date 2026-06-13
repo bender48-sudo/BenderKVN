@@ -19,7 +19,7 @@
 | **warning / digest** | log + опционально один TG digest | RU MONITOR cert rotation (батч ≤1/ч); CDN SNI degraded fail_streak 1/3 |
 | **paging** | Telegram 🚨 | sustained fail (fail_streak ≥3 @ */5 cron); quorum ≥2 SNI на ноде; RU TLS down batch |
 
-**Deploy на LV:** только после явного одобрения владельца (`docs/DEPLOY.md` §1). После деплоя — 24h soak: переходы остаются в логах, TG-шум падает.
+**Deploy на LV:** owner-approved 2026-06-11 (`50a6ac4`). **24h soak closeout 2026-06-13:** window 2026-06-11 15:11 UTC → 2026-06-12 15:11 UTC (+ extended observation to 2026-06-13). **Result:** legacy selfsteal CRITICAL spam eliminated; cert digest PASS; residual `latvia:www.microsoft.com` quorum paging (~17 TG cycles/24h) — soak **PARTIAL**. See [`CHECKPOINT-2026-06-12-CLIENT-NODES-MONITORING.md`](CHECKPOINT-2026-06-12-CLIENT-NODES-MONITORING.md) §8.
 
 ### selfsteal-monitor.py — anti-flap
 

@@ -50,7 +50,7 @@ G5  Public/partner scale
 
 **QA-SCENARIO-MATRIX-001 (2026-06-10):** `ops/qa_scenario_matrix.py` — chains seed → portal fixtures → bot harness → drift report for all 20 customer-journey scenarios; `full` / `partial` / `blocked` classification — **implemented repo, not deployed**. Feeds QA-OWNER-PREVIEW-001 and QA-E2E-001; no prod Telegram/YooKassa/Remna.
 
-**QA-OWNER-PREVIEW-001 (2026-06-10):** `ops/qa_owner_preview.py` — owner HTML journey walkthrough — **implemented repo, not deployed**. **PORTAL-LANDING-CTA-DEDUP-001:** browser landing UX — primary `#landing-paths`, journey steps, existing-user path; duplicate CTA removed — **implemented repo, not deployed**. **QA-OWNER-PREVIEW-FIX-002 (`8a107ba`):** bot visual preview HTML + cabinet `#cabinet-actions` dedup — **DONE repo, not deployed**. Staging bot / second TG / Playwright remain OPEN. **MONITOR-FLAP-001** / **OPS-ALERT-HYGIENE-001** — **DONE repo** (anti-flap + cert digest); **LV deploy pending owner** (no duplicate IDs).
+**QA-OWNER-PREVIEW-001 (2026-06-10):** `ops/qa_owner_preview.py` — owner HTML journey walkthrough — **implemented repo, not deployed**. **PORTAL-LANDING-CTA-DEDUP-001:** browser landing UX — primary `#landing-paths`, journey steps, existing-user path; duplicate CTA removed — **implemented repo, not deployed**. **QA-OWNER-PREVIEW-FIX-002 (`8a107ba`):** bot visual preview HTML + cabinet `#cabinet-actions` dedup — **DONE repo, not deployed**. Staging bot / second TG / Playwright remain OPEN. **MONITOR-FLAP-001** / **OPS-ALERT-HYGIENE-001** — **DEPLOYED LV** (`50a6ac4`, 2026-06-11 ~14:46 UTC); 24h soak closeout **2026-06-13**: **MONITOR-FLAP PARTIAL** (residual `microsoft.com` quorum TG); **OPS-ALERT-HYGIENE PASS** (cert digest batched). NL A2/A4 blocked pending owner risk acceptance or **MONITOR-FLAP-TUNE-001**.
 
 **AUDIT-CLOSEOUT-001 (2026-06-10):** [`AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md`](AUDIT-CLOSEOUT-2026-06-10-LAUNCH-BACKLOG-FREEZE.md) — **G0 audit wave CLOSED**; backlog frozen; **implementation GO** for TRACK 0; no new broad audits.
 
@@ -184,7 +184,7 @@ G5  Public/partner scale
 
 ## 6. G4 — Scale gates (before invite push / 300 configs)
 
-**BACKLOG-CAPACITY-NODES-001:** Before acquisition/referral growth or **G4-A**, **≥2 production-capable nodes** must participate in the **verified customer delivery path**. **NL is not active capacity** (PROOF-001); **pre-qualified for A2/A4 controlled smoke** after **MONITOR-FLAP-001** soak (QUALITY-PROOF-001). NL counts toward **`delivery_path_nodes` only after** inclusion in generated profiles, smoke PASS, post-inclusion audit, owner acceptance. One Latvia exit (relay-only×6) is not acceptable. **VPN-ARCH-001**, **VPN-NODE-RUNBOOK-001**, **MONITOR-FLAP-001** + **OPS-ALERT-HYGIENE-001**. See MASTER §Node capacity.
+**BACKLOG-CAPACITY-NODES-001:** Before acquisition/referral growth or **G4-A**, **≥2 production-capable nodes** must participate in the **verified customer delivery path**. **NL is not active capacity** (PROOF-001); **pre-qualified for A2/A4 controlled smoke** after **MONITOR-FLAP-001** soak **PARTIAL** accepted by owner (or tuning done). NL counts toward **`delivery_path_nodes` only after** inclusion in generated profiles, smoke PASS, post-inclusion audit, owner acceptance. One Latvia exit (relay-only×6) is not acceptable. **VPN-ARCH-001**, **VPN-NODE-RUNBOOK-001**, **MONITOR-FLAP-001** + **OPS-ALERT-HYGIENE-001**. See MASTER §Node capacity.
 
 | Gate | Trigger | Deliverable |
 |------|---------|-------------|
