@@ -13,7 +13,9 @@ from generate_mobile_smoke_template import TEMPLATE  # noqa: E402
 
 def test_template_has_required_sections():
     assert "CLIENT-STABILITY-MOBILE-SMOKE-001" in TEMPLATE
-    assert "Do not paste subscription URLs" in TEMPLATE
+    assert "Do not commit" in TEMPLATE
     assert "PASS / SOFT PASS / FAIL" in TEMPLATE
     assert "ya.ru" in TEMPLATE
+    assert "Lock 10" in TEMPLATE or "lock" in TEMPLATE.lower()
     assert "vless://" not in TEMPLATE
+    assert "For Cursor" in TEMPLATE

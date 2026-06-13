@@ -255,7 +255,8 @@ Run **Happ primary** unless slot B explicitly tests Karing.
 
 ```powershell
 python ops/probe_fallback_client_sub.py
-python ops/generate_mobile_smoke_template.py --write .local/mobile_smoke_results.md
+python ops/generate_mobile_smoke_template.py
+python ops/analyze_mobile_smoke_logs.py --access-log path/to/access_log.txt --out .local/mobile_smoke_log_summary.md
 python ops/happ_routing_directip_guard.py
 ```
 
@@ -270,3 +271,123 @@ python ops/happ_routing_directip_guard.py
 5. Optional: airplane toggle; optional Karing exploratory pass.
 6. Fill §9 table → PASS / SOFT PASS / FAIL.
 7. Update this doc or `.local/mobile_smoke_results.md` — **do not commit** raw screenshots or sub URLs.
+
+---
+
+## 14. Owner-assisted collection — CLIENT-STABILITY-MOBILE-SMOKE-COLLECT-001
+
+**Goal:** Normal phone use → minimal notes → Cursor records verdict. **No complex technical steps required.**
+
+### Generate local result sheet (PC, once)
+
+```powershell
+cd D:\Va\projects\VPN
+python ops/generate_mobile_smoke_template.py
+```
+
+Creates **`.local/mobile_smoke_results.md`** (gitignored path — **do not commit**).
+
+### What Cursor can and cannot do
+
+| Cursor **can** | Cursor **cannot** |
+|----------------|-------------------|
+| Record what owner types or pastes from the template | Measure phone speed or latency directly |
+| Parse **owner-provided** screenshots (crop sub URL/QR first) | See Happ/VPN state without owner input |
+| Score PASS / SOFT PASS / FAIL from owner answers | Run iPhone diagnostics remotely |
+| Optional: read-only **Android ADB** if phone USB-connected | Require ADB for PASS |
+
+### Owner simple test flow
+
+Use **Happ** + **BenderVPN RU** routing if already set up. Use the phone normally; jot **Y/N** or one-word notes.
+
+#### Phase A — Wi‑Fi (~15–20 min normal use)
+
+1. Connect VPN in Happ.
+2. Note **connect time** (rough seconds) and any error toast.
+3. **Google** — search something.
+4. **Gmail** — open inbox.
+5. **Google Docs** — open a doc; scroll/edit briefly.
+6. **Telegram** — send or open a chat.
+7. **Instagram** — optional, if you use it.
+8. **fast.com** or Speedtest app — **once** with VPN on (note download feel: OK / slow / bad).
+9. **ipinfo.io** or **ifconfig.me** — note country/IP looks reasonable.
+10. **ya.ru** and **vk.com** — should feel direct/fast.
+
+#### Phase B — Lock / unlock
+
+1. Lock phone **10–15 minutes** (pocket idle).
+2. Unlock — check VPN still connected in Happ/status bar.
+3. Open **Telegram**, **Gmail**, **Docs** again — still OK?
+
+#### Phase C — Mobile data
+
+1. Turn **Wi‑Fi off**; stay on **LTE/5G**.
+2. VPN should stay on or reconnect — note **auto / one tap / broken**.
+3. **Telegram**, **Gmail**, **Google** — quick check.
+4. **Speedtest or fast.com once** on mobile data.
+5. **ipinfo/ifconfig** once.
+
+#### Report to Cursor
+
+Paste filled **`.local/mobile_smoke_results.md`** or the short block at the bottom of that file into chat. Screenshots optional — **hide subscription URL and QR**.
+
+### Scoring (Cursor applies after owner report)
+
+| Verdict | When |
+|---------|------|
+| **PASS** | Wi‑Fi **and** mobile data usable; Google/Gmail/Docs/TG work; speed OK for browsing; lock/unlock OK; no silent VPN death |
+| **SOFT PASS** | One reconnect or moderate slowdown; still usable — note caveats |
+| **FAIL** | Cannot connect; apps fail; unusable speed; VPN dies after lock or network switch |
+
+**Gate stays OPEN until owner report recorded in §9.**
+
+### Optional Android ADB (not required)
+
+Only if **Android** + **USB debugging** + `adb devices` shows your phone. Read-only on PC:
+
+```powershell
+adb devices
+adb shell dumpsys connectivity | Select-Object -First 40
+adb shell dumpsys wifi | Select-Object -First 30
+```
+
+Do **not** commit raw logcat. Redact tokens if sharing snippets with Cursor.
+
+**This workspace:** `adb` found at `D:\Telephone\platform-tools\adb.exe` — **no device connected** at last check; owner can plug in Android optionally.
+
+### After owner provides result
+
+Cursor will update §9, backlog, and launch gates — commit **`docs(client): record mobile smoke result`** only **after** verdict is known. **No commit until then.**
+
+---
+
+## 15. Log summary helper — CLIENT-STABILITY-MOBILE-LOG-SUMMARY-001
+
+If owner exports Happ/Xray logs, summarize locally into redacted evidence — **does not replace** app/speed checklist.
+
+```powershell
+cd D:\Va\projects\VPN
+python ops/analyze_mobile_smoke_logs.py `
+  --access-log "path\to\access_log.txt" `
+  --subscription-log "path\to\subscription_log.txt" `
+  --adb-log "path\to\logcat_snippet.txt" `
+  --out .local/mobile_smoke_log_summary.md
+```
+
+### How to read the summary
+
+| Evidence | Proves | Does NOT prove |
+|----------|--------|----------------|
+| **access_log** accepted lines | Traffic routed; proxy vs direct split; relay tags; coarse Google/TG/Meta hints | Speed Mbps; app UX |
+| **subscription_log** | HTTP 200; import path | Live session UX |
+| **subscription_log** UnknownContentType | Batch parse skipped some outbounds — **often expected** if **Append custom count=1** succeeded | Broken import by itself |
+| **subscription_log** «1 servers» | Happ UI for **BenderVPN Auto** — expected | Only one relay path |
+| **APPDETECT UDP** / findConnectionOwner NULL | tun2socks app-detection noise | **Not FAIL** unless owner saw app failures at same time |
+
+**Speed still requires:** owner fast.com / Speedtest number or screenshot (Phase A/C).
+
+**Mobile smoke PASS:** remains **PENDING** until owner fills `.local/mobile_smoke_results.md` — log summary alone is **needs_owner_speed_app_result**.
+
+```powershell
+python -m pytest tests/test_analyze_mobile_smoke_logs.py -q
+```

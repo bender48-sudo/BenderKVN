@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate empty mobile smoke result template (CLIENT-STABILITY-MOBILE-SMOKE-001).
+"""Generate empty mobile smoke result template (CLIENT-STABILITY-MOBILE-SMOKE-001/002).
 
-Writes markdown tables for owner to fill locally. No network, no secrets.
+Minimal owner fill-in — local only, do not commit with secrets.
 
 Usage:
     python ops/generate_mobile_smoke_template.py
@@ -14,90 +14,132 @@ import sys
 from datetime import date
 from pathlib import Path
 
-TEMPLATE = """# Mobile smoke results — owner fill-in (do not commit with secrets)
+# Simple sections for owner-assisted collection (COLLECT-001).
+TEMPLATE = """# Mobile smoke results — owner fill-in
 
-**Task:** CLIENT-STABILITY-MOBILE-SMOKE-001
+**Task:** CLIENT-STABILITY-MOBILE-SMOKE-001 / COLLECT-001
 **Generated:** {today}
-**Runbook:** docs/CLIENT-STABILITY-MOBILE-SMOKE.md
+**Runbook:** docs/CLIENT-STABILITY-MOBILE-SMOKE.md §14
 
-> Do not paste subscription URLs, QR payloads, or tokens into git.
+> Keep this file in `.local/` only. Do not commit. No subscription URLs or tokens.
+
+---
 
 ## Device
 
-| Field | Value |
-|-------|-------|
-| Model | |
-| OS | |
-| Client | Happ / Karing |
+| Field | Your answer |
+|-------|-------------|
+| Device model | |
+| OS + version | |
+| Client app | Happ / Karing |
 | App version | |
-| Routing profile (Happ) | BenderVPN RU Y/N |
+| Routing profile (Happ) | BenderVPN RU — Y / N |
 
-## Speed — Wi‑Fi
+---
 
-| Mode | Run 1 ↓/↑/ping | Run 2 | Run 3 | Median ↓ Mbps | ~% loss vs baseline |
-|------|----------------|-------|-------|---------------|---------------------|
-| No VPN | | | | | — |
-| VPN | | | | | |
+## Network (note during test)
 
-## Speed — mobile data
+| Phase | Network |
+|-------|---------|
+| Phase A | Wi‑Fi |
+| Phase B | Wi‑Fi (after lock) |
+| Phase C | Mobile data (LTE/5G) |
 
-| Mode | Run 1 ↓/↑/ping | Run 2 | Run 3 | Median ↓ Mbps | ~% loss vs baseline |
-|------|----------------|-------|-------|---------------|---------------------|
-| No VPN | | | | | — |
-| VPN | | | | | |
+---
 
-## Sites (Y/N/P)
+## Connect
+
+| Item | Answer |
+|------|--------|
+| Connect time (seconds, rough) | |
+| Visible errors on connect | none / describe |
+
+---
+
+## Speed (one run each is enough)
+
+| Network | No VPN — download / upload / ping | With VPN — download / upload / ping |
+|---------|-----------------------------------|---------------------------------------|
+| Wi‑Fi | | |
+| Mobile data | | |
+| Acceptable for browsing? | Y / N / slow but OK |
+
+---
+
+## Apps & sites (Y = works · N = fail · P = slow/partial)
 
 | Check | Wi‑Fi | Mobile data | Notes |
 |-------|-------|-------------|-------|
-| Connect time (sec) | | | |
-| google.com | | | |
+| Google search | | | |
 | Gmail | | | |
 | Google Docs | | | |
 | Telegram | | | |
-| Instagram/Meta | | | |
-| ya.ru | | | |
+| Instagram (optional) | | | |
+| ya.ru | | | expect fast / direct |
 | vk.com | | | |
-| Bank / .ru site | | | |
-| ipinfo.io | | | |
+| ipinfo.io or ifconfig.me | | | country shown |
+
+---
 
 ## Stability
 
-| Phase | Result | Notes |
+| Check | Result | Notes |
 |-------|--------|-------|
-| 15 min active | | |
-| 30 min lock | | |
-| After unlock | | |
-| Wi‑Fi → mobile data | | |
-| Mobile data → Wi‑Fi | | |
-| Airplane toggle | | |
+| Lock 10–15 min → unlock | VPN still on? Y/N | |
+| After unlock: Telegram | Y/N/P | |
+| After unlock: Gmail/Docs | Y/N/P | |
+| Wi‑Fi → mobile data switch | auto / one tap / broken | |
+| Symptoms (reconnects, freezes, «no internet») | | |
 
-## Verdict
+---
 
-| Overall | PASS / SOFT PASS / FAIL |
-|---------|-------------------------|
-| Speed | |
-| Stability | |
-| Setup friction | |
+## Verdict (owner pick one)
 
-## Caveats
+| | |
+|-|-|
+| **Overall** | PASS / SOFT PASS / FAIL |
+| One-line why | |
+| Date | |
+
+### If SOFT PASS or FAIL — optional note
 
 -
 
+---
+
+## For Cursor (paste chat summary)
+
+Copy filled sections above or write:
+
+```
+Device:
+Client:
+Phase A Wi-Fi: Google/Gmail/Docs/TG =
+Speed Wi-Fi VPN:
+Lock/unlock:
+Phase C mobile data:
+Verdict:
+```
 """
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--write", type=Path, help="write template to path (e.g. .local/mobile_smoke_results.md)")
+    ap.add_argument(
+        "--write",
+        type=Path,
+        default=Path(".local/mobile_smoke_results.md"),
+        help="write template (default: .local/mobile_smoke_results.md)",
+    )
+    ap.add_argument("--stdout", action="store_true", help="print to stdout instead of file")
     args = ap.parse_args()
     text = TEMPLATE.format(today=date.today().isoformat())
-    if args.write:
+    if args.stdout:
+        sys.stdout.write(text)
+    else:
         args.write.parent.mkdir(parents=True, exist_ok=True)
         args.write.write_text(text, encoding="utf-8")
         print(f"Wrote: {args.write}")
-    else:
-        sys.stdout.write(text)
     print("MOBILE_SMOKE_TEMPLATE_OK")
     return 0
 
