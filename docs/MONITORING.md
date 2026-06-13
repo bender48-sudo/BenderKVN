@@ -19,7 +19,7 @@
 | **warning / digest** | log + опционально один TG digest | RU MONITOR cert rotation (батч ≤1/ч); CDN SNI degraded fail_streak 1/3; retried WARNING ≤1/ч на SNI |
 | **paging** | Telegram 🚨 | sustained fail (fail_streak ≥3 @ */5 cron); **non-CDN** quorum ≥2 SNI; baseline RU sustained; RU TLS down batch |
 
-**Deploy на LV:** owner-approved 2026-06-11 (`50a6ac4`). **24h soak closeout 2026-06-13:** soak **PARTIAL** — residual `microsoft.com` quorum TG (~17/24h). **MONITOR-FLAP-TUNE-001 (repo):** CDN SNI excluded from quorum-only paging; retried warnings throttled to ~1/h — **deploy pending** after owner approval. See [`CHECKPOINT-2026-06-12-CLIENT-NODES-MONITORING.md`](CHECKPOINT-2026-06-12-CLIENT-NODES-MONITORING.md) §8.
+**Deploy на LV:** `50a6ac4` (2026-06-11) + **MONITOR-FLAP-TUNE-001** `21f5a97` (2026-06-13 16:41 UTC). Short soak **in progress** from first tuned cron **16:46:40 UTC** — review ~17:16 UTC (30m), ~22:46 UTC (6h). `ru-monitor.py` unchanged. See [`CHECKPOINT-2026-06-12-CLIENT-NODES-MONITORING.md`](CHECKPOINT-2026-06-12-CLIENT-NODES-MONITORING.md) §9.
 
 ### selfsteal-monitor.py — anti-flap
 

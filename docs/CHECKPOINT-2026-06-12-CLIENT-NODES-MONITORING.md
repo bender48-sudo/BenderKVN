@@ -188,7 +188,36 @@ Local deeplink validated; prod deploy still pending.
 
 ---
 
-## 9. Key doc links
+## 9. MONITOR-FLAP-TUNE-001 LV deploy (2026-06-13)
+
+**Task:** MONITOR-FLAP-TUNE-001-LV-DEPLOY · owner approval received · **selfsteal-monitor.py only**
+
+| Item | Value |
+|------|-------|
+| Repo commit | `21f5a97` |
+| Deploy UTC | **2026-06-13 16:41:22** |
+| Backup | `/opt/scripts/selfsteal-monitor.py.before-monitor-flap-tune-20260613-164122` |
+| Previous MD5 | `364cac90f5a5c7af0787953d56a6074b` (`50a6ac4`) |
+| New MD5 | `7af796f345bb0a0a3867ce132dbfd930` — **match local + remote** |
+| Cron | `*/5` → `/opt/scripts/selfsteal-monitor.py` — **unchanged** |
+| `ru-monitor.py` | **Not deployed** — MD5 `2046068c4193027cd90ad0cef35e61bb` unchanged |
+
+### Short soak
+
+| Milestone | UTC |
+|-----------|-----|
+| Install complete | 2026-06-13 **16:41:22** |
+| Stale pre-tune DOWN (race) | 16:41:53 — `paging: quorum fail` from run started before swap |
+| **First tuned cron (soak start)** | **16:46:40** — no new CDN quorum DOWN; `transitions=0` |
+| 30m review | ~**17:16** |
+| 6h review | ~**22:46** |
+| Optional 24h gate | before NL A2/A4 if owner wants clean monitoring SoT |
+
+Post-deploy health (through 16:46:40): **0 tracebacks**; github retried throttle state field active (first post-deploy warn expected; ≤1/h thereafter).
+
+---
+
+## 10. Key doc links
 
 | Topic | Doc |
 |-------|-----|
@@ -201,6 +230,6 @@ Local deeplink validated; prod deploy still pending.
 
 ---
 
-## 10. Repo hygiene reminder
+## 11. Repo hygiene reminder
 
 Working tree is **clean for product code** except one `.cursor/skills/` edit. Large untracked QA/review artifacts are local-only; keep out of commits.
