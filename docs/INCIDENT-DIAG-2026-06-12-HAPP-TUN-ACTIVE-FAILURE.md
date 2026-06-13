@@ -341,14 +341,48 @@ python ops/happ_routing_directip_guard.py
 python ops/generate_happ_routing_link.py --write-json
 ```
 
-Redacts secrets; reports TUN lifecycle, error storm, `directIp` overlap, track hints.
+Redacts secrets; reports TUN lifecycle, error storm, `directIp` overlap, track hints, **`final_state_guard`** (overwritten export detection).
 
 ---
 
-## 16. References
+## 16. report(5) + recovery plan (CLIENT-STABILITY-HAPP-RECOVERY-001)
+
+**Date:** 2026-06-13 · **report(5)** — owner export; **not in repo**
+
+### Bender-only segment (use this; ignore final SafeVPN state)
+
+| Check | report(5) Bender segment |
+|-------|--------------------------|
+| TUN lifecycle | **PASS** — starts quickly (not Track A) |
+| Routing | **BenderVPN RU** ON; fixed DirectIp |
+| `geoip:ru` in DirectIp | **Absent** — do **not** rollback |
+| Import / 0 servers | **Not** broken |
+| Failure class | **Relay #1/#2 timeout/reset** under TUN (Track **E**), not DirectIp dial storm |
+| Final zip `selected_server` | **SafeVPN Proxy** — **invalid** as Bender profile evidence |
+
+Owner switched to SafeVPN **after** Bender failed. Export captured **post-switch** state — same class of contamination as cumulative pre-fix logs in report(3).
+
+### Required next capture
+
+See **[CLIENT-STABILITY-HAPP-RECOVERY-CAPTURE.md](CLIENT-STABILITY-HAPP-RECOVERY-CAPTURE.md)** — export `report.zip` **before** switching VPN.
+
+### Recovery sequence
+
+1. Clean Bender-only capture (mandatory).
+2. If relay asymmetry persists → owner-only **relay #2-only** or **single-relay** lab profile (not prod).
+3. **Karing/v2rayN** remains parallel fallback — Happ recovery stays active.
+
+### Analyzer update
+
+`ops/analyze_happ_report_tun.py` — `final_state_guard`, `bender_segment` detect overwritten exports (e.g. SafeVPN in final `selected_server`).
+
+---
+
+## 17. References
 
 - Guard: `ops/happ_routing_directip_guard.py`
 - Generator: `ops/generate_happ_routing_link.py`
 - Parser: `ops/analyze_happ_report_tun.py`
+- Recovery runbook: [CLIENT-STABILITY-HAPP-RECOVERY-CAPTURE.md](CLIENT-STABILITY-HAPP-RECOVERY-CAPTURE.md)
 - Resume helper: `ops/diagnose_windows_vpn_resume.ps1`
 - Backlog: CLIENT-STABILITY-001, CLIENT-SMOKE-001..003, VPN-ARCH-001

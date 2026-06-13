@@ -279,6 +279,119 @@ def scan_signals(text: str, rules: list[tuple[str, re.Pattern[str], str]]) -> li
     return hits
 
 
+BENDER_PROFILE_MARKERS = ("bender", "bendervpn")
+OTHER_VPN_MARKERS = (
+    "safevpn",
+    "safe vpn",
+    "urbanvpn",
+    "checkpoint",
+    "openvpn",
+    "wireguard",
+    "nordvpn",
+    "expressvpn",
+)
+
+
+def detect_final_state_overwrite(
+    sel_raw: str,
+    settings_raw: str,
+    app_log: str,
+) -> dict:
+    """Flag when export final state is not Bender (e.g. owner switched to SafeVPN)."""
+    out: dict = {
+        "final_selected_name": None,
+        "final_selected_is_bender": None,
+        "final_mode_proxy_not_tun": False,
+        "other_vpn_in_final_state": False,
+        "other_vpn_clues": [],
+        "switched_away_detected": False,
+        "usable_as_bender_profile_evidence": True,
+    }
+    try:
+        meta, _ = extract_config(json.loads(sel_raw))
+        name = str(meta.get("name") or "")
+        out["final_selected_name"] = name
+        name_l = name.lower()
+        out["final_selected_is_bender"] = any(m in name_l for m in BENDER_PROFILE_MARKERS)
+        if out["final_selected_is_bender"] is False and name.strip():
+            out["other_vpn_in_final_state"] = True
+            out["other_vpn_clues"].append(f"selected_server.name={name!r}")
+    except (json.JSONDecodeError, TypeError):
+        out["final_selected_is_bender"] = None
+
+    combined = (settings_raw + "\n" + app_log).lower()
+    for marker in OTHER_VPN_MARKERS:
+        if marker in combined and marker not in ("openvpn", "wireguard"):
+            if marker.replace(" ", "") in combined.replace(" ", ""):
+                out["other_vpn_clues"].append(f"log/settings mentions {marker}")
+
+    try:
+        sj = json.loads(settings_raw)
+        pref = sj.get("Preferences") or sj
+        adv = pref.get("AdvancedSettings") or {}
+        if adv.get("tun") is False and adv.get("systemProxy") is True:
+            out["final_mode_proxy_not_tun"] = True
+            out["other_vpn_clues"].append("final settings: systemProxy=true, tun=false")
+    except json.JSONDecodeError:
+        pass
+
+    switch_patterns = [
+        re.compile(r"disconnect(?:ed|ing)?.*bender", re.I),
+        re.compile(r"connect(?:ed|ing)?.*safe\s*vpn", re.I),
+        re.compile(r"selected.*safe\s*vpn", re.I),
+        re.compile(r"switch(?:ed|ing)?.*(?:safe\s*vpn|other\s*vpn)", re.I),
+    ]
+    for pat in switch_patterns:
+        if pat.search(app_log):
+            out["switched_away_detected"] = True
+            break
+
+    if out["final_selected_is_bender"] is False:
+        out["switched_away_detected"] = True
+    if out["other_vpn_in_final_state"] or out["final_mode_proxy_not_tun"]:
+        out["switched_away_detected"] = True
+
+    if out["switched_away_detected"] or out["other_vpn_in_final_state"]:
+        out["usable_as_bender_profile_evidence"] = False
+
+    return out
+
+
+def estimate_bender_segment_stats(
+    app_log: str,
+    tun_log: str,
+    final_state: dict,
+) -> dict:
+    """Heuristic: if export mixes sessions, prefer errors before last disconnect/switch."""
+    out: dict = {
+        "bender_segment_available": False,
+        "segment_hint": "full cumulative log — export before switching VPN for clean Bender snapshot",
+    }
+    if final_state.get("usable_as_bender_profile_evidence"):
+        out["bender_segment_available"] = True
+        out["segment_hint"] = "final selected_server/settings are Bender — full log usable"
+        return out
+
+    disconnect_idx = None
+    lines = app_log.splitlines()
+    for i, line in enumerate(lines):
+        ll = line.lower()
+        if "disconnect" in ll and any(m in ll for m in BENDER_PROFILE_MARKERS):
+            disconnect_idx = i
+        if re.search(r"safe\s*vpn|urbanvpn", ll, re.I):
+            if disconnect_idx is None:
+                disconnect_idx = i
+            break
+
+    if disconnect_idx is not None and disconnect_idx > 0:
+        out["bender_segment_available"] = True
+        out["segment_hint"] = (
+            f"app_log lines 0..{disconnect_idx} may contain last Bender session; "
+            "tun_log is cumulative — prefer fresh export before switch"
+        )
+    return out
+
+
 @dataclass
 class TunAnalysisResult:
     zip_name: str
@@ -291,6 +404,8 @@ class TunAnalysisResult:
     tun_log_stats: dict
     track_signals: dict
     local_clues: dict
+    final_state_guard: dict
+    bender_segment: dict
     timeline_events: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
 
@@ -345,6 +460,8 @@ def analyze_report_zip(path: Path) -> TunAnalysisResult:
     profile = analyze_profile(sel_raw)
     routing_overlap = check_direct_ip_overlap(cfg, routing_profile)
     core_relay_direct = analyze_core_relay_direct_rules(cfg)
+    final_state_guard = detect_final_state_overwrite(sel_raw, settings_raw, app_log)
+    bender_segment = estimate_bender_segment_stats(app_log, tun_log, final_state_guard)
     tun_stats = analyze_tun_log_stream(tun_log)
 
     tun_lifecycle = {
@@ -440,6 +557,13 @@ def analyze_report_zip(path: Path) -> TunAnalysisResult:
         notes.append("Profile integrity OK — not Track C")
     if local_clues["check_point_adapter"]:
         notes.append("Check Point VPN adapter present — Track F secondary factor")
+    if not final_state_guard.get("usable_as_bender_profile_evidence"):
+        notes.append(
+            "Final export state overwritten — selected_server/settings are not clean Bender; "
+            "do not use final profile as Bender evidence; export report.zip BEFORE switching VPN"
+        )
+    if final_state_guard.get("switched_away_detected"):
+        notes.append(f"Bender segment hint: {bender_segment.get('segment_hint')}")
 
     return TunAnalysisResult(
         zip_name=path.name,
@@ -452,6 +576,8 @@ def analyze_report_zip(path: Path) -> TunAnalysisResult:
         tun_log_stats=tun_stats,
         track_signals=track_signals,
         local_clues=local_clues,
+        final_state_guard=final_state_guard,
+        bender_segment=bender_segment,
         timeline_events=timeline[:60],
         notes=notes,
     )
@@ -469,6 +595,8 @@ def result_to_dict(r: TunAnalysisResult) -> dict:
         "tun_log_stats": r.tun_log_stats,
         "track_signals": r.track_signals,
         "local_clues": r.local_clues,
+        "final_state_guard": r.final_state_guard,
+        "bender_segment": r.bender_segment,
         "timeline_events": r.timeline_events,
         "notes": r.notes,
     }
@@ -485,6 +613,8 @@ def print_human(r: TunAnalysisResult) -> None:
     print(f"tun_log_stats: {json.dumps(r.tun_log_stats, ensure_ascii=False, indent=2)}")
     print(f"track_signals: {json.dumps(r.track_signals, ensure_ascii=False)}")
     print(f"local_clues: {json.dumps(r.local_clues, ensure_ascii=False)}")
+    print(f"final_state_guard: {json.dumps(r.final_state_guard, ensure_ascii=False)}")
+    print(f"bender_segment: {json.dumps(r.bender_segment, ensure_ascii=False)}")
     print("timeline (first 30):")
     for ev in r.timeline_events[:30]:
         print(f"  | {ev}")
