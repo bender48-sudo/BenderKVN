@@ -125,7 +125,8 @@ Removing in-core relay direct without lab proof risks failed handshakes or TUN c
 
 | Path | Role |
 |------|------|
-| **Karing/v2rayN** | Parallel fallback — Happ recovery stays active; see [CLIENT-STABILITY-DESKTOP-FALLBACK.md](CLIENT-STABILITY-DESKTOP-FALLBACK.md) |
+| **Karing/v2rayN** | Windows fallback — [CLIENT-STABILITY-DESKTOP-FALLBACK.md](CLIENT-STABILITY-DESKTOP-FALLBACK.md) |
+| **Mobile smoke** | [CLIENT-STABILITY-MOBILE-SMOKE.md](CLIENT-STABILITY-MOBILE-SMOKE.md) — launch gate |
 | **Happ recovery** | **Active** — primary commercial desktop client target |
 
 ---

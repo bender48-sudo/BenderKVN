@@ -165,7 +165,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 
 | Gate | Area | Status | Evidence | Soft blocker? | Paid blocker? | Open blocker? | Required action | Owner decision |
 |------|------|--------|----------|---------------|---------------|---------------|-----------------|----------------|
-| **G1** | VPN stability / Happ / sleep-resume / browser SaaS / **CLIENT-STABILITY** | **PARTIAL** | Track A sleep OPEN; **Track D DirectIp fix — owner local retest PASS (2026-06-12)**; prod `happRouting` deploy pending; Track B Proxy OPEN | Desktop + SaaS work = **yes** (DirectIp leak no longer active blocker) | **Yes** if desktop sold | **Yes** | `patch_happ_routing.py --apply` after approval; Track A/B smokes | Waive desktop/SaaS support? |
+| **G1** | VPN stability / Happ / sleep-resume / browser SaaS / **CLIENT-STABILITY** | **PARTIAL** | Track A sleep OPEN; **Track D DirectIp fix — deployed**; desktop long-session OPEN; **mobile speed/stability smoke PENDING** ([CLIENT-STABILITY-MOBILE-SMOKE-001](CLIENT-STABILITY-MOBILE-SMOKE.md)) | Desktop + mobile work = **yes** | **Yes** if desktop/mobile sold | **Yes** | mobile smoke + desktop smokes | Waive desktop/SaaS/mobile support? |
 | **G2** | Client app compatibility | **PARTIAL** | Happ/Hiddify/Streisand = Auto-equivalent; Karing/Clash/v2rayN stripped | Non-Happ clients | Non-Happ for paid | Non-Happ at scale | Happ primary; Hiddify diagnostic only; freeze Karing | Hiddify as official fallback? |
 | **G3** | Telegram registration / 90d | **DONE** | Code + policy PT-01; trial provision path | No | No | No | Keep monitoring trial abuse | — |
 | **G4** | Web/email fallback / TG bind | **BLOCKED** | Web 1d trial works; **TG bind FAIL** (`funnel_bot_start bind:*` = 0) | **Yes** if email growth pushed | **Yes** | **Yes** | Retest bind per TELEGRAM-BIND-FLOW §9; or disable email path in campaigns | Waive bind or fix first? |
@@ -316,7 +316,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 - [ ] Owner CLIENT-SMOKE-001 sleep/resume test OR waive desktop in all copy
 - [ ] Owner CLIENT-SMOKE-002 Bender Proxy test OR document no Proxy fallback
 - [ ] Owner CLIENT-SMOKE-003 alt client evaluation OR Happ-only Windows guidance
-- [ ] Happ mobile soak 30–60 min + sleep test on ≥1 iOS/Android
+- [ ] Happ mobile soak — [CLIENT-STABILITY-MOBILE-SMOKE-001](CLIENT-STABILITY-MOBILE-SMOKE.md): speed + lock + Wi‑Fi/LTE on ≥1 iOS or Android
 - [ ] Support intake template: device, OS, Happ version, `/id`, screenshot
 - [ ] Disable or caveat email 1d path in referral landing if TG bind still FAIL
 - [ ] Confirm no referral bonus in any live copy
@@ -373,7 +373,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 
 | Dimension | Readiness |
 |-----------|-----------|
-| Mobile (Happ) | **PARTIAL** — interim stable; soak incomplete |
+| Mobile (Happ) | **PARTIAL** — interim stable; **[CLIENT-STABILITY-MOBILE-SMOKE-001](CLIENT-STABILITY-MOBILE-SMOKE.md) PENDING** |
 | Desktop (Happ) | **BLOCKED** — sleep/resume + TUN daemon |
 | Bender Proxy fallback | **BLOCKED** — reported failing (Track B) |
 | Sleep/resume | **BLOCKED** — INCIDENT-003 Track A |
@@ -634,7 +634,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | Closed soft launch | **SOFT-LAUNCH ONLY** | Happ mobile-first; manual support; no email growth push; copy caveats |
 | Paid pilot | **NO-GO** | G6 unaudited; G7/G8 weak; payment runbooks missing |
 | Open launch | **NO-GO** | G9/G11/G12/G1 desktop/G10 gaps |
-| Referral growth | **NO-GO** | G4 bind blocked; G14 missing; migration unproven |
+| Referral growth | **NO-GO** | G4 bind blocked; G14 missing; **mobile smoke PENDING**; migration unproven |
 
 **Strict rules applied:**
 

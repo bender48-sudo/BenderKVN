@@ -99,6 +99,8 @@ G5  Public/partner scale
 
 ### G1.2 Manual Happ checklist (owner)
 
+See also **[CLIENT-STABILITY-MOBILE-SMOKE-001](CLIENT-STABILITY-MOBILE-SMOKE.md)** — mobile speed/stability matrix (Wi‑Fi, LTE, lock, handoff).
+
 | # | Test | Pass | Log field |
 |---|------|------|-----------|
 | 1 | Refresh Happ sub once per device | ☑ (verbal) | sub_bytes ~7353 |
@@ -140,6 +142,7 @@ G5  Public/partner scale
 | **CLIENT-SMOKE-001** | A — TUN sleep/resume | Sleep 10–30 min; internet/mail work without reboot; AFTER-BROKEN bundle if fail | Required |
 | **CLIENT-SMOKE-002** | B — Bender Proxy | Proxy mode: mail/google/IP check; parity vs other VPN Proxy | Required |
 | **CLIENT-SMOKE-003** | Fallback client | **v2rayN first**, Karing exploratory — [CLIENT-STABILITY-DESKTOP-FALLBACK.md](CLIENT-STABILITY-DESKTOP-FALLBACK.md) | Required before fallback copy in support |
+| **CLIENT-STABILITY-MOBILE-SMOKE-001** | Mobile launch smoke | Happ iOS/Android — speed, lock, Wi‑Fi/LTE — [CLIENT-STABILITY-MOBILE-SMOKE.md](CLIENT-STABILITY-MOBILE-SMOKE.md) | **Required before acquisition/referral growth** |
 
 **Runbook:** [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md)
 
