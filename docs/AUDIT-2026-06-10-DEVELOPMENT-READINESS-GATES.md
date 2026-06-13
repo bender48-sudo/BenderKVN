@@ -139,7 +139,7 @@ G5  Public/partner scale
 |-------|-------|---------------|-------|
 | **CLIENT-SMOKE-001** | A — TUN sleep/resume | Sleep 10–30 min; internet/mail work without reboot; AFTER-BROKEN bundle if fail | Required |
 | **CLIENT-SMOKE-002** | B — Bender Proxy | Proxy mode: mail/google/IP check; parity vs other VPN Proxy | Required |
-| **CLIENT-SMOKE-003** | Fallback client | Karing or alt: same sub, proxy/TUN, sleep/resume compare | Required for fallback copy |
+| **CLIENT-SMOKE-003** | Fallback client | **v2rayN first**, Karing exploratory — [CLIENT-STABILITY-DESKTOP-FALLBACK.md](CLIENT-STABILITY-DESKTOP-FALLBACK.md) | Required before fallback copy in support |
 
 **Runbook:** [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md)
 

@@ -93,10 +93,10 @@ python ops/happ_routing_directip_guard.py
 | **B — routing OFF** | Happ routing **disabled** one session; core JSON only | If RU routing layer still contributes | Intl sites work; RU `.ru` may split-tunnel differently | No improvement | Re-enable routing | No |
 | **C — relay #2-only** | Owner support profile: proxy-4/5/6 only | relay#1 is worse | Stable on relay#2 paths | Still fails | Delete test profile | **Yes** — support profile |
 | **D — single-relay deterministic** | One outbound, no random balancer | Happ+balancer instability | Stable single path | Still fails | Remove test profile | **Yes** |
-
-**Runbook (Option A — local JSON, no prod):** [CLIENT-STABILITY-HAPP-RELAY2-LAB.md](CLIENT-STABILITY-HAPP-RELAY2-LAB.md) · `ops/generate_happ_relay2_lab_profile.py`
 | **E — DNS / UseIPv4** | Test profile: `queryStrategy=UseIPv4` or simplified DNS | DNS v6/latency class | Faster resolve; fewer resets | No change | Remove test profile | **Yes** |
 | **F — workload split** | Docs-heavy 10 min vs light browsing | Track E long-connection | Light OK, Docs fail | Both fail | None | No |
+
+**Runbook (relay #2 lab — local JSON, no prod):** [CLIENT-STABILITY-HAPP-RELAY2-LAB.md](CLIENT-STABILITY-HAPP-RELAY2-LAB.md) · `ops/generate_happ_relay2_lab_profile.py`
 
 **Order after clean capture:** **A** → **B** → **C** or **D** (if relay-tagged errors) → **F** → **E**.
 
@@ -125,7 +125,7 @@ Removing in-core relay direct without lab proof risks failed handshakes or TUN c
 
 | Path | Role |
 |------|------|
-| **Karing / v2rayN** (CLIENT-SMOKE-003) | Launch safety if Happ TUN remains flaky |
+| **Karing/v2rayN** | Parallel fallback — Happ recovery stays active; see [CLIENT-STABILITY-DESKTOP-FALLBACK.md](CLIENT-STABILITY-DESKTOP-FALLBACK.md) |
 | **Happ recovery** | **Active** — primary commercial desktop client target |
 
 ---
@@ -136,7 +136,106 @@ Removing in-core relay direct without lab proof risks failed handshakes or TUN c
 python ops/analyze_happ_report_tun.py report.zip
 python ops/happ_routing_directip_guard.py
 python ops/generate_happ_relay2_lab_profile.py --from-json owner_sub.json --write-json .local/lab_relay2.json
-python -m pytest tests/test_analyze_happ_report_tun.py tests/test_generate_happ_relay2_lab_profile.py -q
+python ops/probe_fallback_client_sub.py
+python -m pytest tests/test_analyze_happ_report_tun.py tests/test_generate_happ_relay2_lab_profile.py tests/test_probe_fallback_client_sub.py -q
 ```
 
 Redacts secrets. Flags `final_state_guard` when export was taken after switching VPN.
+
+---
+
+## 9. Long-session soak — CLIENT-STABILITY-HAPP-LONG-SESSION-SOAK-001
+
+**Task:** CLIENT-STABILITY-HAPP-LONG-SESSION-SOAK-001
+**Mode:** owner-run · **no prod mutation** · **no profile refresh/reimport during soak**
+**Duration:** minimum **30 min** · preferred **60 min**
+
+**Question:** Can BenderVPN on Happ Windows TUN sustain real work (Cursor Agent, Google Docs, Gmail, Telegram) without long-connection degradation?
+
+**Do not disturb:** If the owner already has a **stable** Happ TUN session, **do not** reconnect, refresh subscription, reimport profiles, or switch routing for this task. Start the soak on the **current working profile**.
+
+### Profile selection
+
+| Owner state | Test profile |
+|-------------|--------------|
+| Connected on **BenderVPN Auto** (stable) | Soak **normal BenderVPN Auto** TUN first |
+| Connected on **lab relay #2** profile (stable) | Soak **`BenderVPN Auto [LAB relay2-only — do NOT refresh sub]`** |
+| Not connected / unstable | Pick one profile; do **not** switch mid-soak |
+
+Lab JSON (local only, not in git): `.local/lab_relay2.json` · `.local/lab_relay2_one.json` — see [CLIENT-STABILITY-HAPP-RELAY2-LAB.md](CLIENT-STABILITY-HAPP-RELAY2-LAB.md).
+
+**Not in scope:** Proxy mode · `check.ru` as pass/fail · rollback of fixed `happRouting`.
+
+### Before start (once)
+
+Record baseline — **do not change VPN settings after start**:
+
+| Field | Value (owner fills) |
+|-------|---------------------|
+| Start time (local + UTC) | |
+| Profile name | |
+| Lab vs normal Bender | normal / relay2×3 / relay2×1 |
+| TUN | ON |
+| System proxy | OFF |
+| Routing profile | BenderVPN RU (expected) |
+| ipinfo.io / ifconfig.me | start IP + country |
+
+### Activity during soak (continuous)
+
+1. **Cursor Agent** — keep open; actively use (note visible “Reconnecting…” count).
+2. **Google Docs** — open doc; edit and scroll throughout.
+3. **Gmail** — `mail.google.com` loaded and used at least once.
+4. **Telegram** — web or desktop active.
+5. **RU direct check (once)** — `ya.ru` / `vk.com` (direct is **expected**).
+6. **End IP check** — ipinfo.io / ifconfig.me near end.
+
+**Forbidden during soak:** refresh subscription · reimport profile · routing OFF/ON toggle · switch to SafeVPN · Happ restart (unless crash).
+
+### Timeline log (owner)
+
+| Time | Event |
+|------|-------|
+| | Start — soak begins |
+| | Cursor reconnect #N (if any) |
+| | Docs slow / freeze (if any) |
+| | Gmail / TG issue (if any) |
+| | “Connected but no internet” (if any) |
+| | Happ crash / TUN drop (if any) |
+| | End — soak complete |
+
+### PASS / SOFT PASS / FAIL
+
+| Verdict | Criteria |
+|---------|----------|
+| **PASS** | 30–60 min real use; Cursor not repeatedly reconnecting; Docs usable; Gmail + TG work; no connected-but-no-internet; no Happ crash; no SafeVPN fallback |
+| **SOFT PASS** | Minor isolated reconnects; work remains usable — record caveats |
+| **FAIL** | Repeated Cursor reconnects; Docs unusable; Gmail/TG stop loading; connected-but-no-traffic; Happ crash; owner must switch to SafeVPN |
+
+### If FAIL
+
+1. Export **`report.zip` immediately** while still on the **same Bender/lab profile**.
+2. **Do not** switch to SafeVPN before export completes.
+3. Then disconnect / switch for work if needed.
+4. Analyze locally (do **not** commit zip):
+
+```bash
+python ops/analyze_happ_report_tun.py path/to/report.zip
+```
+
+### Result record (update this table after soak)
+
+| Profile | Duration | Verdict | Cursor | Docs | Gmail | TG | report.zip | Date |
+|---------|----------|---------|--------|------|-------|-----|------------|------|
+| BenderVPN Auto (normal) | — | **PENDING** | — | — | — | — | — | — |
+| LAB relay2-only | — | **PENDING** | — | — | — | — | — | — |
+| LAB relay2×1 | — | **PENDING** | — | — | — | — | — | — |
+
+**Happ desktop launch gate:** remains **OPEN** until at least one **PASS** or **SOFT PASS** on normal Bender or lab profile is recorded here.
+
+### Prior evidence (not a soak)
+
+| Source | Notes |
+|--------|-------|
+| report(6) Bender segment | TUN fast; DirectIp fix OK; ~336 ERROR / 5 min — established connection resets; **relay #1 biased** (`72.56.0.145:443`) |
+| report(5) | Final SafeVPN state — invalid Bender evidence |
+| relay2 lab JSON | Generated 2026-06-13 — `.local/lab_relay2.json`, `.local/lab_relay2_one.json` |

@@ -362,7 +362,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | INCIDENT-001/002 | **Monitoring** — not closed | Interim stable after fresh import | No for mobile F&F | Extended soak |
 | INCIDENT-003 sleep/resume (Track A) | **OPEN** | Happ TUN daemon error; another VPN survives sleep | **Yes for desktop** | CLIENT-SMOKE-001 + `diagnose_windows_vpn_resume.ps1` |
 | CLIENT-STABILITY Track B (Proxy) | **OPEN** | Bender Proxy fails; other VPN Proxy works | **Yes for Proxy fallback** | CLIENT-SMOKE-002 |
-| Alt client fallback | **OPEN** | Karing not validated | **Yes if promoted** | CLIENT-SMOKE-003 |
+| Alt client fallback | **PROTOCOL READY** | v2rayN recommended alternate; Karing exploratory — [CLIENT-STABILITY-DESKTOP-FALLBACK.md](CLIENT-STABILITY-DESKTOP-FALLBACK.md) | **Yes if promoted without smoke** | CLIENT-SMOKE-003 owner run |
 | Happ primary | **Yes** | Policy PT-05; client audit | No | Keep |
 | Hiddify | **Diagnostic fallback** | Same Xray JSON as Happ | No if not promoted | Owner decision |
 | Karing | **Frozen / unsupported** | LV-direct strip | Yes if recommended | Do not promote |
