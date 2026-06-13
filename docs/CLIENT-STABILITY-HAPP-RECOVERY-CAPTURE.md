@@ -93,6 +93,8 @@ python ops/happ_routing_directip_guard.py
 | **B — routing OFF** | Happ routing **disabled** one session; core JSON only | If RU routing layer still contributes | Intl sites work; RU `.ru` may split-tunnel differently | No improvement | Re-enable routing | No |
 | **C — relay #2-only** | Owner support profile: proxy-4/5/6 only | relay#1 is worse | Stable on relay#2 paths | Still fails | Delete test profile | **Yes** — support profile |
 | **D — single-relay deterministic** | One outbound, no random balancer | Happ+balancer instability | Stable single path | Still fails | Remove test profile | **Yes** |
+
+**Runbook (Option A — local JSON, no prod):** [CLIENT-STABILITY-HAPP-RELAY2-LAB.md](CLIENT-STABILITY-HAPP-RELAY2-LAB.md) · `ops/generate_happ_relay2_lab_profile.py`
 | **E — DNS / UseIPv4** | Test profile: `queryStrategy=UseIPv4` or simplified DNS | DNS v6/latency class | Faster resolve; fewer resets | No change | Remove test profile | **Yes** |
 | **F — workload split** | Docs-heavy 10 min vs light browsing | Track E long-connection | Light OK, Docs fail | Both fail | None | No |
 
@@ -133,7 +135,8 @@ Removing in-core relay direct without lab proof risks failed handshakes or TUN c
 ```bash
 python ops/analyze_happ_report_tun.py report.zip
 python ops/happ_routing_directip_guard.py
-python -m pytest tests/test_analyze_happ_report_tun.py -q
+python ops/generate_happ_relay2_lab_profile.py --from-json owner_sub.json --write-json .local/lab_relay2.json
+python -m pytest tests/test_analyze_happ_report_tun.py tests/test_generate_happ_relay2_lab_profile.py -q
 ```
 
 Redacts secrets. Flags `final_state_guard` when export was taken after switching VPN.
