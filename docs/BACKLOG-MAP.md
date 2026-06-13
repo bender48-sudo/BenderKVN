@@ -90,7 +90,8 @@
 | ID | Статус | Комментарий |
 |----|--------|-------------|
 | **QA-OWNER-PREVIEW-FIX-002** | **DONE** repo `8a107ba` | Bot visual preview + cabinet CTA dedup |
-| **MONITOR-FLAP-001** | **DEPLOYED LV + soak PARTIAL** | Residual microsoft quorum TG; **MONITOR-FLAP-TUNE-001** or owner risk acceptance |
+| **MONITOR-FLAP-001** | **DEPLOYED LV + soak PARTIAL** | **MONITOR-FLAP-TUNE-001 repo DONE** — deploy + short re-soak |
+| **MONITOR-FLAP-TUNE-001** | **DONE (repo)** | CDN quorum log-only; retried warn ≤1/h |
 | **OPS-ALERT-HYGIENE-001** | **DEPLOYED LV + soak PASS** | Cert digest batched; per-target cert spam stopped |
 | **ACQ-*** / **REF-*** | OPEN | См. MASTER; не дублировать OPS-CAPACITY-300 / NODE-RELAY-ADD |
 | **VPN-ARCH-001** | AWAITING APPROVAL | **QUALITY-PROOF-001 DONE**: NL pre-qualified; A2/A4 smoke after soak; not active capacity |

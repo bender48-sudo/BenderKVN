@@ -239,7 +239,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | 3b | **P0** | **Browser SaaS long-session drops** (INCIDENT-004, G1) | Desktop document/chat SaaS positioning |
 | 4 | **P0** | **DEVICE-ENFORCE-001** — same-sub URL reuse undetected (G7) | Paid/open; referral at scale |
 | 5 | **P1** | **No admin user lookup / revoke-replace path** (G7, G8) | Commercial support at scale |
-| 6 | **P1** | **No automated monitoring/alerting for profile integrity + billing** (G9); **MONITOR-FLAP-001** soak **PARTIAL**; **OPS-ALERT-HYGIENE-001** soak **PASS** (LV `50a6ac4`, closeout 2026-06-13) | Open launch; acquisition scale review; **node readiness decisions** |
+| 6 | **P1** | **No automated monitoring/alerting for profile integrity + billing** (G9); **MONITOR-FLAP-001** soak **PARTIAL**; **MONITOR-FLAP-TUNE-001 repo DONE** (deploy pending); **OPS-ALERT-HYGIENE-001** soak **PASS** | Open launch; acquisition scale review; **node readiness decisions** |
 | 6a | **P1** | **NL not active delivery; pre-qualified for A2/A4 smoke after soak** (PROOF-001 + QUALITY-PROOF-001 2026-06-11) — relay-only×6 live; **≥2 verified delivery-path nodes** after controlled smoke — **VPN-ARCH-001**; **VPN-NODE-RUNBOOK-001** | Acquisition/referral growth; 300 active configs/devices |
 | 7 | **P1** | **Copy false promises** — `device_rule` self-service new config (G10) | External traffic — **TRACK 0 tomorrow** |
 | 8 | **P1** | **No CI / secret scanning** (G11) | Multi-contributor / open launch |
@@ -305,7 +305,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | Payment bind failures | AMS log grep + recovery path |
 | Multi-key anomaly | Admin handling procedure tested |
 | Referral web→TG | Bind success + `referrals` row migrated |
-| **NL active capacity** | **QUALITY-PROOF-001 DONE** — NL pre-qualified (RU relay→NL PASS, infra OK); **not** active until A2/A4 controlled smoke + post-inclusion audit; **MONITOR-FLAP soak PARTIAL** (2026-06-13) — NL A2/A4 needs owner risk acceptance or **MONITOR-FLAP-TUNE-001** before smoke |
+| **NL active capacity** | **QUALITY-PROOF-001 DONE** — NL pre-qualified; **MONITOR-FLAP soak PARTIAL**; **MONITOR-FLAP-TUNE-001 repo DONE** — NL A2/A4 after tune deploy + short soak PASS or owner PARTIAL risk acceptance |
 
 ---
 

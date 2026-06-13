@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MONITOR-FLAP-001: selfsteal-monitor anti-flap regression tests."""
+"""MONITOR-FLAP-001 / MONITOR-FLAP-TUNE-001: selfsteal-monitor anti-flap regression tests."""
 from __future__ import annotations
 
 import importlib.util
@@ -39,6 +39,7 @@ def _run_cycle(mod, prev_state, results, *, is_first_run=False, **kwargs):
         "ok_streak_need": mod.DEFAULT_OK_STREAK,
         "re_alert_cooldown_sec": mod.DEFAULT_RE_ALERT_COOLDOWN_SEC,
         "recover_notify_min_sec": mod.DEFAULT_RECOVER_NOTIFY_MIN_SEC,
+        "retried_warn_log_sec": mod.DEFAULT_RETRIED_WARN_LOG_SEC,
     }
     defaults.update(kwargs)
     return mod.process_node_checks(
@@ -134,16 +135,98 @@ def test_flap_does_not_spam_every_cycle():
     assert telegram_down <= 2
 
 
-def test_quorum_pages_with_two_bad_snis():
+def test_cdn_quorum_does_not_page_immediately():
     mod = _load_selfsteal()
     results = [
         _critical_result("www.microsoft.com"),
         _critical_result("www.apple.com"),
     ]
     state, down, recovered, logs = _run_cycle(mod, {}, results)
+    assert down == []
+    assert recovered == []
+    assert any("quorum blip" in ln for ln in logs)
+    assert state["latvia:www.microsoft.com"]["alerting"] is False
+
+
+def test_non_cdn_quorum_still_pages():
+    mod = _load_selfsteal()
+    results = [
+        _critical_result("id.x5.ru"),
+        _critical_result("eh.vk.com"),
+    ]
+    state, down, recovered, logs = _run_cycle(mod, {}, results)
     assert len(down) == 2
     assert any("quorum" in item.get("page_reason", "") for item in down)
     assert recovered == []
+
+
+def test_cdn_sustained_failure_still_pages():
+    mod = _load_selfsteal()
+    prev = {}
+    down_all = []
+    for _ in range(mod.DEFAULT_FAIL_STREAK):
+        state, down, _, logs = _run_cycle(
+            mod,
+            prev,
+            [_critical_result("www.microsoft.com"), _critical_result("www.apple.com")],
+        )
+        prev = state
+        down_all.extend(down)
+    assert len(down_all) >= 1
+    assert any(
+        "sustained fail (CDN)" in item.get("page_reason", "") for item in down_all
+    )
+    assert state["latvia:www.microsoft.com"]["alerting"] is True
+
+
+def test_retried_warning_throttled_per_hour():
+    mod = _load_selfsteal()
+    recent = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    prev = {
+        "latvia:api.github.com": {
+            "status": "ok",
+            "alerting": False,
+            "fail_streak": 0,
+            "ok_streak": 1,
+            "retry_count": 6,
+            "last_retried_warn_log": recent,
+            "last_change": "2026-06-01T00:00:00Z",
+        }
+    }
+    result = {
+        "sni": "api.github.com",
+        "code": 200,
+        "level": "ok",
+        "reason": None,
+        "retried": True,
+    }
+    _, _, _, logs = _run_cycle(mod, prev, [result], retried_warn_log_sec=3600)
+    assert not any("retried" in ln for ln in logs)
+
+
+def test_retried_warning_logs_after_cooldown():
+    mod = _load_selfsteal()
+    old = (datetime.now(timezone.utc) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    prev = {
+        "latvia:api.github.com": {
+            "status": "ok",
+            "alerting": False,
+            "fail_streak": 0,
+            "ok_streak": 1,
+            "retry_count": 6,
+            "last_retried_warn_log": old,
+            "last_change": "2026-06-01T00:00:00Z",
+        }
+    }
+    result = {
+        "sni": "api.github.com",
+        "code": 200,
+        "level": "ok",
+        "reason": None,
+        "retried": True,
+    }
+    _, _, _, logs = _run_cycle(mod, prev, [result], retried_warn_log_sec=3600)
+    assert any("retried" in ln for ln in logs)
 
 
 def test_legacy_state_backward_compatible():
@@ -198,7 +281,11 @@ def main() -> int:
     test_down_only_after_fail_streak_threshold()
     test_recovered_only_after_ok_streak_threshold()
     test_flap_does_not_spam_every_cycle()
-    test_quorum_pages_with_two_bad_snis()
+    test_cdn_quorum_does_not_page_immediately()
+    test_non_cdn_quorum_still_pages()
+    test_cdn_sustained_failure_still_pages()
+    test_retried_warning_throttled_per_hour()
+    test_retried_warning_logs_after_cooldown()
     test_legacy_state_backward_compatible()
     test_cooldown_blocks_realert_after_recovery()
     print("SELFSTEAL_MONITOR_ANTIFLAP_OK")

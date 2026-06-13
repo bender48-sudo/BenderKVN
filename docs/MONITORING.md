@@ -11,15 +11,15 @@
 | Telegram `/status` | бот admin | ручной снимок |
 | `https://k9x2m1.conntest.xyz/status` | публичный JSON | инциденты (без ops-секретов) |
 
-## Уровни алертов (MONITOR-FLAP-001 / OPS-ALERT-HYGIENE-001)
+## Уровни алертов (MONITOR-FLAP-001 / MONITOR-FLAP-TUNE-001 / OPS-ALERT-HYGIENE-001)
 
 | Уровень | Куда | Примеры |
 |---------|------|---------|
-| **silent / log** | `/var/log/bvpn-*.log`, state.json | одиночный HTTP 0 на CDN SNI до порога streak; cert change при cooldown digest |
-| **warning / digest** | log + опционально один TG digest | RU MONITOR cert rotation (батч ≤1/ч); CDN SNI degraded fail_streak 1/3 |
-| **paging** | Telegram 🚨 | sustained fail (fail_streak ≥3 @ */5 cron); quorum ≥2 SNI на ноде; RU TLS down batch |
+| **silent / log** | `/var/log/bvpn-*.log`, state.json | CDN quorum blip (log-only); cert change при cooldown digest; retried counter без hourly repeat |
+| **warning / digest** | log + опционально один TG digest | RU MONITOR cert rotation (батч ≤1/ч); CDN SNI degraded fail_streak 1/3; retried WARNING ≤1/ч на SNI |
+| **paging** | Telegram 🚨 | sustained fail (fail_streak ≥3 @ */5 cron); **non-CDN** quorum ≥2 SNI; baseline RU sustained; RU TLS down batch |
 
-**Deploy на LV:** owner-approved 2026-06-11 (`50a6ac4`). **24h soak closeout 2026-06-13:** window 2026-06-11 15:11 UTC → 2026-06-12 15:11 UTC (+ extended observation to 2026-06-13). **Result:** legacy selfsteal CRITICAL spam eliminated; cert digest PASS; residual `latvia:www.microsoft.com` quorum paging (~17 TG cycles/24h) — soak **PARTIAL**. See [`CHECKPOINT-2026-06-12-CLIENT-NODES-MONITORING.md`](CHECKPOINT-2026-06-12-CLIENT-NODES-MONITORING.md) §8.
+**Deploy на LV:** owner-approved 2026-06-11 (`50a6ac4`). **24h soak closeout 2026-06-13:** soak **PARTIAL** — residual `microsoft.com` quorum TG (~17/24h). **MONITOR-FLAP-TUNE-001 (repo):** CDN SNI excluded from quorum-only paging; retried warnings throttled to ~1/h — **deploy pending** after owner approval. See [`CHECKPOINT-2026-06-12-CLIENT-NODES-MONITORING.md`](CHECKPOINT-2026-06-12-CLIENT-NODES-MONITORING.md) §8.
 
 ### selfsteal-monitor.py — anti-flap
 
@@ -31,10 +31,11 @@
 | `SELFSTEAL_OK_STREAK_THRESHOLD` | 2 | ~10 мин OK перед RECOVERED |
 | `SELFSTEAL_RE_ALERT_COOLDOWN_SEC` | 900 | cooldown после RECOVERED |
 | `SELFSTEAL_RECOVER_NOTIFY_MIN_SEC` | 3600 | не чаще 1 RECOVERED TG/час на SNI |
+| `SELFSTEAL_RETRIED_WARN_LOG_SEC` | 3600 | retried WARNING не чаще 1/ч на SNI (MONITOR-FLAP-TUNE-001) |
 
-CDN SNI (`microsoft`, `apple`, `bing`): одиночный HTTP 0 → log/warning до streak или quorum (≥2 SNI). Baseline RU SNIs (X5/VK/Ozon): paging после sustained fail. Несколько SNI в одном прогоне → один batched TG.
+CDN SNI (`microsoft`, `apple`, `bing`): **quorum blip → log-only**; TG paging только после **sustained fail** (fail_streak ≥3). Baseline RU SNIs (X5/VK/Ozon): paging после sustained fail **или** non-CDN quorum. `api.github.com` retried warnings: log ≤1/ч, **не TG**.
 
-State: `/var/lib/bvpn-selfsteal-monitor/state.json` — поля `fail_streak`, `ok_streak`, `alerting`, `cooldown_until` (legacy entries мигрируют автоматически).
+State: `/var/lib/bvpn-selfsteal-monitor/state.json` — поля `fail_streak`, `ok_streak`, `alerting`, `cooldown_until`, `last_retried_warn_log` (legacy entries мигрируют автоматически).
 
 ### ru-monitor.py — cert digest
 

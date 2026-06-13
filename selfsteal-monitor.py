@@ -44,9 +44,10 @@ DEFAULT_FAIL_STREAK = 3
 DEFAULT_OK_STREAK = 2
 DEFAULT_RE_ALERT_COOLDOWN_SEC = 900
 DEFAULT_RECOVER_NOTIFY_MIN_SEC = 3600
+DEFAULT_RETRIED_WARN_LOG_SEC = 3600
 QUORUM_MIN_BAD = 2
 
-# CDN-heavy decoy SNIs: brief HTTP 0 is warning/log-only until sustained or quorum.
+# CDN-heavy decoy SNIs: quorum blips are log-only; TG paging requires sustained fail.
 CDN_HEAVY_SNIS = frozenset({
     "www.microsoft.com",
     "www.apple.com",
@@ -198,6 +199,21 @@ def recover_notify_allows(prev, recover_notify_min_sec):
         return True
 
 
+def retried_warn_log_allows(prev, warn_log_sec):
+    """True if consecutive-retried WARNING may be written (rate limit per key)."""
+    if not prev:
+        return True
+    last = prev.get("last_retried_warn_log")
+    if not last:
+        return True
+    try:
+        then = datetime.fromisoformat(last.replace("Z", "+00:00"))
+        elapsed = (datetime.now(timezone.utc) - then).total_seconds()
+        return elapsed >= warn_log_sec
+    except (ValueError, TypeError):
+        return True
+
+
 def normalize_prev_entry(prev):
     """Migrate legacy state entries (pre anti-flap) without crashing."""
     if not prev:
@@ -240,19 +256,27 @@ def evaluate_paging_down(
             f"suppressed: cooldown active fail_streak {fail_streak}/{fail_streak_need}"
         )
 
-    if quorum and fail_streak >= 1:
-        return True, "paging: quorum fail"
-
     if is_baseline and fail_streak >= fail_streak_need:
         return True, "paging: sustained fail (baseline)"
 
-    if is_cdn and http_zero:
+    # CDN SNIs: never page on quorum alone — require sustained fail (~15 min @ */5).
+    if is_cdn:
         if fail_streak >= fail_streak_need:
-            return True, "paging: sustained fail"
-        return False, (
-            f"warning: CDN SNI degraded; suppressed: fail_streak "
-            f"{fail_streak}/{fail_streak_need}"
-        )
+            return True, "paging: sustained fail (CDN)"
+        if quorum:
+            return False, (
+                f"warning: CDN SNI quorum blip; suppressed: fail_streak "
+                f"{fail_streak}/{fail_streak_need}"
+            )
+        if http_zero:
+            return False, (
+                f"warning: CDN SNI degraded; suppressed: fail_streak "
+                f"{fail_streak}/{fail_streak_need}"
+            )
+        return False, f"suppressed: fail_streak {fail_streak}/{fail_streak_need}"
+
+    if quorum and fail_streak >= 1:
+        return True, "paging: quorum fail"
 
     if fail_streak >= fail_streak_need:
         return True, "paging: sustained fail"
@@ -271,6 +295,7 @@ def process_node_checks(
     ok_streak_need,
     re_alert_cooldown_sec,
     recover_notify_min_sec,
+    retried_warn_log_sec,
 ):
     """Apply anti-flap to one node's probe results.
 
@@ -297,6 +322,7 @@ def process_node_checks(
         last_change = prev.get("last_change", now_ts)
         cooldown_until = prev.get("cooldown_until")
         last_recover_notify = prev.get("last_recover_notify")
+        last_retried_warn_log = prev.get("last_retried_warn_log")
 
         if is_bad_probe(level):
             fail_streak += 1
@@ -378,9 +404,11 @@ def process_node_checks(
         prev_retry_count = int(prev.get("retry_count", 0))
         new_retry_count = prev_retry_count + 1 if retried else 0
         if new_retry_count >= RETRY_WARN_THRESHOLD:
-            log_lines.append(
-                f"WARNING: {key} retried {new_retry_count} times consecutively"
-            )
+            if retried_warn_log_allows(prev, retried_warn_log_sec):
+                log_lines.append(
+                    f"WARNING: {key} retried {new_retry_count} times consecutively"
+                )
+                last_retried_warn_log = now_ts
 
         new_state[key] = {
             "status": level,
@@ -391,6 +419,7 @@ def process_node_checks(
             "last_change": last_change,
             "cooldown_until": new_cooldown_until,
             "last_recover_notify": last_recover_notify,
+            "last_retried_warn_log": last_retried_warn_log,
             "code": code,
             "reason": reason,
             "retried": retried,
@@ -691,7 +720,7 @@ def format_batch_alert_down(node, items):
         lines.append(f"• <b>{sni}</b> — {status} [{page_reason}]")
     lines.append(
         "\nCheck Caddy selfsteal on this node.\n"
-        "<i>CDN SNI single blips are suppressed until sustained or quorum.</i>"
+        "<i>CDN SNI quorum blips are log-only; sustained fail required before paging.</i>"
     )
     return "\n".join(lines)
 
@@ -776,6 +805,11 @@ def main():
                 "SELFSTEAL_RECOVER_NOTIFY_MIN_SEC", DEFAULT_RECOVER_NOTIFY_MIN_SEC
             )
         )
+        retried_warn_log_sec = int(
+            balancer_env.get(
+                "SELFSTEAL_RETRIED_WARN_LOG_SEC", DEFAULT_RETRIED_WARN_LOG_SEC
+            )
+        )
 
         if not bot_token:
             log("FATAL: BOT_TOKEN not found in /etc/bvpn/balancer.env")
@@ -819,6 +853,7 @@ def main():
                 ok_streak_need=ok_streak_need,
                 re_alert_cooldown_sec=re_alert_cooldown_sec,
                 recover_notify_min_sec=recover_notify_min_sec,
+                retried_warn_log_sec=retried_warn_log_sec,
             )
             new_state.update(node_state)
             transitions += len(pending_down) + len(pending_recovered)
