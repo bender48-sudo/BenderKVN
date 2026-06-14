@@ -234,3 +234,172 @@ Sleep/wake recovery **not proven stable** on relay2 lab; do not fold into active
 | **B** | If repeat SOFT PASS → design controlled prod strategy: reduce/exclude relay #1 from selector; preserve rollback; **owner approval required** |
 | **C** | Keep desktop fallback v2rayN path ready ([CLIENT-STABILITY-DESKTOP-FALLBACK.md](CLIENT-STABILITY-DESKTOP-FALLBACK.md)) |
 | **D** | Sleep/wake remains separate track — CLIENT-SMOKE-001 |
+
+---
+
+## CLIENT-STABILITY-HAPP-RELAY2-REPEAT-SOAK-001 — repeat active soak (decision gate)
+
+**Task:** CLIENT-STABILITY-HAPP-RELAY2-REPEAT-SOAK-001
+**Status:** **PASS** — repeat relay2 active soak (report(8) · 2026-06-15)
+**Prior evidence:** report(7) · commit `2e2bca9` — active **SOFT PASS**; sleep/wake contaminated
+**Mode:** owner-run · **no prod mutation** · **no deploy**
+
+### Why repeat
+
+report(7) improved active-session evidence (~6.6/min vs report(6) ~67/min) but included **sleep/wake** and was a single capture. One more **sleep-free** 30–60 min soak is required before any controlled prod selector change.
+
+### Profile (existing lab — do not regenerate)
+
+**BenderVPN Auto [LAB relay2-only — do NOT refresh sub]**
+
+Local JSON (not in git): `.local/lab_relay2.json` · `.local/lab_relay2_one.json`
+
+### Rules (mandatory)
+
+| Rule | Required |
+|------|----------|
+| TUN | **ON** |
+| System proxy | **OFF** |
+| Routing | **BenderVPN RU** ON |
+| Refresh subscription on lab row | **NO** |
+| Sleep / lock laptop | **NO** during test |
+| Switch to SafeVPN before export on FAIL | **NO** |
+| Reimport / routing toggle mid-soak | **NO** |
+
+### Duration and activities
+
+**30–60 minutes** continuous active work:
+
+1. **Cursor Agent** — active use; count visible “Reconnecting…”
+2. **Google Docs** — edit and scroll throughout
+3. **Gmail** — load and use at least once
+4. **Telegram** — web or desktop active
+5. **ipinfo.io / ifconfig.me** — once at start and near end
+6. **ya.ru / vk.com** — once (RU direct expected)
+
+### Verdict criteria
+
+| Verdict | Criteria |
+|---------|----------|
+| **PASS** | 30–60 min; Cursor not repeatedly reconnecting; Docs/Gmail/TG usable; no connected-but-dead; no Happ crash; no SafeVPN needed |
+| **SOFT PASS** | Isolated lag/reconnect; work remains usable — record caveats |
+| **FAIL** | Repeated Cursor reconnect; Docs/Gmail/TG unusable; connected-but-no-traffic; Happ crash; SafeVPN required |
+
+### If FAIL
+
+1. Export **`report.zip`** while still on the **lab profile**.
+2. Store locally: `.secrets/diagnostics/report-8-relay2-repeat-soak.zip` (not committed).
+3. Analyze:
+
+```powershell
+python ops/analyze_happ_report_tun.py path\to\report.zip
+```
+
+4. Then disconnect / switch if needed for work.
+
+### Owner result record
+
+| Field | Value |
+|-------|-------|
+| Date | 2026-06-15 (export ~00:57 local) |
+| Duration | **~59 min** post-wake active segment (23:59 → 00:57); full export ~102 min from 14.06 23:15 |
+| Verdict | **PASS** — repeat relay2 active soak |
+| Cursor | Stable; no visible degradation / reconnect loops |
+| Docs / Gmail / TG | Usable; **no site incidents** observed |
+| Symptoms | None requiring SafeVPN |
+| report.zip exported? | **Yes** — while on lab profile |
+| Local artifact | `.secrets/diagnostics/report-8-relay2-repeat-soak.zip` (not committed) |
+
+### Decision gate (after owner result)
+
+| Repeat verdict | Gate outcome | Next step |
+|----------------|--------------|-----------|
+| **PASS** ✓ | Eligible to **design controlled prod selector strategy** | **CLIENT-STABILITY-HAPP-RELAY2-PROD-SELECTOR-CONTROLLED-001** — **not automatically approved**; explicit owner approval required |
+| **FAIL** | **No prod selector change** | Analyze report; consider `lab_relay2_one.json` or escalate; keep v2rayN fallback |
+
+**Relay2 lab now has two positive active-session evidences:** report(7) **SOFT PASS** + report(8) repeat **PASS**. **Relay #1 remains a strong suspect** on the normal 6-way profile. **Eligible to design controlled selector strategy** — **not automatically approved for prod change**. **Sleep/wake remains open** under CLIENT-SMOKE-001.
+
+**Do not:** make relay2 prod default · rollback `happRouting` · mark Happ desktop fully launch-ready · treat this export as sleep/wake PASS.
+
+---
+
+## report(8) — repeat active soak evidence (2026-06-15)
+
+**Task:** CLIENT-STABILITY-HAPP-RELAY2-REPEAT-SOAK-001
+**Local artifact:** `.secrets/diagnostics/report-8-relay2-repeat-soak.zip` (not committed)
+**Analyzer:** `python ops/analyze_happ_report_tun.py .secrets/diagnostics/report-8-relay2-repeat-soak.zip`
+
+### Session context
+
+| Field | Value |
+|-------|-------|
+| Happ | 2.16.2 (546) · core 26.3.27 · tun 1.12.12 |
+| Profile | **BenderVPN Auto [LAB relay2-only — do NOT refresh sub]** |
+| TUN | **ON** |
+| System proxy | **OFF** |
+| Routing | **BenderVPN RU** ON |
+| Export span | 14.06 23:15 → 15.06 00:57 local (~102 min total) |
+| **Repeat active segment** | Post-wake **~59 min** (14.06 23:59 → 15.06 00:57) — grades repeat soak |
+| Final state | Clean Bender lab profile — usable as evidence |
+
+### Profile integrity (confirmed)
+
+| Check | report(8) |
+|-------|-----------|
+| Relay #1 outbounds (`proxy`…`proxy-3`) | **Absent** |
+| Relay #2 outbounds | **Present** — `proxy-4`, `proxy-5`, `proxy-6` |
+| `lab_relay2_only` | **true** |
+| Happ DirectIp | 6 private/system CIDRs; **no `geoip:ru`**; **no relay IP overlap** |
+| `dial_open_errors` | **0** |
+| `outbound_direct_to_relay` | **0** |
+| `happ_directip_leak_signal` | **false** |
+| Relay #1 log bias | **0** |
+
+### Error characterization (full export + repeat segment)
+
+| Class | Full export | Repeat segment (~59 min post-wake) | report(6) baseline |
+|-------|-------------|-------------------------------------|-------------------|
+| `i/o timeout` | **3** | **3** | Dominant pre-fix storm |
+| `dial_open` / open outbound | **0** | **0** | Part of DirectIp storm |
+| `download_closed` / `upload_closed` / `forcibly_closed` | Present (long-lived reset class) | ~523 error-like lines (~8.9/min) | Primary report(6) failure class |
+| Error storm (i/o + dial) | **No** | **No** | Yes (report(6) era) |
+| Happ crash during repeat segment | **No** (owner + log) | — | — |
+
+Remaining log noise is **connection close/reset class** — does **not** correlate with owner-visible failure (no incidents; Cursor stable; no SafeVPN).
+
+### Sleep/wake (separate track — do not fold into active PASS)
+
+| Signal | report(8) |
+|--------|-----------|
+| Sleep/wake in export | **Yes** — timer gap 23:51; wake recovery 23:57–23:58 (same session as report(7) start) |
+| Used as sleep/wake evidence | **No** — repeat soak grades **post-wake active segment only** |
+| Sleep/wake verdict | **OPEN** — CLIENT-SMOKE-001 |
+
+### Verdict
+
+| Track | Verdict | Rationale |
+|-------|---------|-----------|
+| **Repeat relay2 active soak** | **PASS** | ~59 min post-wake; owner: no site incidents; Cursor stable; no SafeVPN; profile integrity OK; no i/o timeout / dial-open storm; no active-session crash |
+| **Sleep/wake** | **OPEN** | Wake events present in export; not proven stable |
+| **Happ desktop launch gate** | **OPEN** | Normal Bender row soak still pending; sleep/wake unresolved; not commercial launch GO |
+
+**Interpretation:** **Repeat relay2 active soak PASS** confirms report(7) direction. **Relay #1 remains a strong suspect** on prod 6-way selector — **eligible to design controlled selector strategy**, **not automatically approved for prod change**.
+
+---
+
+## CLIENT-STABILITY-HAPP-RELAY2-PROD-SELECTOR-CONTROLLED-001 — recommended if repeat PASS/SOFT PASS
+
+**Status:** **ELIGIBLE — NOT STARTED** — REPEAT-SOAK-001 **PASS** recorded; requires **explicit owner approval** before any prod change
+**Mode:** controlled prod change · rollback mandatory · **no broad launch** until owner smoke passes
+
+| Requirement | Detail |
+|-------------|--------|
+| Snapshot | Current prod subscription / template / panel settings before change |
+| Dry-run | Selector diff — show relay #1 exclusion impact on `Intl_Direct` / `Intl_Stealth` |
+| Change | Controlled reduce/exclude relay #1 from normal **BenderVPN Auto** selector |
+| Constraints | No `fallbackTag=direct`; preserve TG/IG/Meta stealth rules; DirectIp guard unchanged |
+| Verify | Owner smoke on prod profile post-change |
+| Rollback | Documented revert command / template restore |
+| Launch | Desktop launch gate stays **OPEN** until smoke result + sleep track separate |
+
+**Not authorized from repeat soak alone** — owner must explicitly approve this task.

@@ -6,9 +6,7 @@
 **Mode:** read-only audit · **no prod mutation** · **no deploy**  
 **Parent audits:** [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md) · [`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md)
 
-**Parallel owner work:** `CLIENT-STABILITY-HAPP-RELAY2-REPEAT-SOAK-001` may be running on relay2 lab profile — **do not interrupt**. This checkpoint does not require owner to simulate work.
-
-**Worktree note:** Uncommitted protocol docs for REPEAT-SOAK-001 exist locally (not in this commit). This checkpoint cites **committed** evidence at `2e2bca9` plus owner context where stated.
+**Parallel owner work:** REPEAT-SOAK-001 **PASS** recorded (report(8)); sleep/wake track remains separate (CLIENT-SMOKE-001).
 
 ---
 
@@ -25,7 +23,7 @@
 
 - **VPN profile integrity (Candidate D):** **PASS** for Happ-class emit — 6 relay outbounds, DoH, selector parity ([`APPLY-2026-06-10-VPN-CANDIDATE-D.md`](APPLY-2026-06-10-VPN-CANDIDATE-D.md)).
 - **Happ DirectIp fix:** **Deployed** to prod `happRouting` (owner context); repo `0258d00`; owner retest `0635067`; prod smoke recorded `9f4f3b4`. **Do not rollback.**
-- **Desktop Happ launch gate:** **OPEN** — TUN starts fast; long-session + sleep/wake unresolved; relay #1 strong suspect; repeat relay2 soak **PENDING**.
+- **Desktop Happ launch gate:** **OPEN** — TUN starts fast; sleep/wake unresolved; relay #1 strong suspect; repeat relay2 active soak **PASS** (report(8)); normal Bender row soak still pending.
 - **Mobile Happ launch gate:** **OPEN** — smoke plan `b85df09`; summarizer `3c850e8`; **PASS not recorded**.
 - **Delivery capacity for growth:** **NO-GO** — effective **one LV geography** behind relays; NL **not** normal Auto capacity ([`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md) § capacity).
 - **Referral/acquisition growth:** **NO-GO** until client stability, capacity ≥2 delivery paths, anti-abuse/admin, and payment gates close.
@@ -62,7 +60,7 @@ Legend: **DONE** = deployed + evidence · **PARTIAL** = works with gaps · **BLO
 | **Subscription / config issuance** | Bot link, QR, Happ import | **DONE** | One config = one device (support manual) | Candidate D sub; Remna provision | DEVICE-ENFORCE not live | No multi-device promise |
 | **App setup** | Portal setup + Happ routing import | **PARTIAL** | Users skip **BenderVPN RU** routing → wrong split | Setup docs; DirectIp guard | Journey QA scenarios 3,6 | Routing import must stay in setup |
 | **First connection** | Happ TUN / mobile VPN | **PARTIAL** | Desktop long-session; mobile unproven | DirectIp fix; TUN fast | REPEAT-SOAK; MOBILE-SMOKE | Windows: disclose sleep risk |
-| **Daily use** | Auto profile, no server pick | **PARTIAL** | Relay #1 bias report(6); resets under load | report(7) relay2 SOFT PASS active | Repeat soak; normal Bender soak | No NL/LV/relay pick in copy |
+| **Daily use** | Auto profile, no server pick | **PARTIAL** | Relay #1 bias report(6); resets under load | report(7)+(8) relay2 active evidences | Normal Bender soak; prod selector planning only with owner approval | No NL/LV/relay pick in copy |
 | **Renewal / top-up** | Balance debit 6.67 ₽/day | **PARTIAL** | Sync fail → balance credited, VPN not extended | BILL-001 S10 | BILL-SMOKE-002/003 | Support runbook for sync fail |
 | **Support** | TG support, `/id` | **PARTIAL** | No user lookup by TG/email; AI arch only | SUPPORT-AI-ARCH designed | Admin lookup P1-ADM-001 | Fallback scripts below §8 |
 | **Fallback (Windows/Happ fail)** | v2rayN / relay2 lab | **PROTOCOL READY** | v2rayN = LV direct only; not Auto-equivalent | `9c3400e` desktop fallback doc | CLIENT-SMOKE-003 owner | Support path documented; not product default |
@@ -74,7 +72,7 @@ Legend: **DONE** = deployed + evidence · **PARTIAL** = works with gaps · **BLO
 | Client | Launch role | Status | Evidence | Blockers | Support action |
 |--------|-------------|--------|----------|----------|----------------|
 | **Happ desktop — normal Auto** | Primary product path | **PARTIAL** | Candidate D; DirectIp fixed; TUN ~1.2s | Long-session OPEN (report(6)); sleep/wake OPEN (report(7)); **desktop launch gate OPEN** | Stay on Happ + **BenderVPN RU** routing; export report.zip before switching VPN |
-| **Happ relay2 lab** | Owner/support isolation | **SOFT PASS** (active only) | report(7) `2e2bca9`; 0 i/o timeout; ~6.6 err/min | Sleep/wake FAIL; **REPEAT-SOAK PENDING**; not prod default | Import local lab JSON; **no refresh** on lab row |
+| **Happ relay2 lab** | Owner/support isolation | **PASS** (repeat active) + **SOFT PASS** (report(7)) | report(7)+(8); 0 dial/open storm; repeat ~59 min post-wake | Sleep/wake **OPEN**; not prod default; **eligible** for controlled selector design | Import local lab JSON; **no refresh** on lab row |
 | **v2rayN fallback** | Windows support alternate | **PROTOCOL READY** | `9c3400e`; `probe_fallback_client_sub.py` | Not Auto-equivalent; no stealth split; **owner smoke PENDING** (CLIENT-SMOKE-003) | Give existing sub URL; warn RU sites may proxy |
 | **Karing exploratory** | Second alternate | **EXPLORATORY** | Client audit | LV-direct sing-box; not launch default | Only if v2rayN insufficient |
 | **Happ mobile** | **Launch primary mobile** | **PENDING** | Plan `b85df09`; logs support connectivity class | Speed/lock/LTE **PASS not recorded**; same 6-way pool as desktop | Run [`CLIENT-STABILITY-MOBILE-SMOKE.md`](CLIENT-STABILITY-MOBILE-SMOKE.md) |
@@ -191,7 +189,7 @@ Source: [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-
 
 | Rank | Sev | Blocker | Evidence |
 |------|-----|---------|----------|
-| 1 | **P0** | Desktop Happ launch gate OPEN | report(6) relay #1 bias; report(7) sleep/wake; REPEAT-SOAK **PENDING** |
+| 1 | **P0** | Desktop Happ launch gate OPEN | report(6) relay #1 bias; sleep/wake OPEN; repeat relay2 **PASS** (report(8)); normal Bender soak pending |
 | 2 | **P0** | Mobile smoke PASS not recorded | `b85df09` plan only |
 | 3 | **P0** | Capacity: **<2 delivery-path nodes** for growth | Master backlog § capacity; Candidate D single LV exit |
 | 4 | **P0** | G4 TG bind FAIL | TELEGRAM-BIND-FLOW audit |
@@ -210,10 +208,10 @@ Use existing backlog IDs — no new random tasks.
 
 | # | Task ID | Action | Gate |
 |---|---------|--------|------|
-| **A** | **CLIENT-STABILITY-HAPP-RELAY2-REPEAT-SOAK-001** | Owner: 30–60 min relay2 lab, **no sleep**, no lab refresh | PASS/SOFT → selector discussion |
+| **A** | **CLIENT-STABILITY-HAPP-RELAY2-PROD-SELECTOR-CONTROLLED-001** | **Only with explicit owner approval:** snapshot, dry-run, controlled relay #1 reduction, rollback | **ELIGIBLE — NOT STARTED** (repeat soak PASS recorded) |
 | **B** | **CLIENT-STABILITY-MOBILE-SMOKE-001** | Owner: phone-only smoke; record PASS/SOFT/FAIL | Blocks mobile acquisition |
 | **C** | **MONITOR-FLAP-TUNE-001 closeout** | Verify latest LV logs; mark SOAK PASS or accept PARTIAL | Before NL A2/A4 |
-| **D** | **CLIENT-STABILITY-HAPP-RELAY2-PROD-SELECTOR-CONTROLLED-001** | **Only if A = PASS/SOFT** + owner approval: snapshot, dry-run, controlled relay #1 reduction | Not default from one test |
+| **D** | **CLIENT-STABILITY-HAPP-LONG-SESSION-SOAK-001** | Normal **BenderVPN Auto** 30–60 min (non-lab row) | Desktop launch gate still OPEN |
 | **E** | **VPN-ARCH-001 NL A2/A4 controlled smoke** | Only after C + client gates + explicit owner approval | ≥2 delivery paths toward growth |
 
 **Then (parallel tracks after A–E progress):**
@@ -229,7 +227,7 @@ Use existing backlog IDs — no new random tasks.
 
 | # | Decision | Default if no answer |
 |---|----------|----------------------|
-| 1 | Allow controlled prod selector change (reduce relay #1) after repeat relay2 **PASS/SOFT**? | **No** — wait for repeat soak |
+| 1 | Allow controlled prod selector change (reduce relay #1)? | **Planning eligible only** — repeat relay2 active soak **PASS**; requires explicit owner approval + snapshot/dry-run/rollback before any prod change |
 | 2 | Allow NL A2/A4 controlled smoke after MONITOR-FLAP-TUNE closeout? | **No** — until soak reviewed |
 | 3 | Allow small paid beta before desktop fully fixed if v2rayN fallback documented? | **Conditional** — manual reconciliation only, ≤10 users |
 | 4 | Launch messaging: Happ mobile primary + desktop fallback disclosed? | **Recommended** for any paid users |
@@ -243,7 +241,7 @@ Use existing backlog IDs — no new random tasks.
 |------|--------|----------|---------|-------------|
 | VPN profile (Candidate D) | **PASS** | APPLY Candidate D; probes | — | Continue probe cadence |
 | Happ DirectIp / routing | **PASS** (prod) | `0258d00`, `0635067`, owner context | Do not rollback | Guard on change |
-| Desktop Happ commercial | **OPEN** | report(7); gate OPEN | Long-session; sleep/wake | REPEAT-SOAK-001 |
+| Desktop Happ commercial | **OPEN** | report(7)+(8) relay2 active; gate OPEN | Sleep/wake; normal Bender soak | PROD-SELECTOR-CONTROLLED-001 (owner approval) |
 | Mobile Happ commercial | **PENDING** | `b85df09` | No PASS recorded | MOBILE-SMOKE-001 |
 | Windows fallback | **PROTOCOL READY** | `9c3400e` | Owner smoke pending | CLIENT-SMOKE-003 |
 | Capacity / growth | **NO-GO** | 1 LV exit; NL not Auto | <2 delivery nodes | NL A2/A4 after gates |

@@ -100,6 +100,8 @@ python ops/happ_routing_directip_guard.py
 
 **Owner evidence (2026-06-14):** report(7) relay2 lab — **SOFT PASS** active session vs report(6); sleep/wake **OPEN** — [CLIENT-STABILITY-HAPP-RELAY2-LAB.md §report(7)](CLIENT-STABILITY-HAPP-RELAY2-LAB.md).
 
+**Repeat soak (decision gate):** [CLIENT-STABILITY-HAPP-RELAY2-REPEAT-SOAK-001](CLIENT-STABILITY-HAPP-RELAY2-LAB.md#client-stability-happ-relay2-repeat-soak-001--repeat-active-soak-decision-gate) — **PASS** (report(8) · 2026-06-15); sleep/wake **OPEN** separately.
+
 **Order after clean capture:** **A** → **B** → **C** or **D** (if relay-tagged errors) → **F** → **E**.
 
 ---
@@ -230,7 +232,8 @@ python ops/analyze_happ_report_tun.py path/to/report.zip
 | Profile | Duration | Verdict | Cursor | Docs | Gmail | TG | report.zip | Date |
 |---------|----------|---------|--------|------|-------|-----|------------|------|
 | BenderVPN Auto (normal) | — | **PENDING** | — | — | — | — | — | — |
-| LAB relay2-only | ~43 min | **SOFT PASS** (active) / **FAIL** (sleep-wake) | — | — | — | — | report(7) local | 2026-06-14 |
+| LAB relay2-only (report(7)) | ~43 min | **SOFT PASS** (active) / **FAIL** (sleep-wake) | — | — | — | — | report(7) local | 2026-06-14 |
+| LAB relay2-only (repeat / report(8)) | ~59 min post-wake (~102 min export) | **PASS** (active repeat) | Stable; no reconnect loops | Usable | Usable | Usable | report(8) local | 2026-06-15 |
 | LAB relay2×1 | — | **PENDING** | — | — | — | — | — | — |
 
 **Happ desktop launch gate:** remains **OPEN** until at least one **PASS** or **SOFT PASS** on normal Bender or lab profile is recorded here.
@@ -243,3 +246,4 @@ python ops/analyze_happ_report_tun.py path/to/report.zip
 | report(5) | Final SafeVPN state — invalid Bender evidence |
 | relay2 lab JSON | Generated 2026-06-13 — `.local/lab_relay2.json`, `.local/lab_relay2_one.json` |
 | report(7) relay2 lab | **SOFT PASS** active session; sleep/wake **OPEN** — see [CLIENT-STABILITY-HAPP-RELAY2-LAB.md §report(7)](CLIENT-STABILITY-HAPP-RELAY2-LAB.md) |
+| REPEAT-SOAK-001 | **PASS** (report(8)) — repeat relay2 active soak; gates PROD-SELECTOR-CONTROLLED-001 planning (**owner approval**); sleep/wake **OPEN** |
