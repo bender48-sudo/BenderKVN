@@ -10,6 +10,8 @@
 
 **Parallel work:** `CLIENT-STABILITY-HAPP-RELAY2-REPEAT-SOAK-001` may run on owner laptop — not interrupted by this audit.
 
+**Follow-up implementation:** [`G4-TG-BIND-HANDOFF-FIX-001`](#11-g4-tg-bind-handoff-fix-001-handoff-ux-only) — portal bind handoff UX + telemetry (does **not** close G4 until owner retest).
+
 ---
 
 ## 1. Executive verdict
@@ -268,6 +270,28 @@ Reuse backlog ID **ACQ-BOT-BIND-001**:
 - If migration bug proven: patch `web_tg_bind.py` / `handlers.py` in isolated commit
 
 **Do not** bundle with referral portal-first or billing schema in one commit.
+
+---
+
+## 11. G4-TG-BIND-HANDOFF-FIX-001 (handoff UX only)
+
+**Scope:** Fix portal → Telegram bind **handoff** so users reliably reach `/start bind_<token>` inside Telegram, with fallback copy/retry and safe funnel events. **No** migration logic changes unless a local bug is proven by tests.
+
+| Item | Status |
+|------|--------|
+| Primary CTA | `Открыть в Telegram` → `https://t.me/<bot>?start=bind_<token>` (+ mobile `tg://resolve?…`) |
+| Instruction | Visible `/start bind_…` preview (truncated in UI; full command on copy) |
+| Fallback | Copy `/start bind_…` + copy t.me link + retry (refresh via recover API when email stored) |
+| Browser preview warning | Copy explains browser-only preview does not bind |
+| Telemetry | `web_tg_bind_rendered`, `web_tg_bind_open_clicked`, `web_tg_bind_copy_clicked`, `web_tg_bind_retry_clicked` — event names only, no raw token in POST body |
+| Files | `web/portal/assets/bind-handoff.js`, `setup.js`, `setup.html`, `content/ru.json`, `ops/test_web_tg_bind_handoff.py` |
+
+**G4 commercial verdict after this fix:** still **NOT PASS** until owner retest (**G4-TG-BIND-RETEST-001**) proves:
+
+- `funnel_bot_start` where `meta LIKE 'bind:%'` ≥ 1 on AMS
+- bind migration completes (`web_tg_bind` row / `telegram_bound` on claim)
+
+**Next task:** **G4-TG-BIND-RETEST-001** (owner, live Telegram app, clean account).
 
 ---
 

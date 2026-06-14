@@ -8,8 +8,9 @@
   <link rel="stylesheet" href="/portal/assets/portal.css?v=30">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
   <script src="/portal/assets/qrcode.min.js?v=30" defer></script>
-  <script src="/portal/assets/portal-shared.js?v=30" defer></script>
-  <script src="/portal/assets/setup.js?v=30" defer></script>
+  <script src="/portal/assets/portal-shared.js?v=31" defer></script>
+  <script src="/portal/assets/bind-handoff.js?v=31" defer></script>
+  <script src="/portal/assets/setup.js?v=31" defer></script>
 </head>
 <body class="cosmic setup-page">
   <div class="cosmic-bg" aria-hidden="true"></div>
@@ -135,8 +136,14 @@
       <section id="bind-tg-panel" class="panel hidden">
         <h2 id="bind-tg-title" class="section-title" style="font-size:1.05rem;margin-top:0"></h2>
         <p class="muted" id="bind-tg-lead"></p>
+        <p class="bind-tg-warning muted" id="bind-tg-warning"></p>
+        <p class="muted" id="bind-tg-instruction-label"></p>
+        <p class="bind-tg-instruction"><code class="cabinet-recover-id__code" id="bind-tg-start-preview"></code></p>
+        <p class="muted" id="bind-tg-status"></p>
         <div class="actions">
-          <a class="btn btn--secondary btn--block" id="btn-bind-tg" href="#" target="_blank" rel="noopener"></a>
+          <a class="btn btn--primary btn--block" id="btn-bind-tg" href="#" rel="noopener"></a>
+          <button type="button" class="btn btn--secondary btn--block" id="btn-copy-bind-start"></button>
+          <button type="button" class="btn btn--ghost btn--block" id="btn-bind-tg-retry"></button>
           <button type="button" class="btn btn--ghost btn--block" id="btn-copy-bind"></button>
         </div>
         <p class="muted" id="bind-tg-note"></p>

@@ -6,12 +6,14 @@
   var API_RECOVER = "/setup/api/web-trial-recover";
   var API_VERIFY = "/setup/api/verify";
   var API_TELEGRAM_SETUP = "/setup/api/telegram-setup";
+  var API_FUNNEL = "/setup/api/funnel-event";
   var SUPPORT_BOT_URL = "https://t.me/Bender_KVN_bot";
 
   var params = new URLSearchParams(window.location.search);
   var token = params.get("t") || "";
   var content = null;
   var lastStoreKey = "generic";
+  var lastBindExtra = null;
 
   function $(id) {
     return document.getElementById(id);
@@ -262,9 +264,10 @@
     }
   }
 
-  function bindCopy(btn, text, doneText) {
+  function bindCopy(btn, text, doneText, onCopy) {
     if (!btn) return;
     btn.onclick = function () {
+      if (typeof onCopy === "function") onCopy();
       var done = function () {
         var prev = btn.textContent;
         btn.textContent = doneText;
@@ -283,6 +286,88 @@
     };
   }
 
+  function trackFunnel(event) {
+    try {
+      fetch(API_FUNNEL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: event }),
+        keepalive: true,
+      }).catch(function () {});
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function parseBindHandoff(bindUrl) {
+    if (
+      window.BenderBindHandoff &&
+      typeof window.BenderBindHandoff.parseBindUrl === "function"
+    ) {
+      return window.BenderBindHandoff.parseBindUrl(bindUrl);
+    }
+    return null;
+  }
+
+  function formatBindStartPreview(startCommand) {
+    if (
+      window.BenderBindHandoff &&
+      typeof window.BenderBindHandoff.formatStartCommandPreview === "function"
+    ) {
+      return window.BenderBindHandoff.formatStartCommandPreview(startCommand);
+    }
+    return startCommand;
+  }
+
+  function openBindInTelegram(handoff) {
+    if (!handoff) return;
+    trackFunnel("web_tg_bind_open_clicked");
+    var statusEl = $("bind-tg-status");
+    var s = content && content.setup;
+    if (statusEl && s && s.bind_tg_status_opening) {
+      statusEl.textContent = s.bind_tg_status_opening;
+    }
+    var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+    if (isMobile && handoff.tgResolveUrl) {
+      window.location.href = handoff.tgResolveUrl;
+      setTimeout(function () {
+        openExternal(handoff.httpsUrl);
+      }, 600);
+    } else {
+      openExternal(handoff.httpsUrl);
+    }
+  }
+
+  function retryBindHandoff() {
+    trackFunnel("web_tg_bind_retry_clicked");
+    var panel = $("bind-tg-panel");
+    var s = content && content.setup;
+    var statusEl = $("bind-tg-status");
+    if (statusEl && s && s.bind_tg_status_retry) {
+      statusEl.textContent = s.bind_tg_status_retry;
+    }
+    var email = "";
+    try {
+      email = (localStorage.getItem("bvpn_customer_email") || "").trim();
+    } catch (e) {
+      /* ignore */
+    }
+    if (email) {
+      postJson(API_RECOVER, { email: email })
+        .then(function (res) {
+          if (res.body && res.body.bind_url && !res.body.telegram_bound) {
+            renderBindTelegram(res.body);
+          }
+        })
+        .catch(function () {});
+    } else if (lastBindExtra) {
+      renderBindTelegram(lastBindExtra);
+    }
+    if (panel) {
+      panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }
+
   function renderBindTelegram(extra) {
     var panel = $("bind-tg-panel");
     var s = content.setup;
@@ -291,20 +376,72 @@
       hide(panel);
       return;
     }
-    $("bind-tg-title").textContent = s.bind_tg_title || "Подтвердите в Telegram";
-    $("bind-tg-lead").textContent = s.bind_tg_lead || "";
-    var btn = $("btn-bind-tg");
-    btn.href = extra.bind_url;
-    btn.textContent = s.bind_tg_button || "Открыть бота";
-    bindExternalLink(btn);
-    $("bind-tg-note").textContent = s.bind_tg_note || "";
-    var copyBind = $("btn-copy-bind");
-    if (copyBind) {
-      copyBind.textContent = s.bind_tg_copy || "Скопировать ссылку на бота";
-      bindCopy(copyBind, extra.bind_url, s.bind_tg_copied || "Скопировано");
+    lastBindExtra = extra;
+    var handoff = parseBindHandoff(extra.bind_url);
+    if (!handoff) {
+      hide(panel);
+      return;
     }
+    $("bind-tg-title").textContent = s.bind_tg_title || "Привязать Telegram";
+    $("bind-tg-lead").textContent = s.bind_tg_lead || "";
+    var warningEl = $("bind-tg-warning");
+    if (warningEl) {
+      warningEl.textContent = s.bind_tg_warning || "";
+    }
+    var instrLabel = $("bind-tg-instruction-label");
+    if (instrLabel) {
+      instrLabel.textContent = s.bind_tg_instruction || "";
+    }
+    var previewEl = $("bind-tg-start-preview");
+    if (previewEl) {
+      previewEl.textContent = formatBindStartPreview(handoff.startCommand);
+    }
+    var statusEl = $("bind-tg-status");
+    if (statusEl) {
+      statusEl.textContent = s.bind_tg_status_default || "";
+    }
+    var btn = $("btn-bind-tg");
+    if (btn) {
+      btn.href = handoff.httpsUrl;
+      btn.textContent = s.bind_tg_button || "Открыть в Telegram";
+      btn.onclick = function (ev) {
+        ev.preventDefault();
+        openBindInTelegram(handoff);
+      };
+    }
+    var copyStart = $("btn-copy-bind-start");
+    if (copyStart) {
+      copyStart.textContent = s.bind_tg_copy_start || "Скопировать команду /start …";
+      bindCopy(
+        copyStart,
+        handoff.startCommand,
+        s.bind_tg_copied_start || "Команда скопирована",
+        function () {
+          trackFunnel("web_tg_bind_copy_clicked");
+        }
+      );
+    }
+    var retryBtn = $("btn-bind-tg-retry");
+    if (retryBtn) {
+      retryBtn.textContent = s.bind_tg_retry || "Повторить привязку";
+      retryBtn.onclick = retryBindHandoff;
+    }
+    var copyLink = $("btn-copy-bind");
+    if (copyLink) {
+      copyLink.textContent = s.bind_tg_copy || "Скопировать ссылку t.me";
+      bindCopy(
+        copyLink,
+        handoff.httpsUrl,
+        s.bind_tg_copied || "Ссылка скопирована",
+        function () {
+          trackFunnel("web_tg_bind_copy_clicked");
+        }
+      );
+    }
+    $("bind-tg-note").textContent = s.bind_tg_note || "";
     renderJourney(3);
     showEl(panel);
+    trackFunnel("web_tg_bind_rendered");
     try {
       localStorage.setItem("bvpn_bind_url", extra.bind_url);
     } catch (e) {
