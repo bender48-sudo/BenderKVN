@@ -2,11 +2,13 @@
 
 **Date:** 2026-06-15  
 **Branch:** `product-referral-cabinet-ui-v1`  
-**HEAD (committed):** `2e2bca9` — docs(client): record Happ relay2 lab evidence  
+**HEAD (committed):** `c03f638` — CodeRabbit launch triage
 **Mode:** read-only audit · **no prod mutation** · **no deploy**  
-**Parent audits:** [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md) · [`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md)
+**Parent audits:** [`COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md`](COMMERCIAL-LAUNCH-READINESS-AUDIT-2026-06-10.md) · [`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md) · [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-06-14.md)
 
-**Parallel owner work:** REPEAT-SOAK-001 **PASS** recorded (report(8)); sleep/wake track remains separate (CLIENT-SMOKE-001).
+**CodeRabbit triage (2026-06-15):** Accepted **P0** billing/terms blockers — **BILL-TERMS-GUARD-001**, **BILL-UT-001/002** — before **automated paid pilot**. Repeat relay2 active soak **PASS** (`4fdf06c` / report(8)); sleep/wake **OPEN**. Rabbit capacity/test overclaims **rejected** (see triage doc).
+
+**Parallel owner work:** REPEAT-SOAK-001 **DONE** (report(8) PASS); sleep/wake track remains separate (CLIENT-SMOKE-001).
 
 ---
 
@@ -17,13 +19,13 @@
 | **Is the product commercially ready today?** | **NO** for paid/open/referral/public acquisition. **CONDITIONAL GO** for trusted internal/friends use with disclosed limits. |
 | **What is safe now?** | **GO** — owner + trusted circle; Telegram 90d trial path; Happ mobile-first for F&F with manual support; read-only ops. |
 | **What is conditional?** | **CONDITIONAL GO** — small paid beta **only** with owner manual reconciliation per user (≤10), no growth campaigns, v2rayN fallback documented for Windows support. |
-| **What is blocked?** | **NO-GO** — invite-only commercial launch at scale, referral growth, public acquisition, **300 active configs/devices** target, automated paid self-serve without BILL-SMOKE proof. |
+| **What is blocked?** | **NO-GO** — invite-only commercial launch at scale, referral growth, public acquisition, **300 active configs/devices** target, **automated paid self-serve** until **BILL-TERMS-GUARD-001** + **BILL-UT-001/002** + **BILL-SMOKE-001..004** |
 
 **Explicit statements (not “almost ready”):**
 
 - **VPN profile integrity (Candidate D):** **PASS** for Happ-class emit — 6 relay outbounds, DoH, selector parity ([`APPLY-2026-06-10-VPN-CANDIDATE-D.md`](APPLY-2026-06-10-VPN-CANDIDATE-D.md)).
 - **Happ DirectIp fix:** **Deployed** to prod `happRouting` (owner context); repo `0258d00`; owner retest `0635067`; prod smoke recorded `9f4f3b4`. **Do not rollback.**
-- **Desktop Happ launch gate:** **OPEN** — TUN starts fast; sleep/wake unresolved; relay #1 strong suspect; repeat relay2 active soak **PASS** (report(8)); normal Bender row soak still pending.
+- **Desktop Happ launch gate:** **OPEN** — relay2 active-session evidence **improved** (report(7) SOFT PASS + report(8) repeat **PASS**); **sleep/wake still OPEN**; normal Bender row soak pending.
 - **Mobile Happ launch gate:** **OPEN** — smoke plan `b85df09`; summarizer `3c850e8`; **PASS not recorded**.
 - **Delivery capacity for growth:** **NO-GO** — effective **one LV geography** behind relays; NL **not** normal Auto capacity ([`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md) § capacity).
 - **Referral/acquisition growth:** **NO-GO** until client stability, capacity ≥2 delivery paths, anti-abuse/admin, and payment gates close.
@@ -36,7 +38,8 @@
 |------|---------|----------------|------------------|---------------------|
 | **Internal / owner testing** | **GO** | None for trusted operator | Sleep/wake on desktop; document limits | — |
 | **Friends-only controlled beta** | **CONDITIONAL GO** | Manual support; disclose desktop sleep + Windows fallback; Happ mobile preferred | Desktop long-session OPEN; mobile smoke PENDING | Waive desktop gate for F&F? |
-| **Small paid beta** | **CONDITIONAL GO** | Manual payment reconciliation; whitelist ≤10; BILL-FIX deployed (`8b9923e` / POSTDEPLOY BILL-FIX-001) | **BILL-SMOKE-001..004 not PASS**; no admin reconciliation UI; G6 PARTIAL | Allow manual paid pilot without automated smokes? |
+| **Small paid beta** | **CONDITIONAL GO** | Manual payment reconciliation; whitelist ≤10; BILL-FIX deployed | **BILL-TERMS-GUARD-001 OPEN**; **BILL-UT/SMOKE not PASS**; G6 PARTIAL | Manual pilot only until terms + offline tests |
+| **Automated paid pilot** | **NO-GO** | BILL-TERMS-GUARD + BILL-UT + BILL-SMOKE | CodeRabbit CB-1..4 open | — |
 | **Invite-only commercial launch** | **NO-GO** | G1 client stability; G6 billing proof; G8 support tooling; monitoring trustworthy | Desktop gate OPEN; mobile PENDING; bind FAIL (G4) | — |
 | **Referral growth** | **NO-GO** | G4 bind; REF-ADMIN; anti-abuse; client stability; capacity ≥2 nodes | All open | Approve portal-first share before bind fixed? |
 | **Public acquisition** | **NO-GO** | Above + capacity + CI/monitoring + copy honesty | Capacity 1 path; 30k cap not enforced | — |
@@ -56,7 +59,7 @@ Legend: **DONE** = deployed + evidence · **PARTIAL** = works with gaps · **BLO
 | **Email 1-day trial** | `/setup`, temp access | **DONE** | Fallback path only; bind broken | Web trial works | G4 bind retest | Do not sell as primary |
 | **90-day Telegram trial** | Bot trial button | **DONE** | Trial abuse unmonitored at scale | Policy PT-01 | — | Clear vs email 1d |
 | **Account / balance** | Cabinet `billing_profile` | **PARTIAL** | Wallet logic unaudited live | P1-CAB-001 deployed | BILL-SMOKE | 6.67 ₽/day messaging OK in policy |
-| **Payment / top-up** | YooKassa presets | **PARTIAL** | No live money-flow matrix PASS | BILL-001 audit; BILL-FIX-001 deployed | **BILL-SMOKE-001..004** | `BOT_PAYMENTS_LIVE` env on AMS |
+| **Payment / top-up** | YooKassa presets | **PARTIAL** | Terms bypass on callbacks; offline tests missing | CodeRabbit triage `c03f638`; BILL-001 | **BILL-TERMS-GUARD-001**, **BILL-UT-001/002**, BILL-SMOKE | Automated pilot blocked until fixed |
 | **Subscription / config issuance** | Bot link, QR, Happ import | **DONE** | One config = one device (support manual) | Candidate D sub; Remna provision | DEVICE-ENFORCE not live | No multi-device promise |
 | **App setup** | Portal setup + Happ routing import | **PARTIAL** | Users skip **BenderVPN RU** routing → wrong split | Setup docs; DirectIp guard | Journey QA scenarios 3,6 | Routing import must stay in setup |
 | **First connection** | Happ TUN / mobile VPN | **PARTIAL** | Desktop long-session; mobile unproven | DirectIp fix; TUN fast | REPEAT-SOAK; MOBILE-SMOKE | Windows: disclose sleep risk |
@@ -189,37 +192,37 @@ Source: [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-
 
 | Rank | Sev | Blocker | Evidence |
 |------|-----|---------|----------|
-| 1 | **P0** | Desktop Happ launch gate OPEN | report(6) relay #1 bias; sleep/wake OPEN; repeat relay2 **PASS** (report(8)); normal Bender soak pending |
-| 2 | **P0** | Mobile smoke PASS not recorded | `b85df09` plan only |
-| 3 | **P0** | Capacity: **<2 delivery-path nodes** for growth | Master backlog § capacity; Candidate D single LV exit |
-| 4 | **P0** | G4 TG bind FAIL | TELEGRAM-BIND-FLOW audit |
-| 5 | **P0** | BILL-SMOKE-001..004 not PASS | BILL-001; G6 PARTIAL |
-| 6 | **P1** | Referral admin / anti-abuse missing | REF-ADMIN not ready |
-| 7 | **P1** | MONITOR-FLAP-TUNE soak OPEN | `21f5a97` deployed; 6h review not committed PASS |
-| 8 | **P1** | v2rayN fallback owner smoke PENDING | CLIENT-SMOKE-003 |
-| 9 | **P1** | Support admin lookup missing | P1-ADM-001 |
+| 1 | **P0** | **BILL-TERMS-GUARD-001** — callback terms bypass | CodeRabbit triage CB-1; `handlers.py` |
+| 2 | **P0** | **BILL-UT-001/002** + **BILL-SMOKE** not PASS | G6 PARTIAL; automated paid **NO-GO** |
+| 3 | **P0** | Desktop Happ launch gate OPEN | sleep/wake OPEN; relay2 active PASS (report(8)); normal Bender soak pending |
+| 4 | **P0** | Mobile smoke PASS not recorded | `b85df09` plan only |
+| 5 | **P0** | Capacity: **<2 delivery-path nodes** | Master backlog § capacity |
+| 6 | **P0** | G4 TG bind FAIL (live) | G4 audit; **G4-TG-BIND-RETEST-001** |
+| 7 | **P1** | TRIAL-GRANT / BALANCE-KOPEKS / WEBHOOK-TOCTOU | CodeRabbit CB-2, CB-4, triage §4 |
+| 8 | **P1** | Referral admin / anti-abuse missing | REF-ADMIN not ready |
+| 9 | **P1** | MONITOR-FLAP-TUNE soak OPEN | `21f5a97` deployed |
 | 10 | **P2** | CI / gitleaks | P2-CI-001 NOT_STARTED |
 
 ---
 
-## 11. Next 5 tasks (order)
+## 11. Next implementation tasks (canonical order)
 
-Use existing backlog IDs — no new random tasks.
+Synced from [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-06-14.md) + master backlog (`c03f638`). **Before automated paid pilot:** items **1–5**.
 
 | # | Task ID | Action | Gate |
 |---|---------|--------|------|
-| **A** | **CLIENT-STABILITY-HAPP-RELAY2-PROD-SELECTOR-CONTROLLED-001** | **Only with explicit owner approval:** snapshot, dry-run, controlled relay #1 reduction, rollback | **ELIGIBLE — NOT STARTED** (repeat soak PASS recorded) |
-| **B** | **CLIENT-STABILITY-MOBILE-SMOKE-001** | Owner: phone-only smoke; record PASS/SOFT/FAIL | Blocks mobile acquisition |
-| **C** | **MONITOR-FLAP-TUNE-001 closeout** | Verify latest LV logs; mark SOAK PASS or accept PARTIAL | Before NL A2/A4 |
-| **D** | **CLIENT-STABILITY-HAPP-LONG-SESSION-SOAK-001** | Normal **BenderVPN Auto** 30–60 min (non-lab row) | Desktop launch gate still OPEN |
-| **E** | **VPN-ARCH-001 NL A2/A4 controlled smoke** | Only after C + client gates + explicit owner approval | ≥2 delivery paths toward growth |
+| **1** | **BILL-TERMS-GUARD-001** | Enforce terms on all trial/pay/wizard callbacks + tests | Automated paid pilot |
+| **2** | **TRIAL-GRANT-ATOMIC-001** | Atomic/idempotent trial grant | Paid beta scale |
+| **3** | **BILL-AUTOPAY-LIVE-GUARD-001** | Internal `BOT_PAYMENTS_LIVE` guard in autopay batch | PAY-AUTO-001 |
+| **4** | **BILL-BALANCE-KOPEKS-001** | Kopeks/Decimal day-rate + preset labels | Copy truth |
+| **5** | **BILL-UT-001** / **BILL-UT-002** | Offline billing + webhook/idempotency tests | G6 / automated paid |
+| **6** | **G4-TG-BIND-RETEST-001** | Owner live bind after handoff deploy | Referral growth |
+| **7** | **CLIENT-STABILITY-HAPP-RELAY2-PROD-SELECTOR-CONTROLLED-001** | Owner approval only — snapshot, dry-run, rollback | Not auto from soak PASS |
+| **8** | **CLIENT-STABILITY-MOBILE-SMOKE-001** | Owner phone smoke; record PASS/SOFT/FAIL | Mobile acquisition |
+| **9** | **MONITOR-FLAP-TUNE-001 closeout** | LV log review; SOAK PASS or accept PARTIAL | Before NL A2/A4 |
+| **10** | **VPN-ARCH-001** | NL A2/A4 controlled smoke after gates | ≥2 delivery paths |
 
-**Then (parallel tracks after A–E progress):**
-
-- **G4-BIND-RETEST** / ACQ-BOT-BIND-001  
-- **BILL-SMOKE-001..004** (owner-approved AMS users)  
-- **CLIENT-SMOKE-003** v2rayN owner smoke  
-- **REF-ADMIN-001** before referral campaigns  
+**Also tracked (P1/P2, not in top-10 sequence):** **BILL-WEBHOOK-CLAIM-TOCTOU-001**, **BOT-QR-MISSING-KEY-UX-001**, **BILL-LEGACY-PAYMENT-FLOW-GATE-001**, **SUBSCRIPTION-RESOLVE-TZ-001**, **BILL-SMOKE-001..004** (live AMS), **CLIENT-SMOKE-001** (sleep/wake).
 
 ---
 
@@ -245,9 +248,9 @@ Use existing backlog IDs — no new random tasks.
 | Mobile Happ commercial | **PENDING** | `b85df09` | No PASS recorded | MOBILE-SMOKE-001 |
 | Windows fallback | **PROTOCOL READY** | `9c3400e` | Owner smoke pending | CLIENT-SMOKE-003 |
 | Capacity / growth | **NO-GO** | 1 LV exit; NL not Auto | <2 delivery nodes | NL A2/A4 after gates |
-| Billing automated paid | **NO-GO** | BILL-001 | BILL-SMOKE open | Controlled AMS smokes |
+| Billing automated paid | **NO-GO** | BILL-001; CodeRabbit triage | **BILL-TERMS-GUARD-001**, BILL-UT, BILL-SMOKE | Items 1–5 in §11 |
 | Billing manual pilot | **CONDITIONAL** | BILL-FIX deployed | Owner reconciliation | Whitelist ≤10 |
-| TG bind / email path | **BLOCKED** | G4 audit FAIL | bind:* = 0 | G4-BIND-RETEST |
+| TG bind / email path | **BLOCKED** | G4 audit FAIL | bind:* = 0 live | **G4-TG-BIND-RETEST-001** |
 | Referral growth | **NO-GO** | REF arch | Admin/anti-abuse | REF-ADMIN after bind |
 | Monitoring | **PARTIAL** | FLAP PARTIAL; TUNE soak OPEN | Residual CDN quorum | TUNE closeout |
 | F&F / internal use | **GO** | Launch audit §5A | Disclose limits | Manual support |
@@ -258,6 +261,9 @@ Use existing backlog IDs — no new random tasks.
 
 | Hash | Topic |
 |------|-------|
+| `c03f638` | CodeRabbit launch triage |
+| `4fdf06c` | Repeat relay2 soak PASS (report(8)) |
+| `ed8b563` | G4 bind handoff UX (repo) |
 | `2e2bca9` | report(7) relay2 lab evidence |
 | `3c850e8` | mobile smoke log summarizer |
 | `b85df09` | mobile stability smoke plan |

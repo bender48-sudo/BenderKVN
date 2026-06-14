@@ -10,6 +10,8 @@
 |---------|------|------|
 | **1. Исполнение** | **`docs/BACKLOG-QUEUE.md`** | Линейная очередь **Q001…**; единственный **`NEXT`** |
 | **2. Задачи и журнал** | **`docs/COMMERCIAL-BACKLOG.md`** | ID, Done when, §7.1 P3-FLOW, **§12** прогресс на проде |
+| **2b. Canonical master** | **`docs/BENDERVPN-MASTER-BACKLOG.md`** | All product/VPN/billing IDs incl. CodeRabbit remediation (`c03f638`) |
+| **2c. CodeRabbit triage** | **`docs/CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`** | Accepted/rejected findings; remediation order |
 | **3. Флоу (продукт)** | **`docs/USER-FLOW-BACKLOG.md`** | Принципы, MVP/Comfort, бабушка-тест |
 | **4. Агент — VPN аудит** | **`docs/BACKLOG-VPN-FULL-AUDIT-2026-05-28.md`** | Полный бэклог Claude 28.05 + gate |
 | **4. Агент — сейчас** | **`docs/AGENT-PHASE11-VPN-NODE-RESILIENCE-BACKLOG.md`** | Q167–170 node + sub edge resilience |

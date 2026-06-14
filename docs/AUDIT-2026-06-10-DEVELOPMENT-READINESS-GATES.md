@@ -26,6 +26,8 @@ G5  Public/partner scale
 
 **BILL-FIX-001:** `shop_bot/payment_idempotency.py` + reconcile dry-run/`--apply`; canonical `yk:{payment_id}`. **Deployed AMS 2026-06-09** — [`POSTDEPLOY-2026-06-10-BILL-FIX-001.md`](POSTDEPLOY-2026-06-10-BILL-FIX-001.md). **No reconcile `--apply`** — BILL-SMOKE still required for G6.
 
+**CodeRabbit triage (2026-06-15):** [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-06-14.md) — G6 sub-gates **OPEN:** terms callback guard (**P0**), trial atomicity, autopay internal guard, kopeks/Decimal, BILL-UT-001/002. **CLIENT-STABILITY-HAPP-RELAY2-REPEAT-SOAK-001** active session **DONE/PASS** (`4fdf06c`); sleep/wake **OPEN**. Capacity ≥2 delivery paths **OPEN** (NL not Auto capacity).
+
 **USER-LIFECYCLE-001 (2026-06-10):** [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md) — S0–S12 states; scenarios A–H; REG-001 / PAY-001 / WEB-001 gates; F&F **GO**, soft **SOFT-LAUNCH ONLY**, paid/open/referral **NO-GO**.
 
 **DEVICE-ARCH-001 (2026-06-10):** [`ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md`](ARCH-2026-06-10-MULTI-DEVICE-BILLING-ENFORCEMENT.md) — **MODEL A** recommended (tracked config per device, billing × N); **MODEL B NOT READY**; L2 soft-launch minimum only; **DEVICE-ENFORCE-001** (reuse detection) **paid/open blocker**; paid/open requires L3/L4; DEVICE-BILL-001 blocked until BILL-SMOKE + owner.
@@ -135,11 +137,14 @@ See also **[CLIENT-STABILITY-MOBILE-SMOKE-001](CLIENT-STABILITY-MOBILE-SMOKE.md)
 
 ### G1.5 CLIENT-STABILITY gate (Windows desktop — 2026-06-10)
 
-**Status:** **OPEN** — Track A (TUN) + Track B (Bender Proxy) split per CLIENT-STABILITY-001.
+**Status:** **OPEN** — Track A (TUN sleep/wake) + Track B (Bender Proxy) split per CLIENT-STABILITY-001.
+
+**Relay2 repeat active soak:** **DONE / PASS** (active session only) — report(8) · `4fdf06c` · [`CLIENT-STABILITY-HAPP-RELAY2-LAB.md`](CLIENT-STABILITY-HAPP-RELAY2-LAB.md). **Does not close** sleep/wake (CLIENT-SMOKE-001) or normal Bender long-session soak.
 
 | Smoke | Track | Pass criteria | Owner |
 |-------|-------|---------------|-------|
-| **CLIENT-SMOKE-001** | A — TUN sleep/resume | Sleep 10–30 min; internet/mail work without reboot; AFTER-BROKEN bundle if fail | Required |
+| **CLIENT-STABILITY-HAPP-RELAY2-REPEAT-SOAK-001** | Relay2 lab active | ~30–60 min post-wake; no dial/i/o storm; owner no incidents | **DONE** — report(8) |
+| **CLIENT-SMOKE-001** | A — TUN sleep/resume | Sleep 10–30 min; internet/mail work without reboot; AFTER-BROKEN bundle if fail | **OPEN** — Required |
 | **CLIENT-SMOKE-002** | B — Bender Proxy | Proxy mode: mail/google/IP check; parity vs other VPN Proxy | Required |
 | **CLIENT-SMOKE-003** | Fallback client | **v2rayN first**, Karing exploratory — [CLIENT-STABILITY-DESKTOP-FALLBACK.md](CLIENT-STABILITY-DESKTOP-FALLBACK.md) | Required before fallback copy in support |
 | **CLIENT-STABILITY-MOBILE-SMOKE-001** | Mobile launch smoke | Happ iOS/Android — speed, lock, Wi‑Fi/LTE — [CLIENT-STABILITY-MOBILE-SMOKE.md](CLIENT-STABILITY-MOBILE-SMOKE.md) | **Required before acquisition/referral growth** |
@@ -147,6 +152,21 @@ See also **[CLIENT-STABILITY-MOBILE-SMOKE-001](CLIENT-STABILITY-MOBILE-SMOKE.md)
 **Runbook:** [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md)
 
 **Paid/open blocker if:** Bender Proxy fallback fails **and** no validated alt client **and** no support runbook **and** setup offers single fragile TUN path.
+
+### G6.1 CodeRabbit billing/compliance sub-gates (2026-06-15)
+
+Source: [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-06-14.md). Blocks **automated paid pilot** until P0 items pass.
+
+| Sub-gate | Status | Backlog ID |
+|----------|--------|------------|
+| Terms on all trial/pay/wizard callbacks | **OPEN / P0** | **BILL-TERMS-GUARD-001** |
+| Trial grant atomic/idempotent | **OPEN** | **TRIAL-GRANT-ATOMIC-001** |
+| Autopay batch internal `BOT_PAYMENTS_LIVE` guard | **OPEN** | **BILL-AUTOPAY-LIVE-GUARD-001** |
+| Balance kopeks / Decimal day-rate | **OPEN** | **BILL-BALANCE-KOPEKS-001** |
+| Offline billing unit tests | **OPEN / P0** | **BILL-UT-001**, **BILL-UT-002** |
+| Webhook claim atomicity | **OPEN** | **BILL-WEBHOOK-CLAIM-TOCTOU-001** |
+
+**G6 overall:** **PARTIAL** — automated paid pilot **NO-GO** until sub-gates + BILL-SMOKE-001..004.
 
 ---
 
@@ -191,7 +211,7 @@ See also **[CLIENT-STABILITY-MOBILE-SMOKE-001](CLIENT-STABILITY-MOBILE-SMOKE.md)
 
 | Gate | Trigger | Deliverable |
 |------|---------|-------------|
-| **G4-A** | ~300 active configs/devices | Capacity dashboard, organic flag review, **node capacity acceptance** (forecast, CPU/RAM/network headroom, latency/throughput, selfsteal/Caddy, alert hygiene, client quality, rollback/failover) |
+| **G4-A** | ~300 active configs/devices | Capacity dashboard, organic flag review, **node capacity acceptance** — **OPEN** (`delivery_path_nodes < 2`; NL not Auto delivery) |
 | **G4-B** | Invite push | Hard or soft invite gate implemented |
 | **G4-C** | 30k approach | Issuance stop + waitlist UX |
 | **G4-D** | Support volume | RUNBOOK-001 complete |

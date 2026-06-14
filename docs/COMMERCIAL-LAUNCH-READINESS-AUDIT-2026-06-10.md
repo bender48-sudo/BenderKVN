@@ -8,6 +8,8 @@
 
 **Post-audit strategy (positioning + growth + capacity):** [`STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md`](STRATEGY-2026-06-10-GROWTH-POSITIONING-CAPACITY.md) — does not change launch verdicts here; frames copy and scale planning before implementation.
 
+**CodeRabbit triage sync (2026-06-15):** [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-06-14.md) (`c03f638`) — **accepted** CB-1..4 billing/terms blockers mapped to master backlog; **rejected** Rabbit “2 tests only” and LV+NL capacity PASS for 300. Launch verdicts below **unchanged** — still **NO-GO** for automated paid pilot, referral, public, 300-cap.
+
 ---
 
 ## 1. Executive summary
@@ -91,6 +93,7 @@ BenderVPN has **strong infra and profile integrity** post–Candidate D, **parti
 | [`AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md`](AUDIT-2026-06-10-TELEGRAM-BIND-FLOW.md) | TG bind |
 | [`AUDIT-2026-06-10-DEVICE-LINKS-BALANCE-UX.md`](AUDIT-2026-06-10-DEVICE-LINKS-BALANCE-UX.md) | Device/billing UX |
 | [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md) | BILL-001 / G6 money flow |
+| [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-06-14.md) | CodeRabbit commercial triage + remediation order |
 | [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md) | USER-LIFECYCLE-001 end-to-end scenarios |
 | POSTDEPLOY P1-CAB / P1-DEV / P1-REF / BILL-FIX-001 | Deploy truth |
 | [`COMMERCIAL-BACKLOG.md`](COMMERCIAL-BACKLOG.md) | Ops/commerce baseline |

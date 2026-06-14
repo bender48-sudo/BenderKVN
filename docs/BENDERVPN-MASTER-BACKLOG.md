@@ -21,6 +21,7 @@
 | [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) | INCIDENT-DIAG-003-004 — Windows Happ report (sleep/mail) |
 | [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md) | CLIENT-STABILITY-001 — TUN daemon + Bender Proxy Track A/B |
 | [`INCIDENT-DIAG-2026-06-12-HAPP-TUN-ACTIVE-FAILURE.md`](INCIDENT-DIAG-2026-06-12-HAPP-TUN-ACTIVE-FAILURE.md) | CLIENT-STABILITY-001 — DirectIp fix; report(5) relay egress; [recovery capture](CLIENT-STABILITY-HAPP-RECOVERY-CAPTURE.md) |
+| [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-06-14.md) | CodeRabbit commercial launch triage — accepted blockers + remediation order (`c03f638`) |
 
 ---
 
@@ -68,7 +69,7 @@
 |-------|-------|-----------|
 | **TRACK 0** | Copy/UX hygiene — COPY-TRUTH, DEVICE-COPY, REF-COPY, SETUP-UX | **Yes** |
 | **TRACK 1** | Bind + referral — G4-BIND-RETEST, REF-PORTAL, REF-ADMIN | Partial tomorrow |
-| **TRACK 2** | Billing proof — BILL-UT, BILL-SMOKE prep | BILL-UT tomorrow |
+| **TRACK 2** | Billing proof — **CodeRabbit remediation** (BILL-TERMS-GUARD → BILL-UT), BILL-SMOKE prep | **Yes** — before automated paid pilot |
 | **TRACK 3** | Device — SMOKE, ENFORCE, DATA, ADMIN, BILL | After TRACK 0–2 |
 | **TRACK 4** | VPN stability + **node capacity readiness** — INCIDENT-003/004, **VPN-ARCH-001**, **VPN-NODE-RUNBOOK-001**, NL revalidation AC | Owner-led; before growth |
 | **TRACK 5** | Monitoring / CI / runbooks — **MONITOR-FLAP-001**, **OPS-ALERT-HYGIENE-001**, G9/G11 | After soft blockers; before acquisition scale |
@@ -83,9 +84,35 @@
 5. ~~**CABINET-TYPE-001**~~ — balance typography (**DONE** in COMMERCIAL-UX-DEVICE-MVP-001)
 6. ~~**P1-REF-002**~~ — gate hidden +3d invitee bonus OFF; target reward = +1 month to referrer (REF-BONUS-001 deferred) (**DONE** repo, not deployed)
 7. **REF-COPY-001** — soften `referral_preserve_note` (separate commit; **not started**)
-8. **G4-BIND-RETEST** — owner in-app bind (no code unless bug)
-9. **BILL-UT-001/002** — unit tests (repo only)
-10. **BILL-SMOKE-001 prep** — script skeleton only
+8. **G4-TG-BIND-RETEST-001** — owner in-app bind after handoff deploy (`ed8b563`)
+9. **BILL-TERMS-GUARD-001** — terms on all trial/pay/wizard callbacks + tests
+10. **TRIAL-GRANT-ATOMIC-001** — atomic/idempotent trial grant
+11. **BILL-AUTOPAY-LIVE-GUARD-001** — defense-in-depth in autopay batch
+12. **BILL-BALANCE-KOPEKS-001** — kopeks/Decimal day-rate
+13. **BILL-UT-001/002** — offline billing + webhook/idempotency unit tests
+14. **BILL-SMOKE-001 prep** — script skeleton only
+
+### CodeRabbit remediation order (2026-06-15)
+
+Source: [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-06-14.md) (`c03f638`). **Rejected Rabbit claims preserved:** test count “2 only” (repo has **72** pytest); LV+NL capacity PASS for 300 (**NO-GO** until ≥2 verified delivery paths).
+
+| # | ID | Sev | Status | Blocks |
+|---|-----|-----|--------|--------|
+| 1 | **BILL-TERMS-GUARD-001** | P0 | OPEN | Automated paid pilot; legal on money/trial paths |
+| 2 | **TRIAL-GRANT-ATOMIC-001** | P1 | OPEN | Paid beta scale; trial retry after crash |
+| 3 | **BILL-AUTOPAY-LIVE-GUARD-001** | P1 | OPEN | Autopay hardening (**PAY-AUTO-001**) |
+| 4 | **BILL-BALANCE-KOPEKS-001** | P1 | OPEN | Honest 200 ₽ ≈ 30 days copy |
+| 5 | **BILL-UT-001** | P0 | OPEN | Offline debit/day-rate tests |
+| 5 | **BILL-UT-002** | P0 | OPEN | Offline webhook/idempotency/autopay tests |
+| — | **BILL-WEBHOOK-CLAIM-TOCTOU-001** | P1 | OPEN | Atomic webhook claim |
+| — | **BOT-QR-MISSING-KEY-UX-001** | P2 | OPEN | `show_qr_handler` silent returns |
+| — | **BILL-LEGACY-PAYMENT-FLOW-GATE-001** | P2 | OPEN | Legacy `buy_*_month` sunset |
+| — | **SUBSCRIPTION-RESOLVE-TZ-001** | P2 | OPEN | Naive `datetime.now()` in resolve |
+| 6 | **G4-TG-BIND-RETEST-001** | P0 | OPEN | Referral/public acquisition |
+| 7 | **CLIENT-STABILITY-HAPP-RELAY2-PROD-SELECTOR-CONTROLLED-001** | P0 | ELIGIBLE | Owner approval only — not auto |
+| 8 | **CLIENT-STABILITY-MOBILE-SMOKE-001** | P0 | PENDING | Mobile acquisition |
+| 9 | **MONITOR-FLAP-TUNE-001** | P1 | SOAK OPEN | Before NL A2/A4 |
+| 10 | **VPN-ARCH-001** | P1 | AWAITING APPROVAL | Capacity ≥2 delivery paths |
 
 ### ACQUISITION-JOURNEY-001 backlog (architecture done — implementation gated)
 
@@ -363,6 +390,17 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 |----|-----|------|-------|---------|----------|-------|--------|----------|---------------|------------|--------|---------|--------|------------|--------|
 | BILL-001 | P1 | Billing/topup | Billing commercial readiness audit | Trial vs wallet; money flow; idempotency; paid pilot gates | **Accepted** | 1 | Payment trust | [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md) | bot, webhook, scheduler | Audit doc; BILL-FIX-001 + smokes before automated paid | BILL-SMOKE-001 | No | No | — | **DONE** (audit) — implementation OPEN |
 | BILL-FIX-001 | P0 | Billing/topup | Reconcile idempotency `yk:` alignment | Webhook `yk:` vs reconcile `yookassa:` double-credit risk | **Accepted** | 1 | Payment integrity | BILL-001 §7.1 | `payment_idempotency.py`, `payment_queue.py`, reconcile | Canonical key shared; dry-run default; legacy skip | unittest + AMS import | Yes | No | — | **DONE** — [`POSTDEPLOY-2026-06-10-BILL-FIX-001.md`](POSTDEPLOY-2026-06-10-BILL-FIX-001.md) |
+| **BILL-TERMS-GUARD-001** | P0 | Billing/legal | Terms gate on all user callbacks | `_ensure_terms_or_prompt` only on `/start` + main menu message; 40+ callbacks skip (trial/topup/pay/wizard) | **Accepted** | 1 | Legal + paid pilot | [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-06-14.md) CB-1 | `handlers.py` | All trial/pay/wizard callbacks enforce terms; pytest | handler tests | Yes | **Yes** | — | **OPEN** |
+| **TRIAL-GRANT-ATOMIC-001** | P1 | Billing/trial | Atomic trial grant | `set_trial_used` before `provision_key`; crash blocks retry | **Accepted** | 1 | Trial abuse UX | CodeRabbit triage CB-2 | `handlers.py` | Flag after key row or idempotent reconcile | unit test | Yes | No | — | **OPEN** |
+| **BILL-AUTOPAY-LIVE-GUARD-001** | P1 | Billing/autopay | Autopay batch live guard | `run_yookassa_autopay_batch` lacks internal guard; scheduler gated | **Accepted** partial | 1 | Defense-in-depth | CodeRabbit triage CB-3 | `yookassa_autopay_scheduler.py` | Early return if not `BOT_PAYMENTS_LIVE` | unit test | Yes | No | PAY-AUTO-001 | **OPEN** |
+| **BILL-BALANCE-KOPEKS-001** | P1 | Billing/topup | Kopeks/Decimal day rate | `DAILY_RATE=6.67` float → 200 ₽ = 29 days | **Accepted** | 1 | Copy truth | CodeRabbit triage CB-4 | `config.py`, billing | Integer kopeks; preset labels match | BILL-UT-001 | Yes | No | — | **OPEN** |
+| **BILL-UT-001** | P0 | Billing/tests | Offline daily debit tests | No `test_balance_billing.py` | **Accepted** | 1 | Automated paid pilot | BILL-001; CodeRabbit triage | `tests/` | `charge_daily_balance_if_due` edge cases | pytest CI | No | No | — | **OPEN** |
+| **BILL-UT-002** | P0 | Billing/tests | Offline webhook/idempotency tests | Payment path gaps in CI | **Accepted** | 1 | Automated paid pilot | BILL-001; CodeRabbit triage | `tests/`, `database.py` | Topup idempotency + webhook claim | pytest CI | No | No | BILL-WEBHOOK-CLAIM-TOCTOU-001 | **OPEN** |
+| **BILL-WEBHOOK-CLAIM-TOCTOU-001** | P1 | Billing/webhook | Harden webhook claim | `claim_webhook_delivery` SELECT-then-INSERT race | **Accepted** | 1 | Double-credit risk | CodeRabbit triage | `database.py` | INSERT OR IGNORE / txn; test concurrent claim | BILL-UT-002 | Yes | No | — | **OPEN** |
+| **BILL-LEGACY-PAYMENT-FLOW-GATE-001** | P2 | Billing/legacy | Gate legacy plan purchase | `buy_*_month` parallel to wallet model | **Accepted** | 2 | UX confusion | BILL-001 §3; CodeRabbit triage | `handlers.py`, `config.py` | Remove UI entry or gate behind flag | copy review | Yes | **Yes** | OD-10 | **OPEN** |
+| **BOT-QR-MISSING-KEY-UX-001** | P2 | Bot UX | QR silent failure UX | `show_qr_handler` bare return on missing inbound/URI | **Accepted** | 1 | Support load | CodeRabbit triage | `handlers.py` | User-visible error on all paths | manual smoke | Yes | No | — | **OPEN** |
+| **SUBSCRIPTION-RESOLVE-TZ-001** | P2 | Bot/cabinet | Timezone-safe expiry check | `datetime.now()` naive in `subscription_unavailable` | **Accepted** | 1 | Edge expiry bugs | CodeRabbit triage | `subscription_resolve.py` | UTC-aware compare | unit test | Yes | No | — | **OPEN** |
+| **G4-TG-BIND-RETEST-001** | P0 | Acquisition | Live TG bind proof | `funnel_bot_start bind:*` = 0; handoff fix repo-only | **Accepted** | 1 | Referral growth | [`G4-TG-BIND-CLIENT-JOURNEY-AUDIT.md`](G4-TG-BIND-CLIENT-JOURNEY-AUDIT.md) | owner + AMS | bind:* ≥ 1; migration completes | smoke_p1_ref_tg_bind_ams | No | **Yes** | handoff deploy | **OPEN** |
 | USER-LIFECYCLE-001 | P1 | Product/lifecycle | End-to-end user scenario audit | Launch gates need scenario matrix | **Accepted** | 1 | Launch readiness | Commercial audit + policy | docs, bot, portal | Scenarios A–H; REG/PAY/WEB gates; go/no-go | — | No | No | — | **DONE** — [`AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md`](AUDIT-2026-06-10-USER-LIFECYCLE-SCENARIOS.md) |
 | DEVICE-ARCH-001 | P0 | Device/config | Multi-device architecture + billing coefficient | Vague support-only insufficient | **Accepted** evaluate | 1 | Infra cost honesty | USER-LIFECYCLE-001 §G | docs, schema, billing, Remna | MODEL A recommended; MODEL B NOT READY; gates DEVICE-* | DEVICE-SMOKE-001 | No | **Yes** | OD-03, BILL-SMOKE | **DONE** (arch) — owner approve MODEL A |
 | DEVICE-ENFORCE-001 | P0 | Device/config | Detect reuse of active config on 2nd device | URL sharing bypasses billing × N | **Accepted** evaluate | 1 | Abuse + infra honesty | DEVICE-ARCH-001 §14 | Remna HWID, panel, admin | L3/L4 for paid/open; staged consequences | DEVICE-SMOKE-001 | No | **Yes** | G7, OD-03 | OPEN — paid/open blocker |
@@ -450,8 +488,8 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 
 | Severity | Count (approx.) | Examples |
 |----------|-----------------|----------|
-| **P0** | 3 | VPN-REL-001, PROD-003, DEC-IMPL-002 |
-| **P1** | 18 | PROD-001,004,005,006,007; DEC-IMPL-003–007,013; BILL-001; BOT-001; ADMIN-001; VPN-ARCH-001; SEC-001; VPN-INC-001 |
+| **P0** | 8+ | BILL-TERMS-GUARD-001, G4-TG-BIND-RETEST-001, BILL-UT-001/002, VPN-REL-001, CLIENT-STABILITY-* |
+| **P1** | 22+ | TRIAL-GRANT, BILL-AUTOPAY/BALANCE/WEBHOOK, PROD-001,004–007; VPN-ARCH-001; … |
 | **P2** | 22 | REG-001; DEC-IMPL-008–012,016,021; PROD-002; AF-*; LEGAL-001; RUNBOOK-001; OD-08; OPS-001; OBS-001; VPN-AUD+ |
 | **P3** | 8 | DEC-IMPL-017–020; UX-209; PARTNER-001; PERF-001; OD-01–04,06 |
 | **P4** | 1 | OD-10 |
