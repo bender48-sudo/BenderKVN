@@ -150,3 +150,87 @@ If Happ cannot import local JSON:
 ## Related variants
 
 See [CLIENT-STABILITY-HAPP-RECOVERY-CAPTURE.md §4](CLIENT-STABILITY-HAPP-RECOVERY-CAPTURE.md) — Variant **C** (relay #2-only) and **D** (single-relay). This doc implements **C/D** locally without prod mutation.
+
+---
+
+## report(7) — owner evidence (2026-06-14)
+
+**Task:** CLIENT-STABILITY-HAPP-RELAY2-LAB-EVIDENCE-001
+**Local artifact:** `.secrets/diagnostics/report-7-relay2-lab.zip` (not committed)
+**Analyzer:** `python ops/analyze_happ_report_tun.py .secrets/diagnostics/report-7-relay2-lab.zip`
+
+### Session context
+
+| Field | Value |
+|-------|-------|
+| Happ | 2.16.2 (546) · core 26.3.27 · tun 1.12.12 |
+| Profile | **BenderVPN Auto [LAB relay2-only — do NOT refresh sub]** |
+| TUN | **ON** |
+| System proxy | **OFF** |
+| Routing | **BenderVPN RU** ON (`useRouting=true`) |
+| Session span | ~43 min (14.06 23:15–23:58 local) |
+| Final state | Clean Bender lab profile — usable as evidence |
+
+### Profile integrity (confirmed)
+
+| Check | report(7) |
+|-------|-----------|
+| Relay #1 outbounds (`proxy`…`proxy-3`) | **Absent** |
+| Relay #2 outbounds | **Present** — `proxy-4`, `proxy-5`, `proxy-6` |
+| `Intl_Direct` / `Intl_Stealth` selector | Pinned to `proxy-4/5/6` |
+| `fallbackTag=direct` | **None** |
+| Happ DirectIp | 6 private/system CIDRs; **no `geoip:ru`**; **no relay IP overlap** |
+| In-core relay `/32` → direct | Expected anti-loop (1 relay IP) |
+
+### Error characterization
+
+| Class | report(7) | report(6) baseline |
+|-------|-----------|-------------------|
+| `i/o timeout` | **0** | Dominant pre-fix; reduced post-fix |
+| `open outbound connection` / dial | **0** | Part of pre-fix DirectIp storm |
+| `connection forcibly closed` | 207 | Long-lived reset class |
+| `connection download closed` | 194 | Primary report(6) failure class |
+| `connection upload closed` | 85 | Secondary reset class |
+| `aborted by host machine` | **0** | — |
+| Error-like lines (total) | **283** (~6.6/min) | **~336 / 5 min** (~67/min) |
+| Relay #1 log bias | **None** | **Strong** (`72.56.0.145:443`) |
+| DirectIp leak signal | **No** | Fixed before report(6) |
+| Old timeout storm | **Not reproduced** | Yes (report(6) era) |
+
+TUN startup: **~1.2 s** first connect; **~1.7 s** after wake reconnect.
+
+### Sleep/wake (separate track)
+
+| Signal | report(7) |
+|--------|-----------|
+| Sleep/wake detected | **Yes** — timer gaps at 23:51 and 23:58 |
+| Daemon IPC disconnect on wake | **Yes** |
+| Wake recovery subscription refresh | **Yes** — risky on lab row (may pull prod 6-way pool) |
+
+Sleep/wake recovery **not proven stable** on relay2 lab; do not fold into active-session PASS.
+
+### Verdict
+
+| Track | Verdict | Rationale |
+|-------|---------|-----------|
+| **Active session (relay2 lab)** | **SOFT PASS** | relay2-only profile used; relay #1 excluded; TUN fast; DirectIp leak absent; no open/i/o timeout storm; error rate ~10× lower than report(6); remaining errors are connection close/reset class |
+| **Sleep/wake** | **FAIL / OPEN** | Daemon IPC disconnect + wake recovery path; subscription refresh on wake |
+| **Happ desktop launch gate** | **OPEN** | One owner capture ≠ 30–60 min controlled soak; sleep/wake unresolved |
+
+**Interpretation:** relay2 lab **materially improves active-session evidence** vs report(6). **Relay #1 remains a strong suspect** on the normal 6-way profile — **not enough to change prod default**. Needs repeat active-session confirmation or controlled selector strategy before production decision. **Sleep/wake remains open.**
+
+### Caveats
+
+- Do **not** rollback fixed `happRouting`.
+- Do **not** make relay2 prod default from one test.
+- Do **not** mark Happ desktop fully launch-ready.
+- Wake recovery forced subscription update on lab profile — owner should **disable auto-refresh on lab row** or re-import after sleep tests.
+
+### Next steps
+
+| Step | Action |
+|------|--------|
+| **A** | Repeat owner active-session test on relay2 lab **30–60 min** without sleep (see recovery doc §9) |
+| **B** | If repeat SOFT PASS → design controlled prod strategy: reduce/exclude relay #1 from selector; preserve rollback; **owner approval required** |
+| **C** | Keep desktop fallback v2rayN path ready ([CLIENT-STABILITY-DESKTOP-FALLBACK.md](CLIENT-STABILITY-DESKTOP-FALLBACK.md)) |
+| **D** | Sleep/wake remains separate track — CLIENT-SMOKE-001 |

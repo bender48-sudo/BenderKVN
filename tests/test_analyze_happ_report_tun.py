@@ -186,3 +186,46 @@ def test_analyze_zip_flags_overwritten_export():
         assert any("overwritten" in n.lower() for n in result.notes)
     finally:
         path.unlink(missing_ok=True)
+
+
+def test_lab_relay2_profile_detection():
+    cfg = {
+        "outbounds": [
+            {"tag": "proxy-4", "settings": {"vnext": [{"address": "203.0.113.20"}]}},
+            {"tag": "proxy-5", "settings": {"vnext": [{"address": "203.0.113.20"}]}},
+            {"tag": "proxy-6", "settings": {"vnext": [{"address": "203.0.113.20"}]}},
+            {"tag": "direct"},
+            {"tag": "block"},
+        ],
+        "routing": {
+            "balancers": [
+                {"tag": "Intl_Direct", "selector": {"outboundTags": ["proxy-4", "proxy-5", "proxy-6"]}},
+            ]
+        },
+    }
+    sel = json.dumps(
+        {
+            "selected": {
+                "name": "BenderVPN Auto [LAB relay2-only — do NOT refresh sub]",
+                "config": cfg,
+            }
+        }
+    )
+    prof = analyze_profile(sel)
+    assert prof["relay1_proxy_count"] == 0
+    assert prof["relay2_proxy_count"] == 3
+    assert prof["lab_relay2_only"] is True
+
+
+def test_sleep_wake_signals_detected():
+    from analyze_happ_report_tun import scan_sleep_wake_signals
+
+    app_log = (
+        "[14.06 23:51:38] [CORE]: Sleep/wake detected via timer gap (1180815ms)\n"
+        "[14.06 23:51:38] [TUN]: [CommunicationClient] Disconnected from happd daemon\n"
+        "[14.06 23:57:57] [CORE]: Wake recovery: forcing subscription update\n"
+    )
+    sig = scan_sleep_wake_signals(app_log)
+    assert sig["sleep_wake_detected"] is True
+    assert sig["daemon_ipc_disconnect"] is True
+    assert sig["wake_subscription_refresh"] is True

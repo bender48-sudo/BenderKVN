@@ -109,8 +109,10 @@ def analyze_profile(sel_raw: str) -> dict:
         outbounds = cfg.get("outbounds") or []
         tags = [ob.get("tag") or ob.get("name") or "?" for ob in outbounds]
         proxy_tags = [t for t in tags if re.match(r"proxy(-\d+)?$", t, re.I)]
-        relay1 = sum(1 for t in proxy_tags if t in ("proxy", "proxy-2", "proxy-3"))  # first trio heuristic
-        relay2 = sum(1 for t in proxy_tags if t in ("proxy-4", "proxy-5", "proxy-6"))
+        relay1_tags = ("proxy", "proxy-2", "proxy-3")
+        relay2_tags = ("proxy-4", "proxy-5", "proxy-6")
+        relay1 = sum(1 for t in proxy_tags if t in relay1_tags)
+        relay2 = sum(1 for t in proxy_tags if t in relay2_tags)
         nl = sum(1 for t in tags if re.search(r"\bnl\b|netherlands", t, re.I))
         lv = sum(1 for t in tags if re.search(r"\blv\b|latvia", t, re.I))
         routing = cfg.get("routing") or {}
@@ -129,8 +131,11 @@ def analyze_profile(sel_raw: str) -> dict:
             {
                 "outbound_count": len(outbounds),
                 "proxy_outbound_count": len(proxy_tags),
-                "relay1_proxy_count": relay1 if len(proxy_tags) == 6 else len(proxy_tags) // 2,
-                "relay2_proxy_count": relay2 if len(proxy_tags) == 6 else len(proxy_tags) - len(proxy_tags) // 2,
+                "relay1_proxy_count": relay1,
+                "relay2_proxy_count": relay2,
+                "lab_relay2_only": relay1 == 0
+                and relay2 > 0
+                and "lab relay2" in str(meta.get("name") or "").lower(),
                 "nl_count": nl,
                 "lv_count": lv,
                 "balancer_names": bal_names,
@@ -271,6 +276,17 @@ def analyze_tun_log_stream(text: str) -> dict:
     }
 
 
+SLEEP_WAKE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
+    ("sleep_wake_detected", re.compile(r"Sleep/wake detected|System wake recovery", re.I)),
+    ("daemon_ipc_disconnect", re.compile(r"Disconnected from happd daemon|daemon IPC", re.I)),
+    ("wake_subscription_refresh", re.compile(r"Wake recovery: forcing subscription update", re.I)),
+]
+
+
+def scan_sleep_wake_signals(text: str) -> dict[str, bool]:
+    return {sig_id: bool(pat.search(text)) for sig_id, pat in SLEEP_WAKE_PATTERNS}
+
+
 def scan_signals(text: str, rules: list[tuple[str, re.Pattern[str], str]]) -> list[str]:
     hits = []
     for sig_id, pat, _ in rules:
@@ -403,6 +419,7 @@ class TunAnalysisResult:
     tun_lifecycle: dict
     tun_log_stats: dict
     track_signals: dict
+    sleep_wake: dict
     local_clues: dict
     final_state_guard: dict
     bender_segment: dict
@@ -478,6 +495,7 @@ def analyze_report_zip(path: Path) -> TunAnalysisResult:
         "track_e": scan_signals(combined, TRACK_E_SIGNALS),
         "track_h": scan_signals(combined, TRACK_H_SIGNALS),
     }
+    sleep_wake = scan_sleep_wake_signals(app_log)
 
     local_clues = {
         "check_point_adapter": "check point" in ipcfg.lower(),
@@ -557,6 +575,16 @@ def analyze_report_zip(path: Path) -> TunAnalysisResult:
         notes.append("Profile integrity OK — not Track C")
     if local_clues["check_point_adapter"]:
         notes.append("Check Point VPN adapter present — Track F secondary factor")
+    if sleep_wake.get("sleep_wake_detected"):
+        notes.append(
+            "Sleep/wake recovery in log — daemon IPC disconnect possible; "
+            "do not treat wake segment as active-session PASS"
+        )
+    if sleep_wake.get("wake_subscription_refresh") and profile.get("lab_relay2_only"):
+        notes.append(
+            "Wake recovery forced subscription update on LAB profile — "
+            "may overwrite relay2-only JSON; avoid refresh on lab row"
+        )
     if not final_state_guard.get("usable_as_bender_profile_evidence"):
         notes.append(
             "Final export state overwritten — selected_server/settings are not clean Bender; "
@@ -575,6 +603,7 @@ def analyze_report_zip(path: Path) -> TunAnalysisResult:
         tun_lifecycle=tun_lifecycle,
         tun_log_stats=tun_stats,
         track_signals=track_signals,
+        sleep_wake=sleep_wake,
         local_clues=local_clues,
         final_state_guard=final_state_guard,
         bender_segment=bender_segment,
@@ -594,6 +623,7 @@ def result_to_dict(r: TunAnalysisResult) -> dict:
         "tun_lifecycle": r.tun_lifecycle,
         "tun_log_stats": r.tun_log_stats,
         "track_signals": r.track_signals,
+        "sleep_wake": r.sleep_wake,
         "local_clues": r.local_clues,
         "final_state_guard": r.final_state_guard,
         "bender_segment": r.bender_segment,
@@ -612,6 +642,7 @@ def print_human(r: TunAnalysisResult) -> None:
     print(f"tun_lifecycle: {json.dumps(r.tun_lifecycle, ensure_ascii=False)}")
     print(f"tun_log_stats: {json.dumps(r.tun_log_stats, ensure_ascii=False, indent=2)}")
     print(f"track_signals: {json.dumps(r.track_signals, ensure_ascii=False)}")
+    print(f"sleep_wake: {json.dumps(r.sleep_wake, ensure_ascii=False)}")
     print(f"local_clues: {json.dumps(r.local_clues, ensure_ascii=False)}")
     print(f"final_state_guard: {json.dumps(r.final_state_guard, ensure_ascii=False)}")
     print(f"bender_segment: {json.dumps(r.bender_segment, ensure_ascii=False)}")

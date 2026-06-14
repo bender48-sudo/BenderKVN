@@ -98,6 +98,8 @@ python ops/happ_routing_directip_guard.py
 
 **Runbook (relay #2 lab — local JSON, no prod):** [CLIENT-STABILITY-HAPP-RELAY2-LAB.md](CLIENT-STABILITY-HAPP-RELAY2-LAB.md) · `ops/generate_happ_relay2_lab_profile.py`
 
+**Owner evidence (2026-06-14):** report(7) relay2 lab — **SOFT PASS** active session vs report(6); sleep/wake **OPEN** — [CLIENT-STABILITY-HAPP-RELAY2-LAB.md §report(7)](CLIENT-STABILITY-HAPP-RELAY2-LAB.md).
+
 **Order after clean capture:** **A** → **B** → **C** or **D** (if relay-tagged errors) → **F** → **E**.
 
 ---
@@ -228,7 +230,7 @@ python ops/analyze_happ_report_tun.py path/to/report.zip
 | Profile | Duration | Verdict | Cursor | Docs | Gmail | TG | report.zip | Date |
 |---------|----------|---------|--------|------|-------|-----|------------|------|
 | BenderVPN Auto (normal) | — | **PENDING** | — | — | — | — | — | — |
-| LAB relay2-only | — | **PENDING** | — | — | — | — | — | — |
+| LAB relay2-only | ~43 min | **SOFT PASS** (active) / **FAIL** (sleep-wake) | — | — | — | — | report(7) local | 2026-06-14 |
 | LAB relay2×1 | — | **PENDING** | — | — | — | — | — | — |
 
 **Happ desktop launch gate:** remains **OPEN** until at least one **PASS** or **SOFT PASS** on normal Bender or lab profile is recorded here.
@@ -240,3 +242,4 @@ python ops/analyze_happ_report_tun.py path/to/report.zip
 | report(6) Bender segment | TUN fast; DirectIp fix OK; ~336 ERROR / 5 min — established connection resets; **relay #1 biased** (`72.56.0.145:443`) |
 | report(5) | Final SafeVPN state — invalid Bender evidence |
 | relay2 lab JSON | Generated 2026-06-13 — `.local/lab_relay2.json`, `.local/lab_relay2_one.json` |
+| report(7) relay2 lab | **SOFT PASS** active session; sleep/wake **OPEN** — see [CLIENT-STABILITY-HAPP-RELAY2-LAB.md §report(7)](CLIENT-STABILITY-HAPP-RELAY2-LAB.md) |

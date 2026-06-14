@@ -366,11 +366,39 @@ Owner switched to SafeVPN **after** Bender failed. Export captured **post-switch
 
 See **[CLIENT-STABILITY-HAPP-RECOVERY-CAPTURE.md](CLIENT-STABILITY-HAPP-RECOVERY-CAPTURE.md)** — export `report.zip` **before** switching VPN.
 
+### report(6) — Bender segment (2026-06-13)
+
+| Check | report(6) Bender segment |
+|-------|--------------------------|
+| TUN lifecycle | **PASS** — startup ~1.6s |
+| Routing | **BenderVPN RU** ON; fixed DirectIp (private-only) |
+| Failure class | Long-lived **connection reset** storm (~336 ERROR / 5 min); **relay #1 biased** (`72.56.0.145:443`) |
+| Cursor symptom | Agent “Reconnecting…” under sustained WebSocket load |
+
+**Next validation:** [CLIENT-STABILITY-HAPP-RECOVERY-CAPTURE.md §9](CLIENT-STABILITY-HAPP-RECOVERY-CAPTURE.md) — **30–60 min owner soak** (do not disturb stable session).
+
+### report(7) — relay2 lab vs report(6) (2026-06-14)
+
+| Check | report(6) normal Bender | report(7) LAB relay2-only |
+|-------|-------------------------|---------------------------|
+| Profile | BenderVPN Auto (6-way) | **LAB relay2-only** — `proxy-4/5/6` only |
+| TUN startup | ~1.6 s | ~1.2 s |
+| Routing / DirectIp | BenderVPN RU; fixed | Same — no `geoip:ru`; no relay overlap |
+| Error rate | ~336 ERROR / 5 min (~67/min) | **283 / ~43 min (~6.6/min)** |
+| Failure class | Long-lived reset storm; **relay #1 biased** | Close/reset class only; **no relay #1**; **0 i/o timeout / 0 dial-open** |
+| DirectIp leak | Absent (post-fix) | Absent |
+| Sleep/wake | Not primary focus | **FAIL/OPEN** — daemon IPC disconnect; wake subscription refresh |
+
+**Comparison:** Excluding relay #1 and pinning relay2 pool **materially improves active-session evidence** vs report(6). This supports **relay #1 as strong suspect** on the normal selector — **not root cause fully proven**, **not enough to change prod default**. Sleep/wake remains a separate open track.
+
+See [CLIENT-STABILITY-HAPP-RELAY2-LAB.md §report(7)](CLIENT-STABILITY-HAPP-RELAY2-LAB.md).
+
 ### Recovery sequence
 
-1. Clean Bender-only capture (mandatory).
-2. If relay asymmetry persists → owner-only **relay #2-only** or **single-relay** lab profile (not prod).
-3. **Karing/v2rayN** remains parallel fallback — Happ recovery stays active.
+1. Clean Bender-only capture (mandatory) — report(6) qualifies when final state was Bender.
+2. **Long-session soak** (§9 recovery doc) on current stable profile — normal Bender or relay2 lab.
+3. If relay asymmetry persists after soak → owner-only **relay #2-only** / **single-relay** lab ([CLIENT-STABILITY-HAPP-RELAY2-LAB.md](CLIENT-STABILITY-HAPP-RELAY2-LAB.md)).
+4. **Karing/v2rayN** remains parallel fallback — Happ recovery stays active.
 
 ### Analyzer update
 
