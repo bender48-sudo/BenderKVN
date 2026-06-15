@@ -14,12 +14,37 @@
 
 | Check | Required |
 |-------|----------|
-| Owner approval for **new node spend** | Yes |
+| Owner approval for **new node spend** | Yes — `procurement.purchase_approved_by_owner` |
 | Owner approval for **routing inclusion** | Yes — separate from provisioning |
 | Node registry entry drafted | [`examples/node-registry.example.yaml`](examples/node-registry.example.yaml) |
+| Procurement policy reviewed | [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) §13 |
 | Rollback path documented | drain + template snapshot |
 | Monitoring alert hygiene | [`MONITOR-FLAP-001`](CHECKPOINT-2026-06-12-CLIENT-NODES-MONITORING.md) acceptable |
 | Not a substitute for multi-node architecture | Read [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) |
+
+---
+
+## 0.1 Node procurement policy (before purchase)
+
+**ID:** VPN-NODE-PROCUREMENT-POLICY-001 · Full spec: capacity plan §13.
+
+| Step | Action |
+|------|--------|
+| 1 | Add registry row `status: candidate` — **do not buy** until AUP + traffic + diversity checked |
+| 2 | Confirm **monthly / test billing** — no long-term prepaid (`long_prepaid_allowed: false`) |
+| 3 | Confirm **KVM, full root, dedicated IPv4** |
+| 4 | Record **traffic policy** and **vpn_allowed_by_aup** — reject if `no` or `unclear` |
+| 5 | Assign **provider_diversity_group** and **datacenter_diversity_group** — must not collapse N+1 |
+| 6 | Owner signs purchase → `purchase_approved_by_owner: true` → pay → `purchased_trial` |
+| 7 | Provision → `staging` — **never skip** to `active` on purchase alone |
+
+**Reject / stop trial** if: VPN prohibited in AUP · vague traffic cap · bad IP reputation · unstable network · no scale headroom.
+
+Lifecycle:
+
+```text
+candidate → purchased_trial → staging → canary → active → draining / failed / decommissioned
+```
 
 ---
 
@@ -34,7 +59,9 @@
 | **OS** | Ubuntu 22.04 LTS |
 | **IPv4** | Stable public IPv4; document in registry (not in git) |
 | **Abuse / reputation** | Avoid recycled IP ranges with poor RU reachability |
-| **Billing** | Owner records provider + renewal date in registry |
+| **Billing** | **Monthly or test window first** — no annual until acceptance PASS; record in `procurement.*` |
+| **AUP** | VPN/proxy/tunneling must be **allowed** — document in `procurement.vpn_allowed_by_aup` |
+| **Traffic** | Document Mbps/TB cap in `procurement.traffic_policy` — reject vague “unlimited” |
 
 Owner delivers to agent: **root SSH**, **public IP**, **region/provider label** — via secure channel, not commit.
 
@@ -104,7 +131,7 @@ Ensure new node does not reintroduce alert spam ([`MONITORING.md`](MONITORING.md
 
 Reference example: [`examples/node-registry.example.yaml`](examples/node-registry.example.yaml).
 
-**Note:** Registry v1 does **not** drive live subscription generation yet (**SUB-GEN-SELECTOR-STRATEGY-001** OPEN).
+**Note:** Registry v1 drives **dry-run selector only** ([`ops/vpn_node_selector.py`](../ops/vpn_node_selector.py)). Live subscription generation unchanged until **SUB-GEN-SELECTOR-INTEGRATION-001** (owner review).
 
 ---
 
@@ -206,7 +233,8 @@ Record in registry:
 
 ## 12. What this runbook does NOT do
 
-- Replace **SUB-GEN-SELECTOR-STRATEGY-001** (cohort assignment).
-- Prove **30k capacity** by itself.
+- Wire selector into live subscription generator (**SUB-GEN-SELECTOR-INTEGRATION-001** — separate task).
+- Prove **30k capacity** by itself — **`delivery_path_nodes < 2`** remains **NO-GO** for 300/30k.
 - Authorize prod changes without owner approval.
 - Copy SafeVPN or third-party configs into production.
+- Authorize long-term prepaid spend before acceptance PASS.

@@ -1,12 +1,29 @@
 # VPN Node Acceptance Checklist
 
-**ID:** NODE-SMOKE-MATRIX-001 companion (operational checklist)  
-**Date:** 2026-06-15  
+**ID:** NODE-SMOKE-MATRIX-001 companion (operational checklist)
+**Date:** 2026-06-15
 **Use with:** [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md) · [`examples/node-registry.example.yaml`](examples/node-registry.example.yaml)
 
 Mark **PASS / FAIL / N/A**. **P0** items block canary. Record evidence links in registry — not raw secrets.
 
 **Node ID:** _______________ **Date:** _______________ **Operator:** _______________
+
+---
+
+## 0. Procurement (before VPS pay — P0)
+
+**Policy:** [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) §13 · **VPN-NODE-PROCUREMENT-POLICY-001**
+
+| # | P | Check | PASS | FAIL | N/A | Notes |
+|---|-----|-------|------|------|-----|-------|
+| 0.1 | P0 | Registry `candidate` row drafted with procurement fields | ☐ | ☐ | ☐ | |
+| 0.2 | P0 | **Monthly / test billing** — no long-term prepaid before acceptance | ☐ | ☐ | ☐ | |
+| 0.3 | P0 | KVM, full root, dedicated IPv4 confirmed | ☐ | ☐ | ☐ | |
+| 0.4 | P0 | Traffic policy documented (Mbps/TB / fair-use) | ☐ | ☐ | ☐ | |
+| 0.5 | P0 | AUP allows VPN/proxy/tunneling (`vpn_allowed_by_aup: yes`) | ☐ | ☐ | ☐ | Reject if no/unclear |
+| 0.6 | P0 | Provider + DC/ASN diversity vs existing prod | ☐ | ☐ | ☐ | |
+| 0.7 | P0 | Owner purchase approval recorded | ☐ | ☐ | ☐ | |
+| 0.8 | P0 | **No auto-promote to active** on purchase — enter `purchased_trial` / `staging` only | ☐ | ☐ | ☐ | |
 
 ---
 
@@ -136,6 +153,7 @@ Mark **PASS / FAIL / N/A**. **P0** items block canary. Record evidence links in 
 | 12.1 | P0 | `delivery_path_nodes` count updated honestly | ☐ | ☐ | ☐ | |
 | 12.2 | P1 | `capacity_snapshot.py` within soft cap | ☐ | ☐ | ☐ | |
 | 12.3 | P1 | Headroom ≥ reserved % in registry | ☐ | ☐ | ☐ | |
+| 12.4 | P0 | `procurement.acceptance_status: passed` before canary | ☐ | ☐ | ☐ | |
 
 ---
 
@@ -156,4 +174,4 @@ Mark **PASS / FAIL / N/A**. **P0** items block canary. Record evidence links in 
 | Agent / ops | | | staging complete ☐ |
 | Owner | | | canary approved ☐ / active approved ☐ |
 
-**Registry updates:** `health.last_smoke` · `health.last_owner_test` · `status` · `rollout.canary_percent`
+**Registry updates:** `health.last_smoke` · `health.last_owner_test` · `status` · `rollout.canary_percent` · `procurement.acceptance_status`

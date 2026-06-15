@@ -56,7 +56,7 @@ Xray routing rules evaluate **top to bottom** — **order is part of the spec**.
 |-----------|---------------------|
 | RU banking, gov, CDN, major domestic services → direct | Maintain **reviewed** list in repo — versioned |
 | Intl / blocked apps → proxy selectors | TG/IG/Meta via **Intl_Stealth** (backend template) |
-| No user-facing NL/LV/relay pick | Policy PT-11 |
+| No user-facing NL/LV/relay pick | Policy PT-11 — see §10 UX auto-connect |
 | List changes = routing pack version bump | Test matrix §6 |
 
 ### 3.3 DNS strategy
@@ -100,6 +100,13 @@ Enable `http`, `tls`, `quic` sniffing where Happ/TUN supports it for domain rout
 | **Client (Happ)** | TUN, leastLoad among **issued** outbounds — not capacity planning |
 
 **Target:** stop relying on “6 outbounds in JSON” as architecture. Selector dry-run: [`ops/vpn_node_selector.py`](../ops/vpn_node_selector.py) (**SUB-GEN-SELECTOR-STRATEGY-001 DONE**). Live generator wiring: **SUB-GEN-SELECTOR-INTEGRATION-001 OPEN**.
+
+**Selector principle (capacity-safe):**
+
+1. **Backend** chooses safe node group and cohort **first** ([`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) §15).
+2. **Subscription generator** emits outbounds only from that approved group.
+3. **Client** urltest / leastLoad may operate **only inside** the issued outbound set — tie-break, not fleet-wide capacity.
+4. **Do not** send all nodes to all users as the main scaling strategy.
 
 ---
 
@@ -178,3 +185,25 @@ Enable `http`, `tls`, `quic` sniffing where Happ/TUN supports it for domain rout
 3. **UseIPv4 cohort test** — owner desktop + one mobile device.
 4. Wire T1–T8 into CI / pre-apply gate alongside `vpn_verify_gate.py`.
 5. **SUB-GEN-SELECTOR-INTEGRATION-001** — connect cohort selector to subscription generator (after owner review).
+
+---
+
+## 10. UX auto-connect principle
+
+**ID:** UX-AUTO-CONNECT-PRINCIPLE-001 · **Status:** **DONE** (architecture/docs)
+
+```text
+One button → BenderVPN Auto. No server picker in normal product UX.
+```
+
+| Rule | Detail |
+|------|--------|
+| **User must not choose server** | Bot, portal, Mini App, and marketing show connect / get profile — not NL/LV/relay/outbound lists |
+| **Backend chooses cohort + group** | [`ops/vpn_node_selector.py`](../ops/vpn_node_selector.py) dry-run today; live wiring = **SUB-GEN-SELECTOR-INTEGRATION-001** |
+| **Support may override** | `FALLBACK_MANUAL`, lab profiles, owner tools — explicit, not default UX |
+| **Advanced profiles hidden** | v2rayN, relay2-only lab, diagnostic urltest — support/owner only |
+| **External product = one-click** | Internal profile variants exist; user-facing promise stays Auto |
+
+Routing pack (DirectIp, DNS, domestic direct) complements Auto — it does **not** replace backend node assignment.
+
+Full architecture: [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) §14.

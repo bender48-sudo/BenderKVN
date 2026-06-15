@@ -101,7 +101,9 @@
 | **VPN-NODE-RUNBOOK-001** | **DOCS DONE / IMPL OPEN** | [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md) + acceptance checklist |
 | **VPN-NODE-REGISTRY-001** | **DONE** | [`ops/config/vpn_node_registry.yaml`](../ops/config/vpn_node_registry.yaml) + validator |
 | **SUB-GEN-SELECTOR-STRATEGY-001** | **DONE** | [`ops/vpn_node_selector.py`](../ops/vpn_node_selector.py) dry-run |
-| **SUB-GEN-SELECTOR-INTEGRATION-001** | **OPEN** | Live subscription generator wiring |
+| **SUB-GEN-SELECTOR-INTEGRATION-001** | **OPEN** | Live subscription generator wiring (after owner review) |
+| **VPN-NODE-PROCUREMENT-POLICY-001** | **DOCS DONE** | Owner-safe VPS purchase — [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) §13 |
+| **UX-AUTO-CONNECT-PRINCIPLE-001** | **DOCS DONE** | One-button BenderVPN Auto — no server picker — §14 + routing strategy §10 |
 | **ROUTING-PROFILE-RU-DIRECT-001** | **DOCS DONE / IMPL OPEN** | [`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md) |
 | **NODE-SMOKE-MATRIX-001** | **DOCS DONE / IMPL OPEN** | [`VPN-NODE-ACCEPTANCE-CHECKLIST.md`](VPN-NODE-ACCEPTANCE-CHECKLIST.md) |
 | **ROLLOUT-CANARY-DRAIN-001** | **DOCS DONE / IMPL OPEN** | Process in runbook + capacity plan |

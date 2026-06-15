@@ -109,14 +109,16 @@ Source: owner decision — stop isolated client smoke loops; prepare **backend-c
 | — | **VPN-NODE-REGISTRY-001** | P1 | **DONE** | **DONE** (repo SoT) | Assignment engine |
 | — | **SUB-GEN-SELECTOR-STRATEGY-001** | P0 | **DONE** | **DONE** (dry-run) | Live sub integration |
 | — | **SUB-GEN-SELECTOR-INTEGRATION-001** | P0 | OPEN | OPEN | Owner review + generator wiring |
+| — | **VPN-NODE-PROCUREMENT-POLICY-001** | P1 | **DONE** | — | Owner-safe VPS purchase ([`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) §13) |
+| — | **UX-AUTO-CONNECT-PRINCIPLE-001** | P1 | **DONE** | — | One-button BenderVPN Auto; no server picker ([§14](VPN-ARCH-30K-CAPACITY-PLAN.md)) |
 | — | **ROUTING-PROFILE-RU-DIRECT-001** | P1 | **DONE** ([`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md)) | OPEN | Routing pack + tests |
 | — | **NODE-SMOKE-MATRIX-001** | P1 | **DONE** (acceptance checklist) | OPEN (runner) | Node quality |
 | — | **ROLLOUT-CANARY-DRAIN-001** | P1 | **DONE** (in runbook + plan) | OPEN | Safe rollout |
 | — | **MONITOR-CAPACITY-001** | P1 | OPEN | OPEN | Capacity dashboard/alerts |
 
-**Architecture decision:** relay2-only = **`LAB_OWNER`** evidence only — **not** production default. **`delivery_path_nodes < 2`** remains blocker for 300/30k.
+**Architecture decision:** relay2-only = **`LAB_OWNER`** evidence only — **not** production default. **`delivery_path_nodes < 2`** remains blocker for 300/30k. **UX:** one-button BenderVPN Auto — users do not pick servers. **Procurement:** monthly trial first; no long prepaid before acceptance.
 
-**Implementation order after pack:** ~~VPN-NODE-REGISTRY-001~~ **DONE** → ~~**SUB-GEN-SELECTOR-STRATEGY-001**~~ **DONE (dry-run)** → **SUB-GEN-SELECTOR-INTEGRATION-001** → runbook automation → NODE-SMOKE-MATRIX runner → MONITOR-CAPACITY-001 → ROLLOUT-CANARY-DRAIN-001 → NL A2/A4 / relay #1 paths.
+**Implementation order after pack:** ~~VPN-NODE-REGISTRY-001~~ **DONE** → ~~**SUB-GEN-SELECTOR-STRATEGY-001**~~ **DONE (dry-run)** → ~~**VPN-NODE-PROCUREMENT-POLICY-001**~~ **DONE** → ~~**UX-AUTO-CONNECT-PRINCIPLE-001**~~ **DONE** → **SUB-GEN-SELECTOR-INTEGRATION-001** → runbook automation → NODE-SMOKE-MATRIX runner → MONITOR-CAPACITY-001 → ROLLOUT-CANARY-DRAIN-001 → NL A2/A4 / relay #1 paths.
 
 ### CodeRabbit remediation order (2026-06-15)
 

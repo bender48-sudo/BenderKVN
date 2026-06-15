@@ -1,5 +1,6 @@
 # Node registry example (redacted schema v1)
 # ID: VPN-NODE-REGISTRY-001 — example only; no production secrets.
+# Procurement fields: VPN-NODE-PROCUREMENT-POLICY-001 (proposal v1.1 — docs only until schema bump).
 # Real IPs, domains, UUIDs, and tokens live in vault / owner secure store — NOT in git.
 
 schema_version: 1
@@ -7,6 +8,19 @@ updated_at: "2026-06-15T00:00:00Z"
 owner_note: >
   Count toward delivery_path_nodes only when status=active AND node appears
   in generated subscriptions/routing with post-inclusion audit evidence.
+  Purchase does not imply production — see procurement.acceptance_status.
+
+# procurement block (per node, proposal v1.1):
+#   provider_label: redacted provider class
+#   billing_period: monthly | trial_7d | annual (annual only after acceptance)
+#   refund_window_days: integer
+#   traffic_policy: documented Mbps/TB or fair-use summary
+#   vpn_allowed_by_aup: yes | no | unclear
+#   provider_diversity_group: logical provider bucket
+#   datacenter_diversity_group: DC/region bucket for N+1
+#   purchase_approved_by_owner: true/false
+#   long_prepaid_allowed: false until acceptance PASS
+#   acceptance_status: pending | passed | failed
 
 capacity_policy:
   users_per_node_soft_cap: 50
@@ -48,6 +62,17 @@ nodes:
       cohort_weight: 0
       canary_percent: 0
       assigned_cohort_ids: []
+    procurement:
+      provider_label: example-provider-eu
+      billing_period: monthly
+      refund_window_days: 7
+      traffic_policy: "example 5 TB/mo fair-use; no burst guarantee"
+      vpn_allowed_by_aup: yes
+      provider_diversity_group: provider-bucket-b
+      datacenter_diversity_group: dc-eu-west-example
+      purchase_approved_by_owner: false
+      long_prepaid_allowed: false
+      acceptance_status: pending
     owner_approval_notes: >
       Replace with real node after VPS provision. Do not set active without
       VPN-NODE-ACCEPTANCE-CHECKLIST P0 PASS and owner canary sign-off.
@@ -70,6 +95,17 @@ nodes:
     rollout:
       cohort_weight: 0
       canary_percent: 0
+    procurement:
+      provider_label: example-provider-eu
+      billing_period: monthly
+      refund_window_days: 14
+      traffic_policy: "example 10 TB/mo; AUP allows VPN"
+      vpn_allowed_by_aup: yes
+      provider_diversity_group: provider-bucket-c
+      datacenter_diversity_group: dc-eu-north-example
+      purchase_approved_by_owner: false
+      long_prepaid_allowed: false
+      acceptance_status: pending
     owner_approval_notes: >
       Example placeholder for future NL or third prod node after VPN-ARCH-001
       controlled smoke. NL must not count as active until inclusion audit passes.
@@ -94,6 +130,17 @@ nodes:
       canary_percent: 0
       assigned_cohort_ids:
         - owner-laptop
+    procurement:
+      provider_label: example-provider-lab
+      billing_period: trial_7d
+      refund_window_days: 7
+      traffic_policy: "lab only; low volume"
+      vpn_allowed_by_aup: yes
+      provider_diversity_group: provider-bucket-lab
+      datacenter_diversity_group: dc-ru-lab-example
+      purchase_approved_by_owner: true
+      long_prepaid_allowed: false
+      acceptance_status: passed
     owner_approval_notes: >
       Relay2-only lab profile — successful repeat soak (report 8). NOT production
       default. PROD selector reduction requires separate owner approval task.
