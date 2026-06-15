@@ -881,41 +881,56 @@ def try_acquire_topup_idempotency(user_id: int, idempotency_key: str) -> bool:
 
 # -------------------- Webhook idempotency / DLQ (P6-RED-PAY-01) --------------------
 def claim_webhook_delivery(idempotency_key: str, source: str, payload_json: str) -> str:
-    """new | duplicate | in_progress | retry"""
+    """new | duplicate | in_progress | retry
+
+    BILL-WEBHOOK-CLAIM-TOCTOU-001: claim atomically. The previous SELECT-then-INSERT
+    let two concurrent workers both see "no row" and both return "new", causing a
+    double credit. `idempotency_key` is the PRIMARY KEY, so `INSERT OR IGNORE` makes
+    exactly one caller win the race (rowcount == 1 -> "new"); everyone else inspects
+    the existing row. On any DB error we fail safe to "in_progress" (the caller skips
+    processing and the payment provider retries) rather than "new" (double credit).
+    """
     try:
         with db_connection() as conn:
             c = conn.cursor()
+            c.execute(
+                """INSERT OR IGNORE INTO webhook_deliveries
+                   (idempotency_key, source, status, payload_json)
+                   VALUES (?, ?, 'pending', ?)""",
+                (idempotency_key, source, payload_json),
+            )
+            if c.rowcount == 1:
+                conn.commit()
+                return "new"
+            # Row already existed — only one worker reaches here per key.
             c.execute(
                 "SELECT status FROM webhook_deliveries WHERE idempotency_key = ?",
                 (idempotency_key,),
             )
             row = c.fetchone()
-            if row:
-                status = row[0]
-                if status == "done":
-                    return "duplicate"
-                if status in ("pending", "processing"):
-                    return "in_progress"
-                c.execute(
-                    """UPDATE webhook_deliveries
-                       SET status = 'pending', source = ?, payload_json = ?, error = NULL,
-                           updated_at = CURRENT_TIMESTAMP
-                       WHERE idempotency_key = ?""",
-                    (source, payload_json, idempotency_key),
-                )
+            if not row:
                 conn.commit()
-                return "retry"
+                return "in_progress"
+            status = row[0]
+            if status == "done":
+                conn.commit()
+                return "duplicate"
+            if status in ("pending", "processing"):
+                conn.commit()
+                return "in_progress"
+            # failed -> reclaim for retry
             c.execute(
-                """INSERT INTO webhook_deliveries
-                   (idempotency_key, source, status, payload_json)
-                   VALUES (?, ?, 'pending', ?)""",
-                (idempotency_key, source, payload_json),
+                """UPDATE webhook_deliveries
+                   SET status = 'pending', source = ?, payload_json = ?, error = NULL,
+                       updated_at = CURRENT_TIMESTAMP
+                   WHERE idempotency_key = ?""",
+                (source, payload_json, idempotency_key),
             )
             conn.commit()
-            return "new"
+            return "retry"
     except sqlite3.Error as e:
         logging.error("claim_webhook_delivery %s: %s", idempotency_key, e)
-        return "new"
+        return "in_progress"
 
 def mark_webhook_processing(idempotency_key: str) -> None:
     try:
