@@ -282,6 +282,25 @@ python ops/vpn_node_selector.py --cohort CANARY
 | `PUBLIC_PROD` while `delivery_path_nodes < 2` | **NO-GO** (hard gate; empty selection) |
 | Next step | **SUB-GEN-SELECTOR-INTEGRATION-001** after owner review |
 
+### 11.1 Shadow diff (integration — shadow stage)
+
+**Module:** [`ops/vpn_sub_assignment_shadow.py`](../ops/vpn_sub_assignment_shadow.py) · **SUB-GEN-SELECTOR-INTEGRATION-001** (shadow stage) + **SUB-GEN-SHADOW-REPORT-001**
+
+```bash
+python ops/vpn_sub_assignment_shadow.py --cohort PUBLIC_PROD
+python ops/vpn_sub_assignment_shadow.py --all --json
+python ops/vpn_sub_assignment_shadow.py --cohort OWNER_FF --baseline-file <owner_export.json>
+```
+
+| Property | Value |
+|----------|-------|
+| Reads | Redacted registry + optional owner baseline file only |
+| Changes live subscription generation | **No** — `dry_run=True`, `applied=False` always |
+| Output | Redacted node IDs + group diffs (would_add / would_remove); no UUIDs/URLs/secrets |
+| Baseline | Registry-derived (labelled "not live-confirmed") unless `--baseline-file` supplied |
+| `apply_safe` flag | GO precondition only — **does not** authorise apply |
+| Apply | **SUB-GEN-SELECTOR-APPLY-001** — separate, owner-reviewed, snapshot+rollback |
+
 ---
 
 ## 12. Document maintenance

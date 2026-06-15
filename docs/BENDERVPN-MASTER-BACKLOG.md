@@ -108,7 +108,8 @@ Source: owner decision — stop isolated client smoke loops; prepare **backend-c
 | — | **VPN-NODE-RUNBOOK-001** | P1 | **DONE** ([`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md)) | OPEN (automation) | Fast node scale |
 | — | **VPN-NODE-REGISTRY-001** | P1 | **DONE** | **DONE** (repo SoT) | Assignment engine |
 | — | **SUB-GEN-SELECTOR-STRATEGY-001** | P0 | **DONE** | **DONE** (dry-run) | Live sub integration |
-| — | **SUB-GEN-SELECTOR-INTEGRATION-001** | P0 | OPEN | OPEN | Owner review + generator wiring |
+| — | **SUB-GEN-SELECTOR-INTEGRATION-001** | P0 | **DONE** (shadow) | **SHADOW DONE / APPLY OPEN** | Owner review + generator wiring; [`ops/vpn_sub_assignment_shadow.py`](../ops/vpn_sub_assignment_shadow.py) |
+| — | **SUB-GEN-SELECTOR-APPLY-001** | P0 | OPEN | OPEN | Owner-reviewed apply (snapshot+rollback); never auto |
 | — | **VPN-NODE-PROCUREMENT-POLICY-001** | P1 | **DONE** | — | Owner-safe VPS purchase ([`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) §13) |
 | — | **UX-AUTO-CONNECT-PRINCIPLE-001** | P1 | **DONE** | — | One-button BenderVPN Auto; no server picker ([§14](VPN-ARCH-30K-CAPACITY-PLAN.md)) |
 | — | **ROUTING-PROFILE-RU-DIRECT-001** | P1 | **DONE** ([`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md)) | OPEN | Routing pack + tests |
