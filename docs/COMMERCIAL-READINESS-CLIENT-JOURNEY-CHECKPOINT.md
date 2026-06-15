@@ -40,7 +40,7 @@
 |------|---------|----------------|------------------|---------------------|
 | **Internal / owner testing** | **GO** | None for trusted operator | Sleep/wake on desktop; document limits | — |
 | **Friends-only controlled beta** | **CONDITIONAL GO** | Manual support; disclose desktop sleep + Windows fallback; Happ mobile preferred | Desktop long-session OPEN; mobile smoke PENDING | Waive desktop gate for F&F? |
-| **Small paid beta** | **CONDITIONAL GO** | Manual payment reconciliation; whitelist ≤10; BILL-FIX deployed | **BILL-TERMS-GUARD-001 OPEN**; **BILL-UT/SMOKE not PASS**; G6 PARTIAL | Manual pilot only until terms + offline tests |
+| **Small paid beta** | **CONDITIONAL GO** | Manual payment reconciliation; whitelist ≤10; BILL-FIX deployed | **LIVE-TERMS-UX-SMOKE owner taps OPEN**; **BILL-SMOKE not PASS**; G6 PARTIAL | Manual pilot only until owner live terms smoke + BILL-SMOKE |
 | **Automated paid pilot** | **NO-GO** | BILL-TERMS-GUARD + BILL-UT + BILL-SMOKE | CodeRabbit CB-1..4 open | — |
 | **Invite-only commercial launch** | **NO-GO** | G1 client stability; G6 billing proof; G8 support tooling; monitoring trustworthy | Desktop gate OPEN; mobile PENDING; bind FAIL (G4) | — |
 | **Referral growth** | **NO-GO** | G4 bind; REF-ADMIN; anti-abuse; client stability; capacity ≥2 nodes | All open | Approve portal-first share before bind fixed? |
@@ -61,7 +61,7 @@ Legend: **DONE** = deployed + evidence · **PARTIAL** = works with gaps · **BLO
 | **Email 1-day trial** | `/setup`, temp access | **DONE** | Fallback path only; bind broken | Web trial works | G4 bind retest | Do not sell as primary |
 | **90-day Telegram trial** | Bot trial button | **DONE** | Trial abuse unmonitored at scale | Policy PT-01 | — | Clear vs email 1d |
 | **Account / balance** | Cabinet `billing_profile` | **PARTIAL** | Wallet logic unaudited live | P1-CAB-001 deployed | BILL-SMOKE | 6.67 ₽/day messaging OK in policy |
-| **Payment / top-up** | YooKassa presets | **PARTIAL** | Terms bypass on callbacks; offline tests missing | CodeRabbit triage `c03f638`; BILL-001 | **BILL-TERMS-GUARD-001**, **BILL-UT-001/002**, BILL-SMOKE | Automated pilot blocked until fixed |
+| **Payment / top-up** | YooKassa presets | **PARTIAL** | Guards deployed AMS 2026-06-15; owner live terms taps pending | POSTDEPLOY-2026-06-15; offline UX smoke PASS | **LIVE-TERMS-UX-SMOKE-001** (owner), **BILL-SMOKE-001..004** | Automated pilot blocked until owner live smoke + BILL-SMOKE |
 | **Subscription / config issuance** | Bot link, QR, Happ import | **DONE** | One config = one device (support manual) | Candidate D sub; Remna provision | DEVICE-ENFORCE not live | No multi-device promise |
 | **App setup** | Portal setup + Happ routing import | **PARTIAL** | Users skip **BenderVPN RU** routing → wrong split | Setup docs; DirectIp guard | Journey QA scenarios 3,6 | Routing import must stay in setup |
 | **First connection** | Happ TUN / mobile VPN | **PARTIAL** | Desktop long-session; mobile unproven | DirectIp fix; TUN fast | REPEAT-SOAK; MOBILE-SMOKE | Windows: disclose sleep risk |
