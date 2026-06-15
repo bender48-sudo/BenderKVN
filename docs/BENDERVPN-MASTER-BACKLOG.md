@@ -106,7 +106,7 @@ Source: owner decision — stop isolated client smoke loops; prepare **backend-c
 | — | **VPN-ARCH-30K-CAPACITY-PACK-001** | P0 | **DONE** | — | Umbrella doc pack |
 | — | **VPN-ARCH-30K-CAPACITY-PLAN-001** | P0 | **DONE** | OPEN | 300/30k gates |
 | — | **VPN-NODE-RUNBOOK-001** | P1 | **DONE** ([`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md)) | OPEN (automation) | Fast node scale |
-| — | **VPN-NODE-REGISTRY-001** | P1 | **DONE** (example schema) | OPEN (SoT + admin) | Assignment engine |
+| — | **VPN-NODE-REGISTRY-001** | P1 | **DONE** | **DONE** (repo SoT) | Assignment engine |
 | — | **SUB-GEN-SELECTOR-STRATEGY-001** | P0 | **DONE** (in capacity plan) | OPEN | Cohort subs |
 | — | **ROUTING-PROFILE-RU-DIRECT-001** | P1 | **DONE** ([`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md)) | OPEN | Routing pack + tests |
 | — | **NODE-SMOKE-MATRIX-001** | P1 | **DONE** (acceptance checklist) | OPEN (runner) | Node quality |
@@ -115,7 +115,7 @@ Source: owner decision — stop isolated client smoke loops; prepare **backend-c
 
 **Architecture decision:** relay2-only = **`LAB_OWNER`** evidence only — **not** production default. **`delivery_path_nodes < 2`** remains blocker for 300/30k.
 
-**Implementation order after pack:** VPN-NODE-REGISTRY-001 → SUB-GEN-SELECTOR-STRATEGY-001 → runbook automation → NODE-SMOKE-MATRIX runner → MONITOR-CAPACITY-001 → ROLLOUT-CANARY-DRAIN-001 → NL A2/A4 / relay #1 paths.
+**Implementation order after pack:** ~~VPN-NODE-REGISTRY-001~~ **DONE** → **SUB-GEN-SELECTOR-STRATEGY-001** → runbook automation → NODE-SMOKE-MATRIX runner → MONITOR-CAPACITY-001 → ROLLOUT-CANARY-DRAIN-001 → NL A2/A4 / relay #1 paths.
 
 ### CodeRabbit remediation order (2026-06-15)
 
@@ -470,7 +470,7 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 | VPN-ARCH-001 | P1 | VPN architecture | Full VPN architecture audit + NL revalidation AC | NL not active; pre-qualified for A2/A4 smoke after soak (PROOF-001 + QUALITY-PROOF-001) | N/A | **Now** | Growth blocked until ≥2 verified delivery-path nodes | **QUALITY-PROOF-001 DONE**; soak + controlled smoke pending | ops/, panel | A2/A4 smoke gates; owner approval; ≥2 path surfaces post-inclusion | `nl_reachability_probe_ru.py`; gate §1 | No | **Yes** global | VPN-REL-001; MONITOR-FLAP-001 | **AWAITING APPROVAL** |
 | VPN-NODE-RUNBOOK-001 | P1 | VPN architecture / ops | Fast node + relay bring-up template | `deploy-node.sh` + partial docs exist; unified runbook **DONE** | N/A | **Now** | Fast scale on user influx | [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md), [`VPN-NODE-ACCEPTANCE-CHECKLIST.md`](VPN-NODE-ACCEPTANCE-CHECKLIST.md) | docs **DONE**; automation OPEN | Repeatable checklist + canary/drain/rollback | owner review | No | **Yes** | VPN-ARCH-001; MONITOR-FLAP-001 | **DOCS DONE / IMPL OPEN** |
 | VPN-ARCH-30K-CAPACITY-PLAN-001 | P0 | VPN architecture | 30k capacity target architecture | Single-path relay2 lab ≠ launch architecture | N/A | **Now** | 300/30k NO-GO until ≥2 delivery paths + registry | [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) | doc **DONE** | Backend-controlled multi-node delivery | — | No | **Yes** | delivery_path_nodes | **DOCS DONE / IMPL OPEN** |
-| VPN-NODE-REGISTRY-001 | P1 | VPN architecture / ops | Node registry SoT | No inventory source for assignment | N/A | **Now** | Scale + support visibility | [`examples/node-registry.example.yaml`](examples/node-registry.example.yaml) | example schema **DONE** | YAML→DB; status/groups/capacity | registry smoke | No | No | SUB-GEN-SELECTOR | **DOCS DONE / IMPL OPEN** |
+| VPN-NODE-REGISTRY-001 | P1 | VPN architecture / ops | Node registry SoT | No inventory source for assignment | N/A | **Now** | Scale + support visibility | [`ops/config/vpn_node_registry.yaml`](../ops/config/vpn_node_registry.yaml), [`ops/validate_vpn_node_registry.py`](../ops/validate_vpn_node_registry.py) | registry + validator **DONE** | `validate_vpn_node_registry.py`; pytest | registry smoke | No | No | SUB-GEN-SELECTOR | **DONE** (v1 repo SoT; no live sub driver) |
 | SUB-GEN-SELECTOR-STRATEGY-001 | P0 | VPN architecture | Cohort-based subscription generation | Static 6-outbound JSON for all users | N/A | **Now** | Honest multi-node delivery | capacity plan §4 | design **DONE** | Assignment engine + generator | transport_mux_audit | Yes | **Yes** | VPN-NODE-REGISTRY | **DOCS DONE / IMPL OPEN** |
 | ROUTING-PROFILE-RU-DIRECT-001 | P1 | VPN client routing | Curated RU direct routing pack | SafeVPN reference only; geoip:ru regression risk | N/A | **Now** | Happ stability | [`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md) | strategy **DONE** | Pack + directip guard tests | happ_routing_directip_guard | Yes | **Yes** (bittorrent OD) | fixed happRouting | **DOCS DONE / IMPL OPEN** |
 | NODE-SMOKE-MATRIX-001 | P1 | VPN ops | Unified per-node smoke matrix | Scattered probes | N/A | **Now** | Node quality gate | [`VPN-NODE-ACCEPTANCE-CHECKLIST.md`](VPN-NODE-ACCEPTANCE-CHECKLIST.md) | checklist **DONE** | Runner script/CI | vpn_verify_gate | No | No | VPN-NODE-RUNBOOK | **DOCS DONE / IMPL OPEN** |

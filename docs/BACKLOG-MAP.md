@@ -99,7 +99,7 @@
 | **VPN-ARCH-001** | AWAITING APPROVAL | **QUALITY-PROOF-001 DONE**: NL pre-qualified; A2/A4 smoke after soak; not active capacity |
 | **VPN-ARCH-30K-CAPACITY-PACK-001** | **DOCS DONE** | [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) + runbook + routing strategy + registry example — impl OPEN |
 | **VPN-NODE-RUNBOOK-001** | **DOCS DONE / IMPL OPEN** | [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md) + acceptance checklist |
-| **VPN-NODE-REGISTRY-001** | **DOCS DONE / IMPL OPEN** | [`examples/node-registry.example.yaml`](examples/node-registry.example.yaml) |
+| **VPN-NODE-REGISTRY-001** | **DONE** | [`ops/config/vpn_node_registry.yaml`](../ops/config/vpn_node_registry.yaml) + validator |
 | **SUB-GEN-SELECTOR-STRATEGY-001** | **DOCS DONE / IMPL OPEN** | Cohort assignment — see capacity plan |
 | **ROUTING-PROFILE-RU-DIRECT-001** | **DOCS DONE / IMPL OPEN** | [`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md) |
 | **NODE-SMOKE-MATRIX-001** | **DOCS DONE / IMPL OPEN** | [`VPN-NODE-ACCEPTANCE-CHECKLIST.md`](VPN-NODE-ACCEPTANCE-CHECKLIST.md) |

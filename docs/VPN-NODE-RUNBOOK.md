@@ -1,7 +1,7 @@
 # VPN Node Runbook — Fast Production Node Bring-Up
 
-**ID:** VPN-NODE-RUNBOOK-001 (documentation **DONE** · automation **OPEN**)  
-**Date:** 2026-06-15  
+**ID:** VPN-NODE-RUNBOOK-001 (documentation **DONE** · automation **OPEN**)
+**Date:** 2026-06-15
 **Purpose:** Repeatable template to raise a **production-capable** VPN node/relay and promote it through staging → canary → active.
 
 **Consolidates:** [`DEPLOY.md`](DEPLOY.md) · [`THIRD-PROD-NODE-ONBOARDING.md`](THIRD-PROD-NODE-ONBOARDING.md) · [`NODE-POLICY-LV-NL.md`](NODE-POLICY-LV-NL.md) · [`CAPACITY-AND-FAILOVER-ROADMAP.md`](CAPACITY-AND-FAILOVER-ROADMAP.md) · [`RUNBOOK-LV-DOWN-NL-FAILOVER.md`](RUNBOOK-LV-DOWN-NL-FAILOVER.md)
@@ -94,13 +94,17 @@ Ensure new node does not reintroduce alert spam ([`MONITORING.md`](MONITORING.md
 
 ## 5. Node registry update
 
-1. Add entry to registry (YAML v1 → future DB).
-2. Set `status: staging`.
-3. Assign `groups` (e.g. `RU_RELAY_CANARY` — not `ACTIVE` yet).
-4. Record `capacity.reserved_headroom_percent` (default **40**).
-5. Set `rollout.canary_percent: 0` until owner smoke PASS.
+1. Edit [`ops/config/vpn_node_registry.yaml`](../ops/config/vpn_node_registry.yaml) (canonical SoT).
+2. Run `python ops/validate_vpn_node_registry.py` — must pass before commit.
+3. Set `status: staging` for new nodes; promote only via canary gates (§7).
+4. Assign `groups` (e.g. `RU_RELAY_CANARY` — not mass `RU_RELAY_ACTIVE` without smoke).
+5. Record `capacity.reserved_headroom_percent` (default **40**).
+6. Set `rollout.canary_percent: 0` until owner smoke PASS.
+7. **Do not** set `delivery_path_eligible: true` until post-inclusion audit proves node in live subs.
 
-See [`examples/node-registry.example.yaml`](examples/node-registry.example.yaml).
+Reference example: [`examples/node-registry.example.yaml`](examples/node-registry.example.yaml).
+
+**Note:** Registry v1 does **not** drive live subscription generation yet (**SUB-GEN-SELECTOR-STRATEGY-001** OPEN).
 
 ---
 

@@ -1,9 +1,9 @@
 # VPN Architecture — 30k Active Configs Capacity Plan
 
-**ID:** VPN-ARCH-30K-CAPACITY-PLAN-001  
-**Date:** 2026-06-15  
-**Branch:** `product-referral-cabinet-ui-v1`  
-**Status:** Architecture doc **DONE** · implementation **OPEN**  
+**ID:** VPN-ARCH-30K-CAPACITY-PLAN-001
+**Date:** 2026-06-15
+**Branch:** `product-referral-cabinet-ui-v1`
+**Status:** Architecture doc **DONE** · implementation **OPEN**
 **Mode:** development preparation · **no prod mutation**
 
 **Related:** [`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md) · [`CAPACITY-AND-FAILOVER-ROADMAP.md`](CAPACITY-AND-FAILOVER-ROADMAP.md) · [`NODE-POLICY-LV-NL.md`](NODE-POLICY-LV-NL.md) · [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md) · [`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md) · [`CLIENT-STABILITY-HAPP-RELAY2-LAB.md`](CLIENT-STABILITY-HAPP-RELAY2-LAB.md)
@@ -209,7 +209,7 @@ Order — do **not** skip registry/strategy before mass node adds:
 
 | # | ID | Deliverable |
 |---|-----|-------------|
-| 1 | **VPN-NODE-REGISTRY-001** | SoT schema → repo YAML → later DB/admin |
+| 1 | **VPN-NODE-REGISTRY-001** | **DONE** — [`ops/config/vpn_node_registry.yaml`](../ops/config/vpn_node_registry.yaml) + [`ops/validate_vpn_node_registry.py`](../ops/validate_vpn_node_registry.py) |
 | 2 | **SUB-GEN-SELECTOR-STRATEGY-001** | Cohort assignment + subscription generator rules |
 | 3 | **VPN-NODE-RUNBOOK-001** (automation) | Script/checklist runner atop [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md) |
 | 4 | **NODE-SMOKE-MATRIX-001** | Unified smoke runner per node |
@@ -227,12 +227,27 @@ Order — do **not** skip registry/strategy before mass node adds:
 
 SafeVPN is a **routing reference only** — see [`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md).
 
-Borrow concepts (UseIPv4, split DNS, private CIDR direct, sniffing, curated RU direct list).  
+Borrow concepts (UseIPv4, split DNS, private CIDR direct, sniffing, curated RU direct list).
 Do **not** copy credentials, endpoints, domain lists wholesale, or single-proxy architecture as capacity proof.
 
 ---
 
-## 10. Document maintenance
+## 10. Node registry v1 (implemented)
+
+**Canonical file:** [`ops/config/vpn_node_registry.yaml`](../ops/config/vpn_node_registry.yaml)
+
+**Validation:** `python ops/validate_vpn_node_registry.py`
+
+| Property | Value |
+|----------|-------|
+| Repo SoT | **Yes** — redacted metadata only |
+| Drives live subscription generation | **No** — SUB-GEN-SELECTOR-STRATEGY-001 remains **OPEN** |
+| `delivery_path_nodes` (current) | **1** — insufficient for 300/30k gates |
+| 300 / 30k verdict | **NO-GO** until ≥2 proven paths + generator integration |
+
+Example schema (non-canonical): [`examples/node-registry.example.yaml`](examples/node-registry.example.yaml).
+
+---
 
 - Update when `delivery_path_nodes` changes (post-inclusion audit).
 - Revisit formula coefficients after first 1k active configs with real metrics.

@@ -1,0 +1,246 @@
+# VPN node registry v1 — repo-level source of truth (redacted, no secrets).
+# ID: VPN-NODE-REGISTRY-001
+# Real IPs, domains, UUIDs, tokens: vault / owner secure store — NOT in git.
+# Does NOT drive live subscription generation yet (SUB-GEN-SELECTOR-STRATEGY-001 OPEN).
+
+schema_version: 1
+updated_at: "2026-06-15T12:00:00Z"
+registry_note: >
+  delivery_path_nodes counts exit-role nodes with status=active and
+  delivery_path_eligible=true. Relay diversity to one LV geography is not
+  multi-node capacity. 300/30k gates remain NO-GO until >=2 proven paths
+  and subscription generator integration.
+
+capacity_policy:
+  users_per_node_soft_cap: 50
+  default_reserved_headroom_percent: 40
+  peak_concurrency_ratio_default: 0.35
+  delivery_path_gate_300: 2
+  delivery_path_gate_30k: 2
+
+nodes:
+  - node_id: lv-exit-1
+    display_name: Latvia production exit (Candidate D path)
+    region: EU
+    country: LV
+    city: redacted
+    provider_label: redacted-vps-lv
+    role: exit
+    status: active
+    delivery_path_eligible: true
+    groups:
+      - RU_RELAY_ACTIVE
+      - INTL_STEALTH_ACTIVE
+    capacity:
+      max_active_configs: null
+      max_concurrent_sessions: null
+      max_mbps: null
+      reserved_headroom_percent: 40
+    health:
+      monitor_status: ok
+      last_smoke_status: pass
+      last_smoke_at: "2026-06-13"
+      last_owner_test_status: pass
+      last_owner_test_at: "2026-06-12"
+    rollout:
+      cohort_weight: 100
+      canary_percent: 0
+      allow_new_assignments: true
+      drain_after: null
+    client_support:
+      happ_supported: true
+      karing_supported: exploratory
+      v2rayn_supported: fallback
+      mobile_supported: pending_owner_smoke
+    owner_approval_required: false
+    notes: >
+      Effective single geographic exit behind relay-only×6 live Auto profile.
+      Counts as 1 toward delivery_path_nodes only — not sufficient for 300 gate.
+
+  - node_id: ru-relay-1
+    display_name: RU relay primary pool member
+    region: RU
+    country: RU
+    city: redacted
+    provider_label: redacted-vps-ru-relay-1
+    role: relay
+    status: active
+    delivery_path_eligible: false
+    groups:
+      - RU_RELAY_ACTIVE
+    capacity:
+      max_active_configs: null
+      max_concurrent_sessions: null
+      max_mbps: null
+      reserved_headroom_percent: 40
+    health:
+      monitor_status: suspect
+      last_smoke_status: needs_diagnosis
+      last_smoke_at: "2026-06-14"
+      last_owner_test_status: soft_pass
+      last_owner_test_at: "2026-06-14"
+    rollout:
+      cohort_weight: 50
+      canary_percent: 0
+      allow_new_assignments: true
+      drain_after: null
+    client_support:
+      happ_supported: true
+      karing_supported: false
+      v2rayn_supported: false
+      mobile_supported: pending_owner_smoke
+    owner_approval_required: true
+    notes: >
+      Present in live Candidate D injectHosts (×3). Under suspicion per client
+      stability reports (dial/open storms). Do NOT blindly reduce selector or
+      assume healthy without PROD-SELECTOR-CONTROLLED owner approval.
+
+  - node_id: ru-relay-2
+    display_name: RU relay secondary pool member
+    region: RU
+    country: RU
+    city: redacted
+    provider_label: redacted-vps-ru-relay-2
+    role: relay
+    status: active
+    delivery_path_eligible: false
+    groups:
+      - RU_RELAY_ACTIVE
+    capacity:
+      max_active_configs: null
+      max_concurrent_sessions: null
+      max_mbps: null
+      reserved_headroom_percent: 40
+    health:
+      monitor_status: ok
+      last_smoke_status: pass
+      last_smoke_at: "2026-06-15"
+      last_owner_test_status: pass
+      last_owner_test_at: "2026-06-15"
+    rollout:
+      cohort_weight: 50
+      canary_percent: 0
+      allow_new_assignments: true
+      drain_after: null
+    client_support:
+      happ_supported: true
+      karing_supported: false
+      v2rayn_supported: false
+      mobile_supported: pending_owner_smoke
+    owner_approval_required: true
+    notes: >
+      Live pool member (×3 in Candidate D). Relay2-only lab profile is separate
+      entry — not production default for mass assignment.
+
+  - node_id: ru-relay-2-lab
+    display_name: Relay2-only owner lab profile
+    region: RU
+    country: RU
+    city: redacted
+    provider_label: lab-local-profile
+    role: lab
+    status: staging
+    delivery_path_eligible: false
+    groups:
+      - LAB_OWNER
+    capacity:
+      max_active_configs: 1
+      max_concurrent_sessions: 1
+      max_mbps: 50
+      reserved_headroom_percent: 0
+    health:
+      monitor_status: n/a
+      last_smoke_status: pass
+      last_smoke_at: "2026-06-15"
+      last_owner_test_status: pass
+      last_owner_test_at: "2026-06-15"
+    rollout:
+      cohort_weight: 0
+      canary_percent: 0
+      allow_new_assignments: false
+      drain_after: null
+    client_support:
+      happ_supported: true
+      karing_supported: false
+      v2rayn_supported: false
+      mobile_supported: false
+    owner_approval_required: true
+    notes: >
+      Successful repeat active soak (report 8). Workaround evidence for owner/F&F.
+      MUST NOT become production default or mass-issued cohort.
+
+  - node_id: nl-node-1
+    display_name: Netherlands node (failover / pre-qualified)
+    region: EU
+    country: NL
+    city: redacted
+    provider_label: redacted-vps-nl
+    role: exit
+    status: disabled
+    delivery_path_eligible: false
+    groups:
+      - INTL_DIRECT_ACTIVE
+    capacity:
+      max_active_configs: null
+      max_concurrent_sessions: null
+      max_mbps: null
+      reserved_headroom_percent: 40
+    health:
+      monitor_status: ok
+      last_smoke_status: not_in_live_subs
+      last_smoke_at: "2026-06-11"
+      last_owner_test_status: pending
+      last_owner_test_at: null
+    rollout:
+      cohort_weight: 0
+      canary_percent: 0
+      allow_new_assignments: false
+      drain_after: null
+    client_support:
+      happ_supported: pending
+      karing_supported: false
+      v2rayn_supported: false
+      mobile_supported: false
+    owner_approval_required: true
+    notes: >
+      Connected in panel historically but NOT normal Auto delivery (NL=0 in
+      injectHosts). A2/A4 controlled smoke gated on MONITOR-FLAP closeout +
+      explicit owner approval. Does not count toward delivery_path_nodes.
+
+  - node_id: ams-backup-edge
+    display_name: Backup subscription edge jurisdiction
+    region: EU
+    country: NL
+    city: redacted
+    provider_label: redacted-vps-ams-edge
+    role: backup
+    status: active
+    delivery_path_eligible: false
+    groups:
+      - FALLBACK_MANUAL
+    capacity:
+      max_active_configs: null
+      max_concurrent_sessions: null
+      max_mbps: null
+      reserved_headroom_percent: 40
+    health:
+      monitor_status: ok
+      last_smoke_status: pass
+      last_smoke_at: "2026-06-03"
+      last_owner_test_status: n/a
+      last_owner_test_at: null
+    rollout:
+      cohort_weight: 0
+      canary_percent: 0
+      allow_new_assignments: false
+      drain_after: null
+    client_support:
+      happ_supported: true
+      karing_supported: false
+      v2rayn_supported: false
+      mobile_supported: false
+    owner_approval_required: false
+    notes: >
+      Backup sub edge (jurisdiction failover). Not VPN delivery capacity.
+
+assignments: []
