@@ -142,12 +142,13 @@ class TestGuardedHandlers(unittest.TestCase):
             )
 
     def test_guard_runs_before_payment_creation(self) -> None:
-        """The terms guard must precede any payment_create call in pay handlers."""
+        """The terms guard must precede any Payment.create call in pay handlers."""
         for name in ("create_yookassa_payment_handler", "pay_yookassa_topup_handler"):
             node = self.funcs[name]
             calls = _call_names(node)
             guard_lines = [ln for c, ln in calls if c == _GUARD_NAME]
-            pay_lines = [ln for c, ln in calls if c == "payment_create"]
+            pay_lines = [ln for c, ln in calls if c == "create"]
+            # Payment.create() -> attr "create"
             self.assertTrue(guard_lines, f"{name} missing terms guard")
             self.assertTrue(pay_lines, f"{name} expected to create a payment")
             self.assertLess(

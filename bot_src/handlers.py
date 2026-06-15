@@ -4,6 +4,7 @@ from io import BytesIO
 from datetime import datetime, timedelta, timezone
 import qrcode
 import aiohttp
+from yookassa import Payment
 import os
 import hashlib
 import json
@@ -52,7 +53,7 @@ from shop_bot.data_manager.database import (
     set_auto_renew, get_auto_renew, log_action, has_action, add_traffic_extra,
     create_promo, get_all_promos, get_balance, add_balance,
 )
-from shop_bot.yookassa_payment import payment_create, yookassa_receipt
+from shop_bot.yookassa_payment import yookassa_receipt
 from shop_bot.config import (
     PLANS, get_profile_text, get_vpn_active_text, VPN_INACTIVE_TEXT, VPN_NO_DATA_TEXT,
     get_key_info_text, CHOOSE_PAYMENT_METHOD_MESSAGE, get_purchase_success_text, ABOUT_TEXT, TERMS_URL, PRIVACY_URL, SUPPORT_USER, SUPPORT_TEXT,
@@ -1675,7 +1676,7 @@ async def pay_yookassa_topup_handler(callback: types.CallbackQuery, state: FSMCo
     amount_value = f"{float(amount_rub):.2f}"
     description = f"Пополнение баланса BenderVPN {amount_rub:.0f} ₽"
     try:
-        payment = payment_create(
+        payment = Payment.create(
             {
                 "amount": {"value": amount_value, "currency": "RUB"},
                 "confirmation": {"type": "redirect", "return_url": return_url},
@@ -1754,7 +1755,7 @@ async def create_yookassa_payment_handler(callback: types.CallbackQuery, state: 
                 disc = promo.get('discount_percent', 0)
                 if disc and 0 < disc < 100:
                     amount_value = f"{float(price_rub) * (100-disc)/100:.2f}"
-        payment = payment_create({
+        payment = Payment.create({
             "amount": {"value": amount_value, "currency": "RUB"},
             "confirmation": {"type": "redirect", "return_url": f"https://t.me/{TELEGRAM_BOT_USERNAME}"},
             "capture": True,
