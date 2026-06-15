@@ -578,7 +578,7 @@ async def _ensure_terms_callback(callback: types.CallbackQuery, state: FSMContex
 
     Resolves identity from `callback.from_user` (callback.message.from_user is the
     bot), prompts via the callback message, and alerts the user. Returns True only
-    when terms are accepted. BILL-TERMS-GUARD-001.
+    when terms are accepted. BILL-TERMS-GUARD-001 / BILL-TERMS-GUARD-002.
     """
     user_id = callback.from_user.id
     username = callback.from_user.username or callback.from_user.full_name or ""
@@ -634,6 +634,8 @@ async def connect_vpn_wizard_start(callback: types.CallbackQuery, state: FSMCont
 async def connect_vpn_wizard_device(callback: types.CallbackQuery, state: FSMContext):
     from shop_bot.vpn_setup_wizard import format_device_lead, get_device
 
+    if not await _ensure_terms_callback(callback, state):
+        return
     device_id = callback.data.replace("wizard_pick_", "", 1)
     if not get_device(device_id):
         await callback.answer("Неизвестное устройство", show_alert=True)
@@ -666,6 +668,8 @@ async def connect_vpn_wizard_device(callback: types.CallbackQuery, state: FSMCon
 async def connect_vpn_wizard_chat(callback: types.CallbackQuery, state: FSMContext):
     from shop_bot.vpn_setup_wizard import format_chat_steps, get_device
 
+    if not await _ensure_terms_callback(callback, state):
+        return
     device_id = callback.data.replace("wizard_chat_", "", 1)
     if not get_device(device_id):
         await callback.answer("Неизвестное устройство", show_alert=True)
@@ -864,7 +868,7 @@ async def manage_keys_handler(callback: types.CallbackQuery):
     )
 
 @user_router.callback_query(F.data == "toggle_autorenew")
-async def toggle_autorenew_handler(callback: types.CallbackQuery):
+async def toggle_autorenew_handler(callback: types.CallbackQuery, state: FSMContext):
     from shop_bot.data_manager.database import (
         get_yookassa_autopay,
         get_yookassa_payment_method_id,
@@ -885,6 +889,9 @@ async def toggle_autorenew_handler(callback: types.CallbackQuery):
         set_yookassa_autopay_enabled(uid, False)
         log_action(uid, "autopay_off", "user")
         await show_main_menu(callback.message, edit_message=True)
+        return
+
+    if not await _ensure_terms_callback(callback, state):
         return
 
     if not (PAYMENT_METHODS or {}).get("yookassa"):
@@ -950,6 +957,8 @@ async def enter_promo_info(callback: types.CallbackQuery):
 
 @user_router.callback_query(F.data == "enter_promo_start")
 async def enter_promo_start(callback: types.CallbackQuery, state: FSMContext):
+    if not await _ensure_terms_callback(callback, state):
+        return
     await callback.answer()
     await state.set_state(PromoInput.waiting_for_code)
     await callback.message.edit_text("Введите промокод одним сообщением:")

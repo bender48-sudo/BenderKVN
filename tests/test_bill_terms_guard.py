@@ -1,6 +1,6 @@
 """Offline structural tests for billing safety guards.
 
-BILL-TERMS-GUARD-001 + TRIAL-GRANT-ATOMIC-001.
+BILL-TERMS-GUARD-001 + TRIAL-GRANT-ATOMIC-001 + BILL-TERMS-GUARD-002.
 
 `bot_src/handlers.py` imports aiogram/aiohttp/qrcode which are not installed in
 the unit-test environment, so (like ``test_yookassa_topup_idempotency`` does) we
@@ -18,11 +18,13 @@ from pathlib import Path
 _REPO = Path(__file__).resolve().parent.parent
 _HANDLERS = _REPO / "bot_src" / "handlers.py"
 
-# Money / trial / wizard entry callbacks that must enforce terms acceptance
-# before doing anything (BILL-TERMS-GUARD-001).
+# Money / trial / wizard / promo / autopay-bind entry callbacks that must enforce
+# terms acceptance before doing anything (BILL-TERMS-GUARD-001 + 002).
 _GUARDED_HANDLERS = (
     "trial_period_handler",
     "connect_vpn_wizard_start",
+    "connect_vpn_wizard_device",
+    "connect_vpn_wizard_chat",
     "show_topup_handler",
     "topup_select_handler",
     "topup_custom_handler",
@@ -31,6 +33,8 @@ _GUARDED_HANDLERS = (
     "create_yookassa_payment_handler",
     "create_crypto_payment_handler",
     "buy_traffic_pack",
+    "toggle_autorenew_handler",
+    "enter_promo_start",
 )
 
 _GUARD_NAME = "_ensure_terms_callback"
@@ -61,6 +65,17 @@ def _call_names(node: ast.AST) -> list[tuple[str, int]]:
     return calls
 
 
+def _first_statement_line(node: ast.AST) -> int | None:
+    body = getattr(node, "body", None)
+    if not body:
+        return None
+    first = body[0]
+    if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant):
+        if body[1:]:
+            return body[1].lineno
+    return first.lineno
+
+
 class TestTermsGuardExists(unittest.TestCase):
     def setUp(self) -> None:
         self.funcs = _functions(_module())
@@ -79,6 +94,13 @@ class TestTermsGuardExists(unittest.TestCase):
         # Identity must come from callback.from_user (callback.message.from_user is
         # the bot), otherwise the gate checks the wrong account.
         self.assertIn("callback.from_user.id", src)
+
+    def test_accepted_users_pass_through_without_prompt(self) -> None:
+        guard = self.funcs[_GUARD_NAME]
+        src = ast.get_source_segment(_HANDLERS.read_text(encoding="utf-8"), guard)
+        self.assertIsNotNone(src)
+        self.assertIn('user_data.get("agreed_to_terms")', src)
+        self.assertIn("return True", src)
 
 
 class TestGuardedHandlers(unittest.TestCase):
@@ -99,6 +121,26 @@ class TestGuardedHandlers(unittest.TestCase):
                 f"{name} must enforce terms via {_GUARD_NAME} before acting",
             )
 
+    def test_guard_is_early_in_handler(self) -> None:
+        """Stale keyboards must hit the guard before any side effect."""
+        # toggle_autorenew: disable path is intentionally unguarded; enable/bind gated later.
+        skip_early = {"toggle_autorenew_handler"}
+        for name in _GUARDED_HANDLERS:
+            if name in skip_early:
+                continue
+            node = self.funcs[name]
+            calls = _call_names(node)
+            guard_lines = [ln for c, ln in calls if c == _GUARD_NAME]
+            self.assertTrue(guard_lines, f"{name} missing terms guard")
+            first_body = _first_statement_line(node)
+            self.assertIsNotNone(first_body)
+            # Guard must be among the first statements (after imports inside fn).
+            self.assertLessEqual(
+                min(guard_lines),
+                first_body + 8,
+                f"{name} must call terms guard near the top (stale keyboard bypass)",
+            )
+
     def test_guard_runs_before_payment_creation(self) -> None:
         """The terms guard must precede any payment_create call in pay handlers."""
         for name in ("create_yookassa_payment_handler", "pay_yookassa_topup_handler"):
@@ -113,6 +155,19 @@ class TestGuardedHandlers(unittest.TestCase):
                 min(pay_lines),
                 f"{name} must check terms before creating a payment",
             )
+
+    def test_toggle_autorenew_guard_before_bind_payment(self) -> None:
+        node = self.funcs["toggle_autorenew_handler"]
+        calls = _call_names(node)
+        guard_lines = [ln for c, ln in calls if c == _GUARD_NAME]
+        bind_lines = [ln for c, ln in calls if c == "create_bind_payment"]
+        self.assertTrue(guard_lines, "toggle_autorenew must be terms-gated")
+        self.assertTrue(bind_lines, "toggle_autorenew may create bind payment")
+        self.assertLess(
+            min(guard_lines),
+            min(bind_lines),
+            "terms guard must precede create_bind_payment in toggle_autorenew",
+        )
 
 
 class TestTrialGrantAtomic(unittest.TestCase):
