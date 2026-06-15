@@ -1,7 +1,7 @@
 # VPN Routing Profile Strategy (BenderVPN)
 
-**ID:** ROUTING-PROFILE-RU-DIRECT-001 (strategy **DONE** · implementation **OPEN**)  
-**Date:** 2026-06-15  
+**ID:** ROUTING-PROFILE-RU-DIRECT-001 (strategy **DONE** · implementation **OPEN**)
+**Date:** 2026-06-15
 **Purpose:** Convert external routing references (e.g. SafeVPN) into **BenderVPN-safe** Happ/Xray routing decisions without copying foreign infrastructure.
 
 **Related:** [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) · `ops/happ_routing_profile_ru.json` · `ops/happ_routing_directip_guard.py` · [`INCIDENT-DIAG-2026-06-12-HAPP-TUN-ACTIVE-FAILURE.md`](INCIDENT-DIAG-2026-06-12-HAPP-TUN-ACTIVE-FAILURE.md)
@@ -99,7 +99,7 @@ Enable `http`, `tls`, `quic` sniffing where Happ/TUN supports it for domain rout
 | **Happ routing profile (RU)** | DirectIp, DNS, domestic domain direct, private CIDR |
 | **Client (Happ)** | TUN, leastLoad among **issued** outbounds — not capacity planning |
 
-**Target:** stop relying on “6 outbounds in JSON” as architecture. See **SUB-GEN-SELECTOR-STRATEGY-001**.
+**Target:** stop relying on “6 outbounds in JSON” as architecture. Selector dry-run: [`ops/vpn_node_selector.py`](../ops/vpn_node_selector.py) (**SUB-GEN-SELECTOR-STRATEGY-001 DONE**). Live generator wiring: **SUB-GEN-SELECTOR-INTEGRATION-001 OPEN**.
 
 ---
 
@@ -177,3 +177,4 @@ Enable `http`, `tls`, `quic` sniffing where Happ/TUN supports it for domain rout
 2. **Owner decision** — bittorrent policy (§3.6).
 3. **UseIPv4 cohort test** — owner desktop + one mobile device.
 4. Wire T1–T8 into CI / pre-apply gate alongside `vpn_verify_gate.py`.
+5. **SUB-GEN-SELECTOR-INTEGRATION-001** — connect cohort selector to subscription generator (after owner review).

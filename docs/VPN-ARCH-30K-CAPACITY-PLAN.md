@@ -210,7 +210,8 @@ Order — do **not** skip registry/strategy before mass node adds:
 | # | ID | Deliverable |
 |---|-----|-------------|
 | 1 | **VPN-NODE-REGISTRY-001** | **DONE** — [`ops/config/vpn_node_registry.yaml`](../ops/config/vpn_node_registry.yaml) + [`ops/validate_vpn_node_registry.py`](../ops/validate_vpn_node_registry.py) |
-| 2 | **SUB-GEN-SELECTOR-STRATEGY-001** | Cohort assignment + subscription generator rules |
+| 2 | **SUB-GEN-SELECTOR-STRATEGY-001** | **DONE** — [`ops/vpn_node_selector.py`](../ops/vpn_node_selector.py) dry-run only |
+| 2b | **SUB-GEN-SELECTOR-INTEGRATION-001** | **OPEN** — wire selector into live subscription generator (owner review) |
 | 3 | **VPN-NODE-RUNBOOK-001** (automation) | Script/checklist runner atop [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md) |
 | 4 | **NODE-SMOKE-MATRIX-001** | Unified smoke runner per node |
 | 5 | **MONITOR-CAPACITY-001** | Capacity metrics + alerts |
@@ -241,7 +242,7 @@ Do **not** copy credentials, endpoints, domain lists wholesale, or single-proxy 
 | Property | Value |
 |----------|-------|
 | Repo SoT | **Yes** — redacted metadata only |
-| Drives live subscription generation | **No** — SUB-GEN-SELECTOR-STRATEGY-001 remains **OPEN** |
+| Drives live subscription generation | **No** — selector dry-run only; **SUB-GEN-SELECTOR-INTEGRATION-001** OPEN |
 | `delivery_path_nodes` (current) | **1** — insufficient for 300/30k gates |
 | 300 / 30k verdict | **NO-GO** until ≥2 proven paths + generator integration |
 
@@ -249,6 +250,28 @@ Example schema (non-canonical): [`examples/node-registry.example.yaml`](examples
 
 ---
 
-- Update when `delivery_path_nodes` changes (post-inclusion audit).
+## 11. Selector strategy v1 (dry-run)
+
+**Module:** [`ops/vpn_node_selector.py`](../ops/vpn_node_selector.py)
+
+**CLI:**
+
+```bash
+python ops/vpn_node_selector.py --cohort LAB_OWNER
+python ops/vpn_node_selector.py --cohort PUBLIC_PROD
+python ops/vpn_node_selector.py --cohort CANARY
+```
+
+| Property | Value |
+|----------|-------|
+| Reads registry | Yes — via validated load |
+| Alters live subscription generation | **No** |
+| Cohorts | `LAB_OWNER`, `OWNER_FF`, `PAID_BETA_MANUAL`, `PUBLIC_PROD`, `CANARY`, `FALLBACK_MANUAL` |
+| `PUBLIC_PROD` while `delivery_path_nodes < 2` | **NO-GO** (hard gate; empty selection) |
+| Next step | **SUB-GEN-SELECTOR-INTEGRATION-001** after owner review |
+
+---
+
+## 12. Document maintenance
 - Revisit formula coefficients after first 1k active configs with real metrics.
 - Link implementation PRs to backlog IDs in §8 — do not mark DONE without verify evidence.
