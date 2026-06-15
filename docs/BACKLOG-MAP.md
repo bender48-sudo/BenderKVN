@@ -49,7 +49,7 @@
 | **17** | 188–195 | **Закрыта** | help_connect, BBR, P4-DNS docs, observatory staging, DNS cron |
 | **12** | 172–173 (VPN-AUD-210/220) | **210 REVERTED, 220 DONE (historical)** | geosite:ru NO-GO; NL :443×4 was live stealth split — **not current** (Candidate D relay-only×6 per PROOF-001) |
 
-**Сейчас:** **NEXT=—** (фазы 16–17 закрыты **2026-06-04**). Владелец: **Q032**, **O-VPN-002**, **O-VPN-009**, **P4-DNS-05**, live **P4-DNS-01** VPS.
+**Сейчас:** **NEXT=—** (фазы 16–17 закрыты **2026-06-04**). **Product/capacity track:** [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) + implementation backlog in [`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md). Владелец: **Q032**, **O-VPN-002**, **O-VPN-009**, **P4-DNS-05**, live **P4-DNS-01** VPS.
 
 **Gate после каждой VPN-правки:** `python ops/vpn_verify_gate.py`
 
@@ -97,7 +97,14 @@
 | **OPS-ALERT-HYGIENE-001** | **DEPLOYED LV + soak PASS** | Cert digest batched; per-target cert spam stopped |
 | **ACQ-*** / **REF-*** | OPEN | См. MASTER; не дублировать OPS-CAPACITY-300 / NODE-RELAY-ADD |
 | **VPN-ARCH-001** | AWAITING APPROVAL | **QUALITY-PROOF-001 DONE**: NL pre-qualified; A2/A4 smoke after soak; not active capacity |
-| **VPN-NODE-RUNBOOK-001** | OPEN | Fast node+relay bring-up template (BACKLOG-CAPACITY-NODES-001) |
+| **VPN-ARCH-30K-CAPACITY-PACK-001** | **DOCS DONE** | [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) + runbook + routing strategy + registry example — impl OPEN |
+| **VPN-NODE-RUNBOOK-001** | **DOCS DONE / IMPL OPEN** | [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md) + acceptance checklist |
+| **VPN-NODE-REGISTRY-001** | **DOCS DONE / IMPL OPEN** | [`examples/node-registry.example.yaml`](examples/node-registry.example.yaml) |
+| **SUB-GEN-SELECTOR-STRATEGY-001** | **DOCS DONE / IMPL OPEN** | Cohort assignment — see capacity plan |
+| **ROUTING-PROFILE-RU-DIRECT-001** | **DOCS DONE / IMPL OPEN** | [`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md) |
+| **NODE-SMOKE-MATRIX-001** | **DOCS DONE / IMPL OPEN** | [`VPN-NODE-ACCEPTANCE-CHECKLIST.md`](VPN-NODE-ACCEPTANCE-CHECKLIST.md) |
+| **ROLLOUT-CANARY-DRAIN-001** | **DOCS DONE / IMPL OPEN** | Process in runbook + capacity plan |
+| **MONITOR-CAPACITY-001** | OPEN | Capacity metrics/dashboard — not started |
 
 ---
 

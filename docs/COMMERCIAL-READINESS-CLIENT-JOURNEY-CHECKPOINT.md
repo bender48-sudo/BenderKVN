@@ -8,6 +8,8 @@
 
 **CodeRabbit triage (2026-06-15):** Accepted **P0** billing/terms blockers — **BILL-TERMS-GUARD-001**, **BILL-UT-001/002** — before **automated paid pilot**. Repeat relay2 active soak **PASS** (`4fdf06c` / report(8)); sleep/wake **OPEN**. Rabbit capacity/test overclaims **rejected** (see triage doc).
 
+**Capacity architecture pack (2026-06-15):** [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) — relay2-only supports **owner/F&F workaround** only; **commercial / public / 300 active configs / 30k** remain **NO-GO** until **backend-controlled multi-node delivery** (`delivery_path_nodes ≥ 2`, node registry, cohort subscription strategy) is **implemented and proven** — not merely documented.
+
 **Parallel owner work:** REPEAT-SOAK-001 **DONE** (report(8) PASS); sleep/wake track remains separate (CLIENT-SMOKE-001).
 
 ---
@@ -91,7 +93,8 @@ Legend: **DONE** = deployed + evidence · **PARTIAL** = works with gaps · **BLO
 | **Effective delivery geography** | **~1** (LV behind relays) | PROOF-001 + QUALITY-PROOF-001; not relay diversity alone |
 | **NL / Amsterdam normal capacity** | **NO** — failover/pre-qualified only | RU→NL TCP PASS; not in live injectHosts; A2/A4 gated |
 | **Growth / 300 configs gate** | **BLOCKED** | Requires **≥2 production-capable delivery-path nodes** + controlled smokes |
-| **Node bring-up** | **PARTIAL** | `deploy-node.sh` exists; **VPN-NODE-RUNBOOK-001 OPEN** |
+| **Node bring-up** | **DOCS READY** | [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md) + checklist; automation **OPEN** |
+| **30k / multi-node architecture** | **DOCS READY / IMPL NO-GO** | [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md); registry + cohort engine **not built** |
 | **NL A2/A4 controlled smoke** | **NOT STARTED** | Blocked: owner approval + monitoring closeout + client gates |
 | **MONITOR-FLAP-001** | **SOAK PARTIAL** | Deployed LV `50a6ac4`; closeout `7e1d2d4` |
 | **MONITOR-FLAP-TUNE-001** | **DEPLOYED LV; SOAK OPEN** | `21f5a97`, deploy doc `2e95cec` — verify 6h review before claiming PASS |

@@ -1,0 +1,108 @@
+# Node registry example (redacted schema v1)
+# ID: VPN-NODE-REGISTRY-001 — example only; no production secrets.
+# Real IPs, domains, UUIDs, and tokens live in vault / owner secure store — NOT in git.
+
+schema_version: 1
+updated_at: "2026-06-15T00:00:00Z"
+owner_note: >
+  Count toward delivery_path_nodes only when status=active AND node appears
+  in generated subscriptions/routing with post-inclusion audit evidence.
+
+capacity_policy:
+  users_per_node_soft_cap: 50
+  default_reserved_headroom_percent: 40
+  peak_concurrency_ratio_default: 0.35
+
+groups:
+  - id: RU_RELAY_ACTIVE
+    description: Primary RU relay delivery paths in production subs
+  - id: RU_RELAY_CANARY
+    description: New or suspect RU relays under controlled test
+  - id: INTL_DIRECT_ACTIVE
+    description: Direct international exits in Intl_Direct selector
+  - id: INTL_STEALTH_ACTIVE
+    description: Stealth-only paths (TG/IG/Meta)
+  - id: FALLBACK_MANUAL
+    description: Support-only emergency profiles
+  - id: LAB_OWNER
+    description: Owner/lab profiles (e.g. relay2-only) — never mass-issued
+
+nodes:
+  - id: ru-relay-canary-01
+    region: RU
+    role: relay
+    status: staging
+    groups:
+      - RU_RELAY_CANARY
+    capacity:
+      max_active_configs: null
+      max_concurrent_sessions: null
+      max_mbps: null
+      reserved_headroom_percent: 40
+    health:
+      last_smoke: null
+      last_owner_test: null
+      monitor_status: unknown
+      last_reconnect_rate: null
+    rollout:
+      cohort_weight: 0
+      canary_percent: 0
+      assigned_cohort_ids: []
+    owner_approval_notes: >
+      Replace with real node after VPS provision. Do not set active without
+      VPN-NODE-ACCEPTANCE-CHECKLIST P0 PASS and owner canary sign-off.
+
+  - id: intl-direct-example-01
+    region: EU
+    role: vpn_exit
+    status: disabled
+    groups:
+      - INTL_DIRECT_ACTIVE
+    capacity:
+      max_active_configs: null
+      max_concurrent_sessions: null
+      max_mbps: null
+      reserved_headroom_percent: 40
+    health:
+      last_smoke: null
+      last_owner_test: null
+      monitor_status: unknown
+    rollout:
+      cohort_weight: 0
+      canary_percent: 0
+    owner_approval_notes: >
+      Example placeholder for future NL or third prod node after VPN-ARCH-001
+      controlled smoke. NL must not count as active until inclusion audit passes.
+
+  - id: lab-relay2-owner
+    region: RU
+    role: relay
+    status: staging
+    groups:
+      - LAB_OWNER
+    capacity:
+      max_active_configs: 1
+      max_concurrent_sessions: 1
+      max_mbps: 50
+      reserved_headroom_percent: 0
+    health:
+      last_smoke: "2026-06-15"
+      last_owner_test: "2026-06-15"
+      monitor_status: n/a
+    rollout:
+      cohort_weight: 0
+      canary_percent: 0
+      assigned_cohort_ids:
+        - owner-laptop
+    owner_approval_notes: >
+      Relay2-only lab profile — successful repeat soak (report 8). NOT production
+      default. PROD selector reduction requires separate owner approval task.
+
+assignments:
+  # Future: map device/config id → node group + cohort
+  # Example shape only:
+  - device_id: "example-device-id-redacted"
+    node_group: LAB_OWNER
+    cohort_id: owner-laptop
+    subscription_profile: happ_lab_relay2_only
+    created_at: "2026-06-15T00:00:00Z"

@@ -22,6 +22,11 @@
 | [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md) | CLIENT-STABILITY-001 — TUN daemon + Bender Proxy Track A/B |
 | [`INCIDENT-DIAG-2026-06-12-HAPP-TUN-ACTIVE-FAILURE.md`](INCIDENT-DIAG-2026-06-12-HAPP-TUN-ACTIVE-FAILURE.md) | CLIENT-STABILITY-001 — DirectIp fix; report(5) relay egress; [recovery capture](CLIENT-STABILITY-HAPP-RECOVERY-CAPTURE.md) |
 | [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-06-14.md) | CodeRabbit commercial launch triage — accepted blockers + remediation order (`c03f638`) |
+| [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) | Target 30k capacity architecture — backend-controlled multi-node delivery |
+| [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md) | Fast node bring-up runbook (unified template) |
+| [`VPN-NODE-ACCEPTANCE-CHECKLIST.md`](VPN-NODE-ACCEPTANCE-CHECKLIST.md) | Operational node acceptance checklist |
+| [`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md) | Happ routing strategy; SafeVPN reference boundaries |
+| [`examples/node-registry.example.yaml`](examples/node-registry.example.yaml) | Node registry schema v1 (redacted example) |
 
 ---
 
@@ -71,7 +76,7 @@
 | **TRACK 1** | Bind + referral — G4-BIND-RETEST, REF-PORTAL, REF-ADMIN | Partial tomorrow |
 | **TRACK 2** | Billing proof — **CodeRabbit remediation** (BILL-TERMS-GUARD → BILL-UT), BILL-SMOKE prep | **Yes** — before automated paid pilot |
 | **TRACK 3** | Device — SMOKE, ENFORCE, DATA, ADMIN, BILL | After TRACK 0–2 |
-| **TRACK 4** | VPN stability + **node capacity readiness** — INCIDENT-003/004, **VPN-ARCH-001**, **VPN-NODE-RUNBOOK-001**, NL revalidation AC | Owner-led; before growth |
+| **TRACK 4** | VPN stability + **node capacity readiness** — INCIDENT-003/004, **VPN-ARCH-001**, **VPN-ARCH-30K pack**, NL revalidation AC | Owner-led; before growth |
 | **TRACK 5** | Monitoring / CI / runbooks — **MONITOR-FLAP-001**, **OPS-ALERT-HYGIENE-001**, G9/G11 | After soft blockers; before acquisition scale |
 | **TRACK 6** | Support AI / technical triage | After P1-ADM + runbooks; not F&F blocker |
 
@@ -91,6 +96,26 @@
 12. **BILL-BALANCE-KOPEKS-001** — kopeks/Decimal day-rate
 13. **BILL-UT-001/002** — offline billing + webhook/idempotency unit tests
 14. **BILL-SMOKE-001 prep** — script skeleton only
+
+### VPN capacity architecture pack (2026-06-15) — docs DONE, implementation OPEN
+
+Source: owner decision — stop isolated client smoke loops; prepare **backend-controlled multi-node delivery** for 30k path. Pack commit: **`VPN-ARCH-30K-CAPACITY-PACK-001`**.
+
+| # | ID | Sev | Doc status | Impl status | Blocks |
+|---|-----|-----|------------|-------------|--------|
+| — | **VPN-ARCH-30K-CAPACITY-PACK-001** | P0 | **DONE** | — | Umbrella doc pack |
+| — | **VPN-ARCH-30K-CAPACITY-PLAN-001** | P0 | **DONE** | OPEN | 300/30k gates |
+| — | **VPN-NODE-RUNBOOK-001** | P1 | **DONE** ([`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md)) | OPEN (automation) | Fast node scale |
+| — | **VPN-NODE-REGISTRY-001** | P1 | **DONE** (example schema) | OPEN (SoT + admin) | Assignment engine |
+| — | **SUB-GEN-SELECTOR-STRATEGY-001** | P0 | **DONE** (in capacity plan) | OPEN | Cohort subs |
+| — | **ROUTING-PROFILE-RU-DIRECT-001** | P1 | **DONE** ([`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md)) | OPEN | Routing pack + tests |
+| — | **NODE-SMOKE-MATRIX-001** | P1 | **DONE** (acceptance checklist) | OPEN (runner) | Node quality |
+| — | **ROLLOUT-CANARY-DRAIN-001** | P1 | **DONE** (in runbook + plan) | OPEN | Safe rollout |
+| — | **MONITOR-CAPACITY-001** | P1 | OPEN | OPEN | Capacity dashboard/alerts |
+
+**Architecture decision:** relay2-only = **`LAB_OWNER`** evidence only — **not** production default. **`delivery_path_nodes < 2`** remains blocker for 300/30k.
+
+**Implementation order after pack:** VPN-NODE-REGISTRY-001 → SUB-GEN-SELECTOR-STRATEGY-001 → runbook automation → NODE-SMOKE-MATRIX runner → MONITOR-CAPACITY-001 → ROLLOUT-CANARY-DRAIN-001 → NL A2/A4 / relay #1 paths.
 
 ### CodeRabbit remediation order (2026-06-15)
 
@@ -443,7 +468,14 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 |----|-----|------|-------|---------|----------|-------|--------|----------|---------------|------------|--------|---------|--------|------------|--------|
 | VPN-REL-001 | P0 | VPN reliability | Unstable reconnect loop diagnostic | Users report disconnect/reconnect | N/A | **Now** | Core product value | `AUDIT-2026-06-09-VPN-RELIABILITY.md` | ops probes, panel, Happ | RC-1 relay2-only SPOF; RC-2 random balancer | AUDIT-001 done | No | **Yes** for patch | Owner picks profile target | **AUDIT DONE** |
 | VPN-ARCH-001 | P1 | VPN architecture | Full VPN architecture audit + NL revalidation AC | NL not active; pre-qualified for A2/A4 smoke after soak (PROOF-001 + QUALITY-PROOF-001) | N/A | **Now** | Growth blocked until ≥2 verified delivery-path nodes | **QUALITY-PROOF-001 DONE**; soak + controlled smoke pending | ops/, panel | A2/A4 smoke gates; owner approval; ≥2 path surfaces post-inclusion | `nl_reachability_probe_ru.py`; gate §1 | No | **Yes** global | VPN-REL-001; MONITOR-FLAP-001 | **AWAITING APPROVAL** |
-| VPN-NODE-RUNBOOK-001 | P1 | VPN architecture / ops | Fast node + relay bring-up template | `deploy-node.sh` + partial docs exist; no unified gradual-traffic + soak + rollback template | N/A | **Now** | Fast scale on user influx | `deploy-node.sh`, `DEPLOY.md`, `NODE-POLICY-LV-NL.md`, `THIRD-PROD-NODE-ONBOARDING.md` | docs runbook | Repeatable checklist: provider/IP/DNS/SNI/Caddy/selfsteal/Remna/monitoring/smoke/soak/routing inclusion/rollback/decommission | owner review | No | **Yes** | VPN-ARCH-001; MONITOR-FLAP-001 | **OPEN** |
+| VPN-NODE-RUNBOOK-001 | P1 | VPN architecture / ops | Fast node + relay bring-up template | `deploy-node.sh` + partial docs exist; unified runbook **DONE** | N/A | **Now** | Fast scale on user influx | [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md), [`VPN-NODE-ACCEPTANCE-CHECKLIST.md`](VPN-NODE-ACCEPTANCE-CHECKLIST.md) | docs **DONE**; automation OPEN | Repeatable checklist + canary/drain/rollback | owner review | No | **Yes** | VPN-ARCH-001; MONITOR-FLAP-001 | **DOCS DONE / IMPL OPEN** |
+| VPN-ARCH-30K-CAPACITY-PLAN-001 | P0 | VPN architecture | 30k capacity target architecture | Single-path relay2 lab ≠ launch architecture | N/A | **Now** | 300/30k NO-GO until ≥2 delivery paths + registry | [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) | doc **DONE** | Backend-controlled multi-node delivery | — | No | **Yes** | delivery_path_nodes | **DOCS DONE / IMPL OPEN** |
+| VPN-NODE-REGISTRY-001 | P1 | VPN architecture / ops | Node registry SoT | No inventory source for assignment | N/A | **Now** | Scale + support visibility | [`examples/node-registry.example.yaml`](examples/node-registry.example.yaml) | example schema **DONE** | YAML→DB; status/groups/capacity | registry smoke | No | No | SUB-GEN-SELECTOR | **DOCS DONE / IMPL OPEN** |
+| SUB-GEN-SELECTOR-STRATEGY-001 | P0 | VPN architecture | Cohort-based subscription generation | Static 6-outbound JSON for all users | N/A | **Now** | Honest multi-node delivery | capacity plan §4 | design **DONE** | Assignment engine + generator | transport_mux_audit | Yes | **Yes** | VPN-NODE-REGISTRY | **DOCS DONE / IMPL OPEN** |
+| ROUTING-PROFILE-RU-DIRECT-001 | P1 | VPN client routing | Curated RU direct routing pack | SafeVPN reference only; geoip:ru regression risk | N/A | **Now** | Happ stability | [`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md) | strategy **DONE** | Pack + directip guard tests | happ_routing_directip_guard | Yes | **Yes** (bittorrent OD) | fixed happRouting | **DOCS DONE / IMPL OPEN** |
+| NODE-SMOKE-MATRIX-001 | P1 | VPN ops | Unified per-node smoke matrix | Scattered probes | N/A | **Now** | Node quality gate | [`VPN-NODE-ACCEPTANCE-CHECKLIST.md`](VPN-NODE-ACCEPTANCE-CHECKLIST.md) | checklist **DONE** | Runner script/CI | vpn_verify_gate | No | No | VPN-NODE-RUNBOOK | **DOCS DONE / IMPL OPEN** |
+| ROLLOUT-CANARY-DRAIN-001 | P1 | VPN ops | Canary / drain / rollback automation | Manual PATCH risk | N/A | **Now** | Safe node intro | runbook §7–8 | process **DONE** | Weight + cohort automation | postmortem | Yes | **Yes** | SUB-GEN-SELECTOR | **DOCS DONE / IMPL OPEN** |
+| MONITOR-CAPACITY-001 | P1 | Monitoring | Capacity metrics + alerts | No dashboard for delivery_path_nodes / load | N/A | **Now** | 1k/10k/30k gates | capacity plan §6 | OPEN | Metrics + TG/dashboard | capacity_snapshot | No | No | OPS-ALERT-HYGIENE | **OPEN** |
 | VPN-STAB-005 | P2 | VPN reliability | xhttp Happ batch risk (historical) | xhttp causes «0 servers» in Happ | Partially done | — | Happ UX | `AUDIT-2026-05-VPN-STABILITY-RESOLUTION` | sub-page, template | batch_risk=LOW on Happ UA | diagnose_happ_import | Yes | No | — | **DONE** |
 | VPN-INC-001 | P1 | VPN reliability | Incident guardrails enforcement | Repeat PATCH without probe caused gen 13→20 outages | N/A | ongoing | Prod stability | `VPN-INCIDENT-LESSONS` | ops patches | One PATCH → probe → smoke | verify gate | No | **Yes** | — | OPEN |
 | **CLIENT-STABILITY-001** | P0 | VPN reliability | Windows Happ TUN recovery | Track D DirectIp **fixed**; relay2 report(7) **SOFT PASS** + report(8) repeat **PASS**; relay #1 strong suspect; sleep/wake **OPEN** | N/A | **Now** | Desktop launch gate | [relay2 lab](CLIENT-STABILITY-HAPP-RELAY2-LAB.md) · [report(8)](CLIENT-STABILITY-HAPP-RELAY2-LAB.md#report8--repeat-active-soak-evidence-2026-06-15) | docs, analyzer, guard | PROD-SELECTOR-CONTROLLED eligible (owner approval) | CLIENT-SMOKE-001..003 | No | **Yes** | sleep/wake | **OPEN** |
