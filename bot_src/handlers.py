@@ -526,14 +526,12 @@ async def agreement_fallback_handler(message: types.Message):
     await message.answer("Пожалуйста, нажми кнопку «Принимаю» выше.")
 
 
-async def _ensure_terms_or_prompt(message: types.Message, state: FSMContext) -> bool:
-    """Return True if user may use the bot (terms accepted)."""
-    user_id = message.from_user.id
-    username = message.from_user.username or message.from_user.full_name or ""
-    register_user_if_not_exists(user_id, username)
-    user_data = get_user(user_id)
-    if user_data and user_data.get("agreed_to_terms"):
-        return True
+async def _send_terms_prompt(target_message: types.Message, state: FSMContext) -> bool:
+    """Send the terms agreement prompt to target_message. Always returns False.
+
+    `target_message` is the message used to deliver the prompt. For callbacks pass
+    `callback.message` (the bot-side message), and resolve identity from the caller.
+    """
     terms_url = effective_legal_url(
         get_setting("terms_url"), DEFAULT_TERMS_URL, TERMS_URL
     )
@@ -542,7 +540,7 @@ async def _ensure_terms_or_prompt(message: types.Message, state: FSMContext) -> 
     )
     if not terms_url or not privacy_url:
         support = (get_setting("support_user") or DEFAULT_SUPPORT_USERNAME).strip()
-        await message.answer(
+        await target_message.answer(
             "❗️ Условия и политика временно недоступны. "
             f"Напиши в поддержку {html.bold(support)}.",
             parse_mode="HTML",
@@ -555,12 +553,50 @@ async def _ensure_terms_or_prompt(message: types.Message, state: FSMContext) -> 
         f"<a href='{privacy_url}'>Политикой конфиденциальности</a>.\n\n"
         "Нажимая «Принимаю», ты подтверждаешь согласие."
     )
-    await message.answer(
+    await target_message.answer(
         agreement_text,
         reply_markup=keyboards.create_agreement_keyboard(),
         disable_web_page_preview=True,
     )
     await state.set_state(UserAgreement.waiting_for_agreement)
+    return False
+
+
+async def _ensure_terms_or_prompt(message: types.Message, state: FSMContext) -> bool:
+    """Return True if user may use the bot (terms accepted)."""
+    user_id = message.from_user.id
+    username = message.from_user.username or message.from_user.full_name or ""
+    register_user_if_not_exists(user_id, username)
+    user_data = get_user(user_id)
+    if user_data and user_data.get("agreed_to_terms"):
+        return True
+    return await _send_terms_prompt(message, state)
+
+
+async def _ensure_terms_callback(callback: types.CallbackQuery, state: FSMContext) -> bool:
+    """Terms gate for inline callbacks (trial / payment / wizard entry points).
+
+    Resolves identity from `callback.from_user` (callback.message.from_user is the
+    bot), prompts via the callback message, and alerts the user. Returns True only
+    when terms are accepted. BILL-TERMS-GUARD-001.
+    """
+    user_id = callback.from_user.id
+    username = callback.from_user.username or callback.from_user.full_name or ""
+    register_user_if_not_exists(user_id, username)
+    user_data = get_user(user_id)
+    if user_data and user_data.get("agreed_to_terms"):
+        return True
+    try:
+        await _send_terms_prompt(callback.message, state)
+    except Exception:
+        logger.warning("terms prompt send failed for user %s", user_id, exc_info=True)
+    try:
+        await callback.answer(
+            "Сначала прими условия использования — кнопка «Принимаю» выше.",
+            show_alert=True,
+        )
+    except Exception:
+        pass
     return False
 
 
@@ -581,6 +617,8 @@ async def back_to_main_menu_handler(callback: types.CallbackQuery, state: FSMCon
 async def connect_vpn_wizard_start(callback: types.CallbackQuery, state: FSMContext):
     from shop_bot.vpn_setup_wizard import WIZARD_INTRO
 
+    if not await _ensure_terms_callback(callback, state):
+        return
     await callback.answer()
     await state.set_state(VpnSetupWizard.picking_device)
     log_action(callback.from_user.id, "wizard_start", "")
@@ -887,7 +925,9 @@ async def show_traffic_packs(callback: types.CallbackQuery):
     await callback.message.edit_text("Выберите пакет дополнительного трафика:", reply_markup=keyboards.create_traffic_packs_keyboard(TRAFFIC_PACKS, key_id))
 
 @user_router.callback_query(F.data.startswith("buy_pack_"))
-async def buy_traffic_pack(callback: types.CallbackQuery):
+async def buy_traffic_pack(callback: types.CallbackQuery, state: FSMContext):
+    if not await _ensure_terms_callback(callback, state):
+        return
     await callback.answer()
     parts = callback.data.split('_')
     pack_id = parts[2]
@@ -934,17 +974,16 @@ async def promo_code_received(message: types.Message, state: FSMContext):
     await show_main_menu(message)
 
 @user_router.callback_query(F.data == "get_trial")
-async def trial_period_handler(callback: types.CallbackQuery):
+async def trial_period_handler(callback: types.CallbackQuery, state: FSMContext):
+    if not await _ensure_terms_callback(callback, state):
+        return
     await callback.answer("Проверяю доступность...", show_alert=False)
     user_id = callback.from_user.id
     user_db_data = get_user(user_id)
     if user_db_data and user_db_data.get('trial_used'):
         await callback.answer("Вы уже использовали бесплатный пробный период.", show_alert=True)
         return
-    
-    # Устанавливаем флаг использования пробного периода сразу, чтобы предотвратить повторное использование
-    set_trial_used(user_id)
-    
+
     await callback.message.edit_text("Создаю твой VPN… ⏳")
     try:
         key_number = get_next_key_number(user_id)
@@ -952,14 +991,15 @@ async def trial_period_handler(callback: types.CallbackQuery):
         uri, expire_iso, vless_uuid, sub_url = await remnawave_api.provision_key(
             email, days=REMNA_TRIAL_DAYS, telegram_id=str(user_id))
         if not uri or not expire_iso or not vless_uuid:
-            # Сбрасываем флаг при ошибке создания ключа
-            reset_trial_used(user_id)
             await callback.message.edit_text("❌ " + user_messages.ERR_TRIAL_CREATE)
             return
         # convert ISO to timestamp ms for storage
         expiry_dt = datetime.fromisoformat(expire_iso.replace('Z', '+00:00'))
         expiry_ms = int(expiry_dt.timestamp() * 1000)
         new_key_id = add_new_key(user_id, vless_uuid, email, expiry_ms)
+        # TRIAL-GRANT-ATOMIC-001: mark trial used only AFTER the key is persisted,
+        # so a crash before this point never leaves trial_used=1 with no key.
+        set_trial_used(user_id)
         from shop_bot.subscription_cache import invalidate_subscription_url_cache
 
         invalidate_subscription_url_cache(user_id)
@@ -984,8 +1024,9 @@ async def trial_period_handler(callback: types.CallbackQuery):
         )
     except Exception as e:
         logger.error(f"Error creating trial key for user {user_id}: {e}", exc_info=True)
-        # Сбрасываем флаг при любой ошибке
-        reset_trial_used(user_id)
+        # TRIAL-GRANT-ATOMIC-001: trial_used is set only after a key is persisted,
+        # so no reset is needed here — an early failure never consumed the trial,
+        # and a late failure must not hand out a second trial for an existing key.
         await callback.message.edit_text("❌ " + user_messages.ERR_TRIAL_CREATE)
 
 @user_router.callback_query(F.data == "open_admin_panel")
@@ -1497,16 +1538,18 @@ async def show_instruction_handler(callback: types.CallbackQuery):
     )
 
 @user_router.callback_query(F.data == "buy_new_key")
-async def buy_new_key_handler(callback: types.CallbackQuery):
-    await show_topup_handler(callback)
+async def buy_new_key_handler(callback: types.CallbackQuery, state: FSMContext):
+    await show_topup_handler(callback, state)
 
 @user_router.callback_query(F.data.startswith("extend_key_"))
-async def extend_key_handler(callback: types.CallbackQuery):
-    await show_topup_handler(callback)
+async def extend_key_handler(callback: types.CallbackQuery, state: FSMContext):
+    await show_topup_handler(callback, state)
 
 
 @user_router.callback_query(F.data == "show_topup")
-async def show_topup_handler(callback: types.CallbackQuery):
+async def show_topup_handler(callback: types.CallbackQuery, state: FSMContext):
+    if not await _ensure_terms_callback(callback, state):
+        return
     await callback.answer()
     user_id = callback.from_user.id
     balance = get_balance(user_id)
@@ -1525,6 +1568,8 @@ async def show_topup_handler(callback: types.CallbackQuery):
 
 @user_router.callback_query(F.data == "topup_custom")
 async def topup_custom_handler(callback: types.CallbackQuery, state: FSMContext):
+    if not await _ensure_terms_callback(callback, state):
+        return
     await callback.answer()
     await state.set_state(CustomTopup.waiting_for_amount)
     await callback.message.edit_text(
@@ -1567,7 +1612,9 @@ async def custom_topup_amount_handler(message: types.Message, state: FSMContext)
 
 
 @user_router.callback_query(F.data.in_({"topup_200", "topup_500", "topup_1000", "topup_2000"}))
-async def topup_select_handler(callback: types.CallbackQuery):
+async def topup_select_handler(callback: types.CallbackQuery, state: FSMContext):
+    if not await _ensure_terms_callback(callback, state):
+        return
     await callback.answer()
     topup_id = callback.data
     if topup_id not in TOPUP_PRESETS:
@@ -1596,7 +1643,9 @@ async def pay_stars_topup_disabled_handler(callback: types.CallbackQuery):
 
 
 @user_router.callback_query(F.data.startswith("pay_yookassa_topup_"))
-async def pay_yookassa_topup_handler(callback: types.CallbackQuery):
+async def pay_yookassa_topup_handler(callback: types.CallbackQuery, state: FSMContext):
+    if not await _ensure_terms_callback(callback, state):
+        return
     await callback.answer("Создаю ссылку на оплату...")
     topup_id = callback.data.replace("pay_yookassa_topup_", "", 1)
     if topup_id.startswith("custom_"):
@@ -1647,7 +1696,9 @@ async def pay_yookassa_topup_handler(callback: types.CallbackQuery):
 
 
 @user_router.callback_query(F.data.startswith("buy_") & F.data.contains("_month"))
-async def choose_payment_method_handler(callback: types.CallbackQuery):
+async def choose_payment_method_handler(callback: types.CallbackQuery, state: FSMContext):
+    if not await _ensure_terms_callback(callback, state):
+        return
     await callback.answer()
     parts = callback.data.split("_")
     plan_id, action, key_id = "_".join(parts[:-2]), parts[-2], int(parts[-1])
@@ -1660,6 +1711,8 @@ async def choose_payment_method_handler(callback: types.CallbackQuery):
     F.data.startswith("pay_yookassa_") & ~F.data.startswith("pay_yookassa_topup_")
 )
 async def create_yookassa_payment_handler(callback: types.CallbackQuery, state: FSMContext):
+    if not await _ensure_terms_callback(callback, state):
+        return
     await callback.answer("Создаю ссылку на оплату...")
     
     parts = callback.data.split("_")[2:]
@@ -1745,6 +1798,8 @@ def create_heleket_signature(payload: dict, api_key: str) -> str:
 
 @user_router.callback_query(F.data.startswith("pay_crypto_"))
 async def create_crypto_payment_handler(callback: types.CallbackQuery, state: FSMContext):
+    if not await _ensure_terms_callback(callback, state):
+        return
     await callback.answer("Создаю счет для оплаты в криптовалюте...")
     
     # Ваша логика парсинга callback.data остается без изменений
