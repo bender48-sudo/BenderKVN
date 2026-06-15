@@ -61,7 +61,6 @@ from shop_bot.config import (
     balance_to_days,
     DEFAULT_TERMS_URL, DEFAULT_PRIVACY_URL, DEFAULT_SUPPORT_USERNAME,
     effective_legal_url,
-    referral_invitee_first_purchase_bonus_days,
 )
 from shop_bot.config import TRAFFIC_PACKS
 from shop_bot.modules.remnawave_api import add_extra_traffic
@@ -2049,9 +2048,8 @@ async def process_successful_payment(bot: Bot, metadata: dict):
             log_action(user_id, 'first_purchase')
             u = get_user(user_id)
             referrer_code = u.get('referred_by') if u else None
-            # P1-REF-002: legacy invitee bonus gated OFF. Target reward = +1 month to referrer
-            # (REF-BONUS-001), not silent days to invitee.
-            invitee_bonus_days = referral_invitee_first_purchase_bonus_days(referrer_code)
+            # P1-REF-002: legacy invitee bonus gated OFF on prod hot-patch (helper not in live config).
+            invitee_bonus_days = 0
             if invitee_bonus_days:
                 days_to_add += invitee_bonus_days
                 log_action(user_id, 'ref_bonus_received', referrer_code)
