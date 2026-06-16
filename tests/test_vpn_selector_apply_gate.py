@@ -80,6 +80,13 @@ def test_current_state_apply_not_allowed(registry_doc):
     assert any("delivery_path_nodes" in b for b in result.blockers)
 
 
+def test_central_guardrail_blockers_present(registry_doc):
+    # apply gate must surface the shared central guardrail (not just its own checks)
+    result = evaluate_apply_gate("PUBLIC_PROD", registry_doc)
+    assert any(b.startswith("guardrail:") for b in result.blockers)
+    assert result.guardrail_summary
+
+
 def test_single_delivery_path_blocks(registry_doc):
     result = evaluate_apply_gate("PUBLIC_PROD", registry_doc, owner_approved=True, rollback_ready=True)
     # owner approval + rollback cannot override the technical delivery-path blocker

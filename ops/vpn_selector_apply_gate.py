@@ -31,6 +31,13 @@ from vpn_node_selector import (
     load_validated_registry,
 )
 from vpn_node_smoke_matrix import build_smoke_matrix
+from vpn_production_guardrails import (
+    MODE_SCALE,
+    CapacityState,
+    GuardrailConfig,
+    capacity_state_from_nodes,
+    evaluate_guardrail,
+)
 
 BANNER = (
     "APPLY GATE - read-only. No template/Remna/subscription/deploy mutation. "
@@ -69,6 +76,7 @@ class ApplyGateResult:
     next_safe_command: str = ""
     owner_approved: bool = False
     dry_run: bool = True
+    guardrail_summary: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -87,6 +95,7 @@ class ApplyGateResult:
             "rollback_requirements": self.rollback_requirements,
             "affected_cohorts": self.affected_cohorts,
             "next_safe_command": self.next_safe_command,
+            "guardrail_summary": self.guardrail_summary,
         }
 
 
@@ -154,6 +163,26 @@ def evaluate_apply_gate(
         blockers.append("selector dry-run selected no nodes")
 
     # registry validation already enforced by load_validated_registry (raises).
+
+    # --- central production guardrail (shared capacity-collapse logic) ---
+    # relay-IP redundancy is a separate node-class concern, not a cohort-exit
+    # selection concern, so minimum_relay_ips=0 here; delivery-path minimum is the
+    # capacity gate that matters for an apply.
+    nodes = [n for n in (registry.get("nodes") or []) if isinstance(n, dict)]
+    guard = evaluate_guardrail(
+        mode=MODE_SCALE,
+        before=CapacityState(),
+        after=capacity_state_from_nodes(nodes),
+        owner_approved=owner_approved,
+        rollback_snapshot_present=rollback_ready,
+        config=GuardrailConfig(
+            minimum_delivery_paths=matrix.delivery_path_gate,
+            minimum_relay_ips=0,
+            minimum_geos=None,
+        ),
+    )
+    blockers.extend(guard.blockers)
+    result.guardrail_summary = guard.summary
 
     # --- Process blockers (can be satisfied by owner) ---
     if not rollback_ready:
