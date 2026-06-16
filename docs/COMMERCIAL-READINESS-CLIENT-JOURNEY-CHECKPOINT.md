@@ -95,7 +95,9 @@ Legend: **DONE** = deployed + evidence · **PARTIAL** = works with gaps · **BLO
 | **Growth / 300 configs gate** | **BLOCKED** | Requires **≥2 production-capable delivery-path nodes** + controlled smokes |
 | **Node bring-up** | **DOCS READY** | [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md) + checklist; automation **OPEN** |
 | **Node readiness matrix (runner)** | **BUILT (dry-run)** | [`ops/vpn_node_smoke_matrix.py`](../ops/vpn_node_smoke_matrix.py): `delivery_path_nodes=1`, `production_capacity_nodes=1`, all GO booleans **false** |
-| **Selector apply gate** | **BUILT — APPLY_ALLOWED=false** | [`ops/vpn_selector_apply_gate.py`](../ops/vpn_selector_apply_gate.py); blocked on 2nd node + rollback + owner APPROVE APPLY |
+| **Selector apply gate** | **BUILT — APPLY_ALLOWED=false** | [`ops/vpn_selector_apply_gate.py`](../ops/vpn_selector_apply_gate.py); blocked on 2nd node + rollback + owner APPROVE APPLY; now consumes central guardrail |
+| **Production guardrails (anti capacity-collapse)** | **BUILT + ENFORCED** | [`ops/vpn_production_guardrails.py`](../ops/vpn_production_guardrails.py) + [`docs/VPN_PRODUCTION_GUARDRAILS.md`](VPN_PRODUCTION_GUARDRAILS.md); stability cannot silently shrink pool; 21 tests |
+| **Legacy patch-on-patch consolidation** | **PARTIAL** | [`docs/VPN_PATCH_SCRIPT_MIGRATION_MAP.md`](VPN_PATCH_SCRIPT_MIGRATION_MAP.md); manual collapse patchers gated; cron auto-cutters banner-flagged, P0 migration OPEN |
 | **2nd production path onboarding** | **READY FOR OWNER ACTION** | [`VPN-NODE-PURCHASE-REQUEST.md`](VPN-NODE-PURCHASE-REQUEST.md) + [`VPN-NODE-ONBOARDING-EXECUTION.md`](VPN-NODE-ONBOARDING-EXECUTION.md) |
 | **relay1 suspect policy** | **ENFORCED + TESTED** | [`RELAY1-DRAIN-OR-RETEST-DECISION.md`](RELAY1-DRAIN-OR-RETEST-DECISION.md); excluded from prod/canary/capacity |
 | **30k / multi-node architecture** | **DOCS READY / IMPL NO-GO** | [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md); registry + selector dry-run built; **live apply NO-GO** |

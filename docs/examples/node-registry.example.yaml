@@ -2,6 +2,27 @@
 # ID: VPN-NODE-REGISTRY-001 — example only; no production secrets.
 # Procurement fields: VPN-NODE-PROCUREMENT-POLICY-001 (proposal v1.1 — docs only until schema bump).
 # Real IPs, domains, UUIDs, and tokens live in vault / owner secure store — NOT in git.
+#
+# CONSOLIDATION TARGET — VPN-NODE-INVENTORY-SOT-001 (see docs/VPN_PRODUCTION_GUARDRAILS.md)
+#   This registry is the single source of truth. Future generators (selector,
+#   smoke matrix, apply gate, production guardrails) consume THESE fields; hardcoded
+#   IP patch scripts are legacy only (docs/VPN_PATCH_SCRIPT_MIGRATION_MAP.md).
+#   Canonical lifecycle/capacity vocabulary the guardrails read or will read:
+#     lifecycle_status: staging | canary | production | degraded | drain | disabled
+#     role: relay | exit (vpn_exit) | backup | lab
+#     region / country: non-secret bucket
+#     provider_class (provider_label): redacted provider bucket
+#     delivery_path_eligible: bool — only true counts toward delivery_path_nodes
+#     canary_percent / weight (rollout.canary_percent / rollout.cohort_weight)
+#     capacity_mbps_estimate (capacity.max_mbps)
+#     capacity_concurrent_users_estimate (capacity.max_concurrent_sessions)
+#     allowed_cohorts (rollout.assigned_cohort_ids / groups)
+#     health_status (health.monitor_status + health.last_smoke)
+#     drain_until / incident_until: ISO timestamp or null (TTL for reductions)
+#     exclude_reason: null | "suspect" | "lab-only" | "backup" | ...
+#     owner_approval_required: bool
+#   Lab-only, backup/sub-edge, suspect, disabled, and unknown-status nodes NEVER
+#   count as production capacity.
 
 schema_version: 1
 updated_at: "2026-06-15T00:00:00Z"
@@ -81,6 +102,12 @@ nodes:
     region: EU
     role: vpn_exit
     status: disabled
+    lifecycle_status: disabled        # SoT: not counted as production
+    delivery_path_eligible: false
+    drain_until: null
+    incident_until: null
+    exclude_reason: disabled
+    owner_approval_required: true
     groups:
       - INTL_DIRECT_ACTIVE
     capacity:
@@ -114,6 +141,12 @@ nodes:
     region: RU
     role: relay
     status: staging
+    lifecycle_status: staging         # SoT: lab-only, never production capacity
+    delivery_path_eligible: false
+    drain_until: null
+    incident_until: null
+    exclude_reason: lab-only
+    owner_approval_required: true
     groups:
       - LAB_OWNER
     capacity:

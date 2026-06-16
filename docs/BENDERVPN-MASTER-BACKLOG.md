@@ -121,6 +121,16 @@ Source: owner decision — stop isolated client smoke loops; prepare **backend-c
 | — | **NODE-ONBOARD-NEW-PROD-PATH-001** | P0 | **DONE** | **READY FOR OWNER ACTION** | [`VPN-NODE-PURCHASE-REQUEST.md`](VPN-NODE-PURCHASE-REQUEST.md) + [`VPN-NODE-ONBOARDING-EXECUTION.md`](VPN-NODE-ONBOARDING-EXECUTION.md) + template + [`ops/prepare_new_node_registry_entry.py`](../ops/prepare_new_node_registry_entry.py) |
 | — | **VPN-SELECTOR-SPEED-STABILITY-POLICY-001** | P1 | **DONE** | **DONE** | Selector excludes suspect/lab/disabled/backup; 7 tests |
 | — | **VPN-CORE-SCALABILITY-STABILITY-SPRINT-001** | P0 | **DONE** | **DONE** | Execution sprint umbrella; `delivery_path_nodes` gate still NO-GO until 2nd node |
+| — | **VPN-ARCH-CONSOLIDATION-001** | P0 | **DONE** | **DONE (partial; cron migration pending)** | Stop patch-on-patch; central guardrails + apply-gate integration + legacy hardening |
+| — | **VPN-PRODUCTION-GUARDRAILS-001** | P0 | **DONE** | **DONE** | [`docs/VPN_PRODUCTION_GUARDRAILS.md`](VPN_PRODUCTION_GUARDRAILS.md) + [`ops/vpn_production_guardrails.py`](../ops/vpn_production_guardrails.py); 21 tests |
+| — | **VPN-AUTO-CUTTING-GUARD-001** | P0 | **DONE** | **DONE (manual gated; cron banner)** | [`ops/vpn_apply_guard.py`](../ops/vpn_apply_guard.py) — manual collapse patchers fail closed; cron reducers banner-flagged; 8 tests |
+| — | **VPN-CAPACITY-GATE-001** | P0 | **DONE** | **DONE** | Apply gate consumes central guardrail; PUBLIC_PROD APPLY_ALLOWED=false; guardrail blockers surfaced |
+| — | **VPN-NODE-INVENTORY-SOT-001** | P1 | **DONE (examples/templates)** | OPEN (live schema bump) | Lifecycle/capacity vocabulary documented; live registry unchanged |
+| — | **VPN-PATCH-SCRIPT-MIGRATION-MAP-001** | P0 | **DONE** | **DONE** | [`docs/VPN_PATCH_SCRIPT_MIGRATION_MAP.md`](VPN_PATCH_SCRIPT_MIGRATION_MAP.md) — "partially patch-on-patch"; P0/P1/P2 |
+| — | **SCRIPT-MIGRATE-LATENCY-AUTOTRIM-001** | P0 | OPEN | OPEN | Wire autotrim apply through central guardrail (owner-approved) |
+| — | **SCRIPT-MIGRATE-INJECTHOSTS-SYNC-001** | P0 | OPEN | OPEN | Registry-driven injectHosts sync with host-count floor |
+| — | **SCRIPT-MIGRATE-RELAY-FAILOVER-001** | P0 | OPEN | OPEN | Failover → incident mode (TTL+rollback+approval) |
+| — | **SCRIPT-MIGRATE-NL-RELAY-PATCHERS-001** | P1 | OPEN | OPEN | Replace hardcoded add-node patchers with registry onboarding |
 | — | **ROLLOUT-CANARY-DRAIN-001** | P1 | **DONE** (in runbook + plan) | OPEN | Safe rollout |
 | — | **MONITOR-CAPACITY-001** | P1 | OPEN | OPEN | Capacity dashboard/alerts |
 

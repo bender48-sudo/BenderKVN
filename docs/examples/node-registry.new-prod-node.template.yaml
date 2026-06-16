@@ -22,7 +22,12 @@
   provider_label: redacted-vps-new      # redacted provider class only
   role: exit                            # exit = potential delivery path
   status: staging                       # staging until acceptance PASS
+  lifecycle_status: staging             # staging|canary|production|degraded|drain|disabled
   delivery_path_eligible: false         # false until smoke PASS + promotion
+  exclude_reason: staging-pending-acceptance  # null once promoted to production
+  drain_until: null                     # ISO ts when draining; null otherwise
+  incident_until: null                  # ISO ts TTL for incident reductions; null otherwise
+  provider_class: redacted-vps-new      # redacted provider bucket (== provider_label)
   groups:
     - INTL_DIRECT_ACTIVE                # or INTL_STEALTH_ACTIVE — never LAB_OWNER
   capacity:
