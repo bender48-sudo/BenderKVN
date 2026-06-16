@@ -94,8 +94,12 @@ future selector apply.
 - **`latency_selector_autotrim.py` is migrated** (SCRIPT-MIGRATE-LATENCY-AUTOTRIM-001):
   any `--apply` calls `evaluate_autotrim_apply_guard()`; bare cron `--apply` fails
   closed; relay-IP collapse and relay-only pool reduction blocked by central rules.
+- **`sync_injecthosts_connected.py` is migrated** (SCRIPT-MIGRATE-INJECTHOSTS-SYNC-001):
+  any `--apply` calls `evaluate_inject_sync_apply_guard()`; transient node disconnect
+  cannot shrink injectHosts without explicit mode + owner approval; UUID↔selector
+  consistency required (count-only checks insufficient); MIN_INJECT floor enforced.
 - Remaining cron-managed reducers print a guardrail banner and are scheduled for
-  P0 migration (`relay_failover_template`, `lv_node_*_failover`, `sync_injecthosts_connected`).
+  P0 migration (`relay_failover_template`, `lv_node_*_failover`).
 - New generators must consume the registry/inventory, not hardcoded IPs.
 
 ## 8. Capacity planning (inputs the inventory should carry)

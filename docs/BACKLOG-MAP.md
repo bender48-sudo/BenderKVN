@@ -106,7 +106,8 @@
 | **SUB-GEN-SELECTOR-APPLY-GATE-001** | **DONE** | [`ops/vpn_selector_apply_gate.py`](../ops/vpn_selector_apply_gate.py) — APPLY_ALLOWED gate; current state false |
 | **VPN-ARCH-CONSOLIDATION-001** | **DONE (partial)** | Patch-on-patch → guardrails; [`docs/VPN_PRODUCTION_GUARDRAILS.md`](VPN_PRODUCTION_GUARDRAILS.md) + [`docs/VPN_PATCH_SCRIPT_MIGRATION_MAP.md`](VPN_PATCH_SCRIPT_MIGRATION_MAP.md) |
 | **VPN-PRODUCTION-GUARDRAILS-001** | **DONE** | [`ops/vpn_production_guardrails.py`](../ops/vpn_production_guardrails.py) — central capacity validator; 21 tests |
-| **VPN-AUTO-CUTTING-GUARD-001** | **PARTIAL (autotrim done)** | Manual patchers gated; autotrim migrated; 3 cron reducers remain |
+| **VPN-AUTO-CUTTING-GUARD-001** | **PARTIAL (2/4 cron done)** | Manual patchers gated; autotrim + injecthosts sync migrated; relay failover + lv failover remain |
+| **SCRIPT-MIGRATE-INJECTHOSTS-SYNC-001** | **DONE** | [`ops/sync_injecthosts_connected.py`](../ops/sync_injecthosts_connected.py) — guardrail-wired apply; 20 tests |
 | **VPN-CAPACITY-GATE-001** | **DONE** | Apply gate consumes guardrail; guardrail blockers surfaced |
 | **VPN-NODE-INVENTORY-SOT-001** | **DONE (examples)** / live schema OPEN | Lifecycle/capacity SoT vocabulary in registry example + template |
 | **SCRIPT-MIGRATE-LATENCY-AUTOTRIM-001** | **DONE** | [`ops/latency_selector_autotrim.py`](../ops/latency_selector_autotrim.py) — guardrail-wired apply; 18 tests |

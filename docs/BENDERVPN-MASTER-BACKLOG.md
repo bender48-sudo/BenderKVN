@@ -123,7 +123,8 @@ Source: owner decision — stop isolated client smoke loops; prepare **backend-c
 | — | **VPN-CORE-SCALABILITY-STABILITY-SPRINT-001** | P0 | **DONE** | **DONE** | Execution sprint umbrella; `delivery_path_nodes` gate still NO-GO until 2nd node |
 | — | **VPN-ARCH-CONSOLIDATION-001** | P0 | **DONE** | **DONE (partial; cron migration pending)** | Stop patch-on-patch; central guardrails + apply-gate integration + legacy hardening |
 | — | **VPN-PRODUCTION-GUARDRAILS-001** | P0 | **DONE** | **DONE** | [`docs/VPN_PRODUCTION_GUARDRAILS.md`](VPN_PRODUCTION_GUARDRAILS.md) + [`ops/vpn_production_guardrails.py`](../ops/vpn_production_guardrails.py); 21 tests |
-| — | **VPN-AUTO-CUTTING-GUARD-001** | P0 | **DONE** | **PARTIAL (autotrim migrated)** | Manual patchers gated; autotrim guardrail-wired; 3 cron reducers remain |
+| — | **VPN-AUTO-CUTTING-GUARD-001** | P0 | **DONE** | **PARTIAL (2/4 cron migrated)** | Manual patchers gated; autotrim + injecthosts sync guardrail-wired; 2 cron reducers remain |
+| — | **SCRIPT-MIGRATE-INJECTHOSTS-SYNC-001** | P0 | **DONE** | **DONE** | [`ops/sync_injecthosts_connected.py`](../ops/sync_injecthosts_connected.py) — central guardrail on apply; UUID↔selector consistency; 20 tests; bare `--apply` fails closed |
 | — | **VPN-CAPACITY-GATE-001** | P0 | **DONE** | **DONE** | Apply gate consumes central guardrail; PUBLIC_PROD APPLY_ALLOWED=false; guardrail blockers surfaced |
 | — | **VPN-NODE-INVENTORY-SOT-001** | P1 | **DONE (examples/templates)** | OPEN (live schema bump) | Lifecycle/capacity vocabulary documented; live registry unchanged |
 | — | **VPN-PATCH-SCRIPT-MIGRATION-MAP-001** | P0 | **DONE** | **DONE** | [`docs/VPN_PATCH_SCRIPT_MIGRATION_MAP.md`](VPN_PATCH_SCRIPT_MIGRATION_MAP.md) — "partially patch-on-patch"; P0/P1/P2 |
