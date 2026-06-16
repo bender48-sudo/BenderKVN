@@ -87,12 +87,14 @@ def test_public_prod_no_go_below_delivery_gate(registry_doc):
     assert any("hard NO-GO" in w for w in plan.warnings)
 
 
-def test_disabled_nl_never_selected(registry_doc):
+def test_nl_staging_never_selected(registry_doc):
+    # NL moved disabled->staging after SSH PASS, but stays hard-gated on
+    # A2/A4 controlled smoke + owner approval — never auto-selected.
     plan = build_assignment_plan("OWNER_FF", registry_doc)
     assert "nl-node-1" not in plan.selected_node_ids
     nl_rej = [r for r in plan.rejections if r.node_id == "nl-node-1"]
     assert nl_rej
-    assert "disabled" in nl_rej[0].reason.lower() or "A2/A4" in nl_rej[0].reason
+    assert "A2/A4" in nl_rej[0].reason
 
 
 def test_draining_node_rejected():

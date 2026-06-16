@@ -51,8 +51,9 @@ def test_nl_excluded_without_approval(registry_doc):
     assert "nl-node-1" not in cand_ids
 
 
-def test_nl_excluded_even_with_flags_when_disabled(registry_doc):
-    # NL is disabled in registry → not canary-ready → still excluded even with flags
+def test_nl_excluded_even_with_flags_when_not_canary_ready(registry_doc):
+    # NL is staging (node-reachable) but not canary-ready (canary_percent=0) →
+    # still excluded even with --include-nl + --owner-approval flags.
     profile = build_owner_canary_profile(registry_doc, include_nl=True, owner_approval=True)
     cand_ids = {c.node_id for c in profile.candidates}
     assert "nl-node-1" not in cand_ids

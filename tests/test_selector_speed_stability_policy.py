@@ -35,7 +35,7 @@ def registry_doc():
 def test_public_prod_excludes_unstable_classes(registry_doc):
     plan = build_assignment_plan("PUBLIC_PROD", registry_doc)
     selected = set(plan.selected_node_ids)
-    # suspect relay1, lab profile, disabled NL, backup edge must all be out
+    # suspect relay1, lab profile, staging NL, backup edge must all be out
     for nid in ("ru-relay-1", "ru-relay-2-lab", "nl-node-1", "ams-backup-edge"):
         assert nid not in selected
 

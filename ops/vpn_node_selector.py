@@ -200,6 +200,11 @@ def evaluate_node_for_cohort(
     groups = _node_groups(node)
     rollout = node.get("rollout") or {}
 
+    # NL is hard-gated until A2/A4 controlled smoke + owner approval promote it to
+    # active/canary. Node-level SSH PASS (staging) is not sufficient for selection.
+    if node_id == "nl-node-1" and status in {"disabled", "staging"}:
+        return False, "NL staging — A2/A4 controlled smoke + owner approval gate pending"
+
     if status in BLOCKED_STATUSES:
         return False, f"status={status} blocked for new assignments"
 
@@ -231,9 +236,6 @@ def evaluate_node_for_cohort(
     if policy.name in {"OWNER_FF", "PAID_BETA_MANUAL", "PUBLIC_PROD"}:
         if "LAB_OWNER" in groups:
             return False, "LAB_OWNER node excluded from production cohort"
-
-    if node_id == "nl-node-1" and status == "disabled":
-        return False, "NL disabled awaiting A2/A4 gates"
 
     cohort_weight = rollout.get("cohort_weight")
     if policy.name in {"OWNER_FF", "PAID_BETA_MANUAL", "PUBLIC_PROD"}:

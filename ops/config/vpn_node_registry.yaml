@@ -4,7 +4,7 @@
 # Does NOT drive live subscription generation yet (SUB-GEN-SELECTOR-STRATEGY-001 OPEN).
 
 schema_version: 1
-updated_at: "2026-06-15T12:00:00Z"
+updated_at: "2026-06-17T00:00:00Z"
 registry_note: >
   delivery_path_nodes counts exit-role nodes with status=active and
   delivery_path_eligible=true. Relay diversity to one LV geography is not
@@ -170,13 +170,13 @@ nodes:
       MUST NOT become production default or mass-issued cohort.
 
   - node_id: nl-node-1
-    display_name: Netherlands node (failover / pre-qualified)
+    display_name: Netherlands node (staging / pre-qualified)
     region: EU
     country: NL
     city: redacted
     provider_label: redacted-vps-nl
     role: exit
-    status: disabled
+    status: staging
     delivery_path_eligible: false
     groups:
       - INTL_DIRECT_ACTIVE
@@ -187,8 +187,8 @@ nodes:
       reserved_headroom_percent: 40
     health:
       monitor_status: ok
-      last_smoke_status: not_in_live_subs
-      last_smoke_at: "2026-06-11"
+      last_smoke_status: staging_node_reachable
+      last_smoke_at: "2026-06-17"
       last_owner_test_status: pending
       last_owner_test_at: null
     rollout:
@@ -203,9 +203,13 @@ nodes:
       mobile_supported: false
     owner_approval_required: true
     notes: >
-      Connected in panel historically but NOT normal Auto delivery (NL=0 in
-      injectHosts). A2/A4 controlled smoke gated on MONITOR-FLAP closeout +
-      explicit owner approval. Does not count toward delivery_path_nodes.
+      NODE-RU-NL-BALANCER-CANARY-001 (2026-06-17): read-only SSH inventory PASS —
+      node up ~8 weeks, remnanode + caddy-selfsteal containers healthy, VPN ports
+      (443/8443/9443) listening, load ~0, disk/mem healthy. Moved disabled->staging
+      to reflect node-level readiness. STILL NOT delivery capacity: A2/A4 controlled
+      traffic smoke + MONITOR-FLAP closeout + explicit owner APPROVE PROD APPLY
+      remain pending. delivery_path_eligible=false, canary_percent=0,
+      allow_new_assignments=false. Does NOT count toward delivery_path_nodes.
 
   - node_id: ams-backup-edge
     display_name: Backup subscription edge jurisdiction
