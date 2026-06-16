@@ -106,10 +106,11 @@
 | **SUB-GEN-SELECTOR-APPLY-GATE-001** | **DONE** | [`ops/vpn_selector_apply_gate.py`](../ops/vpn_selector_apply_gate.py) — APPLY_ALLOWED gate; current state false |
 | **VPN-ARCH-CONSOLIDATION-001** | **DONE (partial)** | Patch-on-patch → guardrails; [`docs/VPN_PRODUCTION_GUARDRAILS.md`](VPN_PRODUCTION_GUARDRAILS.md) + [`docs/VPN_PATCH_SCRIPT_MIGRATION_MAP.md`](VPN_PATCH_SCRIPT_MIGRATION_MAP.md) |
 | **VPN-PRODUCTION-GUARDRAILS-001** | **DONE** | [`ops/vpn_production_guardrails.py`](../ops/vpn_production_guardrails.py) — central capacity validator; 21 tests |
-| **VPN-AUTO-CUTTING-GUARD-001** | **DONE (manual gated)** | [`ops/vpn_apply_guard.py`](../ops/vpn_apply_guard.py) — manual collapse patchers fail closed; cron reducers banner-flagged |
+| **VPN-AUTO-CUTTING-GUARD-001** | **PARTIAL (autotrim done)** | Manual patchers gated; autotrim migrated; 3 cron reducers remain |
 | **VPN-CAPACITY-GATE-001** | **DONE** | Apply gate consumes guardrail; guardrail blockers surfaced |
 | **VPN-NODE-INVENTORY-SOT-001** | **DONE (examples)** / live schema OPEN | Lifecycle/capacity SoT vocabulary in registry example + template |
-| **SCRIPT-MIGRATE-LATENCY-AUTOTRIM-001 / -INJECTHOSTS-SYNC-001 / -RELAY-FAILOVER-001 / -NL-RELAY-PATCHERS-001** | **OPEN** | P0/P1 cron auto-cutter migration to guardrail |
+| **SCRIPT-MIGRATE-LATENCY-AUTOTRIM-001** | **DONE** | [`ops/latency_selector_autotrim.py`](../ops/latency_selector_autotrim.py) — guardrail-wired apply; 18 tests |
+| **SCRIPT-MIGRATE-INJECTHOSTS-SYNC-001 / -RELAY-FAILOVER-001 / -NL-RELAY-PATCHERS-001** | **OPEN** | P0/P1 remaining cron auto-cutter migration |
 | **CLIENT-STABILITY-OWNER-CANARY-PROFILE-001** | **DONE** | [`ops/generate_owner_canary_profile.py`](../ops/generate_owner_canary_profile.py) — owner-only `.local` plan |
 | **RELAY1-DRAIN-OR-RETEST-001** | **DECISION READY** | [`RELAY1-DRAIN-OR-RETEST-DECISION.md`](RELAY1-DRAIN-OR-RETEST-DECISION.md) — owner go/no-go |
 | **NODE-ONBOARD-NEW-PROD-PATH-001** | **READY FOR OWNER ACTION** | [`VPN-NODE-PURCHASE-REQUEST.md`](VPN-NODE-PURCHASE-REQUEST.md) + onboarding execution |

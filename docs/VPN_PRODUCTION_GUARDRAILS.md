@@ -91,9 +91,11 @@ future selector apply.
 - They must become dry-run, guarded, or deprecated.
 - Capacity-reducing manual patchers fail closed without `--owner-approved`
   (via [`ops/vpn_apply_guard.py`](../ops/vpn_apply_guard.py)).
-- cron-managed reducers print a guardrail banner and are scheduled for P0
-  migration to the central guardrail (control flow unchanged this sprint to avoid
-  an outage in live failover automation).
+- **`latency_selector_autotrim.py` is migrated** (SCRIPT-MIGRATE-LATENCY-AUTOTRIM-001):
+  any `--apply` calls `evaluate_autotrim_apply_guard()`; bare cron `--apply` fails
+  closed; relay-IP collapse and relay-only pool reduction blocked by central rules.
+- Remaining cron-managed reducers print a guardrail banner and are scheduled for
+  P0 migration (`relay_failover_template`, `lv_node_*_failover`, `sync_injecthosts_connected`).
 - New generators must consume the registry/inventory, not hardcoded IPs.
 
 ## 8. Capacity planning (inputs the inventory should carry)

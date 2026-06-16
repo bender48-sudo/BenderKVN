@@ -8,9 +8,16 @@ Trims bad paths without gen=33/45/132 footguns:
   - Hysteresis: 2 bad probes → trim; 3 OK → restore
   - Both relays dead → no PATCH
 
+SCRIPT-MIGRATE-LATENCY-AUTOTRIM-001:
+  Dry-run is default. Any live apply must pass ops/vpn_production_guardrails.py
+  (owner approval, rollback snapshot, explicit mode, capacity minimums).
+  Cron ``--apply`` without guarded flags fails closed — no silent pool collapse.
+
 Usage:
     python ops/latency_selector_autotrim.py
-    python ops/latency_selector_autotrim.py --apply
+    python ops/latency_selector_autotrim.py --json
+    python ops/latency_selector_autotrim.py --apply --mode incident \\
+        --incident-ttl-minutes 60 --owner-approved
 """
 from __future__ import annotations
 
@@ -51,7 +58,23 @@ from nl_reachability_probe_ru import NL_IP, probe_nl_from_ru  # noqa: E402
 from panel_client import PanelClient  # noqa: E402
 from relay_latency_probe import RELAY1_IP, RELAY2_IP, RelayIpProbe, probe_relay_ips  # noqa: E402
 from subscription_config_notify import after_template_patch  # noqa: E402
-from vpn_apply_guard import print_guardrail_banner  # noqa: E402
+from validate_vpn_node_registry import DEFAULT_REGISTRY  # noqa: E402
+from vpn_apply_guard import owner_approval_present, print_guardrail_banner  # noqa: E402
+from vpn_node_selector import load_validated_registry  # noqa: E402
+from vpn_production_guardrails import (  # noqa: E402
+    APPLY_MODES,
+    MODE_DEGRADE,
+    MODE_DRY_RUN,
+    MODE_INCIDENT,
+    MODE_MANUAL_EMERGENCY,
+    MODE_SCALE,
+    CapacityState,
+    GuardrailConfig,
+    GuardrailResult,
+    capacity_state_from_nodes,
+    capacity_reduces,
+    evaluate_guardrail,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
@@ -64,6 +87,138 @@ RELAY_SLOW_ABS_MS = 80.0
 NL_MAX_TCP_MS = 120.0
 TRIM_FAIL_STREAK = 2
 RESTORE_OK_STREAK = 3
+
+STATUS_DRY_RUN = "DRY_RUN"
+STATUS_APPLY_BLOCKED = "APPLY_BLOCKED"
+STATUS_APPLY_ALLOWED = "APPLY_ALLOWED"
+
+
+def relay_ips_for_mode(relay_mode: str) -> int:
+    if relay_mode == "full":
+        return 2
+    if relay_mode in ("relay1_only", "relay2_only"):
+        return 1
+    return 0
+
+
+def is_relay_only_pool(relay_mode: str, include_nl: bool, doc: dict) -> bool:
+    if include_nl and _inject_has_nl(doc):
+        return False
+    return relay_mode in ("relay1_only", "relay2_only")
+
+
+def build_autotrim_capacity_state(
+    registry_nodes: list[dict],
+    doc: dict,
+    relay_mode: str,
+    include_nl: bool,
+) -> CapacityState | None:
+    if not registry_nodes:
+        return None
+    base = capacity_state_from_nodes(registry_nodes)
+    return CapacityState(
+        delivery_path_nodes=base.delivery_path_nodes,
+        production_capacity_nodes=base.production_capacity_nodes,
+        relay_ips=relay_ips_for_mode(relay_mode),
+        geos=base.geos,
+        selector_total_paths=len(_build_target(relay_mode, include_nl, doc)),
+        selector_relay_only=is_relay_only_pool(relay_mode, include_nl, doc),
+        canary_node_ids=base.canary_node_ids,
+        unknown_status_in_capacity=base.unknown_status_in_capacity,
+    )
+
+
+def resolve_apply_mode(
+    *,
+    applying: bool,
+    mode_arg: str | None,
+    reduces_capacity: bool,
+) -> tuple[str, list[str]]:
+    if not applying:
+        return MODE_DRY_RUN, []
+    blockers: list[str] = []
+    if not mode_arg:
+        if reduces_capacity:
+            blockers.append(
+                "autotrim: --apply with capacity reduction requires "
+                "--mode degrade|incident|manual_emergency"
+            )
+            return MODE_DRY_RUN, blockers
+        return MODE_SCALE, []
+    if mode_arg == MODE_DRY_RUN:
+        blockers.append("autotrim: --apply cannot use --mode dry_run")
+        return MODE_DRY_RUN, blockers
+    if mode_arg not in APPLY_MODES:
+        blockers.append(f"autotrim: unknown apply mode {mode_arg!r}")
+        return MODE_DRY_RUN, blockers
+    return mode_arg, blockers
+
+
+def evaluate_autotrim_apply_guard(
+    *,
+    registry_nodes: list[dict],
+    doc: dict,
+    relay_mode_before: str,
+    relay_mode_after: str,
+    include_nl_before: bool,
+    include_nl_after: bool,
+    mode: str,
+    owner_approved: bool,
+    rollback_snapshot_present: bool,
+    incident_ttl_minutes: int | None = None,
+    config: GuardrailConfig | None = None,
+) -> GuardrailResult:
+    before = build_autotrim_capacity_state(
+        registry_nodes, doc, relay_mode_before, include_nl_before
+    )
+    after = build_autotrim_capacity_state(
+        registry_nodes, doc, relay_mode_after, include_nl_after
+    )
+    if before is None or after is None:
+        return GuardrailResult(
+            allowed=False,
+            mode=mode,
+            is_live_apply=mode in APPLY_MODES,
+            blockers=["guardrail: cannot build before/after capacity state (registry missing)"],
+            summary="apply blocked: capacity state unavailable",
+        )
+    return evaluate_guardrail(
+        mode=mode,
+        before=before,
+        after=after,
+        owner_approved=owner_approved,
+        rollback_snapshot_present=rollback_snapshot_present,
+        incident_ttl_minutes=incident_ttl_minutes,
+        config=config,
+    )
+
+
+def format_autotrim_result(
+    *,
+    status: str,
+    guard: GuardrailResult,
+    relay_mode_before: str,
+    relay_mode_after: str,
+    include_nl_before: bool,
+    include_nl_after: bool,
+    changed: bool,
+    diagnostic_log: list[str],
+) -> dict:
+    return {
+        "status": status,
+        "changed": changed,
+        "relay_mode_before": relay_mode_before,
+        "relay_mode_after": relay_mode_after,
+        "include_nl_before": include_nl_before,
+        "include_nl_after": include_nl_after,
+        "blockers": guard.blockers,
+        "warnings": guard.warnings,
+        "guardrail_summary": guard.summary,
+        "guardrail_mode": guard.mode,
+        "capacity_before": guard.capacity_before,
+        "capacity_after": guard.capacity_after,
+        "diagnostic_log": diagnostic_log,
+    }
 
 
 def _load_state() -> dict:
@@ -312,7 +467,26 @@ def _verify_profile() -> bool:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--apply", action="store_true", help="Attempt guarded live apply (default: dry-run)")
+    ap.add_argument(
+        "--mode",
+        choices=[MODE_DRY_RUN, MODE_SCALE, MODE_DEGRADE, MODE_INCIDENT, MODE_MANUAL_EMERGENCY],
+        default=None,
+        help="Guardrail mode for --apply (required when apply would reduce capacity)",
+    )
+    ap.add_argument("--incident-ttl-minutes", type=int, default=None)
+    ap.add_argument("--owner-approved", action="store_true")
+    ap.add_argument(
+        "--rollback-snapshot",
+        type=Path,
+        default=None,
+        help="Pre-captured rollback snapshot path (else created on apply before PATCH)",
+    )
+    ap.add_argument("--guardrail-min-delivery-paths", type=int, default=2)
+    ap.add_argument("--guardrail-min-relay-ips", type=int, default=2)
+    ap.add_argument("--guardrail-min-geos", type=int, default=None)
+    ap.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY)
+    ap.add_argument("--json", action="store_true", dest="json_out")
     ap.add_argument("--skip-probe", action="store_true")
     ap.add_argument("--skip-pre-verify", action="store_true")
     ap.add_argument("--template-uuid", default=site_urls.REMNA_TEMPLATE_UUID)
@@ -322,12 +496,54 @@ def main() -> int:
         "latency_selector_autotrim", capacity_reducing=True, cron_managed=True
     )
 
+    guard_cfg = GuardrailConfig(
+        minimum_delivery_paths=args.guardrail_min_delivery_paths,
+        minimum_relay_ips=args.guardrail_min_relay_ips,
+        minimum_geos=args.guardrail_min_geos,
+    )
+    diagnostic_log: list[str] = []
+
+    try:
+        registry = load_validated_registry(args.registry)
+        registry_nodes = [n for n in (registry.get("nodes") or []) if isinstance(n, dict)]
+    except Exception as exc:
+        registry_nodes = []
+        diagnostic_log.append(f"registry load failed: {exc}")
+        if args.apply:
+            guard = GuardrailResult(
+                allowed=False,
+                mode=MODE_DRY_RUN,
+                is_live_apply=False,
+                blockers=["guardrail: cannot build before/after capacity state (registry missing)"],
+                summary="apply blocked: registry unavailable",
+            )
+            payload = format_autotrim_result(
+                status=STATUS_APPLY_BLOCKED,
+                guard=guard,
+                relay_mode_before="full",
+                relay_mode_after="full",
+                include_nl_before=True,
+                include_nl_after=True,
+                changed=False,
+                diagnostic_log=diagnostic_log,
+            )
+            if args.json_out:
+                print(json.dumps(payload, ensure_ascii=False, indent=2))
+            else:
+                print(f"status: {STATUS_APPLY_BLOCKED}")
+                for b in guard.blockers:
+                    print(f"  - {b}")
+            return 2
+
     print("=== pre-verify ===")
     if not args.skip_pre_verify and not _verify_profile():
         print("ABORT: pre-verify failed", file=sys.stderr)
         return 1
 
     state = _load_state()
+    relay_mode_before = str(state.get("relay_mode") or "full")
+    include_nl_before = bool(state.get("nl_in_selector", True))
+
     c = PanelClient(timeout=120)
     tpl = c.get_or_raise(f"/api/subscription-templates/{args.template_uuid}")["response"]
     doc = tpl["templateJson"]
@@ -346,6 +562,7 @@ def main() -> int:
 
     if args.skip_probe:
         print("[autotrim] skip-probe")
+        diagnostic_log.append("[autotrim] skip-probe")
         for row in (state.get("last_relay_probe") or {}).get("results") or []:
             relay_probes.append(
                 RelayIpProbe(
@@ -394,40 +611,210 @@ def main() -> int:
     relay_mode, relay_log = _evaluate_relay(_probe_by_ip(relay_probes), state)
     for line in relay_log:
         print(line)
+        diagnostic_log.append(line)
     state["relay_mode"] = relay_mode
 
     include_nl, nl_log = _evaluate_nl(nl_probes, state, doc)
     for line in nl_log:
         print(line)
+        diagnostic_log.append(line)
     state["nl_in_selector"] = include_nl
 
     target_sel = _build_target(relay_mode, include_nl, doc)
     stealth_sel: list[str] | None = None
     if is_stealth_split_profile(doc):
         stealth_sel = _stealth_relay_selector(relay_mode)
-        print(
+        msg = (
             f"target selector: {len(target_sel)} paths (relay={relay_mode} nl={include_nl}); "
             f"stealth relay×{len(stealth_sel)}"
         )
+        print(msg)
+        diagnostic_log.append(msg)
     else:
-        print(f"target selector: {len(target_sel)} paths (relay={relay_mode} nl={include_nl})")
+        msg = f"target selector: {len(target_sel)} paths (relay={relay_mode} nl={include_nl})"
+        print(msg)
+        diagnostic_log.append(msg)
 
     patched = copy.deepcopy(doc)
     changed, patch_log = _apply_selector(patched, target_sel, stealth_relay_sel=stealth_sel)
     for line in patch_log:
         print(line)
+        diagnostic_log.append(line)
     _save_state(state)
 
+    before_cap = build_autotrim_capacity_state(registry_nodes, doc, relay_mode_before, include_nl_before)
+    after_cap = build_autotrim_capacity_state(registry_nodes, doc, relay_mode, include_nl)
+    reduces = (
+        before_cap is not None
+        and after_cap is not None
+        and capacity_reduces(before_cap, after_cap)
+    )
+
+    apply_mode, mode_blockers = resolve_apply_mode(
+        applying=args.apply,
+        mode_arg=args.mode,
+        reduces_capacity=reduces,
+    )
+
     if not changed:
+        guard = evaluate_autotrim_apply_guard(
+            registry_nodes=registry_nodes,
+            doc=doc,
+            relay_mode_before=relay_mode_before,
+            relay_mode_after=relay_mode,
+            include_nl_before=include_nl_before,
+            include_nl_after=include_nl,
+            mode=MODE_DRY_RUN,
+            owner_approved=False,
+            rollback_snapshot_present=False,
+            config=guard_cfg,
+        )
+        status = STATUS_DRY_RUN
         print("[autotrim] no selector change")
-        return 0
-    if not args.apply:
-        print("\nDry-run. Apply: python ops/latency_selector_autotrim.py --apply")
+        payload = format_autotrim_result(
+            status=status,
+            guard=guard,
+            relay_mode_before=relay_mode_before,
+            relay_mode_after=relay_mode,
+            include_nl_before=include_nl_before,
+            include_nl_after=include_nl,
+            changed=False,
+            diagnostic_log=diagnostic_log,
+        )
+        if args.json_out:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"\nstatus: {status}")
+            print(guard.summary)
         return 0
 
-    snap = SNAPSHOT_DIR / f"template-before-autotrim-{time.strftime('%Y%m%d_%H%M%S')}.json"
-    snap.parent.mkdir(parents=True, exist_ok=True)
-    snap.write_text(json.dumps(tpl, ensure_ascii=False, indent=2), encoding="utf-8")
+    if not args.apply:
+        guard = evaluate_autotrim_apply_guard(
+            registry_nodes=registry_nodes,
+            doc=doc,
+            relay_mode_before=relay_mode_before,
+            relay_mode_after=relay_mode,
+            include_nl_before=include_nl_before,
+            include_nl_after=include_nl,
+            mode=MODE_DRY_RUN,
+            owner_approved=False,
+            rollback_snapshot_present=False,
+            config=guard_cfg,
+        )
+        payload = format_autotrim_result(
+            status=STATUS_DRY_RUN,
+            guard=guard,
+            relay_mode_before=relay_mode_before,
+            relay_mode_after=relay_mode,
+            include_nl_before=include_nl_before,
+            include_nl_after=include_nl,
+            changed=True,
+            diagnostic_log=diagnostic_log,
+        )
+        if args.json_out:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"\nstatus: {STATUS_DRY_RUN}")
+            print(guard.summary)
+            if guard.blockers:
+                print("guardrail blockers (would block apply):")
+                for b in guard.blockers:
+                    print(f"  - {b}")
+            print(
+                "\nDry-run. Guarded apply example:\n"
+                "  python ops/latency_selector_autotrim.py --apply --mode incident "
+                "--incident-ttl-minutes 60 --owner-approved"
+            )
+        return 0
+
+    # --- guarded apply path ---
+    all_blockers = list(mode_blockers)
+    if all_blockers:
+        guard = GuardrailResult(
+            allowed=False,
+            mode=apply_mode,
+            is_live_apply=True,
+            blockers=all_blockers,
+            summary="apply blocked: mode resolution failed",
+        )
+        payload = format_autotrim_result(
+            status=STATUS_APPLY_BLOCKED,
+            guard=guard,
+            relay_mode_before=relay_mode_before,
+            relay_mode_after=relay_mode,
+            include_nl_before=include_nl_before,
+            include_nl_after=include_nl,
+            changed=True,
+            diagnostic_log=diagnostic_log,
+        )
+        if args.json_out:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"\nstatus: {STATUS_APPLY_BLOCKED}")
+            for b in all_blockers:
+                print(f"  - {b}")
+        return 2
+
+    rollback_path = args.rollback_snapshot
+    rollback_present = bool(rollback_path and rollback_path.is_file())
+    if not rollback_present:
+        snap = SNAPSHOT_DIR / f"template-before-autotrim-{time.strftime('%Y%m%d_%H%M%S')}.json"
+        snap.parent.mkdir(parents=True, exist_ok=True)
+        snap.write_text(json.dumps(tpl, ensure_ascii=False, indent=2), encoding="utf-8")
+        rollback_path = snap
+        rollback_present = True
+        diagnostic_log.append(f"rollback snapshot created: {rollback_path.name}")
+
+    guard = evaluate_autotrim_apply_guard(
+        registry_nodes=registry_nodes,
+        doc=doc,
+        relay_mode_before=relay_mode_before,
+        relay_mode_after=relay_mode,
+        include_nl_before=include_nl_before,
+        include_nl_after=include_nl,
+        mode=apply_mode,
+        owner_approved=owner_approval_present(args.owner_approved),
+        rollback_snapshot_present=rollback_present,
+        incident_ttl_minutes=args.incident_ttl_minutes,
+        config=guard_cfg,
+    )
+
+    if not guard.allowed:
+        payload = format_autotrim_result(
+            status=STATUS_APPLY_BLOCKED,
+            guard=guard,
+            relay_mode_before=relay_mode_before,
+            relay_mode_after=relay_mode,
+            include_nl_before=include_nl_before,
+            include_nl_after=include_nl,
+            changed=True,
+            diagnostic_log=diagnostic_log,
+        )
+        if args.json_out:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"\nstatus: {STATUS_APPLY_BLOCKED}")
+            print(guard.summary)
+            for b in guard.blockers:
+                print(f"  - {b}")
+        return 2
+
+    payload = format_autotrim_result(
+        status=STATUS_APPLY_ALLOWED,
+        guard=guard,
+        relay_mode_before=relay_mode_before,
+        relay_mode_after=relay_mode,
+        include_nl_before=include_nl_before,
+        include_nl_after=include_nl,
+        changed=True,
+        diagnostic_log=diagnostic_log,
+    )
+    if args.json_out:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        print(f"\nstatus: {STATUS_APPLY_ALLOWED}")
+        print(guard.summary)
+
     tpl["templateJson"] = patched
     minimal = {
         "uuid": tpl.get("uuid") or args.template_uuid,

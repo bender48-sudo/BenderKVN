@@ -14,4 +14,7 @@ if [[ -z "$PANEL_TOKEN" ]]; then
   echo "LATENCY_AUTOTRIM_FAIL: PANEL_TOKEN/REMNA_API_TOKEN unset" >&2
   exit 1
 fi
+# SCRIPT-MIGRATE-LATENCY-AUTOTRIM-001: bare --apply fails closed until cron wrapper
+# passes --mode, --owner-approved, and (for incidents) --incident-ttl-minutes.
+# Do NOT deploy updated script without updating this wrapper (owner approval required).
 exec python3 "${OPS}/latency_selector_autotrim.py" --apply "$@"

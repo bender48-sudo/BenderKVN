@@ -11,22 +11,18 @@
 
 **PARTIALLY.** The inventory-driven architecture
 (`node inventory → smoke matrix → production guardrails → selector apply gate →
-owner-approved apply`) now exists and is enforced for the **future** selector
-apply path. But legacy hardcoded patch scripts still exist and most still apply
-to the live template via `--apply`. This sprint:
+owner-approved apply`) now exists. **`latency_selector_autotrim.py` is migrated**
+(SCRIPT-MIGRATE-LATENCY-AUTOTRIM-001): `--apply` fails closed unless central
+guardrails allow it (owner approval, rollback snapshot, explicit mode, capacity
+minimums). Bare cron `--apply` no longer silently collapses the pool.
 
-- **Consolidated now:** central guardrail module + tests; selector apply gate uses
-  it; manual capacity-collapse patchers fail closed without `--owner-approved`;
-  all listed capacity reducers print a guardrail banner; inventory SoT vocabulary
-  documented.
-- **Still patch-on-patch:** cron-managed auto-cutters
-  (`latency_selector_autotrim`, `relay_failover_template`,
-  `lv_node_down_nl_failover`, `lv_node_failover_auto`, `sync_injecthosts_connected`)
-  still `--apply` from cron with hardcoded selectors/IPs. They are banner-flagged
-  but NOT yet wired into the central guardrail (deliberate — changing live failover
-  control flow risks an outage and needs owner approval).
-- **Next:** migrate the cron auto-cutters to call `evaluate_guardrail()` before any
-  capacity-reducing PATCH (P0 tasks below).
+- **Consolidated now:** central guardrail module; selector apply gate; manual
+  patchers gated; **`latency_selector_autotrim` wired to guardrails** (18 tests);
+  inventory SoT vocabulary documented.
+- **Still patch-on-patch:** remaining cron auto-cutters
+  (`relay_failover_template`, `lv_node_down_nl_failover`, `lv_node_failover_auto`,
+  `sync_injecthosts_connected`) still `--apply` from cron without guardrail wiring.
+- **Next:** migrate remaining P0 cron auto-cutters (see tasks below).
 
 ## Legacy script inventory
 
@@ -36,7 +32,7 @@ Source of truth used: `hardcoded` (IPs/selectors in code), `live API` (Remna pan
 
 | Script | Purpose | Source of truth | Mutates prod? | Default mode | Owner gate | Rollback snap | Capacity guard | Can reduce pool? | Risk | Action taken |
 |--------|---------|-----------------|---------------|--------------|-----------|---------------|----------------|------------------|------|--------------|
-| `latency_selector_autotrim.py` | Trim slow relay/NL from Intl selectors (hysteresis) | hardcoded + live API | YES (`--apply`, cron) | dry-run | no | yes (snap) | MIN_PATHS=3 only | YES (relay1/2-only) | UNSAFE | Banner added; **P0 migrate** |
+| `latency_selector_autotrim.py` | Trim slow relay/NL from Intl selectors (hysteresis) | registry + live API | YES (`--apply`, cron) | dry-run | **YES (guardrail)** | yes (auto or path) | **central guardrail** | YES (blocked) | WAS UNSAFE → **GUARDED** | **MIGRATED** — `evaluate_autotrim_apply_guard()`; bare `--apply` fails closed |
 | `relay_failover_template.py` | Trim relay outbounds on RU probe fail | hardcoded + live API | YES (`--apply`, cron) | dry-run | no | yes | partial | YES | UNSAFE | Banner added; **P0 migrate** |
 | `lv_node_down_nl_failover.py` | LV down → NL-only template failover | hardcoded + live API | YES (`--apply`, cron) | dry-run | no (`--gate`) | yes | no | YES (collapse to NL) | UNSAFE | Banner added; **P0 migrate (incident-only)** |
 | `lv_node_failover_auto.py` | Cron driver for the above | hardcoded | YES (`--apply`, cron) | dry-run | no | via child | no | YES | UNSAFE | Banner added; **P0 migrate** |
@@ -58,7 +54,7 @@ Source of truth used: `hardcoded` (IPs/selectors in code), `live API` (Remna pan
 
 | Script | Target home |
 |--------|-------------|
-| `latency_selector_autotrim.py` | production guardrails + selector (registry-driven trim with guard) |
+| `latency_selector_autotrim.py` | production guardrails + selector | **DONE** (SCRIPT-MIGRATE-LATENCY-AUTOTRIM-001) |
 | `relay_failover_template.py` | production guardrails (incident mode + TTL) |
 | `lv_node_down_nl_failover.py` / `lv_node_failover_auto.py` | production guardrails (incident mode, TTL/rollback) |
 | `sync_injecthosts_connected.py` | node inventory + apply gate (drive from registry health) |
@@ -67,7 +63,7 @@ Source of truth used: `hardcoded` (IPs/selectors in code), `live API` (Remna pan
 
 ## Migration priority
 
-- **P0 — unsafe live auto-cutters (cron):** `latency_selector_autotrim`,
+- **P0 — unsafe live auto-cutters (cron):** ~~`latency_selector_autotrim`~~ **DONE**;
   `relay_failover_template`, `lv_node_down_nl_failover` + `lv_node_failover_auto`,
   `sync_injecthosts_connected`.
 - **P1 — one-off legacy patchers:** `patch_add_relay2_vpn`,
@@ -78,7 +74,7 @@ Source of truth used: `hardcoded` (IPs/selectors in code), `live API` (Remna pan
 
 | Task ID | Scope | Done when |
 |---------|-------|-----------|
-| `SCRIPT-MIGRATE-LATENCY-AUTOTRIM-001` | Wire `latency_selector_autotrim` apply path through `evaluate_guardrail()` (degrade/incident mode, owner approval + rollback) | Apply blocked when it would breach minimums or collapse to relay-only without owner approval + TTL; tests prove it |
+| `SCRIPT-MIGRATE-LATENCY-AUTOTRIM-001` | Wire `latency_selector_autotrim` apply path through `evaluate_guardrail()` | **DONE** — apply blocked on minimums/relay-only/relay-IP collapse; 18 tests; bare cron `--apply` fails closed |
 | `SCRIPT-MIGRATE-INJECTHOSTS-SYNC-001` | Drive `sync_injecthosts_connected` from registry health; guard host-count floor | Cannot drop below `minimum_delivery_paths`; guarded apply + tests |
 | `SCRIPT-MIGRATE-RELAY-FAILOVER-001` | Convert `relay_failover_template` + `lv_node_*_failover` to incident mode with TTL + rollback + owner approval | No silent collapse; auto-restore on recovery; tests |
 | `SCRIPT-MIGRATE-NL-RELAY-PATCHERS-001` | Replace hardcoded `patch_add_*` patchers with registry-driven onboarding generator | New nodes added via registry + apply gate, not hardcoded IPs |
