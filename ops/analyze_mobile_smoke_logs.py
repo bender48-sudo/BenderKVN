@@ -796,9 +796,53 @@ def main() -> int:
     )
     ap.add_argument("--adb-log", type=Path, help="logcat snippet with tun2socks lines")
     ap.add_argument("--owner-event", action="append", default=[], help="Owner timestamp note for correlation")
+    ap.add_argument("--fullday", action="store_true", help="Full-day timeline + cross-correlation mode")
+    ap.add_argument("--day", default="2026-06-16", help="Target day for fullday mode (YYYY-MM-DD)")
+    ap.add_argument("--timeline-bucket-minutes", type=int, default=5, help="Access timeline bucket size")
+    ap.add_argument("--correlate", action="store_true", help="Cross-correlate gaps with subscription events")
+    ap.add_argument("--emit-json", type=Path, help="Write fullday summary JSON (local only)")
     ap.add_argument("--out", type=Path, default=Path(".local/mobile_smoke_log_summary.md"))
     ap.add_argument("--json", action="store_true", help="print summary JSON to stdout")
     args = ap.parse_args()
+
+    if args.fullday:
+        from mobile_log_fullday import analyze_fullday
+
+        if not args.access_log and not args.subscription_log:
+            print("FAIL: fullday mode needs --access-log and/or --subscription-log", file=sys.stderr)
+            return 1
+        sources: dict[str, str] = {}
+        access_text = sub_text = None
+        if args.access_log and args.access_log.is_file():
+            sources["access_log"] = str(args.access_log)
+            access_text = args.access_log.read_text(encoding="utf-8", errors="replace")
+        if args.subscription_log and args.subscription_log.is_file():
+            sources["subscription_log"] = str(args.subscription_log)
+            sub_text = args.subscription_log.read_text(encoding="utf-8", errors="replace")
+        md, summary = analyze_fullday(
+            day=args.day,
+            access_text=access_text,
+            subscription_text=sub_text,
+            bucket_minutes=args.timeline_bucket_minutes,
+            correlate=args.correlate or True,
+            sources=sources,
+        )
+        out_path = args.out or Path(".local/mobile_fullday_analysis.md")
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(md, encoding="utf-8")
+        print(f"Wrote: {out_path}")
+        if args.emit_json:
+            import json
+
+            args.emit_json.parent.mkdir(parents=True, exist_ok=True)
+            args.emit_json.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+            print(f"Wrote JSON: {args.emit_json}")
+        if args.json:
+            import json
+
+            print(json.dumps(summary, ensure_ascii=False, indent=2))
+        print("MOBILE_FULLDAY_ANALYSIS_OK")
+        return 0
 
     if not any([args.access_log, args.subscription_log, args.adb_log]):
         print("FAIL: provide at least one --access-log, --subscription-log, or --adb-log", file=sys.stderr)
