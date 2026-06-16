@@ -1,0 +1,54 @@
+# New production-path node — registry entry TEMPLATE (redacted, schema v1).
+# ID: NODE-ONBOARD-NEW-PROD-PATH-001
+#
+# SAFETY:
+#   * This is a TEMPLATE ONLY. Do NOT paste real IPs, domains, UUIDs, tokens,
+#     vless/vmess URLs, public/private keys, or shortIds into git.
+#   * Real connection material lives in vault / owner secure store.
+#   * A new node enters as status=staging, canary_percent=0,
+#     delivery_path_eligible=false. It does NOT count toward delivery_path_nodes
+#     and is NOT selected by any production cohort until smoke PASS + owner
+#     promotion (see VPN-NODE-ONBOARDING-EXECUTION.md).
+#
+# Validate after filling redacted fields:
+#   python ops/validate_vpn_node_registry.py --registry <your-staging-copy>
+#   python ops/vpn_node_smoke_matrix.py --markdown
+
+- node_id: new-prod-exit-REPLACE        # e.g. de-exit-1 (no secrets in the id)
+  display_name: New production exit (staging — pending acceptance)
+  region: EU                            # EU | RU | other non-secret bucket
+  country: XX                           # ISO country; non-secret
+  city: redacted                        # keep redacted
+  provider_label: redacted-vps-new      # redacted provider class only
+  role: exit                            # exit = potential delivery path
+  status: staging                       # staging until acceptance PASS
+  delivery_path_eligible: false         # false until smoke PASS + promotion
+  groups:
+    - INTL_DIRECT_ACTIVE                # or INTL_STEALTH_ACTIVE — never LAB_OWNER
+  capacity:
+    max_active_configs: null
+    max_concurrent_sessions: null
+    max_mbps: null
+    reserved_headroom_percent: 40
+  health:
+    monitor_status: unknown
+    last_smoke_status: pending
+    last_smoke_at: null
+    last_owner_test_status: pending
+    last_owner_test_at: null
+  rollout:
+    cohort_weight: 0                    # 0 until promotion
+    canary_percent: 0                   # 0 until canary step-up approved
+    allow_new_assignments: false       # false until promotion
+    drain_after: null
+  client_support:
+    happ_supported: pending
+    karing_supported: false
+    v2rayn_supported: false
+    mobile_supported: false
+  owner_approval_required: true
+  notes: >
+    New candidate production path. Provider/DC/ASN must differ from lv-exit-1 for
+    real N+1 diversity. Promote to active + delivery_path_eligible=true ONLY after
+    VPN-NODE-ACCEPTANCE-CHECKLIST P0 PASS and owner sign-off. Until then this node
+    does not count toward delivery_path_nodes or any 300/30k gate.

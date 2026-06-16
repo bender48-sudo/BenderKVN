@@ -94,7 +94,11 @@ Legend: **DONE** = deployed + evidence · **PARTIAL** = works with gaps · **BLO
 | **NL / Amsterdam normal capacity** | **NO** — failover/pre-qualified only | RU→NL TCP PASS; not in live injectHosts; A2/A4 gated |
 | **Growth / 300 configs gate** | **BLOCKED** | Requires **≥2 production-capable delivery-path nodes** + controlled smokes |
 | **Node bring-up** | **DOCS READY** | [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md) + checklist; automation **OPEN** |
-| **30k / multi-node architecture** | **DOCS READY / IMPL NO-GO** | [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md); registry + cohort engine **not built** |
+| **Node readiness matrix (runner)** | **BUILT (dry-run)** | [`ops/vpn_node_smoke_matrix.py`](../ops/vpn_node_smoke_matrix.py): `delivery_path_nodes=1`, `production_capacity_nodes=1`, all GO booleans **false** |
+| **Selector apply gate** | **BUILT — APPLY_ALLOWED=false** | [`ops/vpn_selector_apply_gate.py`](../ops/vpn_selector_apply_gate.py); blocked on 2nd node + rollback + owner APPROVE APPLY |
+| **2nd production path onboarding** | **READY FOR OWNER ACTION** | [`VPN-NODE-PURCHASE-REQUEST.md`](VPN-NODE-PURCHASE-REQUEST.md) + [`VPN-NODE-ONBOARDING-EXECUTION.md`](VPN-NODE-ONBOARDING-EXECUTION.md) |
+| **relay1 suspect policy** | **ENFORCED + TESTED** | [`RELAY1-DRAIN-OR-RETEST-DECISION.md`](RELAY1-DRAIN-OR-RETEST-DECISION.md); excluded from prod/canary/capacity |
+| **30k / multi-node architecture** | **DOCS READY / IMPL NO-GO** | [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md); registry + selector dry-run built; **live apply NO-GO** |
 | **NL A2/A4 controlled smoke** | **NOT STARTED** | Blocked: owner approval + monitoring closeout + client gates |
 | **MONITOR-FLAP-001** | **SOAK PARTIAL** | Deployed LV `50a6ac4`; closeout `7e1d2d4` |
 | **MONITOR-FLAP-TUNE-001** | **DEPLOYED LV; SOAK OPEN** | `21f5a97`, deploy doc `2e95cec` — verify 6h review before claiming PASS |

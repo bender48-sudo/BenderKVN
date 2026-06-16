@@ -102,6 +102,12 @@
 | **VPN-NODE-REGISTRY-001** | **DONE** | [`ops/config/vpn_node_registry.yaml`](../ops/config/vpn_node_registry.yaml) + validator |
 | **SUB-GEN-SELECTOR-STRATEGY-001** | **DONE** | [`ops/vpn_node_selector.py`](../ops/vpn_node_selector.py) dry-run |
 | **SUB-GEN-SELECTOR-INTEGRATION-001** | **OPEN** | Live subscription generator wiring (after owner review) |
+| **NODE-SMOKE-MATRIX-RUNNER-001** | **DONE** | [`ops/vpn_node_smoke_matrix.py`](../ops/vpn_node_smoke_matrix.py) — readiness matrix (dry-run) |
+| **SUB-GEN-SELECTOR-APPLY-GATE-001** | **DONE** | [`ops/vpn_selector_apply_gate.py`](../ops/vpn_selector_apply_gate.py) — APPLY_ALLOWED gate; current state false |
+| **CLIENT-STABILITY-OWNER-CANARY-PROFILE-001** | **DONE** | [`ops/generate_owner_canary_profile.py`](../ops/generate_owner_canary_profile.py) — owner-only `.local` plan |
+| **RELAY1-DRAIN-OR-RETEST-001** | **DECISION READY** | [`RELAY1-DRAIN-OR-RETEST-DECISION.md`](RELAY1-DRAIN-OR-RETEST-DECISION.md) — owner go/no-go |
+| **NODE-ONBOARD-NEW-PROD-PATH-001** | **READY FOR OWNER ACTION** | [`VPN-NODE-PURCHASE-REQUEST.md`](VPN-NODE-PURCHASE-REQUEST.md) + onboarding execution |
+| **VPN-SELECTOR-SPEED-STABILITY-POLICY-001** | **DONE** | Selector excludes suspect/lab/disabled/backup (tested) |
 | **VPN-NODE-PROCUREMENT-POLICY-001** | **DOCS DONE** | Owner-safe VPS purchase — [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) §13 |
 | **UX-AUTO-CONNECT-PRINCIPLE-001** | **DOCS DONE** | One-button BenderVPN Auto — no server picker — §14 + routing strategy §10 |
 | **ROUTING-PROFILE-RU-DIRECT-001** | **DOCS DONE / IMPL OPEN** | [`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md) |

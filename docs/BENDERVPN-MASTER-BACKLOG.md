@@ -114,6 +114,13 @@ Source: owner decision — stop isolated client smoke loops; prepare **backend-c
 | — | **UX-AUTO-CONNECT-PRINCIPLE-001** | P1 | **DONE** | — | One-button BenderVPN Auto; no server picker ([§14](VPN-ARCH-30K-CAPACITY-PLAN.md)) |
 | — | **ROUTING-PROFILE-RU-DIRECT-001** | P1 | **DONE** ([`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md)) | OPEN | Routing pack + tests |
 | — | **NODE-SMOKE-MATRIX-001** | P1 | **DONE** (acceptance checklist) | OPEN (runner) | Node quality |
+| — | **NODE-SMOKE-MATRIX-RUNNER-001** | P1 | **DONE** | **DONE** | [`ops/vpn_node_smoke_matrix.py`](../ops/vpn_node_smoke_matrix.py) — registry→readiness matrix (dry-run); 11 tests |
+| — | **SUB-GEN-SELECTOR-APPLY-GATE-001** | P0 | **DONE** | **DONE** | [`ops/vpn_selector_apply_gate.py`](../ops/vpn_selector_apply_gate.py) — APPLY_ALLOWED gate (read-only); 8 tests |
+| — | **CLIENT-STABILITY-OWNER-CANARY-PROFILE-001** | P1 | **DONE** | **DONE** | [`ops/generate_owner_canary_profile.py`](../ops/generate_owner_canary_profile.py) — owner-only `.local` profile plan; 9 tests |
+| — | **RELAY1-DRAIN-OR-RETEST-001** | P0 | **DONE** | **DONE** (policy+tests) | [`RELAY1-DRAIN-OR-RETEST-DECISION.md`](RELAY1-DRAIN-OR-RETEST-DECISION.md) — suspect-exclusion enforced; owner go/no-go |
+| — | **NODE-ONBOARD-NEW-PROD-PATH-001** | P0 | **DONE** | **READY FOR OWNER ACTION** | [`VPN-NODE-PURCHASE-REQUEST.md`](VPN-NODE-PURCHASE-REQUEST.md) + [`VPN-NODE-ONBOARDING-EXECUTION.md`](VPN-NODE-ONBOARDING-EXECUTION.md) + template + [`ops/prepare_new_node_registry_entry.py`](../ops/prepare_new_node_registry_entry.py) |
+| — | **VPN-SELECTOR-SPEED-STABILITY-POLICY-001** | P1 | **DONE** | **DONE** | Selector excludes suspect/lab/disabled/backup; 7 tests |
+| — | **VPN-CORE-SCALABILITY-STABILITY-SPRINT-001** | P0 | **DONE** | **DONE** | Execution sprint umbrella; `delivery_path_nodes` gate still NO-GO until 2nd node |
 | — | **ROLLOUT-CANARY-DRAIN-001** | P1 | **DONE** (in runbook + plan) | OPEN | Safe rollout |
 | — | **MONITOR-CAPACITY-001** | P1 | OPEN | OPEN | Capacity dashboard/alerts |
 
