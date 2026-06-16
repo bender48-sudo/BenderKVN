@@ -80,7 +80,7 @@ Legend: **DONE** = deployed + evidence · **PARTIAL** = works with gaps · **BLO
 | **Happ relay2 lab** | Owner/support isolation | **PASS** (repeat active) + **SOFT PASS** (report(7)) | report(7)+(8); 0 dial/open storm; repeat ~59 min post-wake | Sleep/wake **OPEN**; not prod default; **eligible** for controlled selector design | Import local lab JSON; **no refresh** on lab row |
 | **v2rayN fallback** | Windows support alternate | **PROTOCOL READY** | `9c3400e`; `probe_fallback_client_sub.py` | Not Auto-equivalent; no stealth split; **owner smoke PENDING** (CLIENT-SMOKE-003) | Give existing sub URL; warn RU sites may proxy |
 | **Karing exploratory** | Second alternate | **EXPLORATORY** | Client audit | LV-direct sing-box; not launch default | Only if v2rayN insufficient |
-| **Happ mobile** | **Launch primary mobile** | **PENDING** | [FULLDAY deep-dive](CLIENT-STABILITY-MOBILE-FULLDAY-DEEPDIVE-2026-06-16.md): evening traffic OK; sub import noise all day | **Access log 21 min only**; PASS not recorded | **CLIENT-MOBILE-OBSERVABILITY-001** |
+| **Happ mobile** | **Launch primary mobile** | **PENDING** | [Daily capture §9](CLIENT-MOBILE-OBSERVABILITY-PLAN.md); access 21 min only | Owner export on next unstable day | **CLIENT-MOBILE-DAILY-CAPTURE-001** (workflow **DONE**; export **PENDING**) |
 | **Karing mobile exploratory** | Diagnostic only | **NOT LAUNCH** | Stripped emit | No Auto parity | Do not recommend publicly |
 
 ---
@@ -248,7 +248,7 @@ Synced from [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-20
 | VPN profile (Candidate D) | **PASS** | APPLY Candidate D; probes | — | Continue probe cadence |
 | Happ DirectIp / routing | **PASS** (prod) | `0258d00`, `0635067`, owner context | Do not rollback | Guard on change |
 | Desktop Happ commercial | **OPEN** | report(7)+(8) relay2 active; gate OPEN | Sleep/wake; normal Bender soak | PROD-SELECTOR-CONTROLLED-001 (owner approval) |
-| Mobile Happ commercial | **PENDING** | OBSERVABILITY plan + import readonly review | Owner full-day access export still missing | **Owner export** → re-run `--validate-coverage` |
+| Mobile Happ commercial | **PENDING** | Daily capture workflow DONE (`generate_mobile_capture_template.py`) | Owner export on unstable day still missing | **Use OBSERVABILITY-PLAN §9** → `--validate-coverage` |
 | Windows fallback | **PROTOCOL READY** | `9c3400e` | Owner smoke pending | CLIENT-SMOKE-003 |
 | Capacity / growth | **NO-GO** | 1 LV exit; NL not Auto | <2 delivery nodes | NL A2/A4 after gates |
 | Billing automated paid | **NO-GO** | BILL-001; CodeRabbit triage | **BILL-TERMS-GUARD-001**, BILL-UT, BILL-SMOKE | Items 1–5 in §11 |

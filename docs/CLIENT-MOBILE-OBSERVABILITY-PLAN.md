@@ -140,3 +140,109 @@ Validator reports pattern **names** only: `vless_uri`, `sub_url`, `uuid`, etc.
 4. Only if full-day shows gap↔import correlation → [import readonly follow-up](CLIENT-SUBSCRIPTION-IMPORT-HAPP-READONLY.md).
 
 **Mobile PASS:** still **not** claimable from logs alone.
+
+---
+
+## 9. Что делать, когда мобильный VPN снова тупит
+
+Короткая памятка для владельца. Контролируемый smoke-тест **не обязателен** — сначала соберите логи.
+
+### A. Когда заметили проблему (1–2 минуты)
+
+Запишите **время по часам** (без ссылок и ID):
+
+| Вопрос | Пример |
+|--------|--------|
+| Точное время начала | `14:05` |
+| Сеть | Wi‑Fi / LTE / переключили |
+| Телефон | после сна/разблокировки / в активном использовании |
+| Что не работает | Instagram / Telegram / браузер / «всё» |
+| Happ в UI | подключено / отключено / не смотрел |
+| Помогло переподключение вручную? | да / нет / не пробовал |
+
+Сгенерировать бланк на день:
+
+```powershell
+cd D:\Va\projects\VPN
+python ops/generate_mobile_capture_template.py
+```
+
+Файл: `.local/mobile_capture_notes_YYYY-MM-DD.md` (не коммитить).
+
+### B. Экспорт в течение **15 минут** после сбоя
+
+1. **Не** отключайте VPN и **не** убивайте Happ, если можно.
+2. Happ → настройки / логи / экспорт (зависит от версии):
+   - `access_log`
+   - `subscription_log`
+   - core / app log — если есть
+3. Скопируйте на ПК: `D:\Va\projects\VPN\.secrets\diagnostics\`
+4. Переименуйте:
+
+   ```
+   access_log_YYYY-MM-DD_HHMM_after_bad_period.txt
+   subscription_log_YYYY-MM-DD_HHMM_after_bad_period.txt
+   ```
+
+### C. В конце дня (до полуночи / до force-stop)
+
+Повторите экспорт **access_log** и **subscription_log** — Happ может **обрезать** старые строки после перезапуска.
+
+```
+access_log_YYYY-MM-DD_2350_end_of_day.txt
+subscription_log_YYYY-MM-DD_2350_end_of_day.txt
+```
+
+**Два экспорта в один день** (после сбоя + вечером) часто лучше одного короткого.
+
+### D. Куда класть файлы
+
+| Путь | Назначение |
+|------|------------|
+| `.secrets/diagnostics/` | сырые логи с телефона (gitignore) |
+| `.local/` | отчёты анализатора и бланк notes |
+
+### E. Анализ на ПК
+
+```powershell
+cd D:\Va\projects\VPN
+python ops/analyze_mobile_logs.py --fullday --validate-coverage --correlate --day YYYY-MM-DD `
+  --access .secrets/diagnostics/access_log_YYYY-MM-DD_HHMM_after_bad_period.txt `
+  --subscription .secrets/diagnostics/subscription_log_YYYY-MM-DD_HHMM_after_bad_period.txt `
+  --owner-note "YYYY-MM-DD HH:MM unstable started" `
+  --out .local/mobile_observability_report_YYYY-MM-DD.md
+```
+
+Смотрите в отчёте: `access_percent_day`, `missing_access_windows`, предупреждения coverage.
+
+### F. Чего **не** отправлять
+
+- Скриншоты с QR или ссылкой на подписку
+- URL подписки, токены, UUID
+- Сырые логи в публичный чат
+
+### G. Чего достаточно для выводов (без overclaim)
+
+| Гипотеза | Достаточно если… |
+|----------|------------------|
+| **Туннель реально падал** | access_log с большими дырами **без** accepted flows после; или 0 flows в окне сбоя |
+| **Туннель был, apps «тупили»** | accepted flows в окне сбоя + owner-note «медленно»; 0 error в access |
+| **Sleep/wake** | owner-note lock/unlock **+** gap ≥30–60s в access **в то же время** |
+| **Import/provider** | subscription failure **±15 мин** от gap или сбоя **и** owner-note того же времени |
+| **Недостаточно данных** | access &lt; ~12 ч и один короткий экспорт — **нельзя** доказать «весь день» |
+
+**Mobile PASS** по-прежнему **не** ставится только из логов.
+
+---
+
+## 10. Tooling reference
+
+| Script | Purpose |
+|--------|---------|
+| `ops/generate_mobile_capture_template.py` | Бланк notes на день → `.local/` |
+| `ops/analyze_mobile_logs.py --validate-coverage` | Проверка покрытия экспорта |
+| `ops/analyze_mobile_logs.py --fullday --correlate` | Таймлайн + корреляция gap/sub |
+
+```powershell
+python -m pytest tests/test_generate_mobile_capture_template.py tests/test_mobile_log_fullday.py -q
+```
