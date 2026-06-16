@@ -35,6 +35,7 @@ from balancer_selectors import (  # noqa: E402
 )
 from panel_client import PanelClient  # noqa: E402
 from subscription_config_notify import after_template_patch  # noqa: E402
+from vpn_apply_guard import print_guardrail_banner, require_owner_approval  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
@@ -72,8 +73,12 @@ def apply_patch(doc: dict) -> tuple[bool, list[str]]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--owner-approved", action="store_true",
+                    help="Required for --apply: explicit owner approval for this capacity-reducing patch")
     ap.add_argument("--template-uuid", default=site_urls.REMNA_TEMPLATE_UUID)
     args = ap.parse_args()
+
+    print_guardrail_banner("patch_super_balancer_lv_relay_only", capacity_reducing=True)
 
     c = PanelClient(timeout=120)
     tpl = c.get_or_raise(f"/api/subscription-templates/{args.template_uuid}")["response"]
@@ -84,8 +89,12 @@ def main() -> int:
     if not changed:
         return 0
     if not args.apply:
-        print("\nDry-run. Apply: python ops/patch_super_balancer_lv_relay_only.py --apply")
+        print("\nDry-run. Apply: python ops/patch_super_balancer_lv_relay_only.py --apply --owner-approved")
         return 0
+
+    require_owner_approval(
+        "patch_super_balancer_lv_relay_only", owner_approved=args.owner_approved
+    )
 
     snap = SNAPSHOT_DIR / f"template-before-super-lv-relay-{time.strftime('%Y%m%d_%H%M%S')}.json"
     snap.write_text(json.dumps(tpl, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -27,6 +27,8 @@ SCRIPT = OPS / "lv_node_down_nl_failover.py"
 if str(OPS) not in sys.path:
     sys.path.insert(0, str(OPS))
 
+from vpn_apply_guard import print_guardrail_banner  # noqa: E402
+
 
 def _load_state() -> dict:
     if STATE.is_file():
@@ -104,6 +106,10 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--apply", action="store_true")
     args = ap.parse_args()
+
+    print_guardrail_banner(
+        "lv_node_failover_auto", capacity_reducing=True, cron_managed=True
+    )
 
     state = _load_state()
     action, log = _decide()

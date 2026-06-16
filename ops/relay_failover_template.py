@@ -42,6 +42,7 @@ from balancer_selectors import (  # noqa: E402
 )
 from panel_client import PanelClient  # noqa: E402
 from subscription_config_notify import after_template_patch  # noqa: E402
+from vpn_apply_guard import print_guardrail_banner  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
@@ -200,6 +201,10 @@ def main() -> int:
     ap.add_argument("--ok-threshold", type=int, default=3)
     ap.add_argument("--template-uuid", default=site_urls.REMNA_TEMPLATE_UUID)
     args = ap.parse_args()
+
+    print_guardrail_banner(
+        "relay_failover_template", capacity_reducing=True, cron_managed=True
+    )
 
     if args.force_trim and args.force_restore:
         print("choose --force-trim or --force-restore, not both", file=sys.stderr)

@@ -51,6 +51,7 @@ from nl_reachability_probe_ru import NL_IP, probe_nl_from_ru  # noqa: E402
 from panel_client import PanelClient  # noqa: E402
 from relay_latency_probe import RELAY1_IP, RELAY2_IP, RelayIpProbe, probe_relay_ips  # noqa: E402
 from subscription_config_notify import after_template_patch  # noqa: E402
+from vpn_apply_guard import print_guardrail_banner  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
@@ -316,6 +317,10 @@ def main() -> int:
     ap.add_argument("--skip-pre-verify", action="store_true")
     ap.add_argument("--template-uuid", default=site_urls.REMNA_TEMPLATE_UUID)
     args = ap.parse_args()
+
+    print_guardrail_banner(
+        "latency_selector_autotrim", capacity_reducing=True, cron_managed=True
+    )
 
     print("=== pre-verify ===")
     if not args.skip_pre_verify and not _verify_profile():

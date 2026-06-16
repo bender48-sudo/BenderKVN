@@ -34,6 +34,7 @@ if str(_OPS) not in sys.path:
 from panel_client import PanelClient  # noqa: E402
 from subscription_config_notify import after_template_patch  # noqa: E402
 from trim_injecthosts_no_xhttp import is_xhttp_host  # noqa: E402
+from vpn_apply_guard import print_guardrail_banner  # noqa: E402
 
 SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
 MIN_INJECT = int(__import__("os").environ.get("SYNC_INJECTHOSTS_MIN", "3"))
@@ -96,6 +97,10 @@ def main() -> int:
     ap.add_argument("--gate", action="store_true")
     ap.add_argument("--template-uuid", default=site_urls.REMNA_TEMPLATE_UUID)
     args = ap.parse_args()
+
+    print_guardrail_banner(
+        "sync_injecthosts_connected", capacity_reducing=True, cron_managed=True
+    )
 
     c = PanelClient(timeout=120)
     nodes = c.get_or_raise("/api/nodes")["response"]

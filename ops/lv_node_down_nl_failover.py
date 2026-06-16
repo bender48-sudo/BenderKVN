@@ -43,6 +43,7 @@ from lv_nl_failover_common import (  # noqa: E402
 )
 from panel_client import PanelClient  # noqa: E402
 from subscription_config_notify import after_template_patch  # noqa: E402
+from vpn_apply_guard import print_guardrail_banner  # noqa: E402
 
 SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
 STATE_FILE = SNAPSHOT_DIR / STATE_FILE_NAME
@@ -266,6 +267,10 @@ def main() -> int:
     ap.add_argument("--force", action="store_true", help="apply NL failover even if LV connected (drill)")
     ap.add_argument("--template-uuid", default=site_urls.REMNA_TEMPLATE_UUID)
     args = ap.parse_args()
+
+    print_guardrail_banner(
+        "lv_node_down_nl_failover", capacity_reducing=True, cron_managed=True
+    )
 
     c = PanelClient(timeout=120)
 

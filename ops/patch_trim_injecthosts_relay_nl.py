@@ -29,6 +29,7 @@ if str(_OPS) not in sys.path:
 
 from panel_client import PanelClient  # noqa: E402
 from subscription_config_notify import after_template_patch  # noqa: E402
+from vpn_apply_guard import print_guardrail_banner, require_owner_approval  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
@@ -80,8 +81,12 @@ def trim_injecthosts(doc: dict, drop: set[str]) -> tuple[int, int, list[str]]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--owner-approved", action="store_true",
+                    help="Required for --apply: explicit owner approval for this injectHosts-reducing patch")
     ap.add_argument("--template-uuid", default=site_urls.REMNA_TEMPLATE_UUID)
     args = ap.parse_args()
+
+    print_guardrail_banner("patch_trim_injecthosts_relay_nl", capacity_reducing=True)
 
     c = PanelClient(timeout=120)
     drop_list = relay_nl_uuids(c, args.template_uuid)
@@ -102,8 +107,12 @@ def main() -> int:
         print("Nothing to change")
         return 0
     if not args.apply:
-        print("\nDry-run. Apply: python ops/patch_trim_injecthosts_relay_nl.py --apply")
+        print("\nDry-run. Apply: python ops/patch_trim_injecthosts_relay_nl.py --apply --owner-approved")
         return 0
+
+    require_owner_approval(
+        "patch_trim_injecthosts_relay_nl", owner_approved=args.owner_approved
+    )
 
     snap = SNAPSHOT_DIR / f"template-before-trim-relay-nl-{time.strftime('%Y%m%d_%H%M%S')}.json"
     snap.write_text(json.dumps(tpl, ensure_ascii=False, indent=2), encoding="utf-8")
