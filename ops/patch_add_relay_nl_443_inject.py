@@ -41,6 +41,11 @@ from balancer_selectors import (  # noqa: E402
 from panel_client import PanelClient  # noqa: E402
 from patch_add_relay_nl_443_hosts import is_relay_nl_443  # noqa: E402
 from subscription_config_notify import after_template_patch  # noqa: E402
+from vpn_apply_guard import print_guardrail_banner, require_owner_approval  # noqa: E402
+from vpn_config_integrity import (  # noqa: E402
+    assert_already_applied,
+    verify_proxy_tags_within_slots,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
@@ -152,8 +157,12 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--skip-pre-verify", action="store_true")
+    ap.add_argument("--owner-approved", action="store_true",
+                    help="Required for --apply: explicit owner approval (host enable + template patch)")
     ap.add_argument("--template-uuid", default=site_urls.REMNA_TEMPLATE_UUID)
     args = ap.parse_args()
+
+    print_guardrail_banner("patch_add_relay_nl_443_inject", capacity_reducing=False)
 
     c = PanelClient(timeout=120)
     relay_uuids = _relay_nl_443_uuids(c)
@@ -164,11 +173,19 @@ def main() -> int:
 
     tpl = c.get_or_raise(f"/api/subscription-templates/{args.template_uuid}")["response"]
     doc = tpl["templateJson"]
+    hosts_by_uuid = {str(h.get("uuid")): h for h in c.get_or_raise("/api/hosts")["response"]}
 
+    # already-applied must PROVE injected + enabled, not just count/selector shape.
     if is_stealth_split_relay_nl_443_profile(doc):
-        print("OK: VPN-AUD-279 already applied (stealth + Intl relay-NL×6)")
-        print("VPN_AUD_279_OK")
-        return 0
+        applied = assert_already_applied(doc, relay_uuids, hosts_by_uuid)
+        if applied.ok:
+            print("OK: VPN-AUD-279 already applied (relay-NL UUIDs injected AND hosts enabled)")
+            print("VPN_AUD_279_OK")
+            return 0
+        print("WARN: selector shape matches but integrity check failed:")
+        for e in applied.errors:
+            print(f"  - {e}")
+        print("Proceeding to repair (will re-enable hosts after verified patch).")
 
     if not is_stealth_split_profile(doc):
         balancers = {b.get("tag"): b for b in (doc.get("routing") or {}).get("balancers") or []}
@@ -187,9 +204,7 @@ def main() -> int:
         if not _verify_gate("vpn_verify_gate.py", "VPN_VERIFY_GATE_OK", via_lv=True):
             return 1
 
-    for line in _enable_hosts(c, relay_uuids, apply=args.apply):
-        print(line)
-
+    # Step 1: dry-run validate (in-memory) — NO host enable yet.
     patched = copy.deepcopy(doc)
     changed, log = apply_template_patch(patched, relay_uuids)
     for line in log:
@@ -198,15 +213,32 @@ def main() -> int:
         print("VPN_AUD_279_OK (no template change)")
         return 0
 
+    # Step 2: integrity — selector tags must not over-reach inject slots.
+    overreach = verify_proxy_tags_within_slots(patched)
+    if overreach:
+        print("ABORT: selector/inject integrity failed:", file=sys.stderr)
+        for e in overreach:
+            print(f"  - {e}", file=sys.stderr)
+        return 1
+
     if not args.apply:
-        print("\nDry-run. Apply: python ops/patch_add_relay_nl_443_inject.py --apply")
+        print("\nDry-run. Apply: python ops/patch_add_relay_nl_443_inject.py --apply --owner-approved")
         return 0
 
+    # Apply gate: fail closed without explicit owner approval (enables hosts + patches template).
+    require_owner_approval(
+        "patch_add_relay_nl_443_inject",
+        owner_approved=args.owner_approved,
+        capacity_reducing=False,
+    )
+
+    # Step 3: snapshot BEFORE any mutation.
     snap = SNAPSHOT_DIR / f"template-before-relay-nl-443-inject-{time.strftime('%Y%m%d_%H%M%S')}.json"
     snap.parent.mkdir(parents=True, exist_ok=True)
     snap.write_text(json.dumps(tpl, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"snapshot: {snap.name}")
 
+    # Step 4: patch template/injectHosts FIRST.
     tpl["templateJson"] = patched
     minimal = {
         "uuid": tpl.get("uuid") or args.template_uuid,
@@ -218,9 +250,28 @@ def main() -> int:
     if code not in (200, 201, 204):
         print(f"FAIL PATCH HTTP {code}: {body!s}"[:400], file=sys.stderr)
         return 1
+
+    # Step 5: verify template/injectHosts/selector mapping landed before enabling hosts.
+    tpl_after = c.get_or_raise(f"/api/subscription-templates/{args.template_uuid}")["response"]
+    if not is_stealth_split_relay_nl_443_profile(tpl_after["templateJson"]):
+        print("FAIL: template patch did not land — NOT enabling hosts; restore snapshot",
+              file=sys.stderr)
+        return 1
+
+    # Step 6: enable hosts AFTER verified template patch.
+    for line in _enable_hosts(c, relay_uuids, apply=True):
+        print(line)
     after_template_patch("patch_add_relay_nl_443_inject", push_ams=True)
 
+    # Step 7: post-verify; prove enabled + injected; rollback signal on failure.
     print("=== post-verify (LV gate) ===")
+    hosts_after = {str(h.get("uuid")): h for h in c.get_or_raise("/api/hosts")["response"]}
+    applied = assert_already_applied(tpl_after["templateJson"], relay_uuids, hosts_after)
+    if not applied.ok:
+        print("FAIL: post-apply integrity failed — restore snapshot:", file=sys.stderr)
+        for e in applied.errors:
+            print(f"  - {e}", file=sys.stderr)
+        return 1
     if not _verify_gate("vpn_verify_gate.py", "VPN_VERIFY_GATE_OK", via_lv=True):
         print("FAIL: post-verify — restore snapshot", file=sys.stderr)
         return 1

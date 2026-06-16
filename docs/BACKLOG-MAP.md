@@ -106,12 +106,14 @@
 | **SUB-GEN-SELECTOR-APPLY-GATE-001** | **DONE** | [`ops/vpn_selector_apply_gate.py`](../ops/vpn_selector_apply_gate.py) — APPLY_ALLOWED gate; current state false |
 | **VPN-ARCH-CONSOLIDATION-001** | **DONE (partial)** | Patch-on-patch → guardrails; [`docs/VPN_PRODUCTION_GUARDRAILS.md`](VPN_PRODUCTION_GUARDRAILS.md) + [`docs/VPN_PATCH_SCRIPT_MIGRATION_MAP.md`](VPN_PATCH_SCRIPT_MIGRATION_MAP.md) |
 | **VPN-PRODUCTION-GUARDRAILS-001** | **DONE** | [`ops/vpn_production_guardrails.py`](../ops/vpn_production_guardrails.py) — central capacity validator; 21 tests |
-| **VPN-AUTO-CUTTING-GUARD-001** | **PARTIAL (2/4 cron done)** | Manual patchers gated; autotrim + injecthosts sync migrated; relay failover + lv failover remain |
+| **VPN-AUTO-CUTTING-GUARD-001** | **PARTIAL (3/4 cron done)** | Manual patchers gated; autotrim + injecthosts sync + relay_failover migrated; LV→NL failover pair remains |
+| **VPN-CONFIG-STABILITY-SCALABILITY-STEALTH-SPRINT-001** | **DONE (repo-side)** | [`docs/VPN-CONFIG-STABILITY-SCALABILITY-STEALTH-SPRINT-2026-06-17.md`](VPN-CONFIG-STABILITY-SCALABILITY-STEALTH-SPRINT-2026-06-17.md) — registry model + generator + integrity verifier + stealth guard; no prod apply |
 | **SCRIPT-MIGRATE-INJECTHOSTS-SYNC-001** | **DONE** | [`ops/sync_injecthosts_connected.py`](../ops/sync_injecthosts_connected.py) — guardrail-wired apply; 20 tests |
 | **VPN-CAPACITY-GATE-001** | **DONE** | Apply gate consumes guardrail; guardrail blockers surfaced |
 | **VPN-NODE-INVENTORY-SOT-001** | **DONE (examples)** / live schema OPEN | Lifecycle/capacity SoT vocabulary in registry example + template |
 | **SCRIPT-MIGRATE-LATENCY-AUTOTRIM-001** | **DONE** | [`ops/latency_selector_autotrim.py`](../ops/latency_selector_autotrim.py) — guardrail-wired apply; 18 tests |
-| **SCRIPT-MIGRATE-INJECTHOSTS-SYNC-001 / -RELAY-FAILOVER-001 / -NL-RELAY-PATCHERS-001** | **OPEN** | P0/P1 remaining cron auto-cutter migration |
+| **SCRIPT-MIGRATE-RELAY-FAILOVER-001** | **PARTIAL** | `relay_failover_template` migrated (8 tests); LV→NL failover pair OPEN |
+| **SCRIPT-MIGRATE-NL-RELAY-PATCHERS-001** | **OPEN** | P1 remaining cron auto-cutter / add-node patcher migration |
 | **NODE-RU-NL-BALANCER-CANARY-001** | **PARTIAL** | [`docs/NODE-RU-NL-BALANCER-CANARY-2026-06-17.md`](NODE-RU-NL-BALANCER-CANARY-2026-06-17.md) — SSH PASS; NL→staging; owner canary; live apply gated |
 | **NL-NODE-CANARY-ENABLE-001 / RU-NODE-CANARY-ENABLE-001** | **OPEN** | NL/relay-2 node-healthy; canary needs A2/A4 smoke + owner APPROVE PROD APPLY |
 | **CLIENT-STABILITY-OWNER-CANARY-PROFILE-001** | **DONE** | [`ops/generate_owner_canary_profile.py`](../ops/generate_owner_canary_profile.py) — owner-only `.local` plan |

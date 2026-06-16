@@ -98,9 +98,20 @@ future selector apply.
   any `--apply` calls `evaluate_inject_sync_apply_guard()`; transient node disconnect
   cannot shrink injectHosts without explicit mode + owner approval; UUID↔selector
   consistency required (count-only checks insufficient); MIN_INJECT floor enforced.
+- **`relay_failover_template.py` is migrated** (SCRIPT-MIGRATE-RELAY-FAILOVER-001):
+  `--apply` calls `evaluate_relay_failover_apply_guard()` and fails closed without
+  `--mode/--owner-approved/--rollback-snapshot`; trimming relay below the minimum
+  relay-IP floor is blocked even in `manual_emergency`.
+- **`patch_add_relay_nl_443_inject.py` is hardened** (VPN-PROXY-N-DECOUPLE-001):
+  template patch + verify happen **before** host enable; "already applied" must
+  prove UUIDs injected **and** hosts enabled (via `vpn_config_integrity`).
 - Remaining cron-managed reducers print a guardrail banner and are scheduled for
-  P0 migration (`relay_failover_template`, `lv_node_*_failover`).
-- New generators must consume the registry/inventory, not hardcoded IPs.
+  P0 migration (`lv_node_down_nl_failover`, `lv_node_failover_auto`).
+- New generators must consume the registry/inventory, not hardcoded IPs. Use
+  [`ops/vpn_registry_model.py`](../ops/vpn_registry_model.py) (node_id→outbound tag),
+  [`ops/generate_vpn_config_from_registry.py`](../ops/generate_vpn_config_from_registry.py)
+  (dry-run), and [`ops/vpn_config_integrity.py`](../ops/vpn_config_integrity.py)
+  (UUID↔host↔selector↔node_id; count-only rejected).
 
 ## 8. Capacity planning (inputs the inventory should carry)
 

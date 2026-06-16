@@ -43,12 +43,122 @@ from balancer_selectors import (  # noqa: E402
 from panel_client import PanelClient  # noqa: E402
 from subscription_config_notify import after_template_patch  # noqa: E402
 from vpn_apply_guard import print_guardrail_banner  # noqa: E402
+from vpn_production_guardrails import (  # noqa: E402
+    APPLY_MODES,
+    MODE_DRY_RUN,
+    MODE_SCALE,
+    CapacityState,
+    GuardrailConfig,
+    GuardrailResult,
+    capacity_state_from_nodes,
+    evaluate_guardrail,
+)
+from validate_vpn_node_registry import DEFAULT_REGISTRY  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SNAPSHOT_DIR = ROOT / ".secrets" / "snapshots"
 STATE_FILE = ROOT / ".secrets" / "relay_failover_state.json"
 
 _BALANCER_TAGS = ("Super_Balancer", "Intl_Direct")
+
+
+def _load_registry_nodes(path: Path = DEFAULT_REGISTRY) -> list[dict]:
+    try:
+        from vpn_node_selector import load_validated_registry
+
+        reg = load_validated_registry(path)
+        return [n for n in (reg.get("nodes") or []) if isinstance(n, dict)]
+    except Exception:  # noqa: BLE001 - registry optional; guardrail fails closed if missing
+        return []
+
+
+def _balancer_selectors(doc: dict) -> list[list[str]]:
+    balancers = {b.get("tag"): b for b in (doc.get("routing") or {}).get("balancers") or []}
+    out: list[list[str]] = []
+    for tag in _BALANCER_TAGS:
+        b = balancers.get(tag)
+        if b is not None:
+            out.append([str(x) for x in (b.get("selector") or [])])
+    return out
+
+
+def build_relay_failover_capacity_state(
+    registry_nodes: list[dict], doc: dict
+) -> CapacityState | None:
+    """Capacity state derived from the template's Super_Balancer/Intl_Direct selectors."""
+    if not registry_nodes:
+        return None
+    base = capacity_state_from_nodes(registry_nodes)
+    selectors = _balancer_selectors(doc)
+    all_tags = [t for sel in selectors for t in sel]
+    has_relay = any(t in RELAY_OUTBOUND_TAGS for t in all_tags)
+    relay_only = bool(all_tags) and all(t in RELAY_OUTBOUND_TAGS for t in all_tags)
+    total_paths = max((len(sel) for sel in selectors), default=0)
+    return CapacityState(
+        delivery_path_nodes=base.delivery_path_nodes,
+        production_capacity_nodes=base.production_capacity_nodes,
+        relay_ips=base.relay_ips if has_relay else 0,
+        geos=base.geos,
+        selector_total_paths=total_paths,
+        selector_relay_only=relay_only,
+        canary_node_ids=base.canary_node_ids,
+        unknown_status_in_capacity=base.unknown_status_in_capacity,
+    )
+
+
+def resolve_apply_mode(
+    *, applying: bool, mode_arg: str | None, reduces_capacity: bool
+) -> tuple[str, list[str]]:
+    if not applying:
+        return MODE_DRY_RUN, []
+    blockers: list[str] = []
+    if not mode_arg:
+        if reduces_capacity:
+            blockers.append(
+                "relay-failover: --apply with capacity reduction requires "
+                "--mode degrade|incident|manual_emergency"
+            )
+            return MODE_DRY_RUN, blockers
+        return MODE_SCALE, []
+    if mode_arg == MODE_DRY_RUN:
+        blockers.append("relay-failover: --apply cannot use --mode dry_run")
+        return MODE_DRY_RUN, blockers
+    if mode_arg not in APPLY_MODES:
+        blockers.append(f"relay-failover: unknown apply mode {mode_arg!r}")
+        return MODE_DRY_RUN, blockers
+    return mode_arg, blockers
+
+
+def evaluate_relay_failover_apply_guard(
+    *,
+    registry_nodes: list[dict],
+    before_doc: dict,
+    after_doc: dict,
+    mode: str,
+    owner_approved: bool,
+    rollback_snapshot_present: bool,
+    incident_ttl_minutes: int | None = None,
+    config: GuardrailConfig | None = None,
+) -> GuardrailResult:
+    before = build_relay_failover_capacity_state(registry_nodes, before_doc)
+    after = build_relay_failover_capacity_state(registry_nodes, after_doc)
+    if before is None or after is None:
+        return GuardrailResult(
+            allowed=False,
+            mode=mode,
+            is_live_apply=mode in APPLY_MODES,
+            blockers=["guardrail: cannot build before/after capacity state (registry missing)"],
+            summary="apply blocked: capacity state unavailable",
+        )
+    return evaluate_guardrail(
+        mode=mode,
+        before=before,
+        after=after,
+        owner_approved=owner_approved,
+        rollback_snapshot_present=rollback_snapshot_present,
+        incident_ttl_minutes=incident_ttl_minutes,
+        config=config,
+    )
 
 
 def _is_relay_only_gen47(doc: dict) -> bool:
@@ -200,6 +310,18 @@ def main() -> int:
     ap.add_argument("--fail-threshold", type=int, default=2)
     ap.add_argument("--ok-threshold", type=int, default=3)
     ap.add_argument("--template-uuid", default=site_urls.REMNA_TEMPLATE_UUID)
+    ap.add_argument(
+        "--mode",
+        default=None,
+        help="apply mode: scale|degrade|incident|manual_emergency (required for capacity reduction)",
+    )
+    ap.add_argument("--incident-ttl-minutes", type=int, default=None)
+    ap.add_argument("--owner-approved", action="store_true")
+    ap.add_argument(
+        "--rollback-snapshot",
+        action="store_true",
+        help="acknowledge a rollback snapshot will be written before mutation",
+    )
     args = ap.parse_args()
 
     print_guardrail_banner(
@@ -255,6 +377,7 @@ def main() -> int:
 
     c = PanelClient(timeout=120)
     tpl = c.get_or_raise(f"/api/subscription-templates/{args.template_uuid}")["response"]
+    before_doc = copy.deepcopy(tpl["templateJson"])
     doc = copy.deepcopy(tpl["templateJson"])
 
     if action == "trim":
@@ -272,9 +395,46 @@ def main() -> int:
 
     if not changed:
         return 0
+
+    # Central guardrail: stability must NOT silently cut capacity (VPN-AUTO-CUTTING-GUARD-001).
+    registry_nodes = _load_registry_nodes()
+    apply_mode, mode_blockers = resolve_apply_mode(
+        applying=args.apply,
+        mode_arg=args.mode,
+        reduces_capacity=(action == "trim"),
+    )
+    guard = evaluate_relay_failover_apply_guard(
+        registry_nodes=registry_nodes,
+        before_doc=before_doc,
+        after_doc=doc,
+        mode=apply_mode,
+        owner_approved=args.owner_approved,
+        rollback_snapshot_present=args.rollback_snapshot,
+        incident_ttl_minutes=args.incident_ttl_minutes,
+    )
+    for b in mode_blockers:
+        print(f"[guardrail] {b}")
+    print(f"[guardrail] {guard.summary}")
+    for b in guard.blockers:
+        print(f"[guardrail] BLOCKER: {b}")
+    for w in guard.warnings:
+        print(f"[guardrail] warning: {w}")
+
     if not args.apply:
-        print("\nDry-run. Apply: python ops/relay_failover_template.py --apply")
+        print(
+            "\nDry-run. Apply (capacity reduction) requires:\n"
+            "  python ops/relay_failover_template.py --apply --mode incident "
+            "--incident-ttl-minutes 60 --owner-approved --rollback-snapshot"
+        )
         return 0
+
+    if mode_blockers or not guard.allowed:
+        print(
+            "BLOCKED: relay-failover apply did not pass central guardrails "
+            "(fail-closed; no template mutation).",
+            file=sys.stderr,
+        )
+        return 2
 
     rc = _patch_template(c, tpl, doc, args.template_uuid)
     if rc == 0:
