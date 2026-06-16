@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Summarize mobile smoke logs into redacted launch evidence (CLIENT-STABILITY-MOBILE-LOG-SUMMARY-001).
+"""Summarize mobile smoke logs into redacted launch evidence (CLIENT-STABILITY-MOBILE-LOGS-001).
 
 Read-only local tool — never prints vless://, sub URLs, or raw UUIDs.
 
 Usage:
     python ops/analyze_mobile_smoke_logs.py \\
-        --access-log path/to/access_log.txt \\
-        --subscription-log path/to/subscription_log.txt \\
-        --adb-log path/to/logcat.txt \\
+        --access-log .secrets/diagnostics/access_log_mobile.txt \\
+        --subscription-log .secrets/diagnostics/subscription_log_mobile.txt \\
+        --owner-event "2026-06-16 19:32:00 phone slept" \\
         --out .local/mobile_smoke_log_summary.md
 """
 from __future__ import annotations
@@ -29,9 +29,24 @@ ACCESS_LINE = re.compile(
     r"^\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}\.\d+"
     r"\s+from\s+(?P<from_proto>tcp|udp):[\d.:]+"
     r"\s+accepted\s+(?P<dest_proto>tcp|udp):(?P<dest_ip>[\d.]+):(?P<dest_port>\d+)"
-    r"\s+\[socks\s+->\s+(?P<route>[^\]]+)\]",
+    r"\s+\[socks\s+(?:->|>>)\s+(?P<route>[^\]]+)\]",
     re.I,
 )
+
+ACCESS_TS_FMT = "%Y/%m/%d %H:%M:%S.%f"
+ERROR_KEYWORDS = (
+    "error",
+    "failed",
+    "timeout",
+    "reset",
+    "closed",
+    "disconnect",
+    "refused",
+    "rejected",
+)
+SLEEP_WAKE_PATTERN = re.compile(r"sleep|wake|lock|unlock|screen.?off|doze", re.I)
+GAP_THRESHOLDS = (5, 15, 30, 60)
+SUB_DAY_LINE = re.compile(r"^(\w{3}\s+\w{3}\s+\d{1,2})")
 
 REDACT_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"vless://[^\s\"']+", re.I), "vless://[REDACTED]"),
@@ -91,16 +106,27 @@ class AccessStats:
     block: int = 0
     class_proxy: Counter = field(default_factory=Counter)
     class_direct: Counter = field(default_factory=Counter)
+    dest_ports: Counter = field(default_factory=Counter)
+    error_keywords: Counter = field(default_factory=Counter)
+    timestamps: list[str] = field(default_factory=list)
+    gap_counts: dict[int, int] = field(default_factory=dict)
+    sleep_wake_markers: int = 0
     time_first: str | None = None
     time_last: str | None = None
 
     def ingest_line(self, line: str) -> None:
+        low = line.lower()
+        for kw in ERROR_KEYWORDS:
+            if kw in low:
+                self.error_keywords[kw] += 1
+        if SLEEP_WAKE_PATTERN.search(line):
+            self.sleep_wake_markers += 1
         m = ACCESS_LINE.match(line.strip())
         if not m:
-            self.parse_skipped += 1
             return
         self.total_accepted += 1
         ts = line.split()[0] + " " + line.split()[1]
+        self.timestamps.append(ts)
         if not self.time_first:
             self.time_first = ts
         self.time_last = ts
@@ -111,6 +137,7 @@ class AccessStats:
             self.udp += 1
         route = m.group("route").strip()
         dest_ip = m.group("dest_ip")
+        self.dest_ports[m.group("dest_port")] += 1
         ip_cls = _ip_class(dest_ip)
         if route == "direct":
             self.direct += 1
@@ -123,34 +150,96 @@ class AccessStats:
             if ip_cls:
                 self.class_proxy[ip_cls] += 1
 
+    def finalize(self) -> None:
+        self.gap_counts = compute_gap_counts(self.timestamps)
+
 
 @dataclass
 class SubscriptionStats:
+    total_lines: int = 0
     server_response_200: int = 0
     unknown_content_type: int = 0
+    import_count_zero: int = 0
     append_custom_ok: int = 0
+    append_custom_bender: int = 0
+    append_custom_safe: int = 0
+    append_custom_count5: int = 0
     sub_updated_ok: int = 0
+    sub_bender_updated: int = 0
     servers_one: int = 0
+    servers_zero: int = 0
+    google_file_failed: int = 0
+    happ_file_failed: int = 0
+    required_value_null: int = 0
     routing_file_failed: int = 0
+    per_day: Counter = field(default_factory=Counter)
+    jun16_events: list[str] = field(default_factory=list)
+    sleep_wake_markers: int = 0
+    date_first: str | None = None
+    date_last: str | None = None
     last_update_ok_line: str | None = None
     last_server_200_line: str | None = None
     import_verdict: str = "unknown"
 
-    def ingest_line(self, line: str) -> None:
+    def ingest_line(self, line: str, *, context: str = "") -> None:
+        self.total_lines += 1
+        if SLEEP_WAKE_PATTERN.search(line):
+            self.sleep_wake_markers += 1
+        day_m = SUB_DAY_LINE.match(line.strip())
+        if day_m:
+            day = day_m.group(1)
+            self.per_day[day] += 1
+            if not self.date_first:
+                self.date_first = day
+            self.date_last = day
         if "Server response: 200" in line:
             self.server_response_200 += 1
-            self.last_server_200_line = line.strip()[:120]
+            self.last_server_200_line = redact(line.strip()[:120])
         if "UnknownContentType" in line:
             self.unknown_content_type += 1
+        if "ImportResult(count=0" in line:
+            self.import_count_zero += 1
         if re.search(r"Append custom result.*count=1", line):
             self.append_custom_ok += 1
-            self.last_update_ok_line = line.strip()[:120]
+            self.last_update_ok_line = redact(line.strip()[:120])
+            if "BenderVPN" in context:
+                self.append_custom_bender += 1
+            elif "SafeVPN" in context:
+                self.append_custom_safe += 1
+        if re.search(r"Append custom result.*count=5", line):
+            self.append_custom_count5 += 1
+            if "SafeVPN" in context:
+                self.append_custom_safe += 1
         if "Sub BenderVPN successfully updated" in line:
             self.sub_updated_ok += 1
+            self.sub_bender_updated += 1
         if re.search(r"servers:\s*1 servers", line):
             self.servers_one += 1
-        if "Happ file failed" in line or "Google file failed" in line:
+        if re.search(r"servers:\s*0 servers", line):
+            self.servers_zero += 1
+        if "Google file failed" in line:
+            self.google_file_failed += 1
             self.routing_file_failed += 1
+        if "Happ file failed" in line:
+            self.happ_file_failed += 1
+            self.routing_file_failed += 1
+        if "Required value was null" in line:
+            self.required_value_null += 1
+        if "Jun 16" in line and any(
+            k in line
+            for k in (
+                "BenderVPN",
+                "SafeVPN",
+                "UnknownContentType",
+                "Append custom",
+                "Server response",
+                "0 servers",
+                "Required value",
+                "Google file",
+                "Happ file",
+            )
+        ):
+            self.jun16_events.append(redact(line.strip()[:140]))
 
     def finalize(self) -> None:
         if self.append_custom_ok > 0 or self.sub_updated_ok > 0:
@@ -192,18 +281,39 @@ class AdbStats:
             self.classification = "high_frequency_review_if_apps_fail"
 
 
+def compute_gap_counts(timestamps: list[str]) -> dict[int, int]:
+    counts = {t: 0 for t in GAP_THRESHOLDS}
+    if len(timestamps) < 2:
+        return counts
+    prev = datetime.strptime(timestamps[0], ACCESS_TS_FMT)
+    for ts in timestamps[1:]:
+        cur = datetime.strptime(ts, ACCESS_TS_FMT)
+        delta = (cur - prev).total_seconds()
+        for threshold in GAP_THRESHOLDS:
+            if delta >= threshold:
+                counts[threshold] += 1
+        prev = cur
+    return counts
+
+
 def parse_access_log(text: str) -> AccessStats:
     stats = AccessStats()
     for line in text.splitlines():
-        if "accepted" in line and "[socks ->" in line:
+        if "accepted" in line and "[socks" in line:
+            before = stats.total_accepted
             stats.ingest_line(line)
+            if stats.total_accepted == before:
+                stats.parse_skipped += 1
+    stats.finalize()
     return stats
 
 
 def parse_subscription_log(text: str) -> SubscriptionStats:
     stats = SubscriptionStats()
-    for line in text.splitlines():
-        stats.ingest_line(line)
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        context = " ".join(lines[max(0, i - 5) : i + 2])
+        stats.ingest_line(line, context=context)
     stats.finalize()
     return stats
 
@@ -214,6 +324,161 @@ def parse_adb_log(text: str) -> AdbStats:
         stats.ingest_line(line)
     stats.finalize()
     return stats
+
+
+def classify_root_cause_tracks(
+    access: AccessStats | None,
+    sub: SubscriptionStats | None,
+) -> list[dict[str, str]]:
+    tracks: list[dict[str, str]] = []
+
+    if access and access.total_accepted > 0 and not access.error_keywords:
+        tracks.append(
+            {
+                "track": "A — Active traffic path OK",
+                "verdict": "CONFIRMED",
+                "evidence": (
+                    f"{access.total_accepted} accepted flows; "
+                    f"multi-proxy routes; no access-log error keywords"
+                ),
+                "next_test": "Owner sleep/wake timed test with lock/unlock notes",
+                "prod_change": "NO",
+            }
+        )
+    elif access and access.total_accepted > 0:
+        tracks.append(
+            {
+                "track": "A — Active traffic path OK",
+                "verdict": "LIKELY",
+                "evidence": f"{access.total_accepted} accepted flows with some error keywords",
+                "next_test": "Correlate error keywords with user-visible failures",
+                "prod_change": "NO",
+            }
+        )
+    else:
+        tracks.append(
+            {
+                "track": "A — Active traffic path OK",
+                "verdict": "NOT PROVEN",
+                "evidence": "No accepted flows parsed",
+                "next_test": "Export access_log during active use",
+                "prod_change": "NO",
+            }
+        )
+
+    tracks.append(
+        {
+            "track": "B — Mobile sleep/wake reconnect",
+            "verdict": "NOT PROVEN",
+            "evidence": (
+                "Owner report of slow post-sleep reconnect; "
+                f"access log sleep/wake markers={access.sleep_wake_markers if access else 0}"
+            ),
+            "next_test": "Controlled lock/unlock matrix with exact timestamps",
+            "prod_change": "NO",
+        }
+    )
+
+    if sub and (
+        sub.unknown_content_type > 0
+        or sub.google_file_failed > 0
+        or sub.happ_file_failed > 0
+        or sub.required_value_null > 0
+    ):
+        sub_verdict = "LIKELY" if sub.append_custom_ok > 0 else "POSSIBLE"
+        tracks.append(
+            {
+                "track": "C — Subscription/provider import/update",
+                "verdict": sub_verdict,
+                "evidence": (
+                    f"UnknownContentType×{sub.unknown_content_type}; "
+                    f"Google/Happ file failed×{sub.google_file_failed}/{sub.happ_file_failed}; "
+                    f"Required value null×{sub.required_value_null}; "
+                    f"Append custom Bender×{sub.append_custom_bender}"
+                ),
+                "next_test": "CLIENT-SUBSCRIPTION-IMPORT-HAPP-001 — correlate import errors with reconnect",
+                "prod_change": "NO",
+            }
+        )
+    else:
+        tracks.append(
+            {
+                "track": "C — Subscription/provider import/update",
+                "verdict": "NOT SUPPORTED",
+                "evidence": "No subscription import noise in log",
+                "next_test": "—",
+                "prod_change": "NO",
+            }
+        )
+
+    if access and sum(access.proxy_routes.values()) >= 3:
+        tracks.append(
+            {
+                "track": "D — Multi-proxy selector path",
+                "verdict": "POSSIBLE",
+                "evidence": (
+                    f"Traffic spread across {len(access.proxy_routes)} proxy tags "
+                    f"(not relay2-only)"
+                ),
+                "next_test": "CLIENT-STABILITY-MOBILE-PROFILE-COMPARISON-001 if instability persists",
+                "prod_change": "NO",
+            }
+        )
+
+    tracks.append(
+        {
+            "track": "E — Server-side endpoint outage",
+            "verdict": "NOT SUPPORTED",
+            "evidence": "No dial/HTTP failure pattern in access log",
+            "next_test": "Only if future logs show failed dials",
+            "prod_change": "NO",
+        }
+    )
+
+    tracks.append(
+        {
+            "track": "F — App/OS battery/background network",
+            "verdict": "POSSIBLE",
+            "evidence": "Owner sleep/wake report; needs phone settings + timed test",
+            "next_test": "Disable battery optimization for Happ; repeat lock test",
+            "prod_change": "NO",
+        }
+    )
+
+    tracks.append(
+        {
+            "track": "G — Insufficient evidence for sleep/wake root cause",
+            "verdict": "CONFIRMED",
+            "evidence": "Logs alone cannot prove post-sleep tunnel failure without owner timestamps",
+            "next_test": "Owner event correlation during next export",
+            "prod_change": "NO",
+        }
+    )
+    return tracks
+
+
+def correlate_owner_events(
+    owner_events: list[str],
+    access: AccessStats | None,
+    sub: SubscriptionStats | None,
+) -> list[str]:
+    notes: list[str] = []
+    if not owner_events:
+        notes.append("_No --owner-event timestamps provided._")
+        return notes
+    for ev in owner_events:
+        notes.append(f"- Owner event: `{redact(ev)}`")
+        if access and access.time_first and access.time_last:
+            notes.append(
+                f"  Access log window: {access.time_first} → {access.time_last} "
+                "(check overlap manually — access uses YYYY/MM/DD format)"
+            )
+        if sub and sub.jun16_events:
+            notes.append(f"  Jun 16 subscription events in log: {len(sub.jun16_events)} lines captured")
+    notes.append(
+        "_Gap analysis in access log may reflect idle/sleep but cannot classify without owner lock/unlock times._"
+    )
+    return notes
 
 
 def recommend_verdict_support(
@@ -266,15 +531,17 @@ def build_markdown(
     sub: SubscriptionStats | None,
     adb: AdbStats | None,
     sources: dict[str, str],
+    owner_events: list[str] | None = None,
 ) -> str:
     verdict = recommend_verdict_support(access, sub, adb)
+    tracks = classify_root_cause_tracks(access, sub)
     lines: list[str] = [
         "# Mobile smoke log summary (redacted)",
         "",
         f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} local",
-        "**Task:** CLIENT-STABILITY-MOBILE-LOG-SUMMARY-001",
+        "**Task:** CLIENT-STABILITY-MOBILE-LOGS-001",
         "",
-        "> Redacted summary — raw logs not included. Mobile smoke PASS remains **PENDING** without owner app/speed results.",
+        "> Redacted summary — raw logs not included. Mobile smoke PASS remains **PENDING** without owner app/speed/sleep-wake results.",
         "",
         "## Summary",
         "",
@@ -293,9 +560,10 @@ def build_markdown(
 
     if sub:
         lines.append(
-            f"- **Subscription log:** HTTP 200×{sub.server_response_200}, "
-            f"UnknownContentType×{sub.unknown_content_type}, "
-            f"Append custom OK×{sub.append_custom_ok}, import={sub.import_verdict}"
+            f"- **Subscription log:** {sub.total_lines} lines ({sub.date_first} → {sub.date_last}); "
+            f"HTTP 200×{sub.server_response_200}, UnknownContentType×{sub.unknown_content_type}, "
+            f"Append custom Bender×{sub.append_custom_bender}, Safe×{sub.append_custom_safe}, "
+            f"import={sub.import_verdict}"
         )
     else:
         lines.append("- **Subscription log:** not provided")
@@ -346,6 +614,26 @@ def build_markdown(
         relay1_tags = sum(n for t, n in access.proxy_routes.items() if t in ("proxy", "proxy-2", "proxy-3"))
         lines.append("")
         lines.append(f"- Relay pool usage (tag names only): relay1-class tags≈{relay1_tags}, relay2-class tags≈{relay2_tags}")
+        if access.gap_counts:
+            lines.extend(["", "### Flow gaps (inter-accepted)", ""])
+            lines.append("| Threshold | Count |")
+            lines.append("|-----------|------:|")
+            for th in GAP_THRESHOLDS:
+                lines.append(f"| ≥{th}s | {access.gap_counts.get(th, 0)} |")
+            lines.append("")
+            lines.append(
+                "_Gaps may be normal idle or phone sleep — only owner lock/unlock timestamps can classify._"
+            )
+        if access.dest_ports:
+            lines.extend(["", "### Top destination ports", ""])
+            for port, n in access.dest_ports.most_common(8):
+                lines.append(f"- `{port}`: {n}")
+        if access.error_keywords:
+            lines.extend(["", "### Access log error keywords", ""])
+            lines.append(", ".join(f"{k}={v}" for k, v in access.error_keywords.most_common()))
+        else:
+            lines.extend(["", "### Access log error keywords", "", "_None matched._"])
+        lines.append(f"- Sleep/wake markers in access log: **{access.sleep_wake_markers}**")
     else:
         lines.append("_No routing evidence._")
 
@@ -355,10 +643,29 @@ def build_markdown(
         lines.append(f"|--------|------:|")
         lines.append(f"| Server response 200 | {sub.server_response_200} |")
         lines.append(f"| UnknownContentType (batch) | {sub.unknown_content_type} |")
-        lines.append(f"| Append custom count=1 | {sub.append_custom_ok} |")
-        lines.append(f"| Sub successfully updated | {sub.sub_updated_ok} |")
+        lines.append(f"| ImportResult count=0 | {sub.import_count_zero} |")
+        lines.append(f"| Append custom count=1 (total) | {sub.append_custom_ok} |")
+        lines.append(f"| Append custom BenderVPN | {sub.append_custom_bender} |")
+        lines.append(f"| Append custom SafeVPN | {sub.append_custom_safe} |")
+        lines.append(f"| Append custom count=5 | {sub.append_custom_count5} |")
+        lines.append(f"| Sub BenderVPN successfully updated | {sub.sub_bender_updated} |")
         lines.append(f"| «1 servers» UI count | {sub.servers_one} |")
-        lines.append(f"| Routing/geofile fetch failed | {sub.routing_file_failed} |")
+        lines.append(f"| «0 servers» UI count | {sub.servers_zero} |")
+        lines.append(f"| Google file failed | {sub.google_file_failed} |")
+        lines.append(f"| Happ file failed | {sub.happ_file_failed} |")
+        lines.append(f"| Required value was null | {sub.required_value_null} |")
+        lines.append(f"| Routing/geofile fetch failed (total) | {sub.routing_file_failed} |")
+        if sub.per_day:
+            lines.extend(["", "### Per-day line counts (top 8)", ""])
+            for day, n in sub.per_day.most_common(8):
+                lines.append(f"- {day}: {n}")
+        if sub.jun16_events:
+            lines.extend(["", "### Jun 16 subscription timeline (redacted snippets)", ""])
+            for ev in sub.jun16_events[:15]:
+                lines.append(f"- {ev}")
+            if len(sub.jun16_events) > 15:
+                lines.append(f"- … and {len(sub.jun16_events) - 15} more")
+        lines.append(f"- Sleep/wake markers in subscription log: **{sub.sleep_wake_markers}**")
         lines.append("")
         if sub.import_verdict == "parse_noise_but_custom_import_ok":
             lines.append(
@@ -384,6 +691,18 @@ def build_markdown(
             lines.append("**Classification:** Elevated count — correlate with user-visible failures.")
     else:
         lines.append("_No APPDETECT snippet or not provided._")
+
+    lines.extend(["", "## Root-cause classification", ""])
+    lines.append("| Track | Verdict | Next test | Prod change? |")
+    lines.append("|-------|---------|-----------|--------------|")
+    for t in tracks:
+        lines.append(
+            f"| {t['track']} | **{t['verdict']}** | {t['next_test']} | {t['prod_change']} |"
+        )
+
+    lines.extend(["", "## Owner event correlation", ""])
+    for note in correlate_owner_events(owner_events or [], access, sub):
+        lines.append(note)
 
     lines.extend(
         [
@@ -434,6 +753,7 @@ def analyze(
     access_path: Path | None = None,
     subscription_path: Path | None = None,
     adb_path: Path | None = None,
+    owner_events: list[str] | None = None,
 ) -> tuple[str, dict[str, Any]]:
     sources: dict[str, str] = {}
     access = sub = adb = None
@@ -448,20 +768,34 @@ def analyze(
         sources["adb_log"] = str(adb_path)
         adb = parse_adb_log(adb_path.read_text(encoding="utf-8", errors="replace"))
 
-    md = build_markdown(access, sub, adb, sources)
+    md = build_markdown(access, sub, adb, sources, owner_events=owner_events)
     summary = recommend_verdict_support(access, sub, adb)
+    summary["classification_tracks"] = classify_root_cause_tracks(access, sub)
     if access:
         summary["access_total"] = access.total_accepted
         summary["proxy_total"] = sum(access.proxy_routes.values())
         summary["direct_total"] = access.direct
+        summary["gap_counts"] = access.gap_counts
+        summary["error_keywords"] = dict(access.error_keywords)
+    if sub:
+        summary["subscription_unknown_content_type"] = sub.unknown_content_type
+        summary["subscription_append_bender"] = sub.append_custom_bender
+        summary["subscription_required_value_null"] = sub.required_value_null
     return md, summary
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--access-log", type=Path, help="Xray/Happ access_log.txt")
-    ap.add_argument("--subscription-log", type=Path, help="Happ subscription_log.txt")
+    ap.add_argument("--access-log", "--access", dest="access_log", type=Path, help="Xray/Happ access_log.txt")
+    ap.add_argument(
+        "--subscription-log",
+        "--subscription",
+        dest="subscription_log",
+        type=Path,
+        help="Happ subscription_log.txt",
+    )
     ap.add_argument("--adb-log", type=Path, help="logcat snippet with tun2socks lines")
+    ap.add_argument("--owner-event", action="append", default=[], help="Owner timestamp note for correlation")
     ap.add_argument("--out", type=Path, default=Path(".local/mobile_smoke_log_summary.md"))
     ap.add_argument("--json", action="store_true", help="print summary JSON to stdout")
     args = ap.parse_args()
@@ -474,6 +808,7 @@ def main() -> int:
         access_path=args.access_log,
         subscription_path=args.subscription_log,
         adb_path=args.adb_log,
+        owner_events=args.owner_event,
     )
 
     if args.out:

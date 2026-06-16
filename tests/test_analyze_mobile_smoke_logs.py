@@ -13,6 +13,8 @@ if str(_OPS) not in sys.path:
 from analyze_mobile_smoke_logs import (  # noqa: E402
     analyze,
     build_markdown,
+    classify_root_cause_tracks,
+    compute_gap_counts,
     parse_access_log,
     parse_adb_log,
     parse_subscription_log,
@@ -31,9 +33,24 @@ ACCESS_SAMPLE = """\
 SUB_SAMPLE = """\
 Sat Jun 13 19:35:55 GMT+03:00 2026 Server response: 200 7351 symbols
 Sat Jun 13 19:35:55 GMT+03:00 2026 Batch config result 1: ImportResult(count=0, status=null, lastParseError=UnknownContentType)
+Sat Jun 13 19:35:55 GMT+03:00 2026 Fetch provider file error: Required value was null
+Sat Jun 13 19:35:55 GMT+03:00 2026 Google file failed
+Sat Jun 13 19:35:55 GMT+03:00 2026 Happ file failed
+Sat Jun 13 19:35:55 GMT+03:00 2026 Sub BenderVPN update started
 Sat Jun 13 19:35:55 GMT+03:00 2026 Append custom result (use case): ImportResult(count=1, status=null, lastParseError=null)
 Sat Jun 13 19:35:55 GMT+03:00 2026 Sub BenderVPN successfully updated (1)
 Sat Jun 13 19:35:55 GMT+03:00 2026 Sub BenderVPN servers: 1 servers
+"""
+
+SUB_SAFE_SAMPLE = """\
+Sat Jun 16 10:00:00 GMT+03:00 2026 Sub SafeVPN update started
+Sat Jun 16 10:00:01 GMT+03:00 2026 Append custom result: ImportResult(count=5, status=null, lastParseError=null)
+"""
+
+GAP_SAMPLE = """\
+2026/06/16 19:00:00.000000 from tcp:127.0.0.1:1000 accepted tcp:8.8.8.8:443 [socks >> proxy]
+2026/06/16 19:00:06.000000 from tcp:127.0.0.1:1001 accepted tcp:8.8.8.8:443 [socks >> proxy-2]
+2026/06/16 19:00:25.000000 from tcp:127.0.0.1:1002 accepted tcp:8.8.8.8:443 [socks >> proxy-3]
 """
 
 ADB_SAMPLE = """\
@@ -58,7 +75,39 @@ def test_subscription_unknown_content_type_with_append_ok():
     assert stats.server_response_200 == 1
     assert stats.unknown_content_type == 1
     assert stats.append_custom_ok == 1
+    assert stats.append_custom_bender == 1
+    assert stats.required_value_null == 1
+    assert stats.google_file_failed == 1
+    assert stats.happ_file_failed == 1
     assert stats.import_verdict == "parse_noise_but_custom_import_ok"
+
+
+def test_subscription_safevpn_append_count5():
+    stats = parse_subscription_log(SUB_SAFE_SAMPLE)
+    assert stats.append_custom_count5 == 1
+    assert stats.append_custom_safe == 1
+
+
+def test_access_log_double_arrow_route():
+    line = "2026/06/16 19:00:00.000000 from tcp:127.0.0.1:1000 accepted tcp:8.8.8.8:443 [socks >> proxy-4]"
+    stats = parse_access_log(line)
+    assert stats.total_accepted == 1
+    assert stats.proxy_routes["proxy-4"] == 1
+
+
+def test_gap_detection():
+    stats = parse_access_log(GAP_SAMPLE)
+    assert stats.gap_counts[5] == 2
+    assert stats.gap_counts[15] == 1
+    assert stats.gap_counts[30] == 0
+
+
+def test_classification_tracks_present():
+    access = parse_access_log(ACCESS_SAMPLE)
+    sub = parse_subscription_log(SUB_SAMPLE)
+    tracks = classify_root_cause_tracks(access, sub)
+    assert any("sleep/wake" in t["track"].lower() for t in tracks)
+    assert any(t["verdict"] == "CONFIRMED" for t in tracks)
 
 
 def test_adb_appdetect_warnings():

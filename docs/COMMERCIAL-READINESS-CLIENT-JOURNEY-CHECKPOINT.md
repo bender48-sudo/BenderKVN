@@ -80,7 +80,7 @@ Legend: **DONE** = deployed + evidence · **PARTIAL** = works with gaps · **BLO
 | **Happ relay2 lab** | Owner/support isolation | **PASS** (repeat active) + **SOFT PASS** (report(7)) | report(7)+(8); 0 dial/open storm; repeat ~59 min post-wake | Sleep/wake **OPEN**; not prod default; **eligible** for controlled selector design | Import local lab JSON; **no refresh** on lab row |
 | **v2rayN fallback** | Windows support alternate | **PROTOCOL READY** | `9c3400e`; `probe_fallback_client_sub.py` | Not Auto-equivalent; no stealth split; **owner smoke PENDING** (CLIENT-SMOKE-003) | Give existing sub URL; warn RU sites may proxy |
 | **Karing exploratory** | Second alternate | **EXPLORATORY** | Client audit | LV-direct sing-box; not launch default | Only if v2rayN insufficient |
-| **Happ mobile** | **Launch primary mobile** | **PENDING** | Plan `b85df09`; logs support connectivity class | Speed/lock/LTE **PASS not recorded**; same 6-way pool as desktop | Run [`CLIENT-STABILITY-MOBILE-SMOKE.md`](CLIENT-STABILITY-MOBILE-SMOKE.md) |
+| **Happ mobile** | **Launch primary mobile** | **PENDING** | Plan `b85df09`; [logs 2026-06-16](CLIENT-STABILITY-MOBILE-LOGS-2026-06-16.md) — connectivity class OK | Speed/lock/LTE **PASS not recorded**; sleep/wake OPEN | MOBILE-SLEEPWAKE-001 then [smoke doc](CLIENT-STABILITY-MOBILE-SMOKE.md) |
 | **Karing mobile exploratory** | Diagnostic only | **NOT LAUNCH** | Stripped emit | No Auto parity | Do not recommend publicly |
 
 ---
@@ -248,7 +248,7 @@ Synced from [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-20
 | VPN profile (Candidate D) | **PASS** | APPLY Candidate D; probes | — | Continue probe cadence |
 | Happ DirectIp / routing | **PASS** (prod) | `0258d00`, `0635067`, owner context | Do not rollback | Guard on change |
 | Desktop Happ commercial | **OPEN** | report(7)+(8) relay2 active; gate OPEN | Sleep/wake; normal Bender soak | PROD-SELECTOR-CONTROLLED-001 (owner approval) |
-| Mobile Happ commercial | **PENDING** | `b85df09` | No PASS recorded | MOBILE-SMOKE-001 |
+| Mobile Happ commercial | **PENDING** | `b85df09`; [MOBILE-LOGS-2026-06-16](CLIENT-STABILITY-MOBILE-LOGS-2026-06-16.md) — 766 accepted flows; sleep/wake **NOT PROVEN** | No PASS recorded; owner sleep/wake test OPEN | MOBILE-SLEEPWAKE-001 → MOBILE-SMOKE-001 |
 | Windows fallback | **PROTOCOL READY** | `9c3400e` | Owner smoke pending | CLIENT-SMOKE-003 |
 | Capacity / growth | **NO-GO** | 1 LV exit; NL not Auto | <2 delivery nodes | NL A2/A4 after gates |
 | Billing automated paid | **NO-GO** | BILL-001; CodeRabbit triage | **BILL-TERMS-GUARD-001**, BILL-UT, BILL-SMOKE | Items 1–5 in §11 |

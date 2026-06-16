@@ -391,3 +391,15 @@ python ops/analyze_mobile_smoke_logs.py `
 ```powershell
 python -m pytest tests/test_analyze_mobile_smoke_logs.py -q
 ```
+
+---
+
+## 16. Sleep/wake diagnosis — CLIENT-STABILITY-MOBILE-SLEEPWAKE-001
+
+**Evidence doc:** [CLIENT-STABILITY-MOBILE-LOGS-2026-06-16.md](CLIENT-STABILITY-MOBILE-LOGS-2026-06-16.md)
+
+Owner logs (2026-06-16) show **active multi-proxy traffic** but **do not prove** post-sleep reconnect failure. Run §7 timed lock/unlock matrix there before any prod/profile change.
+
+**Reconnect bands:** <10 s PASS · 10–30 s SOFT · 30–120 s WARN · >120 s FAIL.
+
+Pass `--owner-event` to the log analyzer when exporting logs after a failed wake test.
