@@ -131,6 +131,9 @@ Source: owner decision — stop isolated client smoke loops; prepare **backend-c
 | — | **SCRIPT-MIGRATE-INJECTHOSTS-SYNC-001** | P0 | OPEN | OPEN | Registry-driven injectHosts sync with host-count floor |
 | — | **SCRIPT-MIGRATE-RELAY-FAILOVER-001** | P0 | OPEN | OPEN | Failover → incident mode (TTL+rollback+approval) |
 | — | **SCRIPT-MIGRATE-NL-RELAY-PATCHERS-001** | P1 | OPEN | OPEN | Replace hardcoded add-node patchers with registry onboarding |
+| — | **NODE-RU-NL-BALANCER-CANARY-001** | P0 | **PARTIAL** | **PARTIAL** | [`docs/NODE-RU-NL-BALANCER-CANARY-2026-06-17.md`](NODE-RU-NL-BALANCER-CANARY-2026-06-17.md) — SSH inventory PASS; NL `disabled→staging`; owner canary generated; live apply owner-gated |
+| — | **NL-NODE-CANARY-ENABLE-001** | P0 | OPEN | OPEN | NL node-level PASS; needs A2/A4 smoke + owner APPROVE PROD APPLY before `staging→canary` |
+| — | **RU-NODE-CANARY-ENABLE-001** | P1 | OPEN | OPEN | ru-relay-2 reachable/healthy candidate; relay-1 stays suspect; canary needs owner approval |
 | — | **ROLLOUT-CANARY-DRAIN-001** | P1 | **DONE** (in runbook + plan) | OPEN | Safe rollout |
 | — | **MONITOR-CAPACITY-001** | P1 | OPEN | OPEN | Capacity dashboard/alerts |
 

@@ -111,6 +111,8 @@
 | **VPN-NODE-INVENTORY-SOT-001** | **DONE (examples)** / live schema OPEN | Lifecycle/capacity SoT vocabulary in registry example + template |
 | **SCRIPT-MIGRATE-LATENCY-AUTOTRIM-001** | **DONE** | [`ops/latency_selector_autotrim.py`](../ops/latency_selector_autotrim.py) — guardrail-wired apply; 18 tests |
 | **SCRIPT-MIGRATE-INJECTHOSTS-SYNC-001 / -RELAY-FAILOVER-001 / -NL-RELAY-PATCHERS-001** | **OPEN** | P0/P1 remaining cron auto-cutter migration |
+| **NODE-RU-NL-BALANCER-CANARY-001** | **PARTIAL** | [`docs/NODE-RU-NL-BALANCER-CANARY-2026-06-17.md`](NODE-RU-NL-BALANCER-CANARY-2026-06-17.md) — SSH PASS; NL→staging; owner canary; live apply gated |
+| **NL-NODE-CANARY-ENABLE-001 / RU-NODE-CANARY-ENABLE-001** | **OPEN** | NL/relay-2 node-healthy; canary needs A2/A4 smoke + owner APPROVE PROD APPLY |
 | **CLIENT-STABILITY-OWNER-CANARY-PROFILE-001** | **DONE** | [`ops/generate_owner_canary_profile.py`](../ops/generate_owner_canary_profile.py) — owner-only `.local` plan |
 | **RELAY1-DRAIN-OR-RETEST-001** | **DECISION READY** | [`RELAY1-DRAIN-OR-RETEST-DECISION.md`](RELAY1-DRAIN-OR-RETEST-DECISION.md) — owner go/no-go |
 | **NODE-ONBOARD-NEW-PROD-PATH-001** | **READY FOR OWNER ACTION** | [`VPN-NODE-PURCHASE-REQUEST.md`](VPN-NODE-PURCHASE-REQUEST.md) + onboarding execution |
