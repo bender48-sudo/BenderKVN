@@ -103,3 +103,64 @@ def test_fullday_markdown_no_secrets():
 def test_fullday_json_serializable():
     _, summary = analyze_fullday(day="2026-06-16", access_text=ACCESS_DAY, subscription_text=SUB_DAY)
     json.dumps(summary)
+
+
+def test_partial_coverage_warning_validate():
+    from mobile_log_fullday import validate_export_files
+
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        acc = root / "access.txt"
+        sub = root / "sub.txt"
+        acc.write_text(ACCESS_DAY, encoding="utf-8")
+        sub.write_text(SUB_DAY, encoding="utf-8")
+        v = validate_export_files(day="2026-06-16", access_path=acc, subscription_path=sub)
+        assert v["access"]["present"]
+        assert v["coverage"]["access_percent_day"] < 5
+        assert v["coverage"]["can_conclude_full_day_health"] is False
+        assert any("partial" in w.lower() or "CANNOT" in w for w in v["coverage"]["warnings"])
+
+
+def test_missing_access_warning():
+    from mobile_log_fullday import validate_export_files
+
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        sub = Path(td) / "sub.txt"
+        sub.write_text(SUB_DAY, encoding="utf-8")
+        v = validate_export_files(day="2026-06-16", subscription_path=sub)
+        assert "Missing access log" in " ".join(v["issues"])
+
+
+def test_owner_note_parsing():
+    from mobile_log_fullday import parse_owner_notes
+
+    notes = parse_owner_notes(["2026-06-16 14:05 unstable"])
+    assert notes[0]["raw"]
+    assert "vless://" not in notes[0]["raw"]
+
+
+def test_secret_scan_no_values_printed():
+    from mobile_log_fullday import scan_text_for_secrets
+
+    dirty = "see vless://secret@1.2.3.4:443 and done"
+    found = scan_text_for_secrets(dirty)
+    assert "vless_uri" in found
+    assert "secret" not in str(found)
+
+
+def test_observability_report_no_secrets():
+    from mobile_log_fullday import build_observability_report, validate_export_files
+
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        acc = Path(td) / "a.txt"
+        acc.write_text(ACCESS_DAY, encoding="utf-8")
+        v = validate_export_files(day="2026-06-16", access_path=acc)
+        md = build_observability_report(day="2026-06-16", validation=v)
+        assert "vless://" not in md
+        assert "OBSERVABILITY" in md or "observability" in md.lower()

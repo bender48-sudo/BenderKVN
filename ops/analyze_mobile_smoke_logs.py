@@ -796,7 +796,9 @@ def main() -> int:
     )
     ap.add_argument("--adb-log", type=Path, help="logcat snippet with tun2socks lines")
     ap.add_argument("--owner-event", action="append", default=[], help="Owner timestamp note for correlation")
+    ap.add_argument("--owner-note", action="append", default=[], help="Alias for owner-event (observability notes)")
     ap.add_argument("--fullday", action="store_true", help="Full-day timeline + cross-correlation mode")
+    ap.add_argument("--validate-coverage", action="store_true", help="Validate export coverage for target day")
     ap.add_argument("--day", default="2026-06-16", help="Target day for fullday mode (YYYY-MM-DD)")
     ap.add_argument("--timeline-bucket-minutes", type=int, default=5, help="Access timeline bucket size")
     ap.add_argument("--correlate", action="store_true", help="Cross-correlate gaps with subscription events")
@@ -805,8 +807,35 @@ def main() -> int:
     ap.add_argument("--json", action="store_true", help="print summary JSON to stdout")
     args = ap.parse_args()
 
-    if args.fullday:
-        from mobile_log_fullday import analyze_fullday
+    if args.fullday or args.validate_coverage:
+        from mobile_log_fullday import analyze_fullday, build_observability_report, validate_export_files
+
+        owner_notes = list(args.owner_event or []) + list(args.owner_note or [])
+
+        if args.validate_coverage:
+            validation = validate_export_files(
+                day=args.day,
+                access_path=args.access_log,
+                subscription_path=args.subscription_log,
+            )
+            from mobile_log_fullday import parse_owner_notes
+
+            obs_md = build_observability_report(
+                day=args.day,
+                validation=validation,
+                owner_notes=parse_owner_notes(owner_notes),
+            )
+            out_path = args.out or Path(".local/mobile_observability_report.md")
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(obs_md, encoding="utf-8")
+            print(f"Wrote: {out_path}")
+            if args.json:
+                import json
+
+                print(json.dumps(validation, ensure_ascii=False, indent=2))
+            if not args.fullday:
+                print("MOBILE_OBSERVABILITY_VALIDATE_OK")
+                return 0
 
         if not args.access_log and not args.subscription_log:
             print("FAIL: fullday mode needs --access-log and/or --subscription-log", file=sys.stderr)
@@ -826,6 +855,7 @@ def main() -> int:
             bucket_minutes=args.timeline_bucket_minutes,
             correlate=args.correlate or True,
             sources=sources,
+            owner_notes=owner_notes,
         )
         out_path = args.out or Path(".local/mobile_fullday_analysis.md")
         out_path.parent.mkdir(parents=True, exist_ok=True)

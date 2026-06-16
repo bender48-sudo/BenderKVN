@@ -5,6 +5,7 @@ import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from analyze_mobile_smoke_logs import (
@@ -86,11 +87,63 @@ class CoverageReport:
     access_start: datetime | None = None
     access_end: datetime | None = None
     access_minutes: float = 0.0
+    access_percent_day: float = 0.0
     access_full_day: bool = False
     sub_start: datetime | None = None
     sub_end: datetime | None = None
     sub_day_events: int = 0
+    sub_covers_day: bool = False
+    missing_access_windows: list[str] = field(default_factory=list)
+    can_conclude_full_day_health: bool = False
     warnings: list[str] = field(default_factory=list)
+
+
+SECRET_SCAN_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
+    ("vless_uri", re.compile(r"vless://", re.I)),
+    ("sub_url", re.compile(r"https?://[^\s\"']*api/sub/[^\s\"']+", re.I)),
+    ("happ_deeplink", re.compile(r"happ://", re.I)),
+    ("uuid", re.compile(r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b")),
+    ("jwt", re.compile(r"eyJ[A-Za-z0-9_-]{20,}")),
+    ("32hex", re.compile(r"\b[0-9a-f]{32}\b")),
+]
+
+
+def scan_text_for_secrets(text: str) -> list[str]:
+    """Return pattern names found — never print matched values."""
+    found: list[str] = []
+    for name, pat in SECRET_SCAN_PATTERNS:
+        if pat.search(text):
+            found.append(name)
+    return found
+
+
+def scan_file_for_secrets(path: str | Path) -> list[str]:
+    p = Path(path)
+    if not p.is_file():
+        return []
+    sample = p.read_text(encoding="utf-8", errors="replace")[:500_000]
+    return scan_text_for_secrets(sample)
+
+
+def parse_owner_notes(notes: list[str]) -> list[dict[str, str]]:
+    """Parse --owner-note strings; redact before return."""
+    parsed: list[dict[str, str]] = []
+    for note in notes:
+        parsed.append({"raw": redact(note.strip())})
+    return parsed
+
+
+def _format_missing_windows(start: datetime | None, end: datetime | None, day: str) -> list[str]:
+    if not start or not end:
+        return [f"00:00–24:00 on {day} (no access log)"]
+    day_start = datetime.strptime(day, "%Y-%m-%d")
+    day_end = day_start + timedelta(days=1)
+    missing: list[str] = []
+    if start > day_start:
+        missing.append(f"{day_start:%H:%M}–{start:%H:%M}")
+    if end < day_end - timedelta(seconds=1):
+        missing.append(f"{end:%H:%M}–24:00")
+    return missing
 
 
 def _port_category(port: str, ip_class: str | None) -> str:
@@ -351,20 +404,171 @@ def assess_coverage(
         rep.access_start = day_access[0].ts
         rep.access_end = day_access[-1].ts
         rep.access_minutes = (rep.access_end - rep.access_start).total_seconds() / 60.0
+        rep.access_percent_day = round(100 * rep.access_minutes / 1440.0, 2)
         rep.access_full_day = rep.access_minutes >= 12 * 60
+        rep.missing_access_windows = _format_missing_windows(rep.access_start, rep.access_end, day)
     if day_sub:
         rep.sub_start = day_sub[0].ts
         rep.sub_end = day_sub[-1].ts
+        rep.sub_covers_day = (rep.sub_end - rep.sub_start).total_seconds() >= 6 * 3600
+    rep.can_conclude_full_day_health = rep.access_full_day and len(day_access) > 0
     if not day_access:
         rep.warnings.append("No access log coverage for target day.")
+        rep.missing_access_windows = _format_missing_windows(None, None, day)
     elif not rep.access_full_day:
         rep.warnings.append(
-            f"Access log partial: {rep.access_minutes:.0f} min "
+            f"Access log partial: {rep.access_minutes:.0f} min ({rep.access_percent_day}% of day) "
             f"({rep.access_start:%H:%M}–{rep.access_end:%H:%M}), not full-day."
         )
+        rep.warnings.append("CANNOT conclude full-day tunnel health from access log alone.")
     if not day_sub:
         rep.warnings.append("No subscription events for target day.")
+    elif not rep.sub_covers_day:
+        rep.warnings.append("Subscription log has sparse coverage for target day.")
     return rep
+
+
+def validate_export_files(
+    *,
+    day: str,
+    access_path: Path | None = None,
+    subscription_path: Path | None = None,
+) -> dict[str, Any]:
+    """Validate owner exports for analyzer readiness — no secret values printed."""
+    result: dict[str, Any] = {
+        "day": day,
+        "access": {"present": False, "secret_patterns": [], "issues": []},
+        "subscription": {"present": False, "secret_patterns": [], "issues": []},
+        "ready_for_fullday": False,
+        "issues": [],
+    }
+    access_text = sub_text = None
+    if access_path and access_path.is_file():
+        result["access"]["present"] = True
+        result["access"]["secret_patterns"] = scan_file_for_secrets(access_path)
+        access_text = access_path.read_text(encoding="utf-8", errors="replace")
+        if result["access"]["secret_patterns"]:
+            result["access"]["issues"].append(
+                "File may contain secrets — redact before sharing outside .secrets/diagnostics/"
+            )
+    else:
+        result["issues"].append("Missing access log file.")
+    if subscription_path and subscription_path.is_file():
+        result["subscription"]["present"] = True
+        result["subscription"]["secret_patterns"] = scan_file_for_secrets(subscription_path)
+        sub_text = subscription_path.read_text(encoding="utf-8", errors="replace")
+        if result["subscription"]["secret_patterns"]:
+            result["subscription"]["issues"].append("File may contain secrets — review before sharing.")
+    else:
+        result["issues"].append("Missing subscription log file.")
+    cov = assess_coverage(
+        parse_access_events(access_text or ""),
+        parse_subscription_events(sub_text or ""),
+        day,
+    )
+    result["coverage"] = {
+        "access_minutes": round(cov.access_minutes, 1),
+        "access_percent_day": cov.access_percent_day,
+        "access_full_day": cov.access_full_day,
+        "can_conclude_full_day_health": cov.can_conclude_full_day_health,
+        "missing_access_windows": cov.missing_access_windows,
+        "sub_day_events": cov.sub_day_events,
+        "warnings": cov.warnings,
+    }
+    result["ready_for_fullday"] = result["subscription"]["present"] and (
+        result["access"]["present"] or cov.sub_day_events > 0
+    )
+    return result
+
+
+def correlate_owner_notes_to_events(
+    notes: list[dict[str, str]],
+    access_events: list[AccessEvent],
+    sub_events: list[SubEvent],
+) -> list[str]:
+    lines: list[str] = []
+    if not notes:
+        lines.append("_No owner notes provided._")
+        return lines
+    for n in notes:
+        lines.append(f"- Note: `{n['raw']}`")
+        if access_events:
+            lines.append(
+                f"  Access window: {access_events[0].ts:%H:%M}–{access_events[-1].ts:%H:%M} "
+                "(check overlap manually)"
+            )
+        if sub_events:
+            lines.append(f"  Subscription events that day: {len(sub_events)}")
+    lines.append("_Notes help classify gaps but do not replace full-day access export._")
+    return lines
+
+
+def build_observability_report(
+    *,
+    day: str,
+    validation: dict[str, Any],
+    owner_notes: list[dict[str, str]] | None = None,
+) -> str:
+    cov = validation.get("coverage") or {}
+    lines = [
+        "# Mobile observability report (redacted)",
+        "",
+        "**Task:** CLIENT-MOBILE-OBSERVABILITY-001",
+        f"**Day:** {day}",
+        "",
+        "> Export validation only — no raw log contents included.",
+        "",
+        "## Export validation",
+        "",
+        f"- Access file present: **{validation['access']['present']}**",
+        f"- Subscription file present: **{validation['subscription']['present']}**",
+        f"- Ready for fullday analysis: **{validation['ready_for_fullday']}**",
+        "",
+        "## Coverage",
+        "",
+        f"- Access minutes: **{cov.get('access_minutes', 0)}** ({cov.get('access_percent_day', 0)}% of day)",
+        f"- Full-day access: **{cov.get('access_full_day', False)}**",
+        f"- Can conclude full-day health: **{cov.get('can_conclude_full_day_health', False)}**",
+        f"- Subscription day events: **{cov.get('sub_day_events', 0)}**",
+        "",
+    ]
+    if cov.get("missing_access_windows"):
+        lines.append("**Missing access windows:**")
+        for w in cov["missing_access_windows"]:
+            lines.append(f"- {w}")
+        lines.append("")
+    for w in cov.get("warnings") or []:
+        lines.append(f"- ⚠ {w}")
+    for issue in validation.get("issues") or []:
+        lines.append(f"- ⚠ {issue}")
+    lines.extend(["", "## Secret scan (patterns only, no values)", ""])
+    for side in ("access", "subscription"):
+        pats = validation[side].get("secret_patterns") or []
+        lines.append(f"- {side}: {', '.join(pats) if pats else 'none detected'}")
+        for iss in validation[side].get("issues") or []:
+            lines.append(f"  - {iss}")
+    lines.extend(["", "## Owner notes", ""])
+    for line in correlate_owner_notes_to_events(owner_notes or [], [], []):
+        lines.append(line)
+    lines.extend(
+        [
+            "",
+            "## Next step",
+            "",
+            "See [CLIENT-MOBILE-OBSERVABILITY-PLAN.md](../docs/CLIENT-MOBILE-OBSERVABILITY-PLAN.md) for export checklist.",
+            "Run fullday analysis after export:",
+            "",
+            "```powershell",
+            "python ops/analyze_mobile_logs.py --fullday --validate-coverage --day "
+            + day
+            + " \\",
+            "  --access .secrets/diagnostics/access_log_mobile.txt \\",
+            "  --subscription .secrets/diagnostics/subscription_log_mobile.txt",
+            "```",
+            "",
+        ]
+    )
+    return redact("\n".join(lines) + "\n")
 
 
 def classify_fullday_tracks(
@@ -537,7 +741,13 @@ def build_fullday_markdown(
         lines.append(
             f"- **Access:** {coverage.access_start:%Y-%m-%d %H:%M:%S} → "
             f"{coverage.access_end:%H:%M:%S} ({coverage.access_minutes:.0f} min, "
-            f"{len(access_events)} flows)"
+            f"{coverage.access_percent_day}% of day, {len(access_events)} flows)"
+        )
+        if coverage.missing_access_windows:
+            lines.append("- **Missing access windows:** " + "; ".join(coverage.missing_access_windows))
+        lines.append(
+            f"- **Full-day health conclusion allowed:** "
+            f"**{'yes' if coverage.can_conclude_full_day_health else 'NO'}**"
         )
     if coverage.sub_start:
         lines.append(
@@ -644,12 +854,14 @@ def analyze_fullday(
     bucket_minutes: int = 5,
     correlate: bool = True,
     sources: dict[str, str] | None = None,
+    owner_notes: list[str] | None = None,
 ) -> tuple[str, dict[str, Any]]:
     access_all = parse_access_events(access_text or "")
     sub_all = parse_subscription_events(subscription_text or "")
     access_day = filter_events_by_day(access_all, day)
     sub_day = filter_events_by_day(sub_all, day)
     coverage = assess_coverage(access_all, sub_all, day)
+    notes_parsed = parse_owner_notes(owner_notes or [])
     buckets_1 = bucket_access_events(access_day, 1)
     buckets_5 = bucket_access_events(access_day, bucket_minutes)
     top_gaps = find_top_gaps(access_day)
@@ -674,10 +886,15 @@ def analyze_fullday(
         "coverage_warnings": coverage.warnings,
         "access_flows": len(access_day),
         "access_minutes": round(coverage.access_minutes, 1),
+        "access_percent_day": coverage.access_percent_day,
+        "access_full_day": coverage.access_full_day,
+        "can_conclude_full_day_health": coverage.can_conclude_full_day_health,
+        "missing_access_windows": coverage.missing_access_windows,
         "sub_day_events": len(sub_day),
         "gap_counts": gap_threshold_counts(access_day),
         "top_gap_seconds": round(top_gaps[0].seconds, 1) if top_gaps else 0,
         "correlation_rows": len([r for r in correlations if r.get("sub_events")]),
+        "owner_notes_count": len(notes_parsed),
         "primary_next_surface": "CLIENT-MOBILE-OBSERVABILITY-001",
         "secondary_next_surface": "CLIENT-SUBSCRIPTION-IMPORT-HAPP-001",
         "mobile_smoke_pass": "PENDING — passive logs insufficient",

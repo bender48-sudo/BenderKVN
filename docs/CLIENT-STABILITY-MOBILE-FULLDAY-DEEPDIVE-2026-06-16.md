@@ -32,11 +32,7 @@
 
 ### Owner export checklist (CLIENT-MOBILE-OBSERVABILITY-001)
 
-1. Happ → enable logging → export **full-day** `access_log.txt` for days with instability.
-2. Export `subscription_log.txt` same day (already have multi-week file).
-3. Note phone model, Happ version, **BenderVPN RU** routing Y/N.
-4. Optional: lock/unlock times as `--owner-event` notes.
-5. Store under `.secrets/diagnostics/` only — never commit.
+See **[CLIENT-MOBILE-OBSERVABILITY-PLAN.md](CLIENT-MOBILE-OBSERVABILITY-PLAN.md)** (checklist + `--validate-coverage` tooling **DONE**; owner export **PENDING**).
 
 ---
 

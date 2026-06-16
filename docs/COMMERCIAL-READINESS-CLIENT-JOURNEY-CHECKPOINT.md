@@ -248,7 +248,7 @@ Synced from [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-20
 | VPN profile (Candidate D) | **PASS** | APPLY Candidate D; probes | — | Continue probe cadence |
 | Happ DirectIp / routing | **PASS** (prod) | `0258d00`, `0635067`, owner context | Do not rollback | Guard on change |
 | Desktop Happ commercial | **OPEN** | report(7)+(8) relay2 active; gate OPEN | Sleep/wake; normal Bender soak | PROD-SELECTOR-CONTROLLED-001 (owner approval) |
-| Mobile Happ commercial | **PENDING** | FULLDAY-DEEPDIVE-2026-06-16 — 766 flows 19:19–19:40; sub full-day; **access 1.4% coverage** | No PASS; observability gap | **CLIENT-MOBILE-OBSERVABILITY-001** |
+| Mobile Happ commercial | **PENDING** | OBSERVABILITY plan + import readonly review | Owner full-day access export still missing | **Owner export** → re-run `--validate-coverage` |
 | Windows fallback | **PROTOCOL READY** | `9c3400e` | Owner smoke pending | CLIENT-SMOKE-003 |
 | Capacity / growth | **NO-GO** | 1 LV exit; NL not Auto | <2 delivery nodes | NL A2/A4 after gates |
 | Billing automated paid | **NO-GO** | BILL-001; CodeRabbit triage | **BILL-TERMS-GUARD-001**, BILL-UT, BILL-SMOKE | Items 1–5 in §11 |
