@@ -131,7 +131,8 @@
 | **DESKTOP-RELAY1-SERVICE-REPAIR-DEPLOY-001** | **PARTIAL (owner-gated)** | [`DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md`](DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md) — relay1 is hysteria TCP-forwarder (no xray); scoped hysteria-client restart did NOT clear resets; kept degraded; relay2-only canary is workaround |
 | **RU-RELAY-ARCH-UNIFICATION-001** | **DONE (PATH C)** | [`RU-RELAY-ARCH-UNIFICATION-2026-06-17.md`](RU-RELAY-ARCH-UNIFICATION-2026-06-17.md) — relay1≡relay2 (identical hysteria forwarders, shared upstream); formalized STANDARD_RU_RELAY_PATH_V1; registry path_role/architecture_compliance/shared_upstream_group + fail-closed generator gate (+tests). Real gap = independent exit/upstream |
 | **NEW-INDEPENDENT-EXIT-PATH-001** | **DONE — PATH A** | [`NEW-INDEPENDENT-EXIT-PATH-2026-06-17.md`](NEW-INDEPENDENT-EXIT-PATH-2026-06-17.md) |
-| **NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-AND-PROMOTION-001** | **WAITING (owner smoke)** | [`NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-2026-06-18.md`](NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-2026-06-18.md) — runbook ready; registry not promoted until owner PASS |
+| **NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-AND-PROMOTION-001** | **WAITING (owner smoke)** | [`NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-2026-06-18.md`](NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-2026-06-18.md) |
+| **NL-CANARY-IMPORT-ARTIFACT-FIX-001** | **DONE** | [`NL-CANARY-IMPORT-ARTIFACT-FIX-2026-06-18.md`](NL-CANARY-IMPORT-ARTIFACT-FIX-2026-06-18.md) — metadata/importable split; validator; smoke still NOT PASSED |
 | **CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-001** | **OPEN (proposed)** | Relay-path de-weight/replace; owner-gated; no broad prod apply |
 
 ---

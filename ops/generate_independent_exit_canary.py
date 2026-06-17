@@ -17,6 +17,7 @@ HARD SAFETY:
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import sys
 from datetime import datetime, timezone
@@ -47,10 +48,40 @@ from vpn_registry_model import (  # noqa: E402
     path_role,
     shared_upstream_group,
 )
+from validate_happ_importable_profile import (  # noqa: E402
+    METADATA_ARTIFACT_TYPE,
+    validate_importable_profile,
+)
+from balancer_selectors import (  # noqa: E402
+    INTL_BALANCER_TAG,
+    INTL_STEALTH_BALANCER_TAG,
+    NL_DIRECT_SELECTOR,
+)
+from relay_latency_probe import RELAY1_IP, RELAY2_IP  # noqa: E402
+from subscription_fetch import (  # noqa: E402
+    node_label,
+    outbound_endpoint,
+    xray_config_root,
+)
 
 DEFAULT_OUT_DIR = ROOT / ".local"
 DEFAULT_NODE_ID = "nl-node-1"
 TASK_ID = "NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-AND-PROMOTION-001"
+ARTIFACT_FIX_TASK_ID = "NL-CANARY-IMPORT-ARTIFACT-FIX-001"
+RUNBOOK_FILENAME = "independent_exit_nl_canary_RUNBOOK.md"
+METADATA_FILENAME = "independent_exit_nl_canary_METADATA.json"
+IMPORTABLE_FILENAME = "independent_exit_nl_canary_IMPORTABLE_PROFILE.json"
+LEGACY_AMBIGUOUS_FILENAMES = (
+    "independent_exit_nl_canary.json",
+    "independent_exit_nl_canary.md",
+)
+OWNER_CONFIG_PATHS = (
+    ROOT / ".secrets" / "nl_owner_direct_config.json",
+    ROOT / ".secrets" / "owner_sub.json",
+)
+METADATA_WARNING = (
+    "DO NOT IMPORT THIS JSON INTO HAPP. This is metadata/runbook only."
+)
 PROFILE_LABEL = (
     "BenderVPN Independent Exit Canary — owner/staging only — do NOT refresh subscription"
 )
@@ -63,13 +94,14 @@ EGRESS_EVIDENCE = {
 }
 
 IMPORT_INSTRUCTIONS = [
-    "Keep the normal BenderVPN Auto profile untouched — do NOT refresh subscription.",
-    "Create a NEW Happ profile named exactly per the label above.",
-    "Paste owner-held NL direct VLESS/REALITY config from vault/.secrets (never into git).",
-    "Set routing profile to the standard BenderVPN RU routing bundle if prompted.",
+    "Read the runbook: `.local/independent_exit_nl_canary_RUNBOOK.md` (instructions only — not importable).",
+    "DO NOT import `.local/independent_exit_nl_canary_METADATA.json` into Happ — it will crash/fail.",
+    "ONLY import `.local/independent_exit_nl_canary_IMPORTABLE_PROFILE.json` if the generator marked it GENERATED.",
+    "If importable profile status is NOT GENERATED, place owner NL config at `.secrets/nl_owner_direct_config.json` and re-run the generator.",
+    "Create a NEW Happ profile; paste/import ONLY the validated IMPORTABLE_PROFILE.json.",
     "DISABLE auto-update / subscription refresh on the NL canary profile.",
-    "Confirm the profile shows NL direct hosts in Intl_Direct only (not stealth/TG/Meta).",
-    "Do NOT use server picker or manual host selection in user-facing copy.",
+    "Confirm Intl_Direct uses NL paths; Intl_Stealth/TG/Meta stay on relay (not NL direct).",
+    "Do NOT use server picker or overwrite the normal BenderVPN Auto profile.",
 ]
 
 SMOKE_CHECKLIST = [
@@ -163,6 +195,206 @@ REQUIRED_OWNER_INPUT = [
     "Run the checklist in this artifact; fill RECORD_TEMPLATE in the JSON copy locally.",
     "Reply with overall_verdict (PASS/PARTIAL/FAIL) + redacted notes to trigger promotion task.",
 ]
+
+
+def _vless_proxies(cfg: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        o
+        for o in cfg.get("outbounds") or []
+        if isinstance(o, dict)
+        and o.get("protocol") == "vless"
+        and str(o.get("tag") or "").startswith("proxy")
+    ]
+
+
+def _nl_proxy_tags(cfg: dict[str, Any]) -> list[str]:
+    tags: list[str] = []
+    for ob in _vless_proxies(cfg):
+        addr, port = outbound_endpoint(ob)
+        tag = str(ob.get("tag") or "")
+        if node_label(addr, port) == "NL" or tag in NL_DIRECT_SELECTOR:
+            if addr and node_label(addr, port) != "NL" and tag not in NL_DIRECT_SELECTOR:
+                continue
+            tags.append(tag)
+    return sorted(set(tags))
+
+
+def _relay2_proxy_tags(cfg: dict[str, Any]) -> list[str]:
+    tags: list[str] = []
+    for ob in _vless_proxies(cfg):
+        addr, _ = outbound_endpoint(ob)
+        if addr == RELAY2_IP:
+            tags.append(str(ob.get("tag") or ""))
+    return sorted(set(tags))
+
+
+def build_nl_independent_exit_canary_profile(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Transform owner subscription JSON into NL-canary Happ profile (local only)."""
+    nl_tags = _nl_proxy_tags(cfg)
+    if not nl_tags:
+        raise ValueError("source config has no NL direct vless outbounds")
+
+    relay_tags = _relay2_proxy_tags(cfg)
+    if not relay_tags:
+        raise ValueError("source config has no relay-2 vless outbounds for stealth pool")
+
+    keep = set(nl_tags) | set(relay_tags)
+    out = copy.deepcopy(cfg)
+    new_outbounds: list[dict[str, Any]] = []
+    for ob in out.get("outbounds") or []:
+        if (
+            isinstance(ob, dict)
+            and ob.get("protocol") == "vless"
+            and str(ob.get("tag") or "").startswith("proxy")
+        ):
+            if str(ob.get("tag") or "") not in keep:
+                continue
+        new_outbounds.append(ob)
+    out["outbounds"] = new_outbounds
+
+    routing = out.setdefault("routing", {})
+    for bal in routing.get("balancers") or []:
+        tag = bal.get("tag")
+        if tag == INTL_BALANCER_TAG:
+            bal["selector"] = list(nl_tags)
+            bal.setdefault("strategy", {})["type"] = "random"
+        elif tag == INTL_STEALTH_BALANCER_TAG:
+            bal["selector"] = list(relay_tags)
+            bal.setdefault("strategy", {})["type"] = "random"
+
+    rules = routing.get("rules") or []
+    for rule in rules:
+        if rule.get("outboundTag") == "direct" and isinstance(rule.get("ip"), list):
+            rule["ip"] = [
+                ip
+                for ip in rule["ip"]
+                if RELAY1_IP not in str(ip) and f"{RELAY1_IP}/32" not in str(ip)
+            ]
+
+    out.pop("observatory", None)
+    out.pop("burstObservatory", None)
+    out["remarks"] = PROFILE_LABEL
+    return out
+
+
+def validate_nl_canary_profile(cfg: dict[str, Any]) -> list[str]:
+    """Return validation errors for generated importable profile (empty = OK)."""
+    result = validate_importable_profile(cfg)
+    errors = list(result.errors)
+    nl_tags = _nl_proxy_tags(cfg)
+    relay_tags = _relay2_proxy_tags(cfg)
+    if not nl_tags:
+        errors.append("no NL direct outbounds after transform")
+    if not relay_tags:
+        errors.append("no relay-2 outbounds for stealth after transform")
+
+    balancers = {
+        b.get("tag"): b for b in (cfg.get("routing") or {}).get("balancers") or []
+    }
+    intl = balancers.get(INTL_BALANCER_TAG)
+    stealth = balancers.get(INTL_STEALTH_BALANCER_TAG)
+    if intl and list(intl.get("selector") or []) != nl_tags:
+        errors.append("Intl_Direct selector must match NL tags only")
+    if stealth and list(stealth.get("selector") or []) != relay_tags:
+        errors.append("Intl_Stealth selector must match relay-2 tags only")
+
+    if PROFILE_LABEL not in str(cfg.get("remarks") or ""):
+        errors.append("remarks missing expected CANARY label")
+
+    return errors
+
+
+def _load_owner_config() -> tuple[Path | None, dict[str, Any] | None]:
+    for path in OWNER_CONFIG_PATHS:
+        if not path.is_file():
+            continue
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            return path, xray_config_root(raw)
+        except (OSError, json.JSONDecodeError, ValueError):
+            continue
+    return None, None
+
+
+def try_generate_importable_profile(
+    out_dir: Path,
+) -> dict[str, Any]:
+    """Generate validated importable profile to .local only. Never prints secrets."""
+    status: dict[str, Any] = {
+        "status": "IMPORTABLE_PROFILE_NOT_GENERATED_MISSING_OWNER_CONFIG",
+        "generated": False,
+        "output_file": str(out_dir / IMPORTABLE_FILENAME),
+        "expected_owner_config_paths": [str(p) for p in OWNER_CONFIG_PATHS],
+        "validation_errors": [],
+    }
+
+    src_path, cfg = _load_owner_config()
+    if cfg is None:
+        status["reason"] = (
+            "Owner-held NL subscription JSON not found. Place config at "
+            ".secrets/nl_owner_direct_config.json (preferred) or .secrets/owner_sub.json "
+            "with NL direct vless outbounds, then re-run this generator."
+        )
+        return status
+
+    status["source_config"] = src_path.name
+    try:
+        profile = build_nl_independent_exit_canary_profile(cfg)
+    except ValueError as exc:
+        status["reason"] = str(exc)
+        return status
+
+    val_errors = validate_nl_canary_profile(profile)
+    if val_errors:
+        status["status"] = "IMPORTABLE_PROFILE_VALIDATION_FAILED"
+        status["validation_errors"] = val_errors
+        status["reason"] = "Profile transform produced invalid shape"
+        return status
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / IMPORTABLE_FILENAME
+    out_path.write_text(json.dumps(profile, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    post = validate_importable_profile(profile)
+    if not post.ok:
+        status["status"] = "IMPORTABLE_PROFILE_VALIDATION_FAILED"
+        status["validation_errors"] = post.errors
+        return status
+
+    status.update(
+        {
+            "status": "GENERATED",
+            "generated": True,
+            "output_file": str(out_path),
+            "vless_proxy_count": post.summary.get("vless_proxy_count"),
+            "node_label_buckets": post.summary.get("node_label_buckets"),
+        }
+    )
+    return status
+
+
+def build_metadata_document(
+    artifact: dict[str, Any],
+    import_status: dict[str, Any],
+) -> dict[str, Any]:
+    """Wrap runbook payload with loud non-importable metadata envelope."""
+    return {
+        "artifact_type": METADATA_ARTIFACT_TYPE,
+        "importable_profile": False,
+        "do_not_import_this_file": True,
+        "warning": METADATA_WARNING,
+        "client_import_file": f".local/{IMPORTABLE_FILENAME}",
+        "runbook_file": f".local/{RUNBOOK_FILENAME}",
+        "importable_profile_status": import_status.get("status"),
+        "importable_profile_generated": import_status.get("generated", False),
+        "importable_profile_details": {
+            k: v
+            for k, v in import_status.items()
+            if k not in {"validation_errors"}
+        },
+        "artifact_fix_task": ARTIFACT_FIX_TASK_ID,
+        **artifact,
+    }
 
 
 def _criteria_scorecard(node: dict[str, Any]) -> list[dict[str, Any]]:
@@ -284,20 +516,44 @@ def build_artifact(registry: dict[str, Any], node_id: str) -> dict[str, Any]:
     }
 
 
-def format_markdown_artifact(artifact: dict[str, Any]) -> str:
+def format_runbook_markdown(
+    artifact: dict[str, Any],
+    import_status: dict[str, Any],
+) -> str:
     preview = artifact["synthetic_canary_preview"]
     lines = [
         f"# {artifact['label']}",
+        "",
+        "> **DO NOT IMPORT THE METADATA JSON** (`.local/independent_exit_nl_canary_METADATA.json`) into Happ.",
+        "> **Only import** `.local/independent_exit_nl_canary_IMPORTABLE_PROFILE.json` if generated and validated.",
+        "> If no importable profile exists, stop and ask Cursor to generate it from owner-held config.",
         "",
         f"> Candidate independent exit: **{artifact['candidate_node_id']}** · "
         f"standard {artifact['criteria_standard']} · owner/staging only.",
         "",
         f"- task: {artifact['task']}",
+        f"- artifact_fix: {ARTIFACT_FIX_TASK_ID}",
         f"- generated_at: {artifact['generated_at']}",
         f"- traffic_smoke_status: **{artifact['traffic_smoke_status']}**",
+        f"- importable_profile_status: **{import_status.get('status')}**",
         f"- independent_exit_paths_now: {artifact['independent_exit_paths_now']} (LV only)",
         f"- candidate_counts_as_capacity: {artifact['candidate_counts_as_capacity']} (must be False)",
-        f"- production_default_changed: {artifact['production_default_changed']}",
+        "",
+        "## Which file to import into Happ",
+        "",
+        "| File | Import into Happ? | Purpose |",
+        "|------|-------------------|---------|",
+        f"| `{RUNBOOK_FILENAME}` | **NO** | This runbook (instructions only) |",
+        f"| `{METADATA_FILENAME}` | **NO — will crash/fail** | Metadata/scorecard/checklist JSON |",
+        f"| `{IMPORTABLE_FILENAME}` | **YES — only if status=GENERATED** | Validated Happ VPN profile |",
+        "",
+        f"Current importable status: `{import_status.get('status')}`",
+        "",
+        "## Incident note (2026-06-18)",
+        "",
+        "Owner imported the old ambiguous `.local/independent_exit_nl_canary.json` metadata file "
+        "into Happ; client failed immediately. That file was **never** importable. "
+        "NL traffic smoke was **not** performed and remains **NOT PASSED**.",
         "",
         "## Egress independence (redacted tokens)",
         "",
@@ -410,13 +666,32 @@ def main(argv: list[str] | None = None) -> int:
         print("  dry-run: no files written")
         return 0
 
+    import_status = try_generate_importable_profile(args.out_dir)
+    metadata = build_metadata_document(artifact, import_status)
+
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    json_path = args.out_dir / "independent_exit_nl_canary.json"
-    md_path = args.out_dir / "independent_exit_nl_canary.md"
-    json_path.write_text(json.dumps(artifact, indent=2, ensure_ascii=False), encoding="utf-8")
-    md_path.write_text(format_markdown_artifact(artifact), encoding="utf-8")
-    for p in (json_path, md_path):
-        print(f"  wrote: {p}")
+    runbook_path = args.out_dir / RUNBOOK_FILENAME
+    metadata_path = args.out_dir / METADATA_FILENAME
+    runbook_path.write_text(
+        format_runbook_markdown(artifact, import_status), encoding="utf-8"
+    )
+    metadata_path.write_text(
+        json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
+    print(f"  importable_profile_status: {import_status.get('status')}")
+    print(f"  wrote runbook: {runbook_path}")
+    print(f"  wrote metadata: {metadata_path} (DO NOT IMPORT INTO HAPP)")
+    if import_status.get("generated"):
+        print(f"  wrote importable: {import_status.get('output_file')}")
+    else:
+        print("  importable profile NOT generated — see expected_owner_config_paths")
+
+    for legacy in LEGACY_AMBIGUOUS_FILENAMES:
+        legacy_path = args.out_dir / legacy
+        if legacy_path.exists():
+            print(f"  WARNING: legacy ambiguous file still present: {legacy_path} — delete manually")
+
     return 0
 
 
