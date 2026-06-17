@@ -28,6 +28,16 @@ from subscription_fetch import (  # noqa: E402
     xray_config_root,
 )
 
+from balancer_selectors import INTL_BALANCER_TAG, INTL_STEALTH_BALANCER_TAG  # noqa: E402
+from nl_canary_profile_builder import (  # noqa: E402
+    PROFILE_LABEL_DIRECT_BASIC,
+    PROFILE_LABEL_SPLIT_STEALTH,
+    google_routes_via_stealth,
+    nl_proxy_tags,
+    relay1_proxy_tags,
+    relay2_proxy_tags,
+)
+
 # Metadata/runbook markers — presence of any ⇒ NOT importable.
 METADATA_TOP_LEVEL_KEYS = frozenset(
     {
@@ -209,6 +219,99 @@ def validate_importable_profile(doc: Any, *, require_routing: bool = True) -> Pr
     )
 
 
+def validate_nl_canary_variant(
+    doc: Any,
+    variant: str,
+) -> ProfileValidation:
+    """Validate NL canary importable profile against smoke expectations."""
+    base = validate_importable_profile(doc)
+    if not base.ok:
+        return base
+
+    cfg = xray_config_root(doc)
+    errors = list(base.errors)
+    warnings = list(base.warnings)
+    remarks = str(cfg.get("remarks") or "")
+
+    r1 = relay1_proxy_tags(cfg)
+    if r1:
+        errors.append(f"relay-1 outbounds must be absent in canary: {r1}")
+
+    if google_routes_via_stealth(cfg):
+        errors.append(
+            "geosite:google routes via Intl_Stealth — invalid for NL direct smoke "
+            "(Gmail success would not prove NL egress)"
+        )
+
+    rules = (cfg.get("routing") or {}).get("rules") or []
+    if any(r.get("fallbackTag") == "direct" for r in rules):
+        errors.append("fallbackTag=direct present")
+
+    for rule in rules:
+        if rule.get("outboundTag") == "direct" and isinstance(rule.get("ip"), list):
+            for ip in rule["ip"]:
+                if "geoip:ru" in str(ip).lower() and "direct" in str(rule.get("outboundTag", "")):
+                    pass  # geoip:ru direct bypass is OK for RU sites
+                if "geoip:private" in str(ip).lower():
+                    pass
+
+    nl_tags = nl_proxy_tags(cfg)
+    if not nl_tags:
+        errors.append("no NL direct outbounds")
+
+    balancers = {b.get("tag"): b for b in (cfg.get("routing") or {}).get("balancers") or []}
+
+    if variant == "direct_basic":
+        if PROFILE_LABEL_DIRECT_BASIC not in remarks:
+            errors.append("remarks must match DIRECT_BASIC label")
+        if relay2_proxy_tags(cfg):
+            errors.append("DIRECT_BASIC must not include relay-2 outbounds")
+        if INTL_STEALTH_BALANCER_TAG in balancers:
+            errors.append("DIRECT_BASIC must not include Intl_Stealth balancer")
+        google_tag = None
+        for rule in rules:
+            doms = rule.get("domain") or []
+            if any("geosite:google" in str(d) for d in doms):
+                google_tag = rule.get("balancerTag") or rule.get("outboundTag")
+        if google_tag != INTL_BALANCER_TAG:
+            errors.append("geosite:google must route via Intl_Direct for DIRECT_BASIC")
+        intl = balancers.get(INTL_BALANCER_TAG)
+        if intl and list(intl.get("selector") or []) != nl_tags:
+            errors.append("Intl_Direct selector must be NL tags only")
+
+    elif variant == "split_stealth":
+        if PROFILE_LABEL_SPLIT_STEALTH not in remarks:
+            errors.append("remarks must match SPLIT_STEALTH label")
+        r2 = relay2_proxy_tags(cfg)
+        if not r2:
+            errors.append("SPLIT_STEALTH requires relay-2 outbounds")
+        stealth = balancers.get(INTL_STEALTH_BALANCER_TAG)
+        if not stealth or list(stealth.get("selector") or []) != r2:
+            errors.append("Intl_Stealth selector must match relay-2 tags only")
+        intl = balancers.get(INTL_BALANCER_TAG)
+        if intl and list(intl.get("selector") or []) != nl_tags:
+            errors.append("Intl_Direct selector must match NL tags only")
+        for rule in rules:
+            if rule.get("balancerTag") != INTL_BALANCER_TAG:
+                continue
+            hay = " ".join(str(x) for x in (rule.get("domain") or [])).lower()
+            for needle in ("telegram", "instagram", "facebook"):
+                if needle in hay:
+                    errors.append(f"stealth app {needle!r} must not route via Intl_Direct")
+
+    elif variant == "legacy_bad":
+        if google_routes_via_stealth(cfg):
+            errors.append("legacy profile: google on stealth (expected fail for smoke)")
+
+    base.errors = errors
+    base.warnings = warnings
+    base.ok = not errors
+    base.summary["variant"] = variant
+    base.summary["google_on_stealth"] = google_routes_via_stealth(cfg)
+    base.summary["relay1_tags"] = r1
+    return base
+
+
 def validate_file(path: Path, *, require_routing: bool = True) -> ProfileValidation:
     raw = path.read_text(encoding="utf-8")
     doc = json.loads(raw)
@@ -236,10 +339,20 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="accept minimal profile without routing (tests only)",
     )
+    parser.add_argument(
+        "--variant",
+        choices=("direct_basic", "split_stealth", "legacy_bad"),
+        help="NL canary smoke variant validation",
+    )
     args = parser.parse_args(argv)
 
     try:
-        result = validate_file(args.path, require_routing=not args.allow_no_routing)
+        if args.variant:
+            raw = args.path.read_text(encoding="utf-8")
+            result = validate_nl_canary_variant(json.loads(raw), args.variant)
+            result.summary["path"] = str(args.path.name)
+        else:
+            result = validate_file(args.path, require_routing=not args.allow_no_routing)
     except (OSError, json.JSONDecodeError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
