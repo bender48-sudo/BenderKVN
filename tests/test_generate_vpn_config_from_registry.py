@@ -71,6 +71,19 @@ def test_canary_excludes_nl_until_canary_flag():
     assert "nl-node-1" not in node_ids  # staging, canary_percent=0
 
 
+def test_synthetic_canary_preview_includes_nl():
+    from generate_vpn_config_from_registry import apply_synthetic_canary_overlay
+
+    reg = apply_synthetic_canary_overlay(_current_like(), "nl-node-1")
+    gen = generate_for_cohort(reg, COHORT_CANARY)
+    node_ids = {o["node_id"] for o in gen.outbounds}
+    assert "nl-node-1" in node_ids
+    assert "nl-node-1" in node_ids or "lv-exit-1" in node_ids
+    nl = next(o for o in gen.outbounds if o["node_id"] == "nl-node-1")
+    assert nl["lifecycle_status"] == "canary"
+    assert nl["tag"] == "out-nl-node-1"
+
+
 def test_second_clean_exit_makes_public_prod_pass():
     reg = _registry(
         [

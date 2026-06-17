@@ -72,7 +72,7 @@ Xray routing rules evaluate **top to bottom** — **order is part of the spec**.
 | Item | Guidance |
 |------|----------|
 | `queryStrategy: UseIPv4` | **Test cohort only** first — desktop Happ + mobile |
-| Rollout | Owner smoke → canary → default only if PASS |
+| Rollout | Owner smoke → canary → default only if PASS (NL: see [`NL-A2-A4-CONTROLLED-CANARY-SMOKE-2026-06-17.md`](NL-A2-A4-CONTROLLED-CANARY-SMOKE-2026-06-17.md)) |
 | Rollback | Revert routing pack version in generator |
 
 ### 3.5 Sniffing

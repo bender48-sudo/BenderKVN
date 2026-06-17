@@ -89,7 +89,7 @@ Used in the generator and in `patch_add_relay_nl_443_inject`.
   `CANARY` dry-run does not include NL until canary flag set. **No apply.**
 - RU relay: identity/quality still ambiguous (relay-1 suspect; relay-2 diversity).
 - Owner canary: `generate_owner_canary_profile.py` unchanged; LAB_OWNER GO.
-- **Next owner phrase:** `APPROVE NL A2/A4 CONTROLLED CANARY SMOKE`.
+- **Next owner phrase:** `APPROVE NL CANARY TRAFFIC SMOKE` (import `.local/nl_canary_owner_profile.md`).
 
 ## Tests
 

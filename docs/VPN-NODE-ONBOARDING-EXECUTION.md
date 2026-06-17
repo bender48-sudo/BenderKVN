@@ -77,3 +77,5 @@ Only after Stage 2 does `delivery_path_nodes` become 2.
 - Does not mutate Remna/Caddy/subscriptions.
 - Does not activate NL or relay2 as production default.
 - Does not claim 300/30k GO.
+
+**NL reference (2026-06-17):** [`NL-A2-A4-CONTROLLED-CANARY-SMOKE-2026-06-17.md`](NL-A2-A4-CONTROLLED-CANARY-SMOKE-2026-06-17.md) — `nl-node-1` at `staging`, SSH PASS, synthetic canary preview ready; live `canary_percent` remains 0 until traffic smoke + owner approval.

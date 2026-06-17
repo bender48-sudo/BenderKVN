@@ -97,7 +97,8 @@ candidate → purchased_trial → staging → canary → active → draining / f
 |--------|---------|
 | `candidate` | Shortlisted VPS/provider; **not purchased**; AUP/traffic/diversity reviewed |
 | `purchased_trial` | Monthly or short test window paid; **not production**; refund window tracked |
-| `disabled` | In inventory; never issued to users (e.g. NL awaiting A2/A4) |
+| `disabled` | In inventory; never issued to users (e.g. NL pre-A2/A4) |
+| `staging` | Node-level ready; promotion gated (e.g. NL `nl-node-1` SSH PASS 2026-06-17) |
 | `staging` | Provisioned; internal smoke only — **no automatic promotion after purchase** |
 | `canary` | Issued to small tester cohort (1–5%) via selector |
 | `active` | Production delivery participant — only after acceptance + owner sign-off |

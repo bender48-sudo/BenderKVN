@@ -14,6 +14,7 @@ Output (default .local/): generated_vpn_config_preview.{json,md}
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import sys
 from dataclasses import dataclass, field
@@ -48,6 +49,30 @@ BANNER = (
     "DRY-RUN GENERATOR - registry-derived preview only. Synthetic outbound tags "
     "(no real UUID/endpoint). No Remna/Caddy/subscription/template mutation."
 )
+
+SYNTHETIC_CANARY_BANNER = (
+    "SYNTHETIC CANARY PREVIEW - in-memory overlay only; registry file unchanged. "
+    "Does NOT enable live canary or count as production capacity."
+)
+
+
+def apply_synthetic_canary_overlay(registry: dict[str, Any], node_id: str) -> dict[str, Any]:
+    """In-memory preview: show what CANARY cohort would look like if node promoted.
+
+    Keeps delivery_path_eligible=false and allow_new_assignments=false so the
+    preview cannot be mistaken for a production-capacity increase.
+    """
+    reg = copy.deepcopy(registry)
+    for node in reg.get("nodes") or []:
+        if not isinstance(node, dict) or node.get("node_id") != node_id:
+            continue
+        node["status"] = "canary"
+        rollout = node.setdefault("rollout", {})
+        rollout["canary_percent"] = 5
+        rollout["allow_new_assignments"] = False
+        node["delivery_path_eligible"] = False
+        return reg
+    raise ValueError(f"synthetic canary preview: node_id {node_id!r} not found in registry")
 
 
 @dataclass
@@ -207,16 +232,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--cohort", choices=COHORTS, default=COHORT_PUBLIC_PROD)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     parser.add_argument("--dry-run", action="store_true", help="print summary; no files written")
+    parser.add_argument(
+        "--synthetic-canary-node",
+        metavar="NODE_ID",
+        help="In-memory canary overlay for preview only (registry file unchanged)",
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
     try:
         registry = load_validated_registry(args.registry)
+        if args.synthetic_canary_node:
+            registry = apply_synthetic_canary_overlay(registry, args.synthetic_canary_node)
     except (ValueError, OSError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
     gen = generate_for_cohort(registry, args.cohort)
+    if args.synthetic_canary_node:
+        gen.warnings.insert(0, SYNTHETIC_CANARY_BANNER)
 
     if args.json:
         print(json.dumps(gen.to_dict(), indent=2, ensure_ascii=False))

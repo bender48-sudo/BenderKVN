@@ -129,7 +129,8 @@ Source: owner decision — stop isolated client smoke loops; prepare **backend-c
 | — | **VPN-CONFIG-INTEGRITY-VERIFIER-001** | P0 | **DONE** | **DONE** | [`ops/vpn_config_integrity.py`](../ops/vpn_config_integrity.py) — UUID↔host↔selector↔node_id; count-only rejected; already-applied proves injected+enabled; 10 tests |
 | — | **VPN-PROXY-N-DECOUPLE-001** | P0 | **DONE** | **PARTIAL** | Model/generator/verifier are position-independent (out-<node_id>); `patch_add_relay_nl` integrity-gated; legacy positional selectors quarantined by verifier |
 | — | **VPN-STEALTH-ROUTING-GUARDRAILS-001** | P1 | **DONE** | **DONE** | [`ops/vpn_stealth_routing_guard.py`](../ops/vpn_stealth_routing_guard.py) — TG/Meta stay stealth; no Super_Balancer catch-all; Happ DirectIp geoip:ru regression guard; 7 tests |
-| — | **NL-CANARY-PREP-001** | P1 | **DONE (prep)** | **OPEN (apply gated)** | NL staging; canary_percent=0; generator CANARY dry-run; awaits owner phrase APPROVE NL A2/A4 CONTROLLED CANARY SMOKE |
+| — | **NL-CANARY-PREP-001** | P1 | **DONE** | **DONE (artifact)** | NL staging; synthetic canary preview + `.local/nl_canary_owner_profile.*`; [`docs/NL-A2-A4-CONTROLLED-CANARY-SMOKE-2026-06-17.md`](NL-A2-A4-CONTROLLED-CANARY-SMOKE-2026-06-17.md) |
+| — | **NL-A2-A4-CONTROLLED-CANARY-SMOKE-001** | P0 | **PARTIAL** | **OPEN (traffic)** | SSH revalidation PASS; synthetic preview; awaits owner APPROVE NL CANARY TRAFFIC SMOKE |
 | — | **SCRIPT-MIGRATE-INJECTHOSTS-SYNC-001** | P0 | **DONE** | **DONE** | [`ops/sync_injecthosts_connected.py`](../ops/sync_injecthosts_connected.py) — central guardrail on apply; UUID↔selector consistency; 20 tests; bare `--apply` fails closed |
 | — | **VPN-CAPACITY-GATE-001** | P0 | **DONE** | **DONE** | Apply gate consumes central guardrail; PUBLIC_PROD APPLY_ALLOWED=false; guardrail blockers surfaced |
 | — | **VPN-NODE-INVENTORY-SOT-001** | P1 | **DONE (examples/templates)** | OPEN (live schema bump) | Lifecycle/capacity vocabulary documented; live registry unchanged |
@@ -139,7 +140,7 @@ Source: owner decision — stop isolated client smoke loops; prepare **backend-c
 | — | **SCRIPT-MIGRATE-RELAY-FAILOVER-001** | P0 | **DONE (partial)** | **PARTIAL** | `relay_failover_template` → central guardrail (mode+TTL+rollback+owner; relay collapse blocked); 8 tests. LV→NL failover pair still OPEN |
 | — | **SCRIPT-MIGRATE-NL-RELAY-PATCHERS-001** | P1 | OPEN | OPEN | Replace hardcoded add-node patchers with registry onboarding |
 | — | **NODE-RU-NL-BALANCER-CANARY-001** | P0 | **PARTIAL** | **PARTIAL** | [`docs/NODE-RU-NL-BALANCER-CANARY-2026-06-17.md`](NODE-RU-NL-BALANCER-CANARY-2026-06-17.md) — SSH inventory PASS; NL `disabled→staging`; owner canary generated; live apply owner-gated |
-| — | **NL-NODE-CANARY-ENABLE-001** | P0 | OPEN | OPEN | NL node-level PASS; needs A2/A4 smoke + owner APPROVE PROD APPLY before `staging→canary` |
+| — | **NL-NODE-CANARY-ENABLE-001** | P0 | **PARTIAL** | **OPEN** | NL SSH PASS + artifact ready; needs A2/A4 traffic smoke + owner APPROVE PROD APPLY before `staging→canary` |
 | — | **RU-NODE-CANARY-ENABLE-001** | P1 | OPEN | OPEN | ru-relay-2 reachable/healthy candidate; relay-1 stays suspect; canary needs owner approval |
 | — | **ROLLOUT-CANARY-DRAIN-001** | P1 | **DONE** (in runbook + plan) | OPEN | Safe rollout |
 | — | **MONITOR-CAPACITY-001** | P1 | OPEN | OPEN | Capacity dashboard/alerts |

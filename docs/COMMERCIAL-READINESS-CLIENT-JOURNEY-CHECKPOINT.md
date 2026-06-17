@@ -102,7 +102,7 @@ Legend: **DONE** = deployed + evidence · **PARTIAL** = works with gaps · **BLO
 | **RU/NL node connection + canary path** | **PARTIAL (NL→staging)** | [`NODE-RU-NL-BALANCER-CANARY-2026-06-17.md`](NODE-RU-NL-BALANCER-CANARY-2026-06-17.md); SSH PASS; NL validated→staging; owner canary generated; `delivery_path_nodes=1` (honest); live apply owner-gated |
 | **relay1 suspect policy** | **ENFORCED + TESTED** | [`RELAY1-DRAIN-OR-RETEST-DECISION.md`](RELAY1-DRAIN-OR-RETEST-DECISION.md); excluded from prod/canary/capacity |
 | **30k / multi-node architecture** | **DOCS READY / IMPL NO-GO** | [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md); registry + selector dry-run built; **live apply NO-GO** |
-| **NL A2/A4 controlled smoke** | **NOT STARTED** | Blocked: owner approval + monitoring closeout + client gates |
+| **NL A2/A4 controlled smoke** | **PARTIAL (node PASS; traffic pending)** | [`NL-A2-A4-CONTROLLED-CANARY-SMOKE-2026-06-17.md`](NL-A2-A4-CONTROLLED-CANARY-SMOKE-2026-06-17.md); SSH revalidation PASS; synthetic canary preview; owner traffic smoke gated |
 | **MONITOR-FLAP-001** | **SOAK PARTIAL** | Deployed LV `50a6ac4`; closeout `7e1d2d4` |
 | **MONITOR-FLAP-TUNE-001** | **DEPLOYED LV; SOAK OPEN** | `21f5a97`, deploy doc `2e95cec` — verify 6h review before claiming PASS |
 | **OPS-ALERT-HYGIENE-001** | **SOAK PASS** | Cert digest batched |

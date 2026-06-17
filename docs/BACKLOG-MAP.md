@@ -115,7 +115,7 @@
 | **SCRIPT-MIGRATE-RELAY-FAILOVER-001** | **PARTIAL** | `relay_failover_template` migrated (8 tests); LV→NL failover pair OPEN |
 | **SCRIPT-MIGRATE-NL-RELAY-PATCHERS-001** | **OPEN** | P1 remaining cron auto-cutter / add-node patcher migration |
 | **NODE-RU-NL-BALANCER-CANARY-001** | **PARTIAL** | [`docs/NODE-RU-NL-BALANCER-CANARY-2026-06-17.md`](NODE-RU-NL-BALANCER-CANARY-2026-06-17.md) — SSH PASS; NL→staging; owner canary; live apply gated |
-| **NL-NODE-CANARY-ENABLE-001 / RU-NODE-CANARY-ENABLE-001** | **OPEN** | NL/relay-2 node-healthy; canary needs A2/A4 smoke + owner APPROVE PROD APPLY |
+| **NL-NODE-CANARY-ENABLE-001 / RU-NODE-CANARY-ENABLE-001** | **PARTIAL / OPEN** | NL SSH PASS + synthetic preview; traffic smoke + APPROVE PROD APPLY still gated — [`NL-A2-A4-CONTROLLED-CANARY-SMOKE-2026-06-17.md`](NL-A2-A4-CONTROLLED-CANARY-SMOKE-2026-06-17.md) |
 | **CLIENT-STABILITY-OWNER-CANARY-PROFILE-001** | **DONE** | [`ops/generate_owner_canary_profile.py`](../ops/generate_owner_canary_profile.py) — owner-only `.local` plan |
 | **RELAY1-DRAIN-OR-RETEST-001** | **DECISION READY** | [`RELAY1-DRAIN-OR-RETEST-DECISION.md`](RELAY1-DRAIN-OR-RETEST-DECISION.md) — owner go/no-go |
 | **NODE-ONBOARD-NEW-PROD-PATH-001** | **READY FOR OWNER ACTION** | [`VPN-NODE-PURCHASE-REQUEST.md`](VPN-NODE-PURCHASE-REQUEST.md) + onboarding execution |
