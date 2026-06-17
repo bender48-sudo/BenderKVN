@@ -152,7 +152,7 @@ Source: [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-
 
 | Mode | Status | User-facing guidance |
 |------|--------|----------------------|
-| Happ desktop long session (Cursor/Docs) | **OPEN — fix staged, owner-gated** | report(10): one relay endpoint = 80% of resets; bad relay = ru-relay-1 (xray inactive, hysteria on ports); registry incident + owner/staging desktop canary excludes bad path → [`CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-2026-06-17.md`](CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-2026-06-17.md); PASS pending `APPROVE OWNER RELAY-PATH CANARY IMPORT` or `APPROVE DESKTOP RELAY SERVER REPAIR DEPLOY` |
+| Happ desktop long session (Cursor/Docs) | **OPEN — relay1 repair ineffective, workaround ready** | report(10): one relay = 80% of resets = ru-relay-1; relay1 is a hysteria TCP-forwarder (no xray), scoped restart did NOT clear resets → kept degraded; relay2-only owner canary excludes bad path → [`DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md`](DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md); PASS pending `RUN OWNER RELAY2-ONLY DESKTOP CANARY 15 MIN` or `APPROVE DEEP RELAY1 REBUILD` |
 | Sleep / wake (Windows) | **OPEN** | INCIDENT-003 Track A; do not promise laptop sleep reliability |
 | Happ Proxy (Bender) | **NOT RECOMMENDED** | Owner reports fail; SafeVPN Proxy was control only |
 | Mobile lock / LTE handoff | **PENDING** | MOBILE-SMOKE-001 |

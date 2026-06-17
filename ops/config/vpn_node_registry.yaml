@@ -4,7 +4,7 @@
 # Does NOT drive live subscription generation yet (SUB-GEN-SELECTOR-STRATEGY-001 OPEN).
 
 schema_version: 1
-updated_at: "2026-06-17T20:30:00Z"
+updated_at: "2026-06-17T20:55:00Z"
 registry_note: >
   delivery_path_nodes counts exit-role nodes with status=active and
   delivery_path_eligible=true. Relay diversity to one LV geography is not
@@ -82,12 +82,21 @@ nodes:
     incident: true
     exclude_from_desktop_canary: true
     last_incident_ref: CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-001
+    last_repair_ref: DESKTOP-RELAY1-SERVICE-REPAIR-DEPLOY-001
+    repair_status: restarted_no_improvement
+    retest_required: true
     exclude_reason: >
       report(10) desktop Happ: this relay endpoint (redacted ep_20e413bd:443,
-      outbounds proxy/proxy-2/proxy-3) carried ~80.3% of long-lived connection
-      resets. Read-only server check 2026-06-17: xray service inactive / no xray
-      process; ports 443/8443/9443 held by hysteria, not the VLESS/REALITY service
-      the client profile targets — strong server-side cause for VLESS resets.
+      outbounds proxy/proxy-2/proxy-3) carried ~80.3% of that client's long-lived
+      connection resets. Server check 2026-06-17: node is a hysteria TCP-forwarding
+      relay (NO xray/REALITY unit installed; diverges from VPN-NODE-RUNBOOK design).
+      hysteria-client forwards TCP 443/8443/9443 to a reachable co-located upstream
+      (redacted ep_4b84b15b:443: ping 0% loss, TCP/UDP open) but logs continuous
+      "TCP forwarding error: connection reset by peer / timed out" on forwarded
+      streams. Scoped repair (systemctl restart hysteria-client) DID NOT change the
+      reset rate (pre 8/120s, post 7/90s) — root cause is upstream/QUIC-tunnel or
+      relay design, not a stale local process. Deeper fix (rebuild to documented
+      xray/REALITY or QUIC/upstream investigation) needs owner approval.
     rollout:
       cohort_weight: 50
       canary_percent: 0
@@ -101,12 +110,14 @@ nodes:
     owner_approval_required: true
     notes: >
       Present in live Candidate D injectHosts (×3). Under suspicion per client
-      stability reports (dial/open storms) and now report(10) desktop dropout
-      (~80.3% of resets on this endpoint). Server check 2026-06-17: xray inactive,
-      hysteria on 443/8443/9443. Excluded from owner/desktop canary. Live restart
-      / xray restore is an all-users prod action on a shared relay — requires
-      explicit APPROVE DESKTOP RELAY SERVER REPAIR DEPLOY. Do NOT blindly reduce
-      selector or assume healthy without PROD-SELECTOR-CONTROLLED owner approval.
+      stability reports (dial/open storms) and report(10) desktop dropout (~80.3% of
+      that client's resets). Server check + scoped repair 2026-06-17: hysteria
+      TCP-forwarding relay (no xray); upstream reachable; hysteria-client restart did
+      NOT clear the forwarding resets. Kept incident/degraded; excluded from
+      owner/desktop canary. Deeper fix = rebuild to documented xray/REALITY design
+      OR upstream/QUIC investigation, both owner-gated (APPROVE DEEP RELAY1 REBUILD).
+      Do NOT blindly reduce selector or assume healthy without PROD-SELECTOR-CONTROLLED
+      owner approval.
 
   - node_id: ru-relay-2
     display_name: RU relay secondary pool member

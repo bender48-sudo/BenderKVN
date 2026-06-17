@@ -28,12 +28,19 @@ The registry holds no endpoints/UUIDs — all evidence here is health metadata o
 > **Update 2026-06-17 (CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-001):** relay1's
 > suspicion is now backed by hard client + server evidence. report(10) desktop Happ
 > attributed ~80.3% of long-lived resets to relay1's endpoint (`ep_20e413bd:443`,
-> outbounds proxy/proxy-2/proxy-3). Read-only server check found **xray inactive /
-> no xray process; ports 443/8443/9443 held by `hysteria`**, not the VLESS/REALITY
-> service the client targets. relay1 is now annotated `incident: true` /
-> `exclude_from_desktop_canary: true`. Restoring xray on relay1 is an all-users prod
-> action (shared live relay) → requires `APPROVE DESKTOP RELAY SERVER REPAIR DEPLOY`.
-> See [`CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-2026-06-17.md`](CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-2026-06-17.md).
+> outbounds proxy/proxy-2/proxy-3). relay1 is annotated `incident: true` /
+> `exclude_from_desktop_canary: true`.
+>
+> **Update 2026-06-17 (DESKTOP-RELAY1-SERVICE-REPAIR-DEPLOY-001):** deeper server check
+> shows relay1 is a **hysteria TCP-forwarding relay with NO xray/REALITY** (diverges
+> from `VPN-NODE-RUNBOOK.md`). The hysteria-client forwarder (TCP 443/8443/9443) logs
+> continuous "connection reset by peer / timed out" on forwarded streams despite a
+> reachable co-located upstream. A scoped, owner-approved `systemctl restart
+> hysteria-client` was performed (rollbackable) but did **not** change the reset rate
+> (pre 8/120s, post 7/90s) → not a stale-process issue. relay1 kept degraded;
+> deeper fix (rebuild to xray/REALITY or upstream/QUIC investigation) needs
+> `APPROVE DEEP RELAY1 REBUILD`. See
+> [`DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md`](DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md).
 
 ---
 

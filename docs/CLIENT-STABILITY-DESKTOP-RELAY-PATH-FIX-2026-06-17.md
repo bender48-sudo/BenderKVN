@@ -61,6 +61,14 @@ client targets via VLESS/TCP/REALITY has **xray down**; its ports are occupied b
 which is a strong server-side cause for the "connection forcibly/download closed"
 resets concentrated on `ep_20e413bd:443`.
 
+> **Correction (DESKTOP-RELAY1-SERVICE-REPAIR-DEPLOY-001, deeper check):** relay #1 has
+> **no xray unit installed at all** — it is a **hysteria TCP-forwarding relay by design**
+> (diverges from `VPN-NODE-RUNBOOK.md`), not an xray node with a crashed service. The
+> `hysteria-client` forwarder (TCP 443/8443/9443 → reachable co-located upstream) logs
+> continuous "connection reset by peer / timed out" on forwarded streams. A scoped
+> `systemctl restart hysteria-client` did not clear the resets. See
+> [`DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md`](DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md).
+
 ---
 
 ## 3. Correction decision
