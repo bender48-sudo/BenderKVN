@@ -178,7 +178,8 @@ Source: [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-0
 | — | **RU-RELAY-ARCH-UNIFICATION-001** | P0 | **DONE (PATH C)** | relay1≡relay2 (identical hysteria forwarders, **shared upstream ru-fwd-upstream-1**, same error rate) → relay1 not uniquely broken; formalized **STANDARD_RU_RELAY_PATH_V1**; registry `path_role`/`architecture_compliance`/`shared_upstream_group` + fail-closed generator gate + 230 tests green → [`RU-RELAY-ARCH-UNIFICATION-2026-06-17.md`](RU-RELAY-ARCH-UNIFICATION-2026-06-17.md) |
 | — | **NEW-INDEPENDENT-EXIT-PATH-001** | P0 | **DONE — PATH A (owner-gated smoke)** | nl-node-1 VALIDATED as the 2nd INDEPENDENT exit candidate → [`NEW-INDEPENDENT-EXIT-PATH-2026-06-17.md`](NEW-INDEPENDENT-EXIT-PATH-2026-06-17.md) |
 | — | **NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-AND-PROMOTION-001** | P0 | **WAITING (owner smoke)** | Runbook ready; smoke NOT PASSED → [`NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-2026-06-18.md`](NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-2026-06-18.md) |
-| — | **NL-CANARY-IMPORT-ARTIFACT-FIX-001** | P0 | **DONE** | Metadata vs importable profile split + validator; owner imported metadata JSON by mistake → [`NL-CANARY-IMPORT-ARTIFACT-FIX-2026-06-18.md`](NL-CANARY-IMPORT-ARTIFACT-FIX-2026-06-18.md) |
+| — | **NL-CANARY-IMPORT-ARTIFACT-FIX-001** | P0 | **DONE** | Metadata vs importable split + validator → [`NL-CANARY-IMPORT-ARTIFACT-FIX-2026-06-18.md`](NL-CANARY-IMPORT-ARTIFACT-FIX-2026-06-18.md) |
+| — | **GENERATE-IMPORTABLE-NL-PROFILE-001** | P0 | **DONE** | Importable profile generated + validated; import only `*_IMPORTABLE_PROFILE.json`; smoke still WAITING |
 | — | **CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-001** | P0 | OPEN (proposed) | De-weight/replace resetting relay; owner-gated read-only check or owner canary — no broad apply |
 | 9 | **MONITOR-FLAP-TUNE-001** | P1 | SOAK OPEN | Before NL A2/A4 |
 | 10 | **VPN-ARCH-001** | P1 | AWAITING APPROVAL | Capacity ≥2 delivery paths |

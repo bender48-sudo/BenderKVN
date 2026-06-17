@@ -132,7 +132,8 @@
 | **RU-RELAY-ARCH-UNIFICATION-001** | **DONE (PATH C)** | [`RU-RELAY-ARCH-UNIFICATION-2026-06-17.md`](RU-RELAY-ARCH-UNIFICATION-2026-06-17.md) — relay1≡relay2 (identical hysteria forwarders, shared upstream); formalized STANDARD_RU_RELAY_PATH_V1; registry path_role/architecture_compliance/shared_upstream_group + fail-closed generator gate (+tests). Real gap = independent exit/upstream |
 | **NEW-INDEPENDENT-EXIT-PATH-001** | **DONE — PATH A** | [`NEW-INDEPENDENT-EXIT-PATH-2026-06-17.md`](NEW-INDEPENDENT-EXIT-PATH-2026-06-17.md) |
 | **NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-AND-PROMOTION-001** | **WAITING (owner smoke)** | [`NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-2026-06-18.md`](NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-2026-06-18.md) |
-| **NL-CANARY-IMPORT-ARTIFACT-FIX-001** | **DONE** | [`NL-CANARY-IMPORT-ARTIFACT-FIX-2026-06-18.md`](NL-CANARY-IMPORT-ARTIFACT-FIX-2026-06-18.md) — metadata/importable split; validator; smoke still NOT PASSED |
+| **NL-CANARY-IMPORT-ARTIFACT-FIX-001** | **DONE** | [`NL-CANARY-IMPORT-ARTIFACT-FIX-2026-06-18.md`](NL-CANARY-IMPORT-ARTIFACT-FIX-2026-06-18.md) |
+| **GENERATE-IMPORTABLE-NL-PROFILE-001** | **DONE** | Importable profile generated + validated; smoke still WAITING |
 | **CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-001** | **OPEN (proposed)** | Relay-path de-weight/replace; owner-gated; no broad prod apply |
 
 ---

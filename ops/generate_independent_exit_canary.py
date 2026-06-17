@@ -78,13 +78,12 @@ LEGACY_AMBIGUOUS_FILENAMES = (
 OWNER_CONFIG_PATHS = (
     ROOT / ".secrets" / "nl_owner_direct_config.json",
     ROOT / ".secrets" / "owner_sub.json",
+    ROOT / ".secrets" / "owner_sub_dump.json",
 )
 METADATA_WARNING = (
     "DO NOT IMPORT THIS JSON INTO HAPP. This is metadata/runbook only."
 )
-PROFILE_LABEL = (
-    "BenderVPN Independent Exit Canary — owner/staging only — do NOT refresh subscription"
-)
+PROFILE_LABEL = "BenderVPN NL Independent Exit Canary — owner only"
 
 # Redacted egress evidence captured read-only on 2026-06-17 (no raw IPs in repo).
 EGRESS_EVIDENCE = {
@@ -332,12 +331,13 @@ def try_generate_importable_profile(
     if cfg is None:
         status["reason"] = (
             "Owner-held NL subscription JSON not found. Place config at "
-            ".secrets/nl_owner_direct_config.json (preferred) or .secrets/owner_sub.json "
-            "with NL direct vless outbounds, then re-run this generator."
+            ".secrets/nl_owner_direct_config.json (preferred), .secrets/owner_sub.json, "
+            "or .secrets/owner_sub_dump.json with NL direct + relay-2 vless outbounds."
         )
         return status
 
     status["source_config"] = src_path.name
+    status["source_config_redacted"] = True
     try:
         profile = build_nl_independent_exit_canary_profile(cfg)
     except ValueError as exc:
