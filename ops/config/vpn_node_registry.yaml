@@ -4,7 +4,7 @@
 # Does NOT drive live subscription generation yet (SUB-GEN-SELECTOR-STRATEGY-001 OPEN).
 
 schema_version: 1
-updated_at: "2026-06-17T21:30:00Z"
+updated_at: "2026-06-17T22:00:00Z"
 registry_note: >
   delivery_path_nodes counts exit-role nodes with status=active and
   delivery_path_eligible=true. Relay diversity to one LV geography is not
@@ -225,7 +225,10 @@ nodes:
     provider_label: redacted-vps-nl
     role: exit
     path_role: exit
-    architecture_compliance: unverified
+    architecture_compliance: compliant
+    independent_exit_candidate: true
+    acceptance_status: pending_traffic_smoke
+    last_arch_ref: NEW-INDEPENDENT-EXIT-PATH-001
     status: staging
     delivery_path_eligible: false
     groups:
@@ -253,13 +256,17 @@ nodes:
       mobile_supported: false
     owner_approval_required: true
     notes: >
-      NL-A2-A4-CONTROLLED-CANARY-SMOKE-001 (2026-06-17): read-only SSH revalidation
-      PASS — remnanode + caddy-selfsteal up ~8w, ports 443/8443/9443 listening, load
-      ~0.1, disk 17%, outbound OK. Synthetic canary preview + owner artifact in
-      .local/nl_canary_owner_profile.*. STILL NOT delivery capacity: A2/A4 traffic
-      smoke (TG/Google/Meta via NL exit) + MONITOR-FLAP closeout + owner APPROVE
-      PROD APPLY remain pending. delivery_path_eligible=false, canary_percent=0,
-      allow_new_assignments=false. Does NOT count toward delivery_path_nodes.
+      NEW-INDEPENDENT-EXIT-PATH-001 (2026-06-17): VALIDATED as the second INDEPENDENT
+      exit candidate. Read-only check: runs remnanode (VLESS/REALITY exit container),
+      NO hysteria forwarder, own egress (redacted ep_2a1adf7b) DISTINCT from LV exit
+      (ep_82c23da5) and the RU relay shared upstream (ep_4b84b15b) — true provider/geo/
+      egress independence (FriendHosting NL). architecture_compliance=compliant (exit
+      stack), independent_exit_candidate=true. Earlier NL-A2-A4 node-level SSH PASS.
+      STILL NOT counted: acceptance_status=pending_traffic_smoke; delivery_path_eligible
+      =false, status=staging, canary_percent=0 → does NOT inflate delivery_path_nodes /
+      independent_exit_paths. Promotion needs owner A2/A4 traffic smoke + acceptance P0
+      + APPROVE PROD APPLY. Stealth invariant: Intl_Stealth stays relay-only (NL direct
+      never carries TG/Meta/IG).
 
   - node_id: ams-backup-edge
     display_name: Backup subscription edge jurisdiction

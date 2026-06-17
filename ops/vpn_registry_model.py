@@ -76,6 +76,33 @@ def is_architecture_compliant(node: dict[str, Any]) -> bool:
     return architecture_compliance(node) == COMPLIANT
 
 
+def is_independent_exit(node: dict[str, Any]) -> bool:
+    """INDEPENDENT_EXIT_PATH_V1: a counted, independent delivery exit.
+
+    Requires exit path_role, active, delivery_path_eligible, architecture-compliant,
+    and not a shared-upstream relay frontend. (Staging/candidate exits return False
+    until accepted — they must not inflate independent capacity.)
+    """
+    if path_role(node) != "exit":
+        return False
+    if node.get("status") != "active":
+        return False
+    if node.get("delivery_path_eligible") is not True:
+        return False
+    if not is_architecture_compliant(node):
+        return False
+    return True
+
+
+def is_independent_exit_candidate(node: dict[str, Any]) -> bool:
+    """Exit-architecture node being prepared as an independent path (not yet counted)."""
+    return bool(node.get("independent_exit_candidate")) or (
+        path_role(node) == "exit"
+        and shared_upstream_group(node) is None
+        and node.get("status") in {"staging", "canary"}
+    )
+
+
 def outbound_tag_for_node(node_id: str) -> str:
     """Stable, position-independent outbound tag derived from node_id.
 
@@ -222,6 +249,8 @@ class NodeModel:
     architecture_compliance: str
     architecture_compliant: bool
     shared_upstream_group: str | None
+    independent_exit: bool
+    independent_exit_candidate: bool
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -247,6 +276,8 @@ class NodeModel:
             "architecture_compliance": self.architecture_compliance,
             "architecture_compliant": self.architecture_compliant,
             "shared_upstream_group": self.shared_upstream_group,
+            "independent_exit": self.independent_exit,
+            "independent_exit_candidate": self.independent_exit_candidate,
         }
 
 
@@ -281,6 +312,8 @@ def build_node_model(node: dict[str, Any]) -> NodeModel:
         architecture_compliance=architecture_compliance(node),
         architecture_compliant=is_architecture_compliant(node),
         shared_upstream_group=shared_upstream_group(node),
+        independent_exit=is_independent_exit(node),
+        independent_exit_candidate=is_independent_exit_candidate(node),
     )
 
 

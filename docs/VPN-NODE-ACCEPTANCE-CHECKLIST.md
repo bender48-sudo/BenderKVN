@@ -167,6 +167,22 @@ Mark **PASS / FAIL / N/A**. **P0** items block canary. Record evidence links in 
 
 ---
 
+## 13a. Independent exit path (INDEPENDENT_EXIT_PATH_V1 — P0 for capacity count)
+
+Required before a node can count toward `independent_exit_paths` / `delivery_path_nodes`.
+See [`NEW-INDEPENDENT-EXIT-PATH-2026-06-17.md`](NEW-INDEPENDENT-EXIT-PATH-2026-06-17.md).
+
+| # | P | Check | PASS | FAIL | N/A | Notes |
+|---|-----|-------|------|------|-----|-------|
+| 13a.1 | P0 | `path_role: exit` (not relay frontend) | ☐ | ☐ | ☐ | |
+| 13a.2 | P0 | Egress token DISTINCT from every existing exit + relay upstream | ☐ | ☐ | ☐ | `ep_<hash>` only |
+| 13a.3 | P0 | **No** `shared_upstream_group` with existing relays/exits | ☐ | ☐ | ☐ | shared = counts as 1 |
+| 13a.4 | P0 | `architecture_compliance: compliant` (real exit stack) | ☐ | ☐ | ☐ | |
+| 13a.5 | P0 | Generator CANARY preview includes the node | ☐ | ☐ | ☐ | synthetic overlay |
+| 13a.6 | P0 | Controlled A2/A4 traffic smoke PASS (owner) | ☐ | ☐ | ☐ | then `delivery_path_eligible=true` |
+
+---
+
 ## 14. Sign-off
 
 | Role | Name | Date | Decision |

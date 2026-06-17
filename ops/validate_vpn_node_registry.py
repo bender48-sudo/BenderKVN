@@ -319,6 +319,31 @@ def count_delivery_path_nodes(nodes: list[Any]) -> int:
     return count
 
 
+def count_independent_exit_paths(nodes: list[Any]) -> int:
+    """INDEPENDENT_EXIT_PATH_V1: distinct egress backends, not raw exit count.
+
+    Exits that share a ``shared_upstream_group`` (e.g. RU relay frontends that
+    forward to the same exit) collapse to ONE independent path. Relays, backup,
+    lab, staging, and non-eligible nodes never count. This is the honest metric
+    for the 300/30k 'two independent paths' gate.
+    """
+    keys: set[str] = set()
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        if node.get("role") != "exit":
+            continue
+        if node.get("status") != "active":
+            continue
+        if node.get("delivery_path_eligible") is not True:
+            continue
+        if node.get("architecture_compliance", "compliant") != "compliant":
+            continue
+        key = node.get("shared_upstream_group") or node.get("node_id")
+        keys.add(str(key))
+    return len(keys)
+
+
 def summarize_registry(data: dict[str, Any]) -> dict[str, Any]:
     nodes = data.get("nodes") or []
     by_status: dict[str, int] = {}
@@ -335,6 +360,7 @@ def summarize_registry(data: dict[str, Any]) -> dict[str, Any]:
         "by_status": dict(sorted(by_status.items())),
         "by_group": dict(sorted(by_group.items())),
         "delivery_path_nodes": count_delivery_path_nodes(nodes),
+        "independent_exit_paths": count_independent_exit_paths(nodes),
     }
 
 
@@ -345,6 +371,7 @@ def print_summary(data: dict[str, Any], warnings: list[str]) -> None:
     print(f"  by_status: {summary['by_status']}")
     print(f"  by_group: {summary['by_group']}")
     print(f"  delivery_path_nodes: {summary['delivery_path_nodes']}")
+    print(f"  independent_exit_paths: {summary['independent_exit_paths']}")
     for w in warnings:
         print(f"  WARNING: {w}")
 

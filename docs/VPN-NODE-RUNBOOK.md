@@ -96,6 +96,13 @@ Two distinct node standards. Do NOT conflate them:
   paths may enter canary/prod pools (`ops/vpn_registry_model.py`).
 - Relays sharing one `shared_upstream_group` are **front-ends to one backend** — they do
   NOT count as independent delivery paths.
+- **INDEPENDENT_EXIT_PATH_V1** (NEW-INDEPENDENT-EXIT-PATH-001): a node counts toward
+  `independent_exit_paths` (validator) / `delivery_path_nodes` only if `path_role=exit`,
+  active, `delivery_path_eligible=true`, compliant, and its egress + `shared_upstream_group`
+  are independent of all other counted exits. PUBLIC_PROD needs **≥2**. Candidates being
+  prepared use `independent_exit_candidate: true` + `acceptance_status` and do **not** count
+  until the owner traffic smoke passes —
+  [`NEW-INDEPENDENT-EXIT-PATH-2026-06-17.md`](NEW-INDEPENDENT-EXIT-PATH-2026-06-17.md).
 
 ## 3. Remna / Xray / Caddy / Reality / selfsteal
 
