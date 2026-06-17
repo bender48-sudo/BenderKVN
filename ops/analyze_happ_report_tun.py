@@ -10,6 +10,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import io
 import json
 import re
@@ -276,6 +277,139 @@ def analyze_tun_log_stream(text: str) -> dict:
     }
 
 
+# Destination endpoint extraction. Two forms appear in sing-box/xray tun logs:
+#   INFO  "... outbound connection to 203.0.113.10:443"
+#   ERROR "... raw-read tcp 172.16.0.2:26531->203.0.113.10:443: ... forcibly closed"
+_DEST_TO = re.compile(r"connection to (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)")
+_DEST_ARROW = re.compile(r"->(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)")
+_RESET_MARKERS = ("forcibly closed", "connection reset", "broken pipe",
+                  "download closed", "upload closed")
+
+
+def endpoint_token(ip: str, port: str) -> str:
+    """Non-identifying, deterministic endpoint id (no octets, no raw IP).
+
+    Lets us say "one endpoint dominates resets" without leaking the address.
+    """
+    digest = hashlib.sha1(ip.encode("utf-8")).hexdigest()[:8]
+    return f"ep_{digest}:{port}"
+
+
+def categorize_endpoint(ip: str, port: str) -> str:
+    """Coarse, non-identifying category for a destination endpoint."""
+    if ip.startswith("127."):
+        return "local_socks"
+    if ip.startswith(("172.16.", "172.17.", "172.18.", "172.19.", "10.", "192.168.")):
+        return "tun_gateway_or_private"
+    if ip.startswith(("149.154.", "91.108.", "95.161.")):
+        return "telegram"
+    if port == "53":
+        return "dns"
+    if port == "5228":
+        return "google_push"
+    if port in ("443", "80"):
+        return "relay_or_web_tls"
+    return "unknown"
+
+
+def analyze_error_endpoints(text: str) -> dict:
+    """Attribute reset/closed errors to destination endpoints (redacted).
+
+    Identifies whether a single relay endpoint dominates the resets — the key
+    signal the legacy text-based relay1/relay2 counters miss (logs carry IP:port,
+    not the words 'relay 1').
+    """
+    err_ep: Counter[str] = Counter()
+    all_ep: Counter[str] = Counter()
+    err_cat: Counter[str] = Counter()
+    port_hist: Counter[str] = Counter()
+    ep_category: dict[str, str] = {}
+
+    for line in text.splitlines():
+        ll = line.lower()
+        is_reset = any(mk in ll for mk in _RESET_MARKERS)
+        seen: set[str] = set()
+        for pat in (_DEST_TO, _DEST_ARROW):
+            for m in pat.finditer(line):
+                ip, port = m.group(1), m.group(2)
+                tok = endpoint_token(ip, port)
+                cat = categorize_endpoint(ip, port)
+                ep_category.setdefault(tok, cat)
+                if tok not in seen:
+                    all_ep[tok] += 1
+                    port_hist[port] += 1
+                    seen.add(tok)
+                if is_reset:
+                    err_ep[tok] += 1
+                    err_cat[cat] += 1
+
+    total_err = sum(err_ep.values())
+    top = err_ep.most_common(1)
+    top_token, top_count = (top[0] if top else (None, 0))
+    dominance = (top_count / total_err) if total_err else 0.0
+    return {
+        "endpoint_error_total": total_err,
+        "distinct_error_endpoints": len(err_ep),
+        "top_error_endpoint": top_token,
+        "top_error_endpoint_category": ep_category.get(top_token) if top_token else None,
+        "top_error_endpoint_count": top_count,
+        "top_error_endpoint_share": round(dominance, 3),
+        "single_endpoint_dominates": dominance >= 0.5 and total_err >= 50,
+        "errors_by_category": dict(err_cat.most_common(8)),
+        "top_error_endpoints": [
+            {"endpoint": tok, "category": ep_category.get(tok), "errors": cnt}
+            for tok, cnt in err_ep.most_common(5)
+        ],
+        "top_dest_endpoints": [
+            {"endpoint": tok, "category": ep_category.get(tok), "hits": cnt}
+            for tok, cnt in all_ep.most_common(5)
+        ],
+        "port_histogram": dict(port_hist.most_common(8)),
+    }
+
+
+_SESSION_START = re.compile(r"Tun started up in (\d+)ms", re.I)
+_SESSION_TIMING = re.compile(r"TUN startup: (\d+)ms", re.I)
+_EXIT_NONZERO = re.compile(r"exit code (?!0\b)(\d+)|finished with exit code (?!0\b)(\d+)", re.I)
+_EXIT_CLEAN = re.compile(r"finished with exit code 0\b", re.I)
+_TS = re.compile(r"\[(\d{2}\.\d{2} \d{2}:\d{2}:\d{2})\]")
+
+
+def analyze_tun_sessions(app_log: str, happd: str, *, fast_ms: int = 3000) -> dict:
+    """Separate current fast TUN startups from historical crashes.
+
+    Avoids labelling the report a 'startup problem' when current sessions start
+    in ~1s while crashes are older happd entries.
+    """
+    startups: list[dict] = []
+    for line in app_log.splitlines():
+        m = _SESSION_START.search(line) or _SESSION_TIMING.search(line)
+        if not m:
+            continue
+        dur = int(m.group(1))
+        ts_m = _TS.search(line)
+        startups.append({
+            "ts": ts_m.group(1) if ts_m else None,
+            "duration_ms": dur,
+            "fast": dur <= fast_ms,
+        })
+
+    combined = app_log + "\n" + happd
+    crash_count = len(_EXIT_NONZERO.findall(combined))
+    clean_stop_count = len(_EXIT_CLEAN.findall(combined))
+    fast = [s for s in startups if s["fast"]]
+    return {
+        "startup_events": startups[-10:],
+        "startup_count": len(startups),
+        "fast_startup_count": len(fast),
+        "slow_startup_count": len(startups) - len(fast),
+        "current_session_fast": bool(startups) and startups[-1]["fast"],
+        "historical_crash_count": crash_count,
+        "clean_stop_count": clean_stop_count,
+        "crashes_are_historical_only": crash_count > 0 and bool(fast),
+    }
+
+
 SLEEP_WAKE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("sleep_wake_detected", re.compile(r"Sleep/wake detected|System wake recovery", re.I)),
     ("daemon_ipc_disconnect", re.compile(r"Disconnected from happd daemon|daemon IPC", re.I)),
@@ -418,6 +552,8 @@ class TunAnalysisResult:
     core_relay_direct: dict
     tun_lifecycle: dict
     tun_log_stats: dict
+    error_endpoints: dict
+    tun_sessions: dict
     track_signals: dict
     sleep_wake: dict
     local_clues: dict
@@ -480,6 +616,8 @@ def analyze_report_zip(path: Path) -> TunAnalysisResult:
     final_state_guard = detect_final_state_overwrite(sel_raw, settings_raw, app_log)
     bender_segment = estimate_bender_segment_stats(app_log, tun_log, final_state_guard)
     tun_stats = analyze_tun_log_stream(tun_log)
+    error_endpoints = analyze_error_endpoints(tun_log)
+    tun_sessions = analyze_tun_sessions(app_log, happd)
 
     tun_lifecycle = {
         "tun_crash": bool(re.search(r"sing-box-tun.*exit|exit code 1", happd + app_log, re.I)),
@@ -557,6 +695,18 @@ def analyze_report_zip(path: Path) -> TunAnalysisResult:
             "In-core relay endpoint → direct rules present (expected anti-loop); "
             "do not remove without lab proof"
         )
+    if error_endpoints.get("single_endpoint_dominates"):
+        cat = error_endpoints.get("top_error_endpoint_category")
+        notes.append(
+            "Track relay-path: a SINGLE destination endpoint dominates the resets "
+            f"({error_endpoints.get('top_error_endpoint_share')} share, category={cat}) — "
+            "points to one relay/exit path, not a client-wide failure"
+        )
+    if tun_sessions.get("crashes_are_historical_only"):
+        notes.append(
+            "Current TUN startup is fast/healthy; exit-code crashes are historical "
+            "happd entries — do NOT classify this session as a startup failure"
+        )
     if tun_stats.get("outbound_direct_to_relay", 0) > 50:
         notes.append("Track H: Xray relay egress via outbound/direct captured by TUN — possible route loop")
     if routing_overlap.get("relay_in_direct_ip") or routing_overlap.get("geoip_ru_in_direct_ip"):
@@ -602,6 +752,8 @@ def analyze_report_zip(path: Path) -> TunAnalysisResult:
         core_relay_direct=core_relay_direct,
         tun_lifecycle=tun_lifecycle,
         tun_log_stats=tun_stats,
+        error_endpoints=error_endpoints,
+        tun_sessions=tun_sessions,
         track_signals=track_signals,
         sleep_wake=sleep_wake,
         local_clues=local_clues,
@@ -622,6 +774,8 @@ def result_to_dict(r: TunAnalysisResult) -> dict:
         "core_relay_direct": r.core_relay_direct,
         "tun_lifecycle": r.tun_lifecycle,
         "tun_log_stats": r.tun_log_stats,
+        "error_endpoints": r.error_endpoints,
+        "tun_sessions": r.tun_sessions,
         "track_signals": r.track_signals,
         "sleep_wake": r.sleep_wake,
         "local_clues": r.local_clues,
@@ -641,6 +795,8 @@ def print_human(r: TunAnalysisResult) -> None:
     print(f"core_relay_direct: {json.dumps(r.core_relay_direct, ensure_ascii=False)}")
     print(f"tun_lifecycle: {json.dumps(r.tun_lifecycle, ensure_ascii=False)}")
     print(f"tun_log_stats: {json.dumps(r.tun_log_stats, ensure_ascii=False, indent=2)}")
+    print(f"error_endpoints: {json.dumps(r.error_endpoints, ensure_ascii=False, indent=2)}")
+    print(f"tun_sessions: {json.dumps(r.tun_sessions, ensure_ascii=False, indent=2)}")
     print(f"track_signals: {json.dumps(r.track_signals, ensure_ascii=False)}")
     print(f"sleep_wake: {json.dumps(r.sleep_wake, ensure_ascii=False)}")
     print(f"local_clues: {json.dumps(r.local_clues, ensure_ascii=False)}")

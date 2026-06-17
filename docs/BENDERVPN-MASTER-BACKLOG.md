@@ -21,6 +21,7 @@
 | [`INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md`](INCIDENT-DIAG-2026-06-10-WINDOWS-SLEEP-RESUME-MAIL.md) | INCIDENT-DIAG-003-004 — Windows Happ report (sleep/mail) |
 | [`INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md`](INCIDENT-DIAG-2026-06-10-HAPP-TUN-DAEMON-PROXY-FALLBACK.md) | CLIENT-STABILITY-001 — TUN daemon + Bender Proxy Track A/B |
 | [`INCIDENT-DIAG-2026-06-12-HAPP-TUN-ACTIVE-FAILURE.md`](INCIDENT-DIAG-2026-06-12-HAPP-TUN-ACTIVE-FAILURE.md) | CLIENT-STABILITY-001 — DirectIp fix; report(5) relay egress; [recovery capture](CLIENT-STABILITY-HAPP-RECOVERY-CAPTURE.md) |
+| [`CLIENT-STABILITY-DESKTOP-HAPP-DROPOUT-2026-06-17.md`](CLIENT-STABILITY-DESKTOP-HAPP-DROPOUT-2026-06-17.md) | CLIENT-STABILITY-DESKTOP-HAPP-DROPOUT-001 — report(10): single relay endpoint = 80% of resets; TUN/routing healthy; relay-path fix proposed |
 | [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-06-14.md) | CodeRabbit commercial launch triage — accepted blockers + remediation order (`c03f638`) |
 | [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) | Target 30k capacity architecture — backend-controlled multi-node delivery |
 | [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md) | Fast node bring-up runbook (unified template) |
@@ -168,6 +169,8 @@ Source: [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-0
 | 6 | **G4-TG-BIND-RETEST-001** | P0 | OPEN | Referral/public acquisition |
 | 7 | **CLIENT-STABILITY-HAPP-RELAY2-PROD-SELECTOR-CONTROLLED-001** | P0 | ELIGIBLE | Owner approval only — not auto |
 | 8 | **CLIENT-STABILITY-MOBILE-SMOKE-001** | P0 | PENDING | Mobile acquisition |
+| — | **CLIENT-STABILITY-DESKTOP-HAPP-DROPOUT-001** | P0 | **DIAGNOSED** | report(10): one relay endpoint = 80.3% of resets; TUN/routing/profile healthy → [`CLIENT-STABILITY-DESKTOP-HAPP-DROPOUT-2026-06-17.md`](CLIENT-STABILITY-DESKTOP-HAPP-DROPOUT-2026-06-17.md) |
+| — | **CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-001** | P0 | OPEN (proposed) | De-weight/replace resetting relay; owner-gated read-only check or owner canary — no broad apply |
 | 9 | **MONITOR-FLAP-TUNE-001** | P1 | SOAK OPEN | Before NL A2/A4 |
 | 10 | **VPN-ARCH-001** | P1 | AWAITING APPROVAL | Capacity ≥2 delivery paths |
 

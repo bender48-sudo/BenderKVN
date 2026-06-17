@@ -152,7 +152,7 @@ Source: [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-
 
 | Mode | Status | User-facing guidance |
 |------|--------|----------------------|
-| Happ desktop long session (Cursor/Docs) | **OPEN** | Suspect relay path; relay2 lab for owner; v2rayN if unusable |
+| Happ desktop long session (Cursor/Docs) | **OPEN — relay-path localized** | report(10): one relay endpoint = 80% of resets; second relay healthy; TUN/routing OK → [`CLIENT-STABILITY-DESKTOP-HAPP-DROPOUT-2026-06-17.md`](CLIENT-STABILITY-DESKTOP-HAPP-DROPOUT-2026-06-17.md); next CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-001 (owner-gated) |
 | Sleep / wake (Windows) | **OPEN** | INCIDENT-003 Track A; do not promise laptop sleep reliability |
 | Happ Proxy (Bender) | **NOT RECOMMENDED** | Owner reports fail; SafeVPN Proxy was control only |
 | Mobile lock / LTE handoff | **PENDING** | MOBILE-SMOKE-001 |

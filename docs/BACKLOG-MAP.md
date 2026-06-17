@@ -126,6 +126,8 @@
 | **NODE-SMOKE-MATRIX-001** | **DOCS DONE / IMPL OPEN** | [`VPN-NODE-ACCEPTANCE-CHECKLIST.md`](VPN-NODE-ACCEPTANCE-CHECKLIST.md) |
 | **ROLLOUT-CANARY-DRAIN-001** | **DOCS DONE / IMPL OPEN** | Process in runbook + capacity plan |
 | **MONITOR-CAPACITY-001** | OPEN | Capacity metrics/dashboard — not started |
+| **CLIENT-STABILITY-DESKTOP-HAPP-DROPOUT-001** | **DIAGNOSED** | [`CLIENT-STABILITY-DESKTOP-HAPP-DROPOUT-2026-06-17.md`](CLIENT-STABILITY-DESKTOP-HAPP-DROPOUT-2026-06-17.md) — report(10): single relay endpoint dominates resets (80%); TUN/routing healthy |
+| **CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-001** | **OPEN (proposed)** | Relay-path de-weight/replace; owner-gated; no broad prod apply |
 
 ---
 
