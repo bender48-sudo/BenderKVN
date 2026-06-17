@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Independent exit path canary artifact — NEW-INDEPENDENT-EXIT-PATH-001.
+"""Independent exit path canary artifact — NEW-INDEPENDENT-EXIT-PATH-001 /
+NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-AND-PROMOTION-001.
 
 Produces an owner/staging-only artifact under .local/ (never committed) that
 captures the INDEPENDENT_EXIT_PATH_V1 criteria scorecard for a candidate exit
@@ -49,6 +50,7 @@ from vpn_registry_model import (  # noqa: E402
 
 DEFAULT_OUT_DIR = ROOT / ".local"
 DEFAULT_NODE_ID = "nl-node-1"
+TASK_ID = "NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-AND-PROMOTION-001"
 PROFILE_LABEL = (
     "BenderVPN Independent Exit Canary — owner/staging only — do NOT refresh subscription"
 )
@@ -60,27 +62,106 @@ EGRESS_EVIDENCE = {
     "ru_shared_upstream": "ep_4b84b15b",
 }
 
+IMPORT_INSTRUCTIONS = [
+    "Keep the normal BenderVPN Auto profile untouched — do NOT refresh subscription.",
+    "Create a NEW Happ profile named exactly per the label above.",
+    "Paste owner-held NL direct VLESS/REALITY config from vault/.secrets (never into git).",
+    "Set routing profile to the standard BenderVPN RU routing bundle if prompted.",
+    "DISABLE auto-update / subscription refresh on the NL canary profile.",
+    "Confirm the profile shows NL direct hosts in Intl_Direct only (not stealth/TG/Meta).",
+    "Do NOT use server picker or manual host selection in user-facing copy.",
+]
+
 SMOKE_CHECKLIST = [
-    "Confirm normal BenderVPN profile still works (LV path unchanged).",
-    "Import the independent-exit canary as a NEW Happ profile (never overwrite BenderVPN Auto).",
-    "DISABLE auto-update / subscription refresh on the canary profile.",
-    "Connect via canary profile; verify general browsing (Intl_Direct via NL egress) stays stable 5 min.",
-    "Verify Google/search loads through the NL egress.",
-    "Verify Instagram/Meta/Telegram still exit via stealth relay (must NOT exit via NL direct).",
-    "Run sleep/wake once on desktop; reconnect without dial storms.",
-    "Capture pass/fail per app; if any FAIL switch back to normal profile and do not refresh subscription.",
+    "[PRE] Confirm normal BenderVPN profile still works (LV path unchanged).",
+    "[PRE] Import NL canary as a NEW profile; auto-refresh OFF.",
+    "[CONNECT] Connect via NL canary profile; wait until TUN/Proxy shows connected.",
+    "[CONNECT] Verify no immediate dial storm or reset loop in Happ logs.",
+    "[SESSION 10–15 min] Keep an active browser tab on Google Docs or Gmail open.",
+    "[SESSION 10–15 min] Browse Google/search; confirm pages load without repeated reconnects.",
+    "[SESSION 10–15 min] Confirm general Intl_Direct traffic uses NL egress (not LV/RU relay).",
+    "[STEALTH] Open Telegram — must stay on stealth relay path (NOT NL direct exit).",
+    "[STEALTH] Open Instagram/Meta if available — must NOT exit via NL direct.",
+    "[DNS] Resolve a blocked/non-RU site; confirm DNS works without leak to broken relay1.",
+    "[ROUTE] Confirm no fallback to ru-relay-1 (known unstable desktop path).",
+    "[ROUTE] Confirm route integrity: stealth apps on relay, direct apps on NL where expected.",
+    "[SLEEP/WAKE] One sleep/wake cycle on desktop (if safe); reconnect without dial storms.",
+    "[POST] Record pass/fail per step below; export Happ report.zip if any FAIL.",
+    "[POST] Switch back to normal profile when done; do NOT refresh subscription.",
+]
+
+EXPECTED_BEHAVIOR = {
+    "nl_direct": "Google/search/general Intl_Direct browsing exits via NL independent path.",
+    "stealth": "Telegram, Instagram, Meta stay on stealth relay — never NL direct.",
+    "lv_preserved": "Normal BenderVPN profile unchanged; LV production path intact.",
+    "no_relay1": "No dependency on ru-relay-1 (excluded from desktop canary).",
+    "stability": "10–15 min active session without frequent reset/drop/reconnect loops.",
+    "dns": "DNS resolution works; no obvious leak or broken resolver.",
+}
+
+RECORD_TEMPLATE = {
+    "smoke_date_utc": "<fill>",
+    "device": "<desktop|mobile>",
+    "happ_mode": "<TUN|Proxy>",
+    "connect_result": "<PASS|FAIL>",
+    "session_10_15_min": "<PASS|FAIL|PARTIAL>",
+    "google_docs_gmail": "<PASS|FAIL|N/A>",
+    "google_search": "<PASS|FAIL>",
+    "telegram_stealth": "<PASS|FAIL>",
+    "meta_instagram_stealth": "<PASS|FAIL|N/A>",
+    "dns_resolution": "<PASS|FAIL>",
+    "route_integrity": "<PASS|FAIL>",
+    "sleep_wake": "<PASS|FAIL|SKIPPED>",
+    "relay1_fallback_seen": "<NO|YES>",
+    "overall_verdict": "<PASS|PARTIAL|FAIL>",
+    "notes_redacted": "<short notes — no secrets/IPs>",
+    "report_export_path": "<local path to report.zip if FAIL — do not commit>",
+}
+
+FAILURE_EXPORT = [
+    "In Happ: Settings → Diagnostics → Export report (report.zip).",
+    "Save to a local ignored path only (e.g. .secrets/diagnostics/ or Downloads).",
+    "Do NOT paste subscription URLs, UUIDs, raw IPs, or tokens into chat/git.",
+    "Share only: overall verdict, redacted step failures, report filename + date.",
+    "Agent can analyze a copied report via ops/analyze_happ_report_tun.py locally.",
+]
+
+PASS_CRITERIA = [
+    "NL canary connects successfully.",
+    "Traffic flows through NL independent exit for Intl_Direct as expected.",
+    "Long-lived session stable 10–15 minutes.",
+    "Stealth apps (TG/Meta/IG) stay on relay — not NL direct.",
+    "No obvious route leak or LV regression.",
+    "No ru-relay-1 dependency or reset storm.",
+    "DNS and route integrity OK.",
+]
+
+PARTIAL_CRITERIA = [
+    "Connects but one app/path unstable.",
+    "Route unclear or insufficient session duration (<10 min).",
+    "Sleep/wake skipped with other checks PASS.",
+    "Report/log missing for a suspected failure.",
+]
+
+FAIL_CRITERIA = [
+    "Cannot connect.",
+    "Wrong egress (LV/RU relay instead of NL for direct traffic).",
+    "DirectIp/stealth regression (TG/Meta via NL direct).",
+    "Frequent reset/drop/reconnect loops.",
+    "DNS failure or app-breaking behavior.",
 ]
 
 ROLLBACK = [
     "Switch back to the normal 'BenderVPN' profile in the client.",
     "Delete the independent-exit canary profile if no longer needed.",
-    "No server rollback required (read-only; no remote mutation in this task).",
-    "Registry stays status=staging, delivery_path_eligible=false, canary_percent=0 until owner promotion.",
+    "No server rollback required (read-only; no remote mutation unless separate task).",
+    "Registry stays status=staging, delivery_path_eligible=false, canary_percent=0 until smoke PASS + promotion task.",
 ]
 
 REQUIRED_OWNER_INPUT = [
     "Owner-held NL direct VLESS/REALITY config (from vault/.secrets) — never paste into git.",
-    "Explicit phrase: APPROVE NL INDEPENDENT EXIT TRAFFIC SMOKE before any live selector apply.",
+    "Run the checklist in this artifact; fill RECORD_TEMPLATE in the JSON copy locally.",
+    "Reply with overall_verdict (PASS/PARTIAL/FAIL) + redacted notes to trigger promotion task.",
 ]
 
 
@@ -158,7 +239,7 @@ def build_artifact(registry: dict[str, Any], node_id: str) -> dict[str, Any]:
     scorecard = _criteria_scorecard(node)
     blocking = [c for c in scorecard if c["status"] not in {"PASS"}]
     return {
-        "task": "NEW-INDEPENDENT-EXIT-PATH-001",
+        "task": TASK_ID,
         "criteria_standard": "INDEPENDENT_EXIT_PATH_V1",
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "label": PROFILE_LABEL,
@@ -166,6 +247,7 @@ def build_artifact(registry: dict[str, Any], node_id: str) -> dict[str, Any]:
         "owner_only": True,
         "do_not_refresh": True,
         "production_default_changed": False,
+        "traffic_smoke_status": "WAITING_FOR_OWNER_TRAFFIC_SMOKE",
         "independent_exit_paths_now": count_independent_exit_paths(nodes),
         "candidate_counts_as_capacity": is_independent_exit(node),
         "egress_independence": EGRESS_EVIDENCE,
@@ -176,13 +258,29 @@ def build_artifact(registry: dict[str, Any], node_id: str) -> dict[str, Any]:
             "path_role": path_role(node),
             "architecture_compliance": architecture_compliance(node),
             "delivery_path_eligible": node.get("delivery_path_eligible"),
+            "acceptance_status": node.get("acceptance_status"),
             "canary_percent": (node.get("rollout") or {}).get("canary_percent"),
             "shared_upstream_group": shared_upstream_group(node),
         },
+        "import_instructions": IMPORT_INSTRUCTIONS,
         "synthetic_canary_preview": canary_gen.to_dict(),
         "smoke_checklist": SMOKE_CHECKLIST,
+        "expected_behavior": EXPECTED_BEHAVIOR,
+        "record_template": RECORD_TEMPLATE,
+        "failure_export": FAILURE_EXPORT,
+        "pass_criteria": PASS_CRITERIA,
+        "partial_criteria": PARTIAL_CRITERIA,
+        "fail_criteria": FAIL_CRITERIA,
         "rollback": ROLLBACK,
         "required_owner_input": REQUIRED_OWNER_INPUT,
+        "promotion_on_pass": {
+            "acceptance_status": "traffic_smoke_pass",
+            "status": "canary",
+            "canary_percent": 5,
+            "allow_new_assignments": False,
+            "delivery_path_eligible": True,
+            "note": "Repo-side only after owner PASS; PUBLIC_PROD apply still blocked separately.",
+        },
     }
 
 
@@ -196,6 +294,7 @@ def format_markdown_artifact(artifact: dict[str, Any]) -> str:
         "",
         f"- task: {artifact['task']}",
         f"- generated_at: {artifact['generated_at']}",
+        f"- traffic_smoke_status: **{artifact['traffic_smoke_status']}**",
         f"- independent_exit_paths_now: {artifact['independent_exit_paths_now']} (LV only)",
         f"- candidate_counts_as_capacity: {artifact['candidate_counts_as_capacity']} (must be False)",
         f"- production_default_changed: {artifact['production_default_changed']}",
@@ -224,6 +323,7 @@ def format_markdown_artifact(artifact: dict[str, Any]) -> str:
         f"- path_role: {artifact['node_current']['path_role']}",
         f"- architecture_compliance: {artifact['node_current']['architecture_compliance']}",
         f"- delivery_path_eligible: {artifact['node_current']['delivery_path_eligible']}",
+        f"- acceptance_status: {artifact['node_current'].get('acceptance_status')}",
         f"- canary_percent: {artifact['node_current']['canary_percent']}",
         f"- shared_upstream_group: {artifact['node_current']['shared_upstream_group']}",
         "",
@@ -241,16 +341,46 @@ def format_markdown_artifact(artifact: dict[str, Any]) -> str:
                 warnings=preview["warnings"],
             )
         ),
+        "## Import instructions (owner/staging)",
+        "",
+    ]
+    for i, step in enumerate(artifact["import_instructions"], 1):
+        lines.append(f"{i}. {step}")
+    lines += ["", "## Expected behavior", ""]
+    for k, v in artifact["expected_behavior"].items():
+        lines.append(f"- **{k}**: {v}")
+    lines += [
+        "",
         "## Controlled traffic smoke (owner/staging)",
         "",
     ]
     for i, step in enumerate(artifact["smoke_checklist"], 1):
         lines.append(f"{i}. {step}")
+    lines += ["", "## Pass / partial / fail criteria", "", "### PASS", ""]
+    lines += [f"- {c}" for c in artifact["pass_criteria"]]
+    lines += ["", "### PARTIAL", ""]
+    lines += [f"- {c}" for c in artifact["partial_criteria"]]
+    lines += ["", "### FAIL", ""]
+    lines += [f"- {c}" for c in artifact["fail_criteria"]]
+    lines += ["", "## What to record (fill in JSON copy locally)", "", "```json"]
+    lines.append(json.dumps(artifact["record_template"], indent=2, ensure_ascii=False))
+    lines += ["```", "", "## If failure — export report (local only)", ""]
+    lines += [f"- {r}" for r in artifact["failure_export"]]
     lines += ["", "## Rollback", ""]
     lines += [f"- {r}" for r in artifact["rollback"]]
     lines += ["", "## Required owner input", ""]
     lines += [f"- {r}" for r in artifact["required_owner_input"]]
-    lines.append("")
+    lines += [
+        "",
+        "## Promotion on PASS (repo-side — not applied until owner reports PASS)",
+        "",
+        f"- acceptance_status → `{artifact['promotion_on_pass']['acceptance_status']}`",
+        f"- status → `{artifact['promotion_on_pass']['status']}`",
+        f"- canary_percent → `{artifact['promotion_on_pass']['canary_percent']}` (owner/staging cohort only)",
+        f"- delivery_path_eligible → `{artifact['promotion_on_pass']['delivery_path_eligible']}` (canary context only)",
+        f"- Note: {artifact['promotion_on_pass']['note']}",
+        "",
+    ]
     return "\n".join(lines)
 
 

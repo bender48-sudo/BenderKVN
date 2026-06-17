@@ -153,10 +153,10 @@ the A2/A4 checklist. Rollback = switch back to normal profile; no server change.
 
 ## 9. Next owner action
 
-**APPROVE NL INDEPENDENT EXIT TRAFFIC SMOKE** — import `.local/independent_exit_nl_canary.md`
-and run the A2/A4 controlled traffic checklist on owner/staging devices. On PASS, a separate
-owner-approved task promotes `nl-node-1` to canary then active (`delivery_path_eligible=true`),
-making `independent_exit_paths=2`.
+**RUN OWNER NL TRAFFIC SMOKE** — follow `.local/independent_exit_nl_canary.md` (regenerated
+2026-06-18), fill the record template, and report `overall_verdict` PASS/PARTIAL/FAIL.
+On PASS, run **NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-AND-PROMOTION-001** promotion (canary
+fields only — still no PUBLIC_PROD apply).
 
 ---
 
