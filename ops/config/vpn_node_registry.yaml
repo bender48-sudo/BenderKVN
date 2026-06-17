@@ -4,12 +4,17 @@
 # Does NOT drive live subscription generation yet (SUB-GEN-SELECTOR-STRATEGY-001 OPEN).
 
 schema_version: 1
-updated_at: "2026-06-17T20:55:00Z"
+updated_at: "2026-06-17T21:30:00Z"
 registry_note: >
   delivery_path_nodes counts exit-role nodes with status=active and
   delivery_path_eligible=true. Relay diversity to one LV geography is not
   multi-node capacity. 300/30k gates remain NO-GO until >=2 proven paths
   and subscription generator integration.
+  RU-RELAY-ARCH-UNIFICATION-001: ru-relay-1 and ru-relay-2 are identical hysteria
+  TCP-forwarders sharing one upstream (shared_upstream_group=ru-fwd-upstream-1) =>
+  two front-ends to ONE backend, NOT independent delivery paths. Architecture standard
+  for RU relays is STANDARD_RU_RELAY_PATH_V1 (hysteria forwarder), documented in
+  RU-RELAY-ARCH-UNIFICATION-2026-06-17.md. Real scale gap = an INDEPENDENT exit/upstream.
 
 capacity_policy:
   users_per_node_soft_cap: 50
@@ -26,6 +31,8 @@ nodes:
     city: redacted
     provider_label: redacted-vps-lv
     role: exit
+    path_role: exit
+    architecture_compliance: compliant
     status: active
     delivery_path_eligible: true
     groups:
@@ -64,6 +71,10 @@ nodes:
     city: redacted
     provider_label: redacted-vps-ru-relay-1
     role: relay
+    path_role: relay
+    architecture_compliance: compliant
+    architecture_standard: STANDARD_RU_RELAY_PATH_V1
+    shared_upstream_group: ru-fwd-upstream-1
     status: active
     delivery_path_eligible: false
     groups:
@@ -83,7 +94,8 @@ nodes:
     exclude_from_desktop_canary: true
     last_incident_ref: CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-001
     last_repair_ref: DESKTOP-RELAY1-SERVICE-REPAIR-DEPLOY-001
-    repair_status: restarted_no_improvement
+    last_arch_ref: RU-RELAY-ARCH-UNIFICATION-001
+    repair_status: architecture_twin_verified
     retest_required: true
     exclude_reason: >
       report(10) desktop Happ: this relay endpoint (redacted ep_20e413bd:443,
@@ -109,15 +121,17 @@ nodes:
       mobile_supported: pending_owner_smoke
     owner_approval_required: true
     notes: >
-      Present in live Candidate D injectHosts (×3). Under suspicion per client
-      stability reports (dial/open storms) and report(10) desktop dropout (~80.3% of
-      that client's resets). Server check + scoped repair 2026-06-17: hysteria
-      TCP-forwarding relay (no xray); upstream reachable; hysteria-client restart did
-      NOT clear the forwarding resets. Kept incident/degraded; excluded from
-      owner/desktop canary. Deeper fix = rebuild to documented xray/REALITY design
-      OR upstream/QUIC investigation, both owner-gated (APPROVE DEEP RELAY1 REBUILD).
-      Do NOT blindly reduce selector or assume healthy without PROD-SELECTOR-CONTROLLED
-      owner approval.
+      RU-RELAY-ARCH-UNIFICATION-001 (2026-06-17): relay1 is architecturally IDENTICAL
+      to relay2 — same hysteria v2.8.1 forwarder stack, same client.yaml shape, SAME
+      upstream (redacted ep_4b84b15b) + same forward remote (redacted ep_82c23da5),
+      same live forwarding-error rate (10/180s). relay1 is NOT a uniquely broken server
+      path; its report(10) ~80.3% reset dominance was session/balancer-specific. Both
+      relays share one upstream group (ru-fwd-upstream-1) => they are two front-ends to
+      ONE backend, NOT independent delivery paths. architecture_compliance=compliant
+      with STANDARD_RU_RELAY_PATH_V1. Kept incident/retest_required + excluded from the
+      desktop canary so the relay2-only profile stays an owner A/B diagnostic (NOT a
+      proven fix). Real stability/scale gap = an INDEPENDENT exit/upstream, not a relay1
+      rebuild. Do NOT assume healthy without owner retest.
 
   - node_id: ru-relay-2
     display_name: RU relay secondary pool member
@@ -126,6 +140,10 @@ nodes:
     city: redacted
     provider_label: redacted-vps-ru-relay-2
     role: relay
+    path_role: relay
+    architecture_compliance: compliant
+    architecture_standard: STANDARD_RU_RELAY_PATH_V1
+    shared_upstream_group: ru-fwd-upstream-1
     status: active
     delivery_path_eligible: false
     groups:
@@ -154,10 +172,12 @@ nodes:
       mobile_supported: pending_owner_smoke
     owner_approval_required: true
     notes: >
-      Live pool member (×3 in Candidate D). Comparatively healthy path in report(10)
-      (redacted ep_d1a601f6:443, outbounds proxy-4/proxy-5/proxy-6 — minimal resets).
-      Designated healthy path for the owner/staging desktop relay-path canary. Relay2-only
-      lab profile is a separate entry — not production default for mass assignment.
+      Live pool member (×3 in Candidate D), redacted ep_d1a601f6:443, outbounds
+      proxy-4/proxy-5/proxy-6. RU-RELAY-ARCH-UNIFICATION-001: architecturally identical
+      to relay1 (hysteria v2.8.1 forwarder, same upstream ru-fwd-upstream-1, same
+      error rate) — it is the compliant reference for STANDARD_RU_RELAY_PATH_V1, NOT an
+      independent second path. Used as the relay2-only owner A/B diagnostic front-end.
+      MUST NOT become a permanent relay2-only production default for mass assignment.
 
   - node_id: ru-relay-2-lab
     display_name: Relay2-only owner lab profile
@@ -166,6 +186,7 @@ nodes:
     city: redacted
     provider_label: lab-local-profile
     role: lab
+    path_role: lab
     status: staging
     delivery_path_eligible: false
     groups:
@@ -203,6 +224,8 @@ nodes:
     city: redacted
     provider_label: redacted-vps-nl
     role: exit
+    path_role: exit
+    architecture_compliance: unverified
     status: staging
     delivery_path_eligible: false
     groups:
@@ -245,6 +268,7 @@ nodes:
     city: redacted
     provider_label: redacted-vps-ams-edge
     role: backup
+    path_role: backup
     status: active
     delivery_path_eligible: false
     groups:

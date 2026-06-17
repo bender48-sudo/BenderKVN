@@ -22,7 +22,7 @@ from vpn_registry_model import (  # noqa: E402
 
 
 def _node(node_id, role, status, *, eligible=False, groups=None, monitor="ok",
-          smoke="pass", canary=0, weight=0, country="LV"):
+          smoke="pass", canary=0, weight=0, country="LV", arch="compliant"):
     return {
         "node_id": node_id,
         "role": role,
@@ -30,6 +30,7 @@ def _node(node_id, role, status, *, eligible=False, groups=None, monitor="ok",
         "country": country,
         "region": "EU",
         "delivery_path_eligible": eligible,
+        "architecture_compliance": arch,
         "groups": groups or [],
         "health": {"monitor_status": monitor, "last_smoke_status": smoke},
         "rollout": {"canary_percent": canary, "cohort_weight": weight},

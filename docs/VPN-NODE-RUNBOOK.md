@@ -80,6 +80,23 @@ Owner delivers to agent: **root SSH**, **public IP**, **region/provider label** 
 
 ---
 
+## 2.1 Path tiers — relay vs exit architecture (RU-RELAY-ARCH-UNIFICATION-001)
+
+Two distinct node standards. Do NOT conflate them:
+
+| Tier | `path_role` | Standard | Service |
+|------|-------------|----------|---------|
+| **Exit** (LV/NL) | `exit` | runbook §3 (Remna/Xray/Caddy/REALITY) | xray VLESS/REALITY + Caddy selfsteal |
+| **RU relay** | `relay` | **STANDARD_RU_RELAY_PATH_V1** | hysteria v2.8.x forwarder (server UDP:443 + client TCP 443/8443/9443 → upstream) |
+
+- RU relays are **hysteria TCP-forwarders**, not xray — see
+  [`RU-RELAY-ARCH-UNIFICATION-2026-06-17.md`](RU-RELAY-ARCH-UNIFICATION-2026-06-17.md).
+- Each node must declare `path_role`, `architecture_compliance`, and (relays)
+  `shared_upstream_group`. **Fail-closed:** only `architecture_compliance: compliant`
+  paths may enter canary/prod pools (`ops/vpn_registry_model.py`).
+- Relays sharing one `shared_upstream_group` are **front-ends to one backend** — they do
+  NOT count as independent delivery paths.
+
 ## 3. Remna / Xray / Caddy / Reality / selfsteal
 
 | Step | Action | Notes |

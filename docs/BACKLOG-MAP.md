@@ -128,7 +128,9 @@
 | **MONITOR-CAPACITY-001** | OPEN | Capacity metrics/dashboard — not started |
 | **CLIENT-STABILITY-DESKTOP-HAPP-DROPOUT-001** | **DIAGNOSED** | [`CLIENT-STABILITY-DESKTOP-HAPP-DROPOUT-2026-06-17.md`](CLIENT-STABILITY-DESKTOP-HAPP-DROPOUT-2026-06-17.md) — report(10): single relay endpoint dominates resets (80%); TUN/routing healthy |
 | **CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-001** | **DONE (owner-gated)** | [`CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-2026-06-17.md`](CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-2026-06-17.md) — bad relay = ru-relay-1; registry incident + owner desktop canary excludes bad path; desktop PASS pending owner canary import |
-| **DESKTOP-RELAY1-SERVICE-REPAIR-DEPLOY-001** | **PARTIAL (owner-gated)** | [`DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md`](DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md) — relay1 is hysteria TCP-forwarder (no xray); scoped hysteria-client restart did NOT clear resets; kept degraded; relay2-only canary is workaround; next = RUN OWNER RELAY2-ONLY DESKTOP CANARY 15 MIN or APPROVE DEEP RELAY1 REBUILD |
+| **DESKTOP-RELAY1-SERVICE-REPAIR-DEPLOY-001** | **PARTIAL (owner-gated)** | [`DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md`](DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md) — relay1 is hysteria TCP-forwarder (no xray); scoped hysteria-client restart did NOT clear resets; kept degraded; relay2-only canary is workaround |
+| **RU-RELAY-ARCH-UNIFICATION-001** | **DONE (PATH C)** | [`RU-RELAY-ARCH-UNIFICATION-2026-06-17.md`](RU-RELAY-ARCH-UNIFICATION-2026-06-17.md) — relay1≡relay2 (identical hysteria forwarders, shared upstream); formalized STANDARD_RU_RELAY_PATH_V1; registry path_role/architecture_compliance/shared_upstream_group + fail-closed generator gate (+tests). Real gap = independent exit/upstream |
+| **NEW-INDEPENDENT-EXIT-PATH-001** | **OPEN (owner-gated)** | Procure an INDEPENDENT second exit/upstream (not same backend as relays) per VPN-ARCH-30K-CAPACITY-PLAN; owner phrase: APPROVE NEW RELAY NODE PURCHASE TO REPLACE RELAY1 |
 | **CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-001** | **OPEN (proposed)** | Relay-path de-weight/replace; owner-gated; no broad prod apply |
 
 ---

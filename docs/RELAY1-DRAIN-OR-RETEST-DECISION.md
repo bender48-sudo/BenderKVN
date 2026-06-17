@@ -41,6 +41,16 @@ The registry holds no endpoints/UUIDs — all evidence here is health metadata o
 > deeper fix (rebuild to xray/REALITY or upstream/QUIC investigation) needs
 > `APPROVE DEEP RELAY1 REBUILD`. See
 > [`DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md`](DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md).
+>
+> **Update 2026-06-17 (RU-RELAY-ARCH-UNIFICATION-001) — supersedes the "relay1 uniquely
+> broken" framing:** read-only compare shows ru-relay-1 and ru-relay-2 are **identical
+> hysteria forwarders sharing one upstream** (`ru-fwd-upstream-1`), same error rate. relay1
+> is NOT uniquely broken; report(10) dominance was session/balancer-specific. A relay1
+> rebuild/replace adds no independent path (same backend). Both relays are
+> `architecture_compliance: compliant` with **STANDARD_RU_RELAY_PATH_V1**. The real gap is
+> an INDEPENDENT exit/upstream. See
+> [`RU-RELAY-ARCH-UNIFICATION-2026-06-17.md`](RU-RELAY-ARCH-UNIFICATION-2026-06-17.md).
+> Owner action: `APPROVE NEW RELAY NODE PURCHASE TO REPLACE RELAY1` (= independent path).
 
 ---
 

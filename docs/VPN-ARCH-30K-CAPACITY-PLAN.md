@@ -35,6 +35,7 @@ picking among outbounds in a static JSON blob.
 | **Effective delivery geography** | **~1** (LV exit behind relays) | PROOF-001 + QUALITY-PROOF-001 |
 | **`delivery_path_nodes`** | **< 2** | NL connected but **not** in normal Auto subs |
 | **Relay #1** | Under suspicion (dial/open storms in lab) | report(6–7); relay2 lab mitigates locally only |
+| **Relay #1 vs #2 (2026-06-17)** | **Identical hysteria forwarders sharing ONE upstream** | RU-RELAY-ARCH-UNIFICATION-001: both `STANDARD_RU_RELAY_PATH_V1` compliant, `shared_upstream_group: ru-fwd-upstream-1`, same error rate → **two front-ends, one backend = NOT independent paths**. relay1 not uniquely broken; a relay1 rebuild/replace adds no diversity. Real fix = independent exit/upstream. |
 | **Relay2-only lab** | **LAB_OWNER** — PASS repeat soak | Must stay **non-production default** |
 | **Happ DirectIp fix** | **Deployed** — do **not** rollback | `0258d00`, owner retest `0635067` |
 | **Node bootstrap template** | **Partial** — `deploy-node.sh`, scattered docs | Unified runbook: [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md) |

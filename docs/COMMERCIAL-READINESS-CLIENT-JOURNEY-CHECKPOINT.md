@@ -152,7 +152,7 @@ Source: [`AUDIT-2026-06-10-BILLING-PAYMENT-COMMERCIAL-READINESS.md`](AUDIT-2026-
 
 | Mode | Status | User-facing guidance |
 |------|--------|----------------------|
-| Happ desktop long session (Cursor/Docs) | **OPEN — relay1 repair ineffective, workaround ready** | report(10): one relay = 80% of resets = ru-relay-1; relay1 is a hysteria TCP-forwarder (no xray), scoped restart did NOT clear resets → kept degraded; relay2-only owner canary excludes bad path → [`DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md`](DESKTOP-RELAY1-SERVICE-REPAIR-2026-06-17.md); PASS pending `RUN OWNER RELAY2-ONLY DESKTOP CANARY 15 MIN` or `APPROVE DEEP RELAY1 REBUILD` |
+| Happ desktop long session (Cursor/Docs) | **OPEN — needs independent exit/upstream** | RU-RELAY-ARCH-UNIFICATION-001: relay1≡relay2 (identical hysteria forwarders **sharing one upstream**, same error rate) → relay1 not uniquely broken; resets stem from shared upstream/forward design. Standard formalized (STANDARD_RU_RELAY_PATH_V1); relay2-only canary is an A/B diagnostic not a fix → [`RU-RELAY-ARCH-UNIFICATION-2026-06-17.md`](RU-RELAY-ARCH-UNIFICATION-2026-06-17.md); durable fix needs `APPROVE NEW RELAY NODE PURCHASE TO REPLACE RELAY1` (independent path) |
 | Sleep / wake (Windows) | **OPEN** | INCIDENT-003 Track A; do not promise laptop sleep reliability |
 | Happ Proxy (Bender) | **NOT RECOMMENDED** | Owner reports fail; SafeVPN Proxy was control only |
 | Mobile lock / LTE handoff | **PENDING** | MOBILE-SMOKE-001 |

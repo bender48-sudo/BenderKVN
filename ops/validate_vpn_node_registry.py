@@ -32,6 +32,18 @@ STATUSES = frozenset(
 
 ROLES = frozenset({"relay", "exit", "backup", "lab"})
 
+# RU-RELAY-ARCH-UNIFICATION-001: explicit path role + architecture compliance.
+PATH_ROLES = frozenset({"exit", "relay", "lab", "backup", "control-plane"})
+ARCHITECTURE_COMPLIANCE = frozenset(
+    {
+        "compliant",          # matches the documented architecture standard
+        "unverified",         # not yet checked against a standard
+        "non_compliant",      # diverges from standard; excluded from canary/prod
+        "replace_required",   # cannot be made compliant safely; replace
+        "decommission_candidate",
+    }
+)
+
 GROUPS = frozenset(
     {
         "LAB_OWNER",
@@ -246,6 +258,17 @@ def validate_registry(data: dict[str, Any], raw_text: str) -> tuple[list[str], l
             for csf in CLIENT_SUPPORT_FIELDS:
                 if csf not in client_support:
                     errors.append(f"{prefix}.client_support: missing {csf!r}")
+
+        # Optional architecture-unification fields (RU-RELAY-ARCH-UNIFICATION-001).
+        path_role = node.get("path_role")
+        if path_role is not None and path_role not in PATH_ROLES:
+            errors.append(f"{prefix}: invalid path_role {path_role!r}")
+        arch = node.get("architecture_compliance")
+        if arch is not None and arch not in ARCHITECTURE_COMPLIANCE:
+            errors.append(f"{prefix}: invalid architecture_compliance {arch!r}")
+        sug = node.get("shared_upstream_group")
+        if sug is not None and not isinstance(sug, str):
+            errors.append(f"{prefix}: shared_upstream_group must be a string")
 
         if _node_production_active(node):
             if isinstance(capacity, dict):

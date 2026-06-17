@@ -51,6 +51,30 @@ COHORT_PUBLIC_PROD = "PUBLIC_PROD"
 
 OUTBOUND_TAG_PREFIX = "out"
 
+# RU-RELAY-ARCH-UNIFICATION-001: a node enters canary/prod/desktop pools only if its
+# architecture is verified compliant with the documented standard. Unknown/unverified
+# defaults to NOT compliant (fail-closed) so undocumented stacks can't silently serve.
+ARCHITECTURE_STANDARD_RELAY = "STANDARD_RU_RELAY_PATH_V1"
+COMPLIANT = "compliant"
+
+
+def architecture_compliance(node: dict[str, Any]) -> str:
+    val = node.get("architecture_compliance")
+    return str(val) if val else "unverified"
+
+
+def path_role(node: dict[str, Any]) -> str:
+    return str(node.get("path_role") or node.get("role") or "?")
+
+
+def shared_upstream_group(node: dict[str, Any]) -> str | None:
+    val = node.get("shared_upstream_group")
+    return str(val) if val else None
+
+
+def is_architecture_compliant(node: dict[str, Any]) -> bool:
+    return architecture_compliance(node) == COMPLIANT
+
 
 def outbound_tag_for_node(node_id: str) -> str:
     """Stable, position-independent outbound tag derived from node_id.
@@ -125,6 +149,9 @@ def allowed_cohorts_for_node(node: dict[str, Any]) -> list[str]:
     cohorts: list[str] = []
     if "LAB_OWNER" in groups or role == "lab":
         return [COHORT_LAB_OWNER]
+    # Fail-closed: only architecture-compliant paths may enter canary/prod pools.
+    if not is_architecture_compliant(node):
+        return cohorts
     if status == "canary":
         cohorts.append(COHORT_CANARY)
     if is_production_delivery(node):
@@ -154,10 +181,12 @@ def exclusion_reason(node: dict[str, Any]) -> str | None:
     role = node.get("role")
     if status in BLOCKED_STATUSES:
         return f"status={status} (blocked from delivery)"
-    if _is_suspect(node):
-        return "health=suspect/needs_diagnosis"
     if "LAB_OWNER" in groups or role == "lab":
         return "lab-only (owner/F&F)"
+    if not is_architecture_compliant(node):
+        return f"architecture={architecture_compliance(node)} (not standard-compliant)"
+    if _is_suspect(node):
+        return "health=suspect/needs_diagnosis"
     if role == "backup" or "FALLBACK_MANUAL" in groups:
         return "backup/fallback (not delivery capacity)"
     if role == "relay":
@@ -189,6 +218,10 @@ class NodeModel:
     drain_after: Any
     incident: bool
     excluded_reason: str | None
+    path_role: str
+    architecture_compliance: str
+    architecture_compliant: bool
+    shared_upstream_group: str | None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -210,6 +243,10 @@ class NodeModel:
             "drain_after": self.drain_after,
             "incident": self.incident,
             "excluded_reason": self.excluded_reason,
+            "path_role": self.path_role,
+            "architecture_compliance": self.architecture_compliance,
+            "architecture_compliant": self.architecture_compliant,
+            "shared_upstream_group": self.shared_upstream_group,
         }
 
 
@@ -240,6 +277,10 @@ def build_node_model(node: dict[str, Any]) -> NodeModel:
         drain_after=rollout.get("drain_after"),
         incident=bool(node.get("incident")),
         excluded_reason=exclusion_reason(node),
+        path_role=path_role(node),
+        architecture_compliance=architecture_compliance(node),
+        architecture_compliant=is_architecture_compliant(node),
+        shared_upstream_group=shared_upstream_group(node),
     )
 
 

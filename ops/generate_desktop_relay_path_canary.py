@@ -94,6 +94,10 @@ def build_canary_plan(registry: dict[str, Any]) -> dict[str, Any]:
         "owner_only": True,
         "do_not_refresh": True,
         "production_default_changed": False,
+        "diagnostic_ab_not_guaranteed_fix": (
+            bad_node.get("shared_upstream_group")
+            and bad_node.get("shared_upstream_group") == healthy_node.get("shared_upstream_group")
+        ),
         "bad_path": {
             "endpoint_token": bad_token,
             "exclude_outbounds": list(RELAY1_SELECTOR),
@@ -101,7 +105,9 @@ def build_canary_plan(registry: dict[str, Any]) -> dict[str, Any]:
             "registry_monitor_status": (bad_node.get("health") or {}).get("monitor_status"),
             "registry_incident": bad_node.get("incident", False),
             "exclude_from_desktop_canary": bad_node.get("exclude_from_desktop_canary", False),
-            "evidence": "report(10) ~80.3% of resets; server check: xray inactive, hysteria on ports",
+            "architecture_compliance": bad_node.get("architecture_compliance"),
+            "shared_upstream_group": bad_node.get("shared_upstream_group"),
+            "evidence": "report(10) ~80.3% of that client's resets (session/balancer-specific; server-side identical to relay2)",
         },
         "healthy_path": {
             "endpoint_token": healthy_token,
@@ -109,6 +115,8 @@ def build_canary_plan(registry: dict[str, Any]) -> dict[str, Any]:
             "node_id": "ru-relay-2",
             "registry_monitor_status": (healthy_node.get("health") or {}).get("monitor_status"),
             "desktop_canary_path": healthy_node.get("desktop_canary_path", False),
+            "architecture_compliance": healthy_node.get("architecture_compliance"),
+            "shared_upstream_group": healthy_node.get("shared_upstream_group"),
         },
         "pin_balancers": [INTL_BALANCER_TAG, INTL_STEALTH_BALANCER_TAG],
         "guarantees": GUARANTEES,

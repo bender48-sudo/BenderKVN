@@ -139,3 +139,16 @@ upstream-app / QUIC-tunnel quality / relay design — not a stale local process.
   second healthy delivery path.
 
 > Desktop PASS NOT claimed. 300/30k GO NOT claimed.
+
+---
+
+## 10. Follow-up (RU-RELAY-ARCH-UNIFICATION-001, 2026-06-17)
+
+Deeper read-only compare with ru-relay-2 **revises the conclusion above**: relay1 is NOT a
+uniquely broken node — ru-relay-1 and ru-relay-2 are **identical hysteria v2.8.1 forwarders
+sharing one upstream** (`ru-fwd-upstream-1`), with the **same** forwarding-error rate
+(10/180s). The hysteria-forwarder IS the RU relay architecture (now formalized as
+**STANDARD_RU_RELAY_PATH_V1**); relay1 is `architecture_compliance: compliant`. The desktop
+resets stem from the shared upstream/forward design, and the relay2-only canary is an A/B
+diagnostic, not real redundancy. See
+[`RU-RELAY-ARCH-UNIFICATION-2026-06-17.md`](RU-RELAY-ARCH-UNIFICATION-2026-06-17.md).
