@@ -368,6 +368,38 @@ def analyze_error_endpoints(text: str) -> dict:
     }
 
 
+def map_endpoints_to_outbounds(cfg: dict, tokens: set[str] | None = None) -> dict:
+    """Map redacted endpoint tokens to the outbound tags that target them.
+
+    Lets us tie a dominant-error endpoint (ep_<hash>:port) back to the relay
+    outbound group (proxy / proxy-N) WITHOUT printing any raw IP/UUID.
+    """
+    mapping: dict[str, list[str]] = {}
+    tag_to_token: dict[str, str] = {}
+    for ob in cfg.get("outbounds") or []:
+        tag = ob.get("tag") or ob.get("name")
+        if not tag:
+            continue
+        s = ob.get("settings") or {}
+        addr = port = None
+        vnext = s.get("vnext") or []
+        if vnext:
+            addr = vnext[0].get("address")
+            port = vnext[0].get("port")
+        if not addr:
+            addr = s.get("address") or s.get("server")
+            port = s.get("port")
+        if not addr or port is None:
+            continue
+        tok = endpoint_token(str(addr), str(port))
+        tag_to_token[str(tag)] = tok
+        if tokens is None or tok in tokens:
+            mapping.setdefault(tok, []).append(str(tag))
+    for tok in mapping:
+        mapping[tok] = sorted(mapping[tok])
+    return {"token_to_outbounds": mapping, "tag_to_token": tag_to_token}
+
+
 _SESSION_START = re.compile(r"Tun started up in (\d+)ms", re.I)
 _SESSION_TIMING = re.compile(r"TUN startup: (\d+)ms", re.I)
 _EXIT_NONZERO = re.compile(r"exit code (?!0\b)(\d+)|finished with exit code (?!0\b)(\d+)", re.I)
@@ -617,6 +649,10 @@ def analyze_report_zip(path: Path) -> TunAnalysisResult:
     bender_segment = estimate_bender_segment_stats(app_log, tun_log, final_state_guard)
     tun_stats = analyze_tun_log_stream(tun_log)
     error_endpoints = analyze_error_endpoints(tun_log)
+    top_tok = error_endpoints.get("top_error_endpoint")
+    if top_tok and cfg:
+        ep_map = map_endpoints_to_outbounds(cfg, {top_tok})
+        error_endpoints["top_error_endpoint_outbounds"] = ep_map["token_to_outbounds"].get(top_tok, [])
     tun_sessions = analyze_tun_sessions(app_log, happd)
 
     tun_lifecycle = {

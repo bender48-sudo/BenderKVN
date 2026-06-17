@@ -25,6 +25,16 @@ that into an enforced, tested repo policy plus a single owner go/no-go.
 
 The registry holds no endpoints/UUIDs — all evidence here is health metadata only.
 
+> **Update 2026-06-17 (CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-001):** relay1's
+> suspicion is now backed by hard client + server evidence. report(10) desktop Happ
+> attributed ~80.3% of long-lived resets to relay1's endpoint (`ep_20e413bd:443`,
+> outbounds proxy/proxy-2/proxy-3). Read-only server check found **xray inactive /
+> no xray process; ports 443/8443/9443 held by `hysteria`**, not the VLESS/REALITY
+> service the client targets. relay1 is now annotated `incident: true` /
+> `exclude_from_desktop_canary: true`. Restoring xray on relay1 is an all-users prod
+> action (shared live relay) → requires `APPROVE DESKTOP RELAY SERVER REPAIR DEPLOY`.
+> See [`CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-2026-06-17.md`](CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-2026-06-17.md).
+
 ---
 
 ## 2. Enforced policy (now tested in repo)

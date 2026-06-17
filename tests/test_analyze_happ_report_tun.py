@@ -23,8 +23,30 @@ from analyze_happ_report_tun import (  # noqa: E402
     detect_final_state_overwrite,
     endpoint_token,
     estimate_bender_segment_stats,
+    map_endpoints_to_outbounds,
     redact_text,
 )
+
+
+def test_map_endpoints_to_outbounds_groups_tags_by_token():
+    cfg = {
+        "outbounds": [
+            {"tag": "proxy", "protocol": "vless", "settings": {"vnext": [{"address": "203.0.113.10", "port": 443}]}},
+            {"tag": "proxy-2", "protocol": "vless", "settings": {"vnext": [{"address": "203.0.113.10", "port": 443}]}},
+            {"tag": "proxy-4", "protocol": "vless", "settings": {"vnext": [{"address": "203.0.113.20", "port": 443}]}},
+            {"tag": "direct", "protocol": "freedom", "settings": {}},
+        ]
+    }
+    res = map_endpoints_to_outbounds(cfg)
+    bad = endpoint_token("203.0.113.10", "443")
+    good = endpoint_token("203.0.113.20", "443")
+    assert res["token_to_outbounds"][bad] == ["proxy", "proxy-2"]
+    assert res["token_to_outbounds"][good] == ["proxy-4"]
+    # filtered mode returns only requested token
+    only = map_endpoints_to_outbounds(cfg, {bad})
+    assert set(only["token_to_outbounds"]) == {bad}
+    # no raw IP leaks into the mapping keys
+    assert all(k.startswith("ep_") for k in res["token_to_outbounds"])
 
 
 def _make_zip(files: dict[str, str]) -> Path:

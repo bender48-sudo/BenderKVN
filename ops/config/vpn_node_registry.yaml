@@ -4,7 +4,7 @@
 # Does NOT drive live subscription generation yet (SUB-GEN-SELECTOR-STRATEGY-001 OPEN).
 
 schema_version: 1
-updated_at: "2026-06-17T20:00:00Z"
+updated_at: "2026-06-17T20:30:00Z"
 registry_note: >
   delivery_path_nodes counts exit-role nodes with status=active and
   delivery_path_eligible=true. Relay diversity to one LV geography is not
@@ -75,10 +75,19 @@ nodes:
       reserved_headroom_percent: 40
     health:
       monitor_status: suspect
-      last_smoke_status: needs_diagnosis
-      last_smoke_at: "2026-06-14"
+      last_smoke_status: desktop_reset_dominant
+      last_smoke_at: "2026-06-17"
       last_owner_test_status: soft_pass
       last_owner_test_at: "2026-06-14"
+    incident: true
+    exclude_from_desktop_canary: true
+    last_incident_ref: CLIENT-STABILITY-DESKTOP-RELAY-PATH-FIX-001
+    exclude_reason: >
+      report(10) desktop Happ: this relay endpoint (redacted ep_20e413bd:443,
+      outbounds proxy/proxy-2/proxy-3) carried ~80.3% of long-lived connection
+      resets. Read-only server check 2026-06-17: xray service inactive / no xray
+      process; ports 443/8443/9443 held by hysteria, not the VLESS/REALITY service
+      the client profile targets — strong server-side cause for VLESS resets.
     rollout:
       cohort_weight: 50
       canary_percent: 0
@@ -92,8 +101,12 @@ nodes:
     owner_approval_required: true
     notes: >
       Present in live Candidate D injectHosts (×3). Under suspicion per client
-      stability reports (dial/open storms). Do NOT blindly reduce selector or
-      assume healthy without PROD-SELECTOR-CONTROLLED owner approval.
+      stability reports (dial/open storms) and now report(10) desktop dropout
+      (~80.3% of resets on this endpoint). Server check 2026-06-17: xray inactive,
+      hysteria on 443/8443/9443. Excluded from owner/desktop canary. Live restart
+      / xray restore is an all-users prod action on a shared relay — requires
+      explicit APPROVE DESKTOP RELAY SERVER REPAIR DEPLOY. Do NOT blindly reduce
+      selector or assume healthy without PROD-SELECTOR-CONTROLLED owner approval.
 
   - node_id: ru-relay-2
     display_name: RU relay secondary pool member
@@ -117,6 +130,7 @@ nodes:
       last_smoke_at: "2026-06-15"
       last_owner_test_status: pass
       last_owner_test_at: "2026-06-15"
+    desktop_canary_path: true
     rollout:
       cohort_weight: 50
       canary_percent: 0
@@ -129,8 +143,10 @@ nodes:
       mobile_supported: pending_owner_smoke
     owner_approval_required: true
     notes: >
-      Live pool member (×3 in Candidate D). Relay2-only lab profile is separate
-      entry — not production default for mass assignment.
+      Live pool member (×3 in Candidate D). Comparatively healthy path in report(10)
+      (redacted ep_d1a601f6:443, outbounds proxy-4/proxy-5/proxy-6 — minimal resets).
+      Designated healthy path for the owner/staging desktop relay-path canary. Relay2-only
+      lab profile is a separate entry — not production default for mass assignment.
 
   - node_id: ru-relay-2-lab
     display_name: Relay2-only owner lab profile
