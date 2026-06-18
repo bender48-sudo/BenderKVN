@@ -199,9 +199,51 @@ def _rules_split_stealth(cfg: dict[str, Any], nl_tags: list[str], relay_tags: li
     return rules
 
 
+def _strip_reality_fragment(cfg: dict[str, Any]) -> int:
+    """Remove sockopt.fragment from REALITY outbounds.
+
+    TLS fragmentation corrupts the REALITY ClientHello on the direct exit path:
+    the session connects, survives a few seconds, then resets (report 13 NL
+    direct reset storm while the relay2/stealth forwarder path stayed alive).
+    The repo already strips this server-side (patch_remove_fragment_defaults);
+    the canary builder previously copied it verbatim from the owner source.
+    Returns the number of outbounds cleaned (for logging/tests).
+    """
+    cleaned = 0
+    for ob in cfg.get("outbounds") or []:
+        if not isinstance(ob, dict):
+            continue
+        ss = ob.get("streamSettings")
+        if not isinstance(ss, dict) or ss.get("security") != "reality":
+            continue
+        sockopt = ss.get("sockopt")
+        if isinstance(sockopt, dict) and "fragment" in sockopt:
+            sockopt.pop("fragment", None)
+            cleaned += 1
+            if not sockopt:
+                ss.pop("sockopt", None)
+    return cleaned
+
+
+def reality_fragment_outbounds(cfg: dict[str, Any]) -> list[str]:
+    """Tags of REALITY outbounds that still carry sockopt.fragment (should be none)."""
+    tags: list[str] = []
+    for ob in cfg.get("outbounds") or []:
+        if not isinstance(ob, dict):
+            continue
+        ss = ob.get("streamSettings")
+        if not isinstance(ss, dict) or ss.get("security") != "reality":
+            continue
+        sockopt = ss.get("sockopt")
+        if isinstance(sockopt, dict) and "fragment" in sockopt:
+            tags.append(str(ob.get("tag") or "?"))
+    return tags
+
+
 def _finalize(cfg: dict[str, Any], remarks: str) -> dict[str, Any]:
     cfg.pop("observatory", None)
     cfg.pop("burstObservatory", None)
+    _strip_reality_fragment(cfg)
     cfg["remarks"] = remarks
     return cfg
 

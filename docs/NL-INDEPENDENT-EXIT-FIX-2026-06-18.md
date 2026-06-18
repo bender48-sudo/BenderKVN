@@ -1,8 +1,8 @@
 # NL Independent Exit Fix — 2026-06-18
 
 **Task:** NL-INDEPENDENT-EXIT-FIX-001  
-**Status:** **FAIL_PROFILE_ROUTING_PROTOCOL → WAITING_RETEST** (corrected profiles generated locally)  
-**Companion:** [`NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-2026-06-18.md`](NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-2026-06-18.md)
+**Status:** **WAITING_CLEAN_DIRECT_BASIC_SMOKE** — report(13) NL-direct REALITY fragment defect fixed in client builder (corrected profiles generated locally)
+**Companions:** [`NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-2026-06-18.md`](NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-2026-06-18.md) · [`NL-DIRECT-PATH-SERVER-PROFILE-FIX-2026-06-18.md`](NL-DIRECT-PATH-SERVER-PROFILE-FIX-2026-06-18.md)
 
 > Repo-side generator/routing/validation fix only. No prod apply, no registry promotion.
 
@@ -16,6 +16,8 @@
 | Verdict (report 11) | **FAIL_PROFILE_ROUTING_PROTOCOL** |
 | Profile used (report 12) | Same legacy profile + Happ **BenderVPN RU** overlay + Telegram opened |
 | Verdict (report 12) | **NOT_TESTED_INVALID_SMOKE** — not NL Direct Basic failure |
+| Profile used (report 13) | `NL Split Stealth Canary` + BenderVPN RU overlay still ON; Telegram alive, NL direct reset |
+| Verdict (report 13) | **NOT_TESTED (overlay)** + NL-direct REALITY fragment defect identified → fixed (see fix doc) |
 | Analyzer | `ops/analyze_nl_canary_smoke.py` (guard NL-DIRECT-BASIC-SMOKE-GUARD-001) |
 | Registry promotion | **Not performed** |
 

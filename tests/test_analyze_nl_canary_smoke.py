@@ -142,3 +142,16 @@ def test_fixture_zip_structure():
         assert any(n.endswith("selected_server.json") for n in names)
         sel = json.loads(zf.read([n for n in names if n.endswith("selected_server.json")][0]))
         assert "Independent Exit Canary" in sel["selected"]["name"]
+
+
+def test_report13_split_stealth_overlay_not_tested(tmp_path: Path):
+    """report(13): Split Stealth active + BenderVPN RU overlay still enabled +
+    NL direct reset storm ⇒ NOT a clean NL acceptance smoke (overlay invalid)."""
+    from fixtures.nl_smoke_report13_fixture import write_report13_fixture  # noqa: E402
+
+    p = write_report13_fixture(tmp_path / "report13.zip")
+    result = analyze_nl_canary_smoke_report(p, variant="split_stealth")
+    guard = result["guard"]
+    assert guard["ACCEPTABLE_SMOKE_INPUT"] is False
+    assert guard["verdict"] == VERDICT_NOT_TESTED
+    assert INVALID_ROUTING_OVERLAY in guard["invalid_reasons"]

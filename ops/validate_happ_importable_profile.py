@@ -33,6 +33,7 @@ from nl_canary_profile_builder import (  # noqa: E402
     PROFILE_LABEL_DIRECT_BASIC,
     PROFILE_LABEL_LEGACY,
     PROFILE_LABEL_SPLIT_STEALTH,
+    reality_fragment_outbounds,
     google_routes_via_stealth,
     nl_proxy_tags,
     relay1_proxy_tags,
@@ -237,6 +238,13 @@ def validate_nl_canary_variant(
     r1 = relay1_proxy_tags(cfg)
     if r1:
         errors.append(f"relay-1 outbounds must be absent in canary: {r1}")
+
+    frag_tags = reality_fragment_outbounds(cfg)
+    if frag_tags:
+        errors.append(
+            "REALITY outbounds must not carry sockopt.fragment (breaks REALITY "
+            f"handshake on the direct exit path): {frag_tags}"
+        )
 
     if google_routes_via_stealth(cfg):
         errors.append(

@@ -221,7 +221,9 @@ def test_try_generate_missing_owner_config(tmp_path, monkeypatch):
 def test_artifact_traffic_smoke_fail_status():
     registry = load_validated_registry()
     artifact = build_artifact(registry, "nl-node-1")
-    assert artifact["traffic_smoke_status"] == "FAIL_PROFILE_ROUTING_PROTOCOL"
+    # After report(13) NL-direct fragment fix: client profile corrected, gate
+    # waits for a fresh clean Direct Basic smoke (not a standing FAIL).
+    assert artifact["traffic_smoke_status"] == "WAITING_CLEAN_DIRECT_BASIC_SMOKE"
 
 
 def test_artifact_filenames_constants():

@@ -181,6 +181,7 @@ Source: [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-0
 | — | **NL-CANARY-IMPORT-ARTIFACT-FIX-001** | P0 | **DONE** | Metadata vs importable split + validator → [`NL-CANARY-IMPORT-ARTIFACT-FIX-2026-06-18.md`](NL-CANARY-IMPORT-ARTIFACT-FIX-2026-06-18.md) |
 | — | **GENERATE-IMPORTABLE-NL-PROFILE-001** | P0 | **DONE** | Superseded by NL-INDEPENDENT-EXIT-FIX-001 two-profile flow |
 | — | **NL-DIRECT-BASIC-SMOKE-GUARD-001** | P0 | **DONE (repo)** | `analyze_nl_canary_smoke.py` rejects invalid owner smoke (report 12) |
+| — | **NL-DIRECT-PATH-SERVER-PROFILE-FIX-001** | P0 | **PATH B — DONE (repo) / WAITING_CLEAN_DIRECT_BASIC_SMOKE** | report(13): NL-direct REALITY `sockopt.fragment` broke direct handshake (stealth alive, sites dead); builder strips it + validator guard + tests → [`NL-DIRECT-PATH-SERVER-PROFILE-FIX-2026-06-18.md`](NL-DIRECT-PATH-SERVER-PROFILE-FIX-2026-06-18.md) |
 | — | **NL-INDEPENDENT-EXIT-FIX-001** | P0 | **DONE (repo) / WAITING_CLEAN_DIRECT_BASIC_SMOKE** | Split DIRECT_BASIC + SPLIT_STEALTH; validator catches google→stealth mismatch → [`NL-INDEPENDENT-EXIT-FIX-2026-06-18.md`](NL-INDEPENDENT-EXIT-FIX-2026-06-18.md) |
 | 9 | **MONITOR-FLAP-TUNE-001** | P1 | SOAK OPEN | Before NL A2/A4 |
 | 10 | **VPN-ARCH-001** | P1 | AWAITING APPROVAL | Capacity ≥2 delivery paths |
