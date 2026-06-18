@@ -39,6 +39,7 @@ from nl_canary_profile_builder import (  # noqa: E402
     relay1_proxy_tags,
     relay2_proxy_tags,
 )
+from nl_canary_route_classes import validate_route_classes  # noqa: E402
 
 # Metadata/runbook markers — presence of any ⇒ NOT importable.
 METADATA_TOP_LEVEL_KEYS = frozenset(
@@ -292,6 +293,9 @@ def validate_nl_canary_variant(
         if intl and list(intl.get("selector") or []) != nl_tags:
             errors.append("Intl_Direct selector must be NL tags only")
 
+        rc_errors = validate_route_classes(cfg, variant="direct_basic")
+        errors.extend(rc_errors)
+
     elif variant == "split_stealth":
         if PROFILE_LABEL_SPLIT_STEALTH not in remarks:
             errors.append("remarks must match SPLIT_STEALTH label")
@@ -311,6 +315,9 @@ def validate_nl_canary_variant(
             for needle in ("telegram", "instagram", "facebook"):
                 if needle in hay:
                     errors.append(f"stealth app {needle!r} must not route via Intl_Direct")
+
+        rc_errors = validate_route_classes(cfg, variant="split_stealth")
+        errors.extend(rc_errors)
 
     elif variant == "legacy_bad":
         if google_routes_via_stealth(cfg):

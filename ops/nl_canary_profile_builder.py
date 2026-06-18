@@ -14,6 +14,12 @@ import copy
 from typing import Any
 
 from balancer_selectors import INTL_BALANCER_TAG, INTL_STEALTH_BALANCER_TAG, NL_DIRECT_SELECTOR
+from nl_canary_route_classes import (
+    NL_DIRECT_VALIDATION_DOMAINS,
+    NL_DIRECT_VALIDATION_GEOSITES,
+    STEALTH_VALIDATION_DOMAINS,
+    STEALTH_VALIDATION_GEOSITES,
+)
 from relay_latency_probe import RELAY1_IP, RELAY2_IP
 from subscription_fetch import node_label, outbound_endpoint
 
@@ -27,19 +33,8 @@ SPLIT_STEALTH_FILENAME = "independent_exit_nl_SPLIT_STEALTH_IMPORTABLE_PROFILE.j
 LEGACY_IMPORTABLE_FILENAME = "independent_exit_nl_canary_IMPORTABLE_PROFILE.json"
 
 # Stealth-only media (must NOT include geosite:google — invalidates NL smoke).
-STEALTH_MEDIA_GEOSITES = [
-    "geosite:instagram",
-    "geosite:facebook",
-    "geosite:telegram",
-    "geosite:whatsapp",
-    "meta.com",
-    "fbcdn.net",
-    "cdninstagram.com",
-    "telegram.org",
-    "t.me",
-    "telegram.me",
-    "telesco.pe",
-]
+STEALTH_MEDIA_GEOSITES = list(STEALTH_VALIDATION_GEOSITES)
+STEALTH_MEDIA_DOMAINS = list(STEALTH_VALIDATION_DOMAINS)
 
 STEALTH_MEDIA_IPS = [
     "149.154.0.0/16",
@@ -50,11 +45,9 @@ STEALTH_MEDIA_IPS = [
     "57.144.0.0/14",
 ]
 
-# Explicit NL-direct proof targets for DIRECT_BASIC smoke.
-NL_DIRECT_PROOF_GEOSITES = [
-    "geosite:google",
-    "geosite:youtube",
-]
+# Explicit NL-direct proof targets for DIRECT_BASIC + SPLIT_STEALTH smoke.
+NL_DIRECT_PROOF_GEOSITES = list(NL_DIRECT_VALIDATION_GEOSITES)
+NL_DIRECT_PROOF_DOMAINS = list(NL_DIRECT_VALIDATION_DOMAINS)
 
 # Markers that must never route via Intl_Direct in split profile.
 STEALTH_SENSITIVE_IN_DIRECT = frozenset({"telegram", "instagram", "facebook", "meta.com"})
@@ -165,14 +158,14 @@ def _set_balancers(
 def _rules_direct_basic(cfg: dict[str, Any], nl_tags: list[str]) -> list[dict[str, Any]]:
     src_rules = (cfg.get("routing") or {}).get("rules") or []
     rules = [_block_bittorrent_rule()]
-    rules.extend(_scrub_direct_rules(src_rules))
     rules.append(
         {
             "type": "field",
-            "domain": list(NL_DIRECT_PROOF_GEOSITES),
+            "domain": list(NL_DIRECT_PROOF_GEOSITES) + list(NL_DIRECT_PROOF_DOMAINS),
             "balancerTag": INTL_BALANCER_TAG,
         }
     )
+    rules.extend(_scrub_direct_rules(src_rules))
     rules.append({"type": "field", "network": "tcp,udp", "balancerTag": INTL_BALANCER_TAG})
     return rules
 
@@ -190,8 +183,16 @@ def _rules_split_stealth(cfg: dict[str, Any], nl_tags: list[str], relay_tags: li
     rules.append(
         {
             "type": "field",
-            "domain": list(STEALTH_MEDIA_GEOSITES),
+            "domain": list(STEALTH_MEDIA_GEOSITES) + list(STEALTH_MEDIA_DOMAINS),
             "balancerTag": INTL_STEALTH_BALANCER_TAG,
+        }
+    )
+    # NL validation BEFORE direct-bypass scrub — source may list intl domains as direct.
+    rules.append(
+        {
+            "type": "field",
+            "domain": list(NL_DIRECT_PROOF_GEOSITES) + list(NL_DIRECT_PROOF_DOMAINS),
+            "balancerTag": INTL_BALANCER_TAG,
         }
     )
     rules.extend(_scrub_direct_rules(src_rules))

@@ -131,26 +131,29 @@ SMOKE_CHECKLIST_DIRECT_BASIC = [
     "[PRE] Complete one-screen preflight checklist above — agent rejects invalid smoke otherwise.",
     "[IMPORT] New profile from DIRECT_BASIC JSON only; auto-refresh OFF; external routing profile OFF.",
     "[CONNECT] Connect; wait for TUN up without immediate error storm.",
-    "[NL PROOF] Open Google search + Gmail — must route via NL (Intl_Direct only pool).",
-    "[NL PROOF] 10–15 min stable session on Google/Docs or neutral site (not Telegram).",
+    "[NL PROOF — ROUTE CLASS] Open Google search + Gmail + YouTube — must route via NL (Intl_Direct).",
+    "[NOT PROOF] Yandex/VK/Mail.ru/Ozon/Rutube are DIRECT_BYPASS — success does NOT prove NL.",
+    "[NL PROOF] 10–15 min stable session on Google/Docs (not Telegram, not RU sites).",
     "[NEG] Do NOT use Telegram/Meta in this phase — not in profile scope.",
     "[POST] Record pass/fail; export report.zip if FAIL.",
 ]
 
 SMOKE_CHECKLIST_SPLIT_STEALTH = [
     "[PRE] DIRECT_BASIC already PASS.",
-    "[IMPORT] New profile from SPLIT_STEALTH JSON; auto-refresh OFF.",
-    "[STEALTH] Telegram/Meta/Instagram must use relay-2 stealth pool (NOT NL direct).",
-    "[DIRECT] General browsing catch-all uses NL Intl_Direct.",
-    "[SESSION] 10–15 min mixed usage; sleep/wake once if safe.",
-    "[POST] Record pass/fail per app.",
+    "[IMPORT] New profile from SPLIT_STEALTH JSON; auto-refresh OFF; external routing OFF.",
+    "[STEALTH PROOF] Telegram/Meta/Instagram/WhatsApp → relay-2 stealth (Intl_Stealth).",
+    "[NL DIRECT PROOF] Google/YouTube/X/OpenAI → NL direct (Intl_Direct) — blocked intl sites.",
+    "[NOT PROOF] RU/local sites (Yandex, VK, Mail.ru) are direct bypass — do not count as VPN proof.",
+    "[SESSION] 10–15 min mixed usage; test BOTH stealth apps AND NL-direct blocked sites.",
+    "[POST] Record pass/fail per route class; export report.zip if FAIL.",
 ]
 
 SMOKE_CHECKLIST = SMOKE_CHECKLIST_DIRECT_BASIC + ["--- then SPLIT_STEALTH ---"] + SMOKE_CHECKLIST_SPLIT_STEALTH
 
 EXPECTED_BEHAVIOR = {
-    "nl_direct": "Google/search/general Intl_Direct browsing exits via NL independent path.",
-    "stealth": "Telegram, Instagram, Meta stay on stealth relay — never NL direct.",
+    "nl_direct": "Google/YouTube/X/OpenAI and catch-all Intl_Direct browsing exits via NL independent path.",
+    "stealth": "Telegram, Instagram, Meta, WhatsApp stay on stealth relay — never NL direct.",
+    "direct_bypass": "RU/local domains and geoip:ru go direct — do NOT prove NL or VPN success.",
     "lv_preserved": "Normal BenderVPN profile unchanged; LV production path intact.",
     "no_relay1": "No dependency on ru-relay-1 (excluded from desktop canary).",
     "stability": "10–15 min active session without frequent reset/drop/reconnect loops.",
@@ -425,7 +428,7 @@ def build_artifact(registry: dict[str, Any], node_id: str) -> dict[str, Any]:
         "owner_only": True,
         "do_not_refresh": True,
         "production_default_changed": False,
-        "traffic_smoke_status": "WAITING_CLEAN_DIRECT_BASIC_SMOKE",
+        "traffic_smoke_status": "WAITING_OWNER_NL_DIRECT_BASIC_ROUTE_CLASS_SMOKE",
         "independent_exit_paths_now": count_independent_exit_paths(nodes),
         "candidate_counts_as_capacity": is_independent_exit(node),
         "egress_independence": EGRESS_EVIDENCE,

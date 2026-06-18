@@ -19,10 +19,13 @@ if str(_FIX.parent) not in sys.path:
 from analyze_nl_canary_smoke import analyze_nl_canary_smoke_report  # noqa: E402
 from nl_canary_profile_builder import PROFILE_LABEL_DIRECT_BASIC  # noqa: E402
 from nl_canary_smoke_guard import (  # noqa: E402
+    CLASS_NL_DIRECT_ROUTE_FAIL,
+    CLASS_SPLIT_STEALTH_PARTIAL,
     INVALID_FORBIDDEN_APP,
     INVALID_ROUTING_OVERLAY,
     INVALID_WRONG_PROFILE,
     VERDICT_NOT_TESTED,
+    VERDICT_PARTIAL,
     evaluate_nl_canary_smoke,
     external_routing_overlay_active,
     generator_smoke_metadata,
@@ -47,6 +50,8 @@ def test_generator_metadata_direct_basic():
     assert meta["expected_variant"] == "direct_basic"
     assert meta["requires_external_routing_overlay_off"] is True
     assert "Telegram" in meta["forbidden_apps_for_variant"]
+    assert "smoke_targets" in meta
+    assert "google.com" in str(meta["smoke_targets"]["nl_direct_proof"])
 
 
 def test_external_routing_overlay_detected():
@@ -155,3 +160,36 @@ def test_report13_split_stealth_overlay_not_tested(tmp_path: Path):
     assert guard["ACCEPTABLE_SMOKE_INPUT"] is False
     assert guard["verdict"] == VERDICT_NOT_TESTED
     assert INVALID_ROUTING_OVERLAY in guard["invalid_reasons"]
+
+
+def test_report14_split_stealth_partial_not_pass(tmp_path: Path):
+    """report(14): clean profile input but NL direct/blocked path failed — PARTIAL not PASS."""
+    from fixtures.nl_smoke_report14_fixture import write_report14_fixture  # noqa: E402
+    from nl_canary_profile_builder import PROFILE_LABEL_SPLIT_STEALTH  # noqa: E402
+
+    p = write_report14_fixture(tmp_path / "report14.zip")
+    result = analyze_nl_canary_smoke_report(p, variant="split_stealth", evaluate=True)
+    guard = result["guard"]
+    assert guard["ACCEPTABLE_SMOKE_INPUT"] is True
+    assert guard["verdict"] == VERDICT_PARTIAL
+    assert guard["checks"]["session_classification"] == CLASS_SPLIT_STEALTH_PARTIAL
+    assert guard["verdict"] != "PASS"
+    notes = " ".join(guard.get("notes") or [])
+    assert CLASS_NL_DIRECT_ROUTE_FAIL in notes or CLASS_SPLIT_STEALTH_PARTIAL in notes
+
+
+def test_telegram_alive_alone_not_pass_split_stealth():
+    guard = evaluate_nl_canary_smoke(
+        variant="split_stealth",
+        profile_name="BenderVPN NL Split Stealth Canary — owner only",
+        profile={"relay2_proxy_count": 3, "balancer_names": ["Intl_Direct", "Intl_Stealth"]},
+        mode={"use_routing": False},
+        tun_lifecycle={"interface_up_ok": True, "dns_set_ok": True},
+        tun_log_stats={"error_like_lines": 611},
+        app_log="Telegram loading chats yandex.ru ok google.com did not load",
+        tun_log="connection reset by peer",
+        allow_evaluation=True,
+    )
+    assert guard.acceptable_smoke_input is True
+    assert guard.verdict in {VERDICT_PARTIAL, "FAIL"}
+    assert guard.verdict != "PASS"

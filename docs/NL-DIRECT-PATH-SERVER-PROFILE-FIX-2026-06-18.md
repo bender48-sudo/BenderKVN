@@ -116,10 +116,11 @@ under **APPROVE NL DIRECT SERVER FIX**.
 | Gate | State |
 |------|-------|
 | NL Direct Basic | client profile corrected · **WAITING_CLEAN_DIRECT_BASIC_SMOKE** |
-| NL Split Stealth | not accepted (overlay-contaminated report 13) |
+| NL Split Stealth | **PARTIAL** (report 14 — stealth alive, NL direct/blocked fail) |
 | Registry promotion | **NO** |
 | PUBLIC_PROD | **NO-GO** (`delivery_path_nodes=1`) |
 | 300 / 30k | **NO-GO** |
 
-**Next owner action:** RUN OWNER NL DIRECT BASIC SMOKE (clean — overlay OFF, no
-Telegram, import only `independent_exit_nl_DIRECT_BASIC_IMPORTABLE_PROFILE.json`).
+**Next owner action:** RUN OWNER NL DIRECT BASIC ROUTE-CLASS SMOKE (see
+[`NL-DIRECT-ROUTE-CLASS-FIX-2026-06-19.md`](NL-DIRECT-ROUTE-CLASS-FIX-2026-06-19.md);
+report 14 = SPLIT_STEALTH_PARTIAL, NL direct still failing).

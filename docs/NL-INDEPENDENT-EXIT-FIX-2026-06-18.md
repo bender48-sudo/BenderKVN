@@ -1,7 +1,7 @@
 # NL Independent Exit Fix — 2026-06-18
 
 **Task:** NL-INDEPENDENT-EXIT-FIX-001  
-**Status:** **WAITING_CLEAN_DIRECT_BASIC_SMOKE** — report(13) NL-direct REALITY fragment defect fixed in client builder (corrected profiles generated locally)
+**Status:** **WAITING_OWNER_NL_DIRECT_BASIC_ROUTE_CLASS_SMOKE** — report(14) split partial; route-class fix applied
 **Companions:** [`NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-2026-06-18.md`](NL-INDEPENDENT-EXIT-TRAFFIC-SMOKE-2026-06-18.md) · [`NL-DIRECT-PATH-SERVER-PROFILE-FIX-2026-06-18.md`](NL-DIRECT-PATH-SERVER-PROFILE-FIX-2026-06-18.md)
 
 > Repo-side generator/routing/validation fix only. No prod apply, no registry promotion.
@@ -18,6 +18,8 @@
 | Verdict (report 12) | **NOT_TESTED_INVALID_SMOKE** — not NL Direct Basic failure |
 | Profile used (report 13) | `NL Split Stealth Canary` + BenderVPN RU overlay still ON; Telegram alive, NL direct reset |
 | Verdict (report 13) | **NOT_TESTED (overlay)** + NL-direct REALITY fragment defect identified → fixed (see fix doc) |
+| Profile used (report 14) | `NL Split Stealth Canary` + overlay OFF; Telegram alive; blocked sites failed; NL direct reset |
+| Verdict (report 14) | **SPLIT_STEALTH_PARTIAL** — route classes defined; NL direct still not acceptance-ready → [`NL-DIRECT-ROUTE-CLASS-FIX-2026-06-19.md`](NL-DIRECT-ROUTE-CLASS-FIX-2026-06-19.md) |
 | Analyzer | `ops/analyze_nl_canary_smoke.py` (guard NL-DIRECT-BASIC-SMOKE-GUARD-001) |
 | Registry promotion | **Not performed** |
 
@@ -94,7 +96,7 @@ Local copy: `.secrets/diagnostics/report-12-invalid-nl-smoke.zip` (not committed
 
 | Gate | Status |
 |------|--------|
-| NL traffic smoke | **WAITING_CLEAN_DIRECT_BASIC_SMOKE** (report 12 = invalid, not tested) |
+| NL traffic smoke | **WAITING_OWNER_NL_DIRECT_BASIC_ROUTE_CLASS_SMOKE** (report 14 = SPLIT_STEALTH_PARTIAL) |
 | Registry promotion | **NO** |
 | PUBLIC_PROD | **NO-GO** |
 | 300 / 30k | **NO-GO** |
@@ -103,9 +105,9 @@ Local copy: `.secrets/diagnostics/report-12-invalid-nl-smoke.zip` (not committed
 
 ## 6. Next owner action
 
-**RUN CLEAN OWNER NL DIRECT BASIC SMOKE** — preflight checklist in runbook; analyze with `ops/analyze_nl_canary_smoke.py`.
+**RUN OWNER NL DIRECT BASIC ROUTE-CLASS SMOKE** — Phase 1 DIRECT_BASIC with explicit NL proof targets; see [`NL-DIRECT-ROUTE-CLASS-FIX-2026-06-19.md`](NL-DIRECT-ROUTE-CLASS-FIX-2026-06-19.md).
 
-If DIRECT_BASIC still FAILs with clean routing → escalate **APPREVE NL SERVER-SIDE FIX** (separate approval).
+If DIRECT_BASIC still FAILs with clean routing → escalate **APPROVE NL DIRECT SERVER FIX** (separate approval).
 
 ---
 

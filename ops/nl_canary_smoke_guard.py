@@ -35,6 +35,11 @@ VERDICT_PASS = "PASS"
 VERDICT_PARTIAL = "PARTIAL"
 VERDICT_FAIL = "FAIL"
 
+CLASS_SPLIT_STEALTH_PARTIAL = "SPLIT_STEALTH_PARTIAL"
+CLASS_TELEGRAM_STEALTH_ALIVE = "TELEGRAM_STEALTH_ALIVE"
+CLASS_NL_DIRECT_ROUTE_FAIL = "NL_DIRECT_OR_ROUTE_CLASS_FAIL"
+CLASS_DIRECT_BYPASS_MASKS = "DIRECT_BYPASS_MASKS_SMOKE"
+
 _EXTERNAL_OVERLAY_MARKERS = (
     "bendervpn ru",
     "bender vpn ru",
@@ -51,6 +56,24 @@ _META_PATTERNS = (
     re.compile(r"\binstagram\b", re.I),
     re.compile(r"\bfacebook\b", re.I),
     re.compile(r"\bmeta\.com\b", re.I),
+)
+
+_BLOCKED_NL_PATTERNS = (
+    re.compile(r"\bgoogle\.com\b", re.I),
+    re.compile(r"\bgmail\b", re.I),
+    re.compile(r"\byoutube\b", re.I),
+    re.compile(r"\bx\.com\b", re.I),
+    re.compile(r"\btwitter\b", re.I),
+    re.compile(r"\bopenai\b", re.I),
+)
+
+_DIRECT_BYPASS_OK_PATTERNS = (
+    re.compile(r"\byandex\b", re.I),
+    re.compile(r"\bvk\.com\b", re.I),
+    re.compile(r"\bmail\.ru\b", re.I),
+    re.compile(r"\bozon\b", re.I),
+    re.compile(r"\brutube\b", re.I),
+    re.compile(r"\.ru\b", re.I),
 )
 
 
@@ -118,6 +141,74 @@ def profile_name_matches_variant(profile_name: str | None, variant: str) -> bool
 def is_legacy_profile_name(profile_name: str | None) -> bool:
     name = str(profile_name or "").strip().lower()
     return "independent exit canary" in name and "direct basic" not in name
+
+
+def detect_session_signals(
+    *,
+    app_log: str = "",
+    tun_log: str = "",
+    tasklist: str = "",
+) -> dict[str, bool]:
+    """Classify owner session activity for route-class smoke interpretation."""
+    combined = "\n".join((app_log, tun_log, tasklist))
+    telegram_alive = any(p.search(combined) for p in _TELEGRAM_PATTERNS)
+    stealth_meta = any(p.search(combined) for p in _META_PATTERNS)
+    blocked_nl_attempted = any(p.search(combined) for p in _BLOCKED_NL_PATTERNS)
+    blocked_nl_failed = bool(
+        re.search(r"google.*(fail|reset|closed|error|did not)", combined, re.I)
+        or re.search(r"gmail.*(fail|reset|closed|error|did not)", combined, re.I)
+        or re.search(r"youtube.*(fail|reset|closed|error|did not)", combined, re.I)
+        or re.search(r"instagram.*(fail|reset|closed|error|did not)", combined, re.I)
+        or re.search(r"blocked.*(fail|reset|closed|error)", combined, re.I)
+    )
+    direct_bypass_ok = any(p.search(combined) for p in _DIRECT_BYPASS_OK_PATTERNS) and not blocked_nl_attempted
+    return {
+        "telegram_alive": telegram_alive,
+        "stealth_meta_alive": stealth_meta,
+        "blocked_nl_attempted": blocked_nl_attempted,
+        "blocked_nl_failed": blocked_nl_failed,
+        "direct_bypass_activity": direct_bypass_ok,
+    }
+
+
+def classify_split_stealth_session(
+    *,
+    tun_log_stats: dict[str, Any] | None,
+    error_endpoints: dict[str, Any] | None,
+    session_signals: dict[str, bool],
+) -> tuple[str, list[str]]:
+    """Return (classification, notes) for split_stealth owner sessions."""
+    stats = tun_log_stats or {}
+    err_eps = error_endpoints or {}
+    err_lines = int(stats.get("error_like_lines") or 0)
+    notes: list[str] = []
+
+    telegram_alive = session_signals.get("telegram_alive") or session_signals.get("stealth_meta_alive")
+    blocked_failed = session_signals.get("blocked_nl_failed") or (
+        err_lines >= 300 and telegram_alive
+    )
+    nl_direct_dominant = (
+        err_eps.get("top_error_endpoint_category") in {"relay_or_web_tls", "unknown"}
+        and float(err_eps.get("top_error_endpoint_share") or 0) >= 0.35
+        and err_lines >= 200
+    )
+
+    if telegram_alive:
+        notes.append(CLASS_TELEGRAM_STEALTH_ALIVE)
+
+    if session_signals.get("direct_bypass_activity") and not session_signals.get("blocked_nl_attempted"):
+        notes.append(CLASS_DIRECT_BYPASS_MASKS)
+
+    if blocked_failed or nl_direct_dominant:
+        notes.append(CLASS_NL_DIRECT_ROUTE_FAIL)
+
+    if telegram_alive and (blocked_failed or nl_direct_dominant):
+        return CLASS_SPLIT_STEALTH_PARTIAL, notes
+
+    if blocked_failed or nl_direct_dominant:
+        return CLASS_NL_DIRECT_ROUTE_FAIL, notes
+
+    return "", notes
 
 
 def detect_forbidden_apps(
@@ -216,6 +307,7 @@ def evaluate_nl_canary_smoke(
     forbidden = detect_forbidden_apps(
         app_log=app_log, tun_log=tun_log, tasklist=tasklist, profile=profile
     )
+    session_signals = detect_session_signals(app_log=app_log, tun_log=tun_log, tasklist=tasklist)
     invalid_reasons = classify_invalid_reasons(
         variant=variant,
         profile_name=profile_name,
@@ -246,24 +338,49 @@ def evaluate_nl_canary_smoke(
         "balancer_names": profile.get("balancer_names"),
         "top_error_endpoint_category": (error_endpoints or {}).get("top_error_endpoint_category"),
         "top_error_endpoint_share": (error_endpoints or {}).get("top_error_endpoint_share"),
+        "session_signals": session_signals,
     }
 
     notes: list[str] = []
     acceptable = not invalid_reasons
     verdict = VERDICT_NOT_TESTED
+    classification = ""
+
+    if variant == "split_stealth" and acceptable:
+        classification, class_notes = classify_split_stealth_session(
+            tun_log_stats=stats,
+            error_endpoints=error_endpoints,
+            session_signals=session_signals,
+        )
+        checks["session_classification"] = classification or None
+        notes.extend(class_notes)
 
     if not acceptable:
         notes.append(
             "Smoke input rejected — wrong profile, routing overlay, or forbidden apps. "
-            "NL Direct Basic was NOT tested; do not classify as NL PASS/FAIL."
+            "NL canary smoke was NOT tested; do not classify as NL PASS/FAIL."
         )
     elif allow_evaluation:
         err_lines = int(stats.get("error_like_lines") or 0)
-        if err_lines > 800:
+        if variant == "split_stealth" and classification == CLASS_SPLIT_STEALTH_PARTIAL:
+            verdict = VERDICT_PARTIAL
+            notes.append(
+                "Split Stealth PARTIAL: stealth/Telegram alive but NL-direct/blocked path failed. "
+                "Normal RU/direct-bypass sites do not prove NL."
+            )
+        elif variant == "split_stealth" and classification == CLASS_NL_DIRECT_ROUTE_FAIL:
+            verdict = VERDICT_FAIL
+            notes.append("NL direct / blocked-site route class failed — not acceptance-ready.")
+        elif err_lines > 800:
             verdict = VERDICT_FAIL
             notes.append("High error volume during otherwise valid smoke input.")
         elif err_lines > 300:
             verdict = VERDICT_PARTIAL
+            if variant == "direct_basic":
+                notes.append("Elevated errors — NL direct path unstable; not PASS.")
+        elif variant == "direct_basic" and session_signals.get("direct_bypass_activity"):
+            verdict = VERDICT_PARTIAL
+            notes.append(CLASS_DIRECT_BYPASS_MASKS + ": only direct-bypass activity seen; use NL proof targets.")
         else:
             verdict = VERDICT_PASS
             notes.append("Smoke input acceptable; session metrics within expected bounds.")
@@ -282,12 +399,16 @@ def evaluate_nl_canary_smoke(
 
 def generator_smoke_metadata(variant: str) -> dict[str, Any]:
     """Metadata fields embedded in generated canary artifacts."""
-    return {
+    from nl_canary_route_classes import route_class_metadata  # noqa: WPS433
+
+    base = {
         "expected_profile_name": VARIANT_EXPECTED_PROFILE.get(variant),
         "expected_variant": variant,
         "forbidden_apps_for_variant": sorted(FORBIDDEN_APPS_DIRECT_BASIC)
         if variant == "direct_basic"
         else [],
-        "requires_external_routing_overlay_off": variant == "direct_basic",
+        "requires_external_routing_overlay_off": True,
         "deprecated_legacy_profile_name": PROFILE_LABEL_LEGACY,
     }
+    base.update(route_class_metadata(variant))
+    return base
