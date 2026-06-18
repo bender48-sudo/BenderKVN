@@ -1,7 +1,7 @@
 # NL Direct Route-Class Fix — 2026-06-19
 
 **Task:** NL-DIRECT-ROUTE-CLASS-FIX-001  
-**Status:** **PATH A — DONE (repo) / WAITING_OWNER_NL_DIRECT_BASIC_ROUTE_CLASS_SMOKE**  
+**Status:** **AUTOMATED_SMOKE_PASS — WAITING_OWNER_NL_DIRECT_BASIC_ROUTE_CLASS_SMOKE**  
 **Companions:**
 [`NL-DIRECT-PATH-SERVER-PROFILE-FIX-2026-06-18.md`](NL-DIRECT-PATH-SERVER-PROFILE-FIX-2026-06-18.md) ·
 [`NL-INDEPENDENT-EXIT-FIX-2026-06-18.md`](NL-INDEPENDENT-EXIT-FIX-2026-06-18.md)
@@ -83,7 +83,8 @@ Prior artifact bugs remain fixed: no legacy profile, no overlay, no fragment, no
 
 | Gate | Status |
 |------|--------|
-| NL Direct Basic smoke | **WAITING_OWNER_NL_DIRECT_BASIC_ROUTE_CLASS_SMOKE** |
+| NL Direct Basic automated smoke | **PASS** (local xray, 5/5 targets) → [`NL-AUTOMATED-CONNECTIVITY-SMOKE-2026-06-19.md`](NL-AUTOMATED-CONNECTIVITY-SMOKE-2026-06-19.md) |
+| NL Direct Basic owner Happ smoke | **WAITING_OWNER_NL_DIRECT_BASIC_ROUTE_CLASS_SMOKE** |
 | NL Split Stealth | **PARTIAL** (report 14 — stealth alive, NL direct fail) |
 | Registry promotion | **NO** |
 | PUBLIC_PROD | **NO-GO** |
