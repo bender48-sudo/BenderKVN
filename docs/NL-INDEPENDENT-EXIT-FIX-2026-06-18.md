@@ -12,10 +12,11 @@
 
 | Field | Value |
 |-------|-------|
-| Profile used | Legacy `BenderVPN NL Independent Exit Canary — owner only` (single importable) |
-| Verdict | **FAIL** |
-| Symptoms | Immediate errors; sites + Telegram did not load; Gmail partial/full |
-| Report | `report(11).zip` → `.secrets/diagnostics/report-11-nl-canary-fail.zip` (local, not committed) |
+| Profile used (report 11) | Legacy `BenderVPN NL Independent Exit Canary — owner only` (single importable) |
+| Verdict (report 11) | **FAIL_PROFILE_ROUTING_PROTOCOL** |
+| Profile used (report 12) | Same legacy profile + Happ **BenderVPN RU** overlay + Telegram opened |
+| Verdict (report 12) | **NOT_TESTED_INVALID_SMOKE** — not NL Direct Basic failure |
+| Analyzer | `ops/analyze_nl_canary_smoke.py` (guard NL-DIRECT-BASIC-SMOKE-GUARD-001) |
 | Registry promotion | **Not performed** |
 
 ---
@@ -58,8 +59,22 @@
 - `ops/nl_canary_profile_builder.py` — two-profile builder
 - `ops/generate_independent_exit_canary.py` — generates both variants + updated runbook
 - `ops/validate_happ_importable_profile.py` — `validate_nl_canary_variant()` smoke/routing guards
+- `ops/nl_canary_smoke_guard.py` + `ops/analyze_nl_canary_smoke.py` — fail-fast invalid smoke detection (report 12)
 
 ---
+
+## 3b. report(12) — invalid Direct Basic attempt (2026-06-18)
+
+| Check | Finding |
+|-------|---------|
+| Active profile | Legacy Independent Exit Canary (not Direct Basic) |
+| Happ overlay | `useRouting=true`, `selectedRoutingRule=BenderVPN RU` |
+| Forbidden app | Telegram opened during Direct Basic phase |
+| TUN / DNS | Healthy (~1.5s startup, DNS set OK) |
+| Errors | ~700 lines / ~2 min — relay/stealth class, not isolated NL direct |
+| Classification | **NOT_TESTED_INVALID_SMOKE** — do not score as NL PASS/FAIL |
+
+Local copy: `.secrets/diagnostics/report-12-invalid-nl-smoke.zip` (not committed).
 
 ## 4. Owner test sequence (mandatory order)
 
@@ -77,7 +92,7 @@
 
 | Gate | Status |
 |------|--------|
-| NL traffic smoke | **FAIL_PROFILE_ROUTING_PROTOCOL / WAITING_RETEST** |
+| NL traffic smoke | **WAITING_CLEAN_DIRECT_BASIC_SMOKE** (report 12 = invalid, not tested) |
 | Registry promotion | **NO** |
 | PUBLIC_PROD | **NO-GO** |
 | 300 / 30k | **NO-GO** |
@@ -86,7 +101,7 @@
 
 ## 6. Next owner action
 
-**RUN OWNER NL DIRECT BASIC SMOKE** — import DIRECT_BASIC profile only; disable Happ external routing overlay.
+**RUN CLEAN OWNER NL DIRECT BASIC SMOKE** — preflight checklist in runbook; analyze with `ops/analyze_nl_canary_smoke.py`.
 
 If DIRECT_BASIC still FAILs with clean routing → escalate **APPREVE NL SERVER-SIDE FIX** (separate approval).
 

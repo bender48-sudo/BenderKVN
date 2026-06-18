@@ -75,6 +75,7 @@ IMPORTABLE_FILENAME = "independent_exit_nl_canary_IMPORTABLE_PROFILE.json"
 from nl_canary_profile_builder import (  # noqa: E402
     DIRECT_BASIC_FILENAME,
     PROFILE_LABEL_DIRECT_BASIC,
+    PROFILE_LABEL_LEGACY,
     PROFILE_LABEL_SPLIT_STEALTH,
     SPLIT_STEALTH_FILENAME,
     build_nl_direct_basic_profile,
@@ -86,6 +87,7 @@ from nl_canary_profile_builder import (  # noqa: E402
 from validate_happ_importable_profile import (  # noqa: E402
     validate_nl_canary_variant,
 )
+from nl_canary_smoke_guard import generator_smoke_metadata  # noqa: E402
 LEGACY_AMBIGUOUS_FILENAMES = (
     "independent_exit_nl_canary.json",
     "independent_exit_nl_canary.md",
@@ -116,8 +118,17 @@ IMPORT_INSTRUCTIONS = [
     "Create NEW profiles; auto-refresh OFF; do not overwrite BenderVPN Auto.",
 ]
 
+SMOKE_PREFLIGHT_CHECKLIST = [
+    "[1] Active profile name = BenderVPN NL Direct Basic Canary — owner only (not legacy Independent Exit).",
+    "[2] Happ external routing overlay OFF (no BenderVPN RU selectedRoutingRule; useRouting=false).",
+    "[3] Auto-refresh OFF on the canary profile.",
+    "[4] Telegram / Instagram / Meta apps CLOSED for Direct Basic phase.",
+    "[5] Import file = .local/independent_exit_nl_DIRECT_BASIC_IMPORTABLE_PROFILE.json only.",
+    "[6] Delete or ignore legacy profile: BenderVPN NL Independent Exit Canary — owner only.",
+]
+
 SMOKE_CHECKLIST_DIRECT_BASIC = [
-    "[PRE] Normal BenderVPN Auto profile still works.",
+    "[PRE] Complete one-screen preflight checklist above — agent rejects invalid smoke otherwise.",
     "[IMPORT] New profile from DIRECT_BASIC JSON only; auto-refresh OFF; external routing profile OFF.",
     "[CONNECT] Connect; wait for TUN up without immediate error storm.",
     "[NL PROOF] Open Google search + Gmail — must route via NL (Intl_Direct only pool).",
@@ -170,7 +181,8 @@ FAILURE_EXPORT = [
     "Save to a local ignored path only (e.g. .secrets/diagnostics/ or Downloads).",
     "Do NOT paste subscription URLs, UUIDs, raw IPs, or tokens into chat/git.",
     "Share only: overall verdict, redacted step failures, report filename + date.",
-    "Agent can analyze a copied report via ops/analyze_happ_report_tun.py locally.",
+    "Agent analyzes via: python ops/analyze_nl_canary_smoke.py --report <zip> --variant direct_basic",
+    "INVALID smoke (wrong profile / overlay / Telegram in Direct Basic) → NOT_TESTED_INVALID_SMOKE — not NL FAIL.",
 ]
 
 PASS_CRITERIA = [
@@ -413,7 +425,7 @@ def build_artifact(registry: dict[str, Any], node_id: str) -> dict[str, Any]:
         "owner_only": True,
         "do_not_refresh": True,
         "production_default_changed": False,
-        "traffic_smoke_status": "FAIL_PROFILE_ROUTING_PROTOCOL",
+        "traffic_smoke_status": "WAITING_CLEAN_DIRECT_BASIC_SMOKE",
         "independent_exit_paths_now": count_independent_exit_paths(nodes),
         "candidate_counts_as_capacity": is_independent_exit(node),
         "egress_independence": EGRESS_EVIDENCE,
@@ -430,7 +442,11 @@ def build_artifact(registry: dict[str, Any], node_id: str) -> dict[str, Any]:
         },
         "import_instructions": IMPORT_INSTRUCTIONS,
         "synthetic_canary_preview": canary_gen.to_dict(),
+        "smoke_preflight_checklist": SMOKE_PREFLIGHT_CHECKLIST,
         "smoke_checklist": SMOKE_CHECKLIST,
+        "smoke_guard_analyzer": "ops/analyze_nl_canary_smoke.py",
+        "direct_basic_smoke_metadata": generator_smoke_metadata("direct_basic"),
+        "split_stealth_smoke_metadata": generator_smoke_metadata("split_stealth"),
         "expected_behavior": EXPECTED_BEHAVIOR,
         "record_template": RECORD_TEMPLATE,
         "failure_export": FAILURE_EXPORT,
@@ -463,6 +479,15 @@ def format_runbook_markdown(
         "> **Phase 2 (after DIRECT_BASIC PASS):** import `.local/independent_exit_nl_SPLIT_STEALTH_IMPORTABLE_PROFILE.json`.",
         "> Disable Happ external routing profile overlay — use JSON-embedded routing only.",
         "",
+        "## Owner preflight (one screen — mandatory before Direct Basic)",
+        "",
+    ]
+    for step in SMOKE_PREFLIGHT_CHECKLIST:
+        lines.append(f"- {step}")
+    lines += [
+        "",
+        "> If Telegram is opened, overlay is ON, or legacy profile is active → smoke is **INVALID**, not FAIL.",
+        "",
         f"> Candidate independent exit: **{artifact['candidate_node_id']}** · "
         f"standard {artifact['criteria_standard']} · owner/staging only.",
         "",
@@ -492,7 +517,9 @@ def format_runbook_markdown(
         "2. Owner imported legacy single `IMPORTABLE_PROFILE` — **FAIL_PROFILE_ROUTING_PROTOCOL**: "
         "`geosite:google` routed via Intl_Stealth (relay-2), so Gmail did **not** prove NL egress. "
         "Report(11) also showed external Happ routing profile `BenderVPN RU` overlay active.",
-        "3. NL traffic smoke remains **FAIL / WAITING_RETEST** — use DIRECT_BASIC first.",
+        "3. NL traffic smoke remains **WAITING_CLEAN_DIRECT_BASIC_SMOKE** — use DIRECT_BASIC first.",
+        "4. report(12): owner used legacy profile + BenderVPN RU overlay + Telegram during Direct Basic → "
+        "**NOT_TESTED_INVALID_SMOKE** (guard: `ops/analyze_nl_canary_smoke.py`).",
         "",
         "## Egress independence (redacted tokens)",
         "",

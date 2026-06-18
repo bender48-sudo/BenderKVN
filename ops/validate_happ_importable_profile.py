@@ -31,6 +31,7 @@ from subscription_fetch import (  # noqa: E402
 from balancer_selectors import INTL_BALANCER_TAG, INTL_STEALTH_BALANCER_TAG  # noqa: E402
 from nl_canary_profile_builder import (  # noqa: E402
     PROFILE_LABEL_DIRECT_BASIC,
+    PROFILE_LABEL_LEGACY,
     PROFILE_LABEL_SPLIT_STEALTH,
     google_routes_via_stealth,
     nl_proxy_tags,
@@ -264,6 +265,10 @@ def validate_nl_canary_variant(
     if variant == "direct_basic":
         if PROFILE_LABEL_DIRECT_BASIC not in remarks:
             errors.append("remarks must match DIRECT_BASIC label")
+        if PROFILE_LABEL_LEGACY.lower() in remarks.lower() or "independent exit canary" in remarks.lower():
+            errors.append("legacy Independent Exit Canary label must not be used for DIRECT_BASIC validation")
+        if "split stealth" in remarks.lower():
+            errors.append("SPLIT_STEALTH label must not pass DIRECT_BASIC validation")
         if relay2_proxy_tags(cfg):
             errors.append("DIRECT_BASIC must not include relay-2 outbounds")
         if INTL_STEALTH_BALANCER_TAG in balancers:

@@ -20,6 +20,8 @@ from subscription_fetch import node_label, outbound_endpoint
 PROFILE_LABEL_DIRECT_BASIC = "BenderVPN NL Direct Basic Canary — owner only"
 PROFILE_LABEL_SPLIT_STEALTH = "BenderVPN NL Split Stealth Canary — owner only"
 
+PROFILE_LABEL_LEGACY = "BenderVPN NL Independent Exit Canary — owner only"
+
 DIRECT_BASIC_FILENAME = "independent_exit_nl_DIRECT_BASIC_IMPORTABLE_PROFILE.json"
 SPLIT_STEALTH_FILENAME = "independent_exit_nl_SPLIT_STEALTH_IMPORTABLE_PROFILE.json"
 LEGACY_IMPORTABLE_FILENAME = "independent_exit_nl_canary_IMPORTABLE_PROFILE.json"
