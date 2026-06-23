@@ -16,7 +16,7 @@ sleep $((RANDOM % 600))
 # Runs at 09:00 UTC via cron
 # ==========================================
 
-ADMIN_CHAT_ID="924498094"
+OPS_ALERT_CHAT_ID="${OPS_ALERT_CHAT_ID:-${ADMIN_CHAT_ID:-924498094}}"
 # Remnawave API на AMS (HTTPS). На LV локального :3000 после миграции панели нет.
 PANEL_URL="${PANEL_URL:-https://k9x2m1.conntest.xyz:2053}"
 AMS_IP="168.100.11.140"
@@ -230,7 +230,7 @@ MSGEOF
 )"
 
 curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-    -d "chat_id=${ADMIN_CHAT_ID}" \
+    -d "chat_id=${OPS_ALERT_CHAT_ID}" \
     -d "parse_mode=HTML" \
     --data-urlencode "text=${MESSAGE}" > /dev/null 2>&1
 

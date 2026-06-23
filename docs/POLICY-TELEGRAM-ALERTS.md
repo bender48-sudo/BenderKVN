@@ -2,6 +2,15 @@
 
 Цель: админ получает **достаточно контекста для диагностики**, без **лишних метаданных** о пользователях и без **секретов**.
 
+## Куда уходят алерты (2026-06-24)
+
+| Поток | Куда | Env |
+|-------|------|-----|
+| **Infra / monitoring** (selfsteal, ru-monitor, `monitor.sh`, daily report, balancer, backup, docker events) | **Private ops channel** | `OPS_ALERT_CHAT_ID` в `/etc/bvpn/balancer.env` (LV) |
+| **User-facing bot** (`remna-shop-bot` на AMS) | Пользователи + admin-команды владельца | `ADMIN_TELEGRAM_ID` в `bot.env` — **отдельно** от ops |
+
+**Правило:** пользовательский бот **не получает** infra-алерты (SELFSTEAL, Caddy, имена нод, Latvia/NL в monitor copy). Тот же `@Bender_KVN_bot` token может слать в ops-канал, но **chat_id** — только `OPS_ALERT_CHAT_ID`. Fallback `ADMIN_CHAT_ID` — только на время миграции, если ops-канал ещё не задан.
+
 ## Разрешено в тексте алерта
 
 - Имя проверки (`xray_lv_443`, `subscription`, `panel`, …).

@@ -180,7 +180,12 @@ def main() -> int:
 
     env = load_env(args.env_file)
     token = env.get("BOT_TOKEN") or env.get("TELEGRAM_BOT_TOKEN") or ""
-    chat_id = env.get("ADMIN_CHAT_ID") or env.get("ADMIN_TELEGRAM_ID") or "924498094"
+    chat_id = (
+        env.get("OPS_ALERT_CHAT_ID")
+        or env.get("ADMIN_CHAT_ID")
+        or env.get("ADMIN_TELEGRAM_ID")
+        or "924498094"
+    )
 
     import socket
 

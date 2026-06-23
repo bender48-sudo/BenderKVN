@@ -6,7 +6,7 @@
 
 | Репо | Хост | Путь на проде | Назначение |
 |------|------|---------------|------------|
-| `monitor.sh` | LV | `/opt/scripts/monitor.sh` | Каждые 5 мин: LV Xray-порты, **smoke подписки** (`SUB_PUBLIC_ORIGIN` / `SUB_MONITOR_PROBE_URL` после `source /etc/bvpn/balancer.env`, см. **`daily-report.sh`**), **`PANEL_URL`**, бот AMS, disk. Алерты в TG. |
+| `monitor.sh` | LV | `/opt/scripts/monitor.sh` | Каждые 5 мин: LV Xray-порты, **smoke подписки** (`SUB_PUBLIC_ORIGIN` / `SUB_MONITOR_PROBE_URL` после `source /etc/bvpn/balancer.env`, см. **`daily-report.sh`**), **`PANEL_URL`**, бот AMS, disk. Алерты в TG → **`OPS_ALERT_CHAT_ID`**. |
 | `daily-report.sh` | LV | `/opt/scripts/daily-report.sh` | 09:00 UTC digest: users/traffic/nodes/… **`/api/users` обязан запрашивать со страницами (`size`/`start`)** — без этого панель отдаёт только ~25 записей и цифры в TG не сходятся с UI. |
 | `ops/capacity_snapshot.py` | LV / рабочая станция | — (ops, не cron) | Снимок **§10.1**: активные users (постранично), ноды, мягкая «загрузка» относительно `USERS_PER_NODE`. **P6-SCALE-01**. |
 | `balancer.sh` | LV | `/opt/scripts/balancer.sh` | Каждый час: capacity (users/node, CPU). 80/95/100% алерты + daily summary. |
@@ -263,7 +263,7 @@ python ops/render_compose.py --none compose/ams/remnawave-sub/docker-compose.yml
 | Что | Почему отдельно |
 |-----|----------------|
 | Compose и prod-**.env** для стеков remnawave / remnanode / subscription / bot / adguard | Sanitized **`compose/**/*.tmpl`** + vault; проверка в **`ops/drift-check.py`** (**§7**). |
-| `/etc/bvpn/balancer.env` (LV) | `BOT_TOKEN`, `PANEL_TOKEN`, … — **никогда не коммитим**; шаблон **`compose/_shared/etc-bvpn-lv/balancer.env.tmpl`**. |
+| `/etc/bvpn/balancer.env` (LV) | `BOT_TOKEN`, `PANEL_TOKEN`, **`OPS_ALERT_CHAT_ID`** (infra TG → private ops channel), `ADMIN_CHAT_ID` (fallback only) — **никогда не коммитим**; шаблон **`compose/_shared/etc-bvpn-lv/balancer.env.tmpl`**. См. **`docs/POLICY-TELEGRAM-ALERTS.md`**. |
 | `/etc/bvpn/ru-monitor.env` (LV) | Аналогично; **`compose/_shared/etc-bvpn-lv/ru-monitor.env.tmpl`**. |
 | `/etc/bvpn/bot-token` (NL) | **`compose/_shared/etc-bvpn-nl/bot-token.tmpl`**. |
 | Прочее (`intel-digest.py`, one-shot скрипты) | Артефакты / legacy, не обязательно в drift-matrix. |
@@ -277,6 +277,7 @@ python ops/render_compose.py --none compose/ams/remnawave-sub/docker-compose.yml
 
 ## 10. История
 
+- **2026-06-24** — **OPS alert channel:** LV `balancer.env` + monitor scripts use **`OPS_ALERT_CHAT_ID`** (private ops channel); user bot chat no longer receives infra alerts — **`docs/POLICY-TELEGRAM-ALERTS.md`**, **`docs/SECRETS.md`**.
 - **2026-05-14** — P1-OPS-DRIFT-01 закрыта. Все 10 файлов синхронизированы (репо ← прод после большой серии правок P0-block / Monitor-block / AMS-decom). Этот документ создан.
 - **2026-05-15** — **P1-OPS-DRIFT-02**: в §1 добавлена строка **`compose/**/*.tmpl`**; §7 описывает vault, `sanitize_compose_templates` / `extract_vault`, `render_compose.py` (`--only`, `--none`, согласованность с `tmpl_only_keys` в `drift-check.py`), нормализацию CRLF при сравнении MD5 с продом.
 - **2026-05-16** — **§7.5** safe-deploy gate AMS: **`docs/RUNBOOK-AMS-SAFE-DEPLOY.md`** (**`P2-OPS-AMS-SAFE-DEPLOY-01`**).

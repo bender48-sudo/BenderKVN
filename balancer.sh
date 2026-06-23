@@ -23,7 +23,7 @@ fi
 # Anti-correlation jitter: random delay 0-600s
 sleep $((RANDOM % 600))
 
-ADMIN_CHAT_ID="924498094"
+OPS_ALERT_CHAT_ID="${OPS_ALERT_CHAT_ID:-${ADMIN_CHAT_ID:-924498094}}"
 # After panel migration off LV, set PANEL_URL in /etc/bvpn/balancer.env (HTTPS, no trailing slash).
 PANEL_URL="${PANEL_URL:-http://localhost:3000}"
 STATE_DIR="/tmp/bvpn_states"
@@ -36,7 +36,7 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"; }
 
 notify() {
     curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-        -d "chat_id=${ADMIN_CHAT_ID}" \
+        -d "chat_id=${OPS_ALERT_CHAT_ID}" \
         -d "parse_mode=HTML" \
         --data-urlencode "text=$1" > /dev/null 2>&1
 }

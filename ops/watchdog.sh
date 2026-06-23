@@ -4,7 +4,11 @@
 # to Telegram and creates a per-monitor antispam marker (cleared on recovery).
 set -uo pipefail
 
-ADMIN_CHAT_ID="924498094"
+if [ -f /etc/bvpn/balancer.env ]; then
+    # shellcheck disable=SC1091
+    source /etc/bvpn/balancer.env
+fi
+OPS_ALERT_CHAT_ID="${OPS_ALERT_CHAT_ID:-${ADMIN_CHAT_ID:-924498094}}"
 BOT_TOKEN_FILE="/etc/bvpn/bot-token"
 STATE_DIR="/var/lib/bvpn-watchdog"
 THRESHOLD=1800  # 30 minutes
@@ -26,7 +30,7 @@ BOT_TOKEN=$(tr -d ' \n' < "$BOT_TOKEN_FILE")
 tg() {
     local text="$1"
     curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-        -d "chat_id=${ADMIN_CHAT_ID}" \
+        -d "chat_id=${OPS_ALERT_CHAT_ID}" \
         -d "parse_mode=HTML" \
         --data-urlencode "text=${text}" > /dev/null 2>&1
 }

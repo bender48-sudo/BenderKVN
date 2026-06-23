@@ -43,7 +43,7 @@
 | Хост | Путь | Что внутри |
 |------|------|------------|
 | **LV** | `/opt/remnanode/.env` | `SECRET_KEY_NODE_JWT_BUNDLE` (для LV-ноды) |
-| **LV** | `/etc/bvpn/balancer.env` | `BOT_TOKEN`, `PANEL_TOKEN==REMNA_API_TOKEN`, `REMNA_API_TOKEN`, `ADMIN_CHAT_ID` (последний не секрет) |
+| **LV** | `/etc/bvpn/balancer.env` | `BOT_TOKEN`, `PANEL_TOKEN==REMNA_API_TOKEN`, `REMNA_API_TOKEN`, **`OPS_ALERT_CHAT_ID`** (infra alerts channel), `ADMIN_CHAT_ID` (legacy fallback, not user bot) |
 | **LV** | `/etc/bvpn/ru-monitor.env` | `REMNA_API_TOKEN`, `REMNA_API_URL`, ssh-параметры RELAY |
 | **LV** | `/opt/_archive/remnawave-legacy-*/**` (после **`P0-SEC-04`**) | Исторический снимок panel + `.env` с **теми же секретами**, что у активного AMS — офлайн, ожидается **`chattr +i`** на каталог архива. Живого **`/opt/remnawave/`** на LV быть **не должно**. |
 | **AMS** | `/opt/remnawave/.env` | `JWT_AUTH_SECRET`, `JWT_API_TOKENS_SECRET`, `POSTGRES_PASSWORD`, `METRICS_PASS`, `WEBHOOK_SECRET_HEADER` |
@@ -83,7 +83,8 @@
 
 | Значение | Где встречается | Почему не секрет |
 |----------|------------------|-------------------|
-| `ADMIN_TELEGRAM_ID=924498094` | bot.env | Это Telegram user-id, легко выясняется, ничем не открывает доступ. |
+| `ADMIN_TELEGRAM_ID=924498094` | bot.env (AMS) | Telegram user-id владельца для **admin-команд бота** (`/status`, …). **Не** канал infra-алертов. |
+| `OPS_ALERT_CHAT_ID` | `balancer.env` (LV) | Private ops channel for monitor/selfsteal/backup TG. **Не секрет** (id канала). Infra **не** шлёт в owner DM. |
 | `SUPPORT_GROUP_ID=-1003675105450` | bot.env | Group-id поддержки, технически публично. |
 | `METRICS_USER=0287d665ff0a` | panel.env | Имя HTTP-basic пользователя для Prometheus. Слабая корреляция с паролем, можно оставить. |
 | `REMNA_SQUAD_UUID`, `TEMPLATE_UUID` | bot.env, ops/* | Identifier'ы записей в БД панели. Без `REMNA_API_TOKEN` ничего не открывают. |

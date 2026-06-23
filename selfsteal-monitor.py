@@ -790,7 +790,9 @@ def main():
         # Load env for Telegram + anti-flap thresholds
         balancer_env = load_env("/etc/bvpn/balancer.env")
         bot_token = balancer_env.get("BOT_TOKEN")
-        chat_id = balancer_env.get("ADMIN_CHAT_ID", "924498094")
+        chat_id = balancer_env.get("OPS_ALERT_CHAT_ID") or balancer_env.get(
+            "ADMIN_CHAT_ID", "924498094"
+        )
         fail_streak_need = int(
             balancer_env.get("SELFSTEAL_FAIL_STREAK_THRESHOLD", DEFAULT_FAIL_STREAK)
         )

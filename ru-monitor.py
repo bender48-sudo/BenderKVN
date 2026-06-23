@@ -460,7 +460,9 @@ def main():
         relay_user = monitor_env.get("RELAY_SSH_USER", "bvpncheck")
         relay_key = monitor_env.get("RELAY_SSH_KEY", "/root/.ssh/id_ed25519")
         bot_token = balancer_env.get("BOT_TOKEN")
-        chat_id = balancer_env.get("ADMIN_CHAT_ID", "924498094")
+        chat_id = balancer_env.get("OPS_ALERT_CHAT_ID") or balancer_env.get(
+            "ADMIN_CHAT_ID", "924498094"
+        )
         fail_streak_need = int(
             monitor_env.get("RU_FAIL_STREAK_THRESHOLD", DEFAULT_FAIL_STREAK)
         )

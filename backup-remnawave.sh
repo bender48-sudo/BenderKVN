@@ -12,8 +12,7 @@ source /etc/bvpn/balancer.env
 sleep $((RANDOM % 600))
 set -e
 
-# Config
-ADMIN_CHAT_ID="924498094"
+OPS_ALERT_CHAT_ID="${OPS_ALERT_CHAT_ID:-${ADMIN_CHAT_ID:-924498094}}"
 BACKUP_DIR="/opt/backups/remnawave"
 MAX_BACKUPS=7
 DB_CONTAINER="remnawave-db"
@@ -33,7 +32,7 @@ docker exec "$DB_CONTAINER" pg_dump -U "$DB_USER" "$DB_NAME" | gzip > "$BACKUP_F
 
 if [ ! -s "$BACKUP_FILE" ]; then
     echo "[$(date)] ERROR: Backup file not created or empty"
-    curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage"         -d "chat_id=${ADMIN_CHAT_ID}"         -d "text=❌ Remnawave DB backup FAILED at $(date)" > /dev/null
+    curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage"         -d "chat_id=${OPS_ALERT_CHAT_ID}"         -d "text=❌ Remnawave DB backup FAILED at $(date)" > /dev/null
     exit 1
 fi
 
@@ -44,7 +43,7 @@ echo "[$(date)] Backup created: $BACKUP_FILE ($FILE_SIZE)"
 REMNA_BACKUP_NOTIFY="${REMNA_BACKUP_NOTIFY:-0}"
 if [ "$REMNA_BACKUP_NOTIFY" = "1" ]; then
     SEND_RESULT=$(curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument" \
-        -F "chat_id=${ADMIN_CHAT_ID}" \
+        -F "chat_id=${OPS_ALERT_CHAT_ID}" \
         -F "document=@${BACKUP_FILE}" \
         -F "caption=💾 Remnawave DB Backup
 📅 Time: $(date '+%Y-%m-%d %H:%M UTC')

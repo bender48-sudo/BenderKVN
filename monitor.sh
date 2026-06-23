@@ -34,7 +34,9 @@ sleep $((RANDOM % 60))
 # Runs every 5 min via cron
 # ==========================================
 
-ADMIN_CHAT_ID="924498094"
+# Infra alerts → OPS_ALERT_CHAT_ID (private ops channel); fallback ADMIN_CHAT_ID
+OPS_ALERT_CHAT_ID="${OPS_ALERT_CHAT_ID:-${ADMIN_CHAT_ID:-924498094}}"
+
 # Persistent state dir — survives reboot (was /tmp/bvpn_states; after reboot
 # the alert markers vanished and `recover` never fired the RECOVERED message,
 # which felt like "монитор не отписал что починилось". 2026-05-14.
@@ -68,7 +70,7 @@ _tg_send() {
     tmp=$(mktemp)
     printf '%s' "$body" >"$tmp"
     curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-        -d "chat_id=${ADMIN_CHAT_ID}" \
+        -d "chat_id=${OPS_ALERT_CHAT_ID}" \
         -d "parse_mode=HTML" \
         --data-urlencode "text@${tmp}" > /dev/null 2>&1
     rm -f "$tmp"
