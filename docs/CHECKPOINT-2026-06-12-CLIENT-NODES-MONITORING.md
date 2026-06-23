@@ -59,7 +59,7 @@ Commits from **`68e327d` → `0258d00`** (user-accepted scope). Earlier commits 
 | Mini App cabinet contrast | `0a79614` | `web/portal/` |
 | Happ routing DirectIp fix (`geoip:ru` removed) | `0258d00` | `ops/happ_routing_profile_ru.json`, guard, generator |
 | Prod `happRouting` deeplink | — | `patch_happ_routing.py --apply` **not approved, not run** |
-| NL A2/A4 routing inclusion | — | blocked on MONITOR-FLAP soak + owner approval |
+| NL A2/A4 routing inclusion | — | blocked on owner explicit approval (soak PASS 2026-06-24) |
 | Remna / Caddy / subscription template | — | no changes in accepted range |
 | Bot / billing / YooKassa | — | no prod mutation |
 
@@ -69,8 +69,8 @@ Commits from **`68e327d` → `0258d00`** (user-accepted scope). Earlier commits 
 
 | Blocker | Status | Unblocks |
 |---------|--------|----------|
-| **MONITOR-FLAP-001** 24h soak | **PARTIAL** (closeout 2026-06-13) | **MONITOR-FLAP-TUNE-001** or owner risk acceptance for NL A2/A4 |
-| **NL A2/A4** controlled smoke | Blocked | Soak **PARTIAL** — owner explicit approval + optional tuning first |
+| **MONITOR-FLAP-001** + **TUNE-001** soak | **PASS** (closeout 2026-06-24, §10) | — |
+| **NL A2/A4** controlled smoke | Blocked on **owner explicit approval** only | Soak gate cleared 2026-06-24 |
 | **CLIENT-STABILITY DirectIp fix** | **Owner local retest PASS (2026-06-12)** | Prod `patch_happ_routing.py --apply` after explicit approval |
 | **Prod Happ routing update** | Prepared — see INCIDENT-DIAG-2026-06-12 §11 | Explicit `OWNER APPROVES PROD HAPP ROUTING APPLY NOW` |
 | **Proxy Track B** (CLIENT-SMOKE-002) | Open | Separate capture — Bender Proxy vs control Proxy |
@@ -94,11 +94,12 @@ Commits from **`68e327d` → `0258d00`** (user-accepted scope). Earlier commits 
 
 ## 6. Next-step decision map
 
-### A. ~~MONITOR-FLAP soak~~ — **CLOSED PARTIAL 2026-06-13**
+### A. ~~MONITOR-FLAP soak~~ — **CLOSED PASS 2026-06-24**
 
-- See §8 for LV log evidence.
+- §8 — pre-tune PARTIAL (2026-06-13); §9 — TUNE deploy; §10 — extended soak evidence.
+- **MONITOR-FLAP-001** + **MONITOR-FLAP-TUNE-001:** soak **PASS** (`quorum_fail_cdn=0`; owner accepts microsoft sustained ~6/10d).
 - **OPS-ALERT-HYGIENE-001:** soak **PASS** (cert digest).
-- **NL A2/A4:** blocked until owner accepts PARTIAL risk or **MONITOR-FLAP-TUNE-001** lands.
+- **NL A2/A4:** monitoring soak gate **cleared** — still needs **owner explicit approval** for controlled smoke (not automatic).
 
 ### B. Prod Happ routing apply (when owner approves)
 
@@ -110,7 +111,7 @@ Commits from **`68e327d` → `0258d00`** (user-accepted scope). Earlier commits 
 
 Local deeplink validated; prod deploy still pending.
 
-### D. NL A2/A4 (after owner accepts PARTIAL soak or tuning)
+### D. NL A2/A4 (after soak PASS + owner approval)
 
 - Controlled smoke per [`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md) VPN-ARCH-001 — **not** automatic on soak closeout.
 
@@ -120,8 +121,8 @@ Local deeplink validated; prod deploy still pending.
 
 ### F. Safe next Cursor prompts (copy-paste)
 
-1. ~~`MONITOR-FLAP-001-SOAK-CLOSEOUT`~~ — **DONE PARTIAL 2026-06-13**
-2. `MONITOR-FLAP-TUNE-001 — repo: reduce microsoft CDN quorum paging + github retried log throttle`
+1. ~~`MONITOR-FLAP-001-SOAK-CLOSEOUT`~~ — **DONE PASS 2026-06-24** (§10)
+2. ~~`MONITOR-FLAP-TUNE-001`~~ — **DONE PASS 2026-06-24** (§10)
 3. `CLIENT-STABILITY-ROUTING-DIRECTIP-RETEST-001 — owner Happ TUN retest after stable session ends` (owner action required)
 4. `Push product-referral-cabinet-ui-v1 — 20 commits ahead of origin` (only if owner asks)
 
@@ -217,7 +218,53 @@ Post-deploy health (through 16:46:40): **0 tracebacks**; github retried throttle
 
 ---
 
-## 10. Key doc links
+## 10. MONITOR-FLAP extended soak closeout (2026-06-24)
+
+**Task:** MONITOR-FLAP-001 + MONITOR-FLAP-TUNE-001 extended soak · read-only LV log review · no prod mutation  
+**Review UTC:** 2026-06-23 21:30 · owner acceptance 2026-06-24 (microsoft sustained TG = design, no tune-002)
+
+### Deploy verification
+
+| Check | Result |
+|-------|--------|
+| `selfsteal-monitor.py` MD5 | `7af796f345bb0a0a3867ce132dbfd930` — **match** TUNE-001 (`21f5a97`) |
+| Soak window | **2026-06-13 16:46:40 UTC** → **2026-06-23 21:30 UTC** (~**10.2 days**) |
+| Review script | `.playwright-review/monitor_tune_30min_review.sh` on LV (`/tmp/monitor_tune_review.sh`) |
+
+### Evidence (post-tune window)
+
+| Metric | Count | Notes |
+|--------|------:|-------|
+| `quorum_fail_cdn` (microsoft/apple/bing → TG) | **0** | Primary TUNE-001 goal — **met** |
+| `cdn_quorum_blip` (log-only, suppressed) | **419** | CDN blips do not page |
+| `sustained fail (CDN)` → TG | **6** | All `latvia:www.microsoft.com`, HTTP 000, ~10–18 min; **owner accepted** |
+| `ALERT DOWN queued` (total) | **11** | 6 microsoft sustained + 4 `ir-3.ozone.ru` + 1 `sun6-21.userapi.com` |
+| `ALERT RECOVERED queued` | **12** | Includes stale pre-tune recover line |
+| `paging: quorum fail` (non-CDN) | **5** | Legitimate baseline RU SNIs |
+| `api.github.com retried` (log WARNING) | **236** | ~1/h; **not TG** |
+| Traceback / FATAL / ERROR | **0** / **0** / **0** | |
+| Log lines in window | **3651** | |
+| End state | `ok=12 critical=1` | Chronic `api.github.com` — log-only |
+
+### Comparison to pre-TUNE blocker (§8)
+
+| Before TUNE-001 | After TUNE-001 (10d window) |
+|-----------------|----------------------------|
+| `paging: quorum fail` on `www.microsoft.com` | **0** CDN quorum pages |
+| ~36 microsoft DOWN/RECOVERED pairs / 49h | **6** microsoft sustained DOWN (~0.6/day) |
+| Rapid flap loops | Gaps ~hours–1 day between sustained events |
+
+### Decision
+
+| ID | Verdict |
+|----|---------|
+| **MONITOR-FLAP-TUNE-001** | **PASS** — CDN quorum log-only; `quorum_fail_cdn=0` |
+| **MONITOR-FLAP-001** | **PASS** — anti-flap deployed; legacy spam eliminated; residual TG = real sustained CDN + baseline RU only |
+| **NL A2/A4** | Monitoring gate **cleared**; controlled smoke still requires **owner explicit approval** |
+
+---
+
+## 11. Key doc links
 
 | Topic | Doc |
 |-------|-----|
@@ -230,6 +277,6 @@ Post-deploy health (through 16:46:40): **0 tracebacks**; github retried throttle
 
 ---
 
-## 11. Repo hygiene reminder
+## 12. Repo hygiene reminder
 
 Working tree is **clean for product code** except one `.cursor/skills/` edit. Large untracked QA/review artifacts are local-only; keep out of commits.
