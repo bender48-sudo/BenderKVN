@@ -3,8 +3,13 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from shop_bot.config import BOT_PAYMENTS_LIVE, DAILY_RATE, balance_to_days
-from shop_bot.data_manager.database import get_user, get_user_keys, has_action
+from shop_bot.config import BOT_PAYMENTS_LIVE, DAILY_RATE, balance_covers_one_day, balance_to_days
+from shop_bot.data_manager.database import (
+    get_latest_action_meta,
+    get_user,
+    get_user_keys,
+    has_action,
+)
 from shop_bot.subscription_profile import access_profile, is_legacy_manual_panel
 from shop_bot.web_trial_db import (
     format_customer_id,
@@ -184,7 +189,7 @@ def build_billing_fields(
     is_billable_now = (
         billing_profile == "wallet"
         and active_config_count > 0
-        and balance >= DAILY_RATE
+        and balance_covers_one_day(balance)
     )
 
     daily_action = _daily_charge_action_for(now)
@@ -208,7 +213,7 @@ def build_billing_fields(
     elif billing_profile == "wallet":
         billing_note_code = "wallet_daily"
         billing_note = (
-            f"Баланс: {balance:.0f} ₽. Списание: {DAILY_RATE:.2f} ₽/день за аккаунт."
+            f"Баланс: {balance:.0f} ₽. Списание: {DAILY_RATE:.2f} ₽/день за активный конфиг."
         )
         if not is_billable_now and balance > 0:
             billing_note += " Сейчас баланса не хватает на следующий день."
@@ -249,11 +254,39 @@ def build_billing_fields(
     }
 
 
+def build_profile_fields(user_id: int, user: dict, base: dict) -> dict:
+    """§7.4 / D15 profile: email, phone, language, consents (read-only snapshot)."""
+    lang = (get_latest_action_meta(user_id, "onboarding_language") or "ru").strip().lower()
+    if lang not in ("ru", "en"):
+        lang = "ru"
+    rules_v = get_latest_action_meta(user_id, "rules_accepted")
+    privacy_v = get_latest_action_meta(user_id, "privacy_accepted")
+    agreed = bool(user.get("agreed_to_terms")) or bool(rules_v) or bool(privacy_v)
+    consents = []
+    if agreed:
+        consents.append({"doc": "rules", "version": rules_v or "1", "accepted": True})
+        consents.append({"doc": "privacy", "version": privacy_v or "1", "accepted": True})
+    return {
+        "profile": {
+            "email": (user.get("contact_email") or "").strip() or None,
+            "phone": (base.get("phone") or "").strip() or None if base.get("phone") else None,
+            "language": lang,
+            "username": (user.get("username") or "").strip() or None,
+            "consents": consents,
+            "notifications": {
+                "telegram": bool(base.get("telegram_bound")),
+                "email": bool((user.get("contact_email") or "").strip()),
+            },
+        }
+    }
+
+
 def _enrich_cabinet_response(user_id: int, user: dict, base: dict) -> dict:
     keys = get_user_keys(user_id)
     billing = build_billing_fields(user_id, user, keys)
     out = dict(base)
     out.update(billing)
+    out.update(build_profile_fields(user_id, user, out))
     return out
 
 
@@ -329,6 +362,7 @@ def cabinet_snapshot(
         "daily_rate": DAILY_RATE,
         "telegram_bound": tg_bound,
         "web_only": is_web_surrogate_id(web_uid) and not tg_bound,
+        "phone": (claim.get("contact_phone") or "").strip() or None,
     }
     if not tg_bound and is_web_surrogate_id(web_uid):
         base["needs_telegram_bind"] = True

@@ -14,10 +14,11 @@ from pathlib import Path
 
 from aiogram import Bot, Router, F, types, html
 from aiogram.filters import Command
-from aiogram.types import BufferedInputFile
+from aiogram.types import BufferedInputFile, ReplyKeyboardRemove
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # Универсальная функция для безопасного редактирования сообщений
 async def safe_edit_message(message: types.Message, text: str, reply_markup=None):
@@ -59,8 +60,10 @@ from shop_bot.config import (
     get_key_info_text, CHOOSE_PAYMENT_METHOD_MESSAGE, get_purchase_success_text, ABOUT_TEXT, TERMS_URL, PRIVACY_URL, SUPPORT_USER, SUPPORT_TEXT,
     REMNA_TRIAL_DAYS, DAILY_RATE, TOPUP_PRESETS, CUSTOM_AMOUNT_UNAVAILABLE, KEY_EMAIL_DOMAIN,
     balance_to_days,
+    format_daily_rate_ru,
     DEFAULT_TERMS_URL, DEFAULT_PRIVACY_URL, DEFAULT_SUPPORT_USERNAME,
     effective_legal_url,
+    REFERRAL_UI_ENABLED,
 )
 from shop_bot.config import TRAFFIC_PACKS
 from shop_bot.modules.remnawave_api import add_extra_traffic
@@ -83,8 +86,15 @@ from shop_bot.utils.logger import bot_logger
 async def referral_invite_payload(bot: Bot, user_id: int) -> tuple[str, str]:
     ref_code = ensure_user_ref_code(user_id)
     ref_count = count_referrals(ref_code)
-    bot_info = await bot.get_me()
-    ref_url = f"https://t.me/{bot_info.username}?start=ref_{ref_code}"
+    # §4.1 portal-first: основная пригласительная ссылка ведёт на портал
+    # (клиент делится порталом), а не на t.me. Портал сам проносит ref в бота.
+    try:
+        from shop_bot.public_urls import portal_page_url
+
+        ref_url = portal_page_url("", query={"ref": ref_code})
+    except Exception:
+        bot_info = await bot.get_me()
+        ref_url = f"https://t.me/{bot_info.username}?start=ref_{ref_code}"
     text = user_messages.msg_referral_invite(ref_count, ref_url)
     return text, ref_url
 
@@ -422,7 +432,7 @@ async def start_handler(message: types.Message, state: FSMContext):
             if user_data and user_data.get("agreed_to_terms"):
                 await message.answer(
                     f"👋 Снова здравствуйте, {html.bold(message.from_user.full_name)}!",
-                    reply_markup=keyboards.main_reply_keyboard,
+                    reply_markup=ReplyKeyboardRemove(),
                 )
                 await show_main_menu(message)
             return
@@ -446,46 +456,29 @@ async def start_handler(message: types.Message, state: FSMContext):
             await state.update_data(pending_web_bind=None)
         await message.answer(
             f"👋 Снова здравствуйте, {html.bold(message.from_user.full_name)}!",
-            reply_markup=keyboards.main_reply_keyboard,
+            reply_markup=ReplyKeyboardRemove(),
         )
         await show_main_menu(message)
     else:
-        terms_url = effective_legal_url(
-            get_setting("terms_url"), DEFAULT_TERMS_URL, TERMS_URL
-        )
-        privacy_url = effective_legal_url(
-            get_setting("privacy_url"), DEFAULT_PRIVACY_URL, PRIVACY_URL
-        )
-        if not terms_url or not privacy_url:
-            logger.warning(
-                "Legal URLs missing for user %s (terms=%s privacy=%s)",
-                user_id,
-                bool(terms_url),
-                bool(privacy_url),
-            )
-            support = (get_setting("support_user") or DEFAULT_SUPPORT_USERNAME).strip()
+        await state.clear()
+        try:
+            from shop_bot.onboarding_copy import t as ob_t
+            from shop_bot.onboarding_flow import start_onboarding
+
+            if ref_code:
+                await state.update_data(onboarding_ref_note=ob_t("ref_applied_note"))
+            await start_onboarding(message, state)
+        except Exception:
+            logger.exception("onboarding start failed for user %s — legacy terms screen", user_id)
+            await state.set_state(UserAgreement.waiting_for_agreement)
             await message.answer(
-                "<b>Привет! 👋</b>\n\n"
-                "BenderVPN — свободный интернет без блокировок.\n\n"
-                "Сейчас ссылки на условия временно недоступны. "
-                f"Напиши в поддержку {html.bold(support)} — пришлём документы и поможем начать.",
-                parse_mode="HTML",
+                "Для доступа к BenderVPN примите условия использования и политику конфиденциальности.",
+                reply_markup=keyboards.create_agreement_keyboard(),
             )
-            return
-        agreement_text = (
-            "<b>Привет.</b>\n\n"
-            "Небольшой сервис для тех, кому нужно, чтобы подключение просто работало: "
-            "без сюрпризов, постоянных переподключений и ощущения «почему опять сломалось».\n\n"
-            "Первые 90 дней — бесплатно.\n\n"
-            f"→ <a href='{terms_url}'>Условия использования</a> · "
-            f"<a href='{privacy_url}'>Политика конфиденциальности</a>"
-        )
-        await message.answer(agreement_text, reply_markup=keyboards.create_agreement_keyboard(), disable_web_page_preview=True)
-        await state.set_state(UserAgreement.waiting_for_agreement)
 
 @user_router.callback_query(F.data == "agree_to_terms")
 async def agree_to_terms_handler(callback: types.CallbackQuery, state: FSMContext):
-    """Accept terms — works without FSM state (old inline buttons after bot restart)."""
+    """Legacy «Принимаю» — maps to rules+privacy accept (§5)."""
     user_id = callback.from_user.id
     username = callback.from_user.username or callback.from_user.full_name or ""
     await callback.answer()
@@ -501,64 +494,40 @@ async def agree_to_terms_handler(callback: types.CallbackQuery, state: FSMContex
         await show_main_menu(callback.message)
         return
 
-    data = await state.get_data()
-    pending_bind = data.get("pending_web_bind")
-    set_terms_agreed(user_id)
-    log_action(user_id, "terms_accepted", "")
-    await state.clear()
-
     try:
-        await callback.message.delete()
-    except TelegramBadRequest:
-        pass
+        from shop_bot.onboarding_flow import legacy_agree_combined
 
-    await callback.message.answer(
-        "Отлично. Начни бесплатный период — кнопка «Получить бесплатный VPN» ниже.",
-        reply_markup=keyboards.main_reply_keyboard,
-    )
-    if pending_bind:
-        await _apply_web_bind(callback.message, pending_bind)
-        await state.update_data(pending_web_bind=None)
-    await show_main_menu(callback.message)
+        await legacy_agree_combined(callback, state)
+    except Exception:
+        logger.exception("legacy agree onboarding failed for user %s", user_id)
+        set_terms_agreed(user_id)
+        log_action(user_id, "terms_accepted", "legacy_fallback")
+        await state.clear()
+        try:
+            await callback.message.delete()
+        except TelegramBadRequest:
+            pass
+        await callback.message.answer("👋", reply_markup=ReplyKeyboardRemove())
+        await show_main_menu(callback.message)
 
 @user_router.message(UserAgreement.waiting_for_agreement)
 async def agreement_fallback_handler(message: types.Message):
-    await message.answer("Пожалуйста, нажми кнопку «Принимаю» выше.")
+    await message.answer("Выберите действие кнопками на экране выше.")
 
 
 async def _send_terms_prompt(target_message: types.Message, state: FSMContext) -> bool:
-    """Send the terms agreement prompt to target_message. Always returns False.
+    """Resume onboarding at rules step. Always returns False."""
+    try:
+        from shop_bot.onboarding_flow import prompt_rules
 
-    `target_message` is the message used to deliver the prompt. For callbacks pass
-    `callback.message` (the bot-side message), and resolve identity from the caller.
-    """
-    terms_url = effective_legal_url(
-        get_setting("terms_url"), DEFAULT_TERMS_URL, TERMS_URL
-    )
-    privacy_url = effective_legal_url(
-        get_setting("privacy_url"), DEFAULT_PRIVACY_URL, PRIVACY_URL
-    )
-    if not terms_url or not privacy_url:
-        support = (get_setting("support_user") or DEFAULT_SUPPORT_USERNAME).strip()
+        await prompt_rules(target_message, state)
+    except Exception:
+        logger.exception("onboarding rules prompt failed")
+        await state.set_state(UserAgreement.waiting_for_agreement)
         await target_message.answer(
-            "❗️ Условия и политика временно недоступны. "
-            f"Напиши в поддержку {html.bold(support)}.",
-            parse_mode="HTML",
+            "Для доступа к BenderVPN примите условия использования и политику конфиденциальности.",
+            reply_markup=keyboards.create_agreement_keyboard(),
         )
-        return False
-    agreement_text = (
-        "<b>Добро пожаловать.</b>\n\n"
-        "Перед началом ознакомься с "
-        f"<a href='{terms_url}'>Условиями использования</a> и "
-        f"<a href='{privacy_url}'>Политикой конфиденциальности</a>.\n\n"
-        "Нажимая «Принимаю», ты подтверждаешь согласие."
-    )
-    await target_message.answer(
-        agreement_text,
-        reply_markup=keyboards.create_agreement_keyboard(),
-        disable_web_page_preview=True,
-    )
-    await state.set_state(UserAgreement.waiting_for_agreement)
     return False
 
 
@@ -720,11 +689,12 @@ async def profile_handler_callback(callback: types.CallbackQuery):
     else: vpn_status_text = VPN_NO_DATA_TEXT
     ref_code = ensure_user_ref_code(user_id)
     ref_count = count_referrals(ref_code)
-    final_text = (
-        get_profile_text(username, total_spent, total_months, vpn_status_text)
-        + f"\n\n👥 Приглашено друзей: <b>{ref_count}</b>\n"
-        "Ссылку для друга — кнопка «Пригласить друга» ниже."
-    )
+    final_text = get_profile_text(username, total_spent, total_months, vpn_status_text)
+    if REFERRAL_UI_ENABLED:
+        final_text += (
+            f"\n\n👥 Приглашено друзей: <b>{ref_count}</b>\n"
+            "Ссылку для друга — кнопка «Пригласить друга» ниже."
+        )
     await callback.message.edit_text(
         final_text,
         parse_mode="HTML",
@@ -741,36 +711,46 @@ async def referrals_handler(callback: types.CallbackQuery):
 @user_router.callback_query(F.data == "show_about")
 async def about_handler(callback: types.CallbackQuery):
     await callback.answer()
-    
-    about_text = get_setting("about_text")
-    terms_url = get_setting("terms_url")
-    privacy_url = get_setting("privacy_url")
+    await _present_info_menu(callback.message, edit=True)
 
-    if about_text == ABOUT_TEXT and terms_url == TERMS_URL and privacy_url == PRIVACY_URL:
-        await callback.message.edit_text(
-            "Информация о проекте не установлена. Установите её в админ-панели.",
-            reply_markup=keyboards.create_back_to_menu_keyboard()
-        )
-    elif terms_url == TERMS_URL and privacy_url == PRIVACY_URL:
-        await callback.message.edit_text(
-            about_text,
-            reply_markup=keyboards.create_back_to_menu_keyboard()
-        )
-    elif terms_url == TERMS_URL:
-        await callback.message.edit_text(
-            about_text,
-            reply_markup=keyboards.create_about_keyboard_terms(privacy_url)
-        )
-    elif privacy_url == PRIVACY_URL:
-        await callback.message.edit_text(
-            about_text,
-            reply_markup=keyboards.create_about_keyboard_privacy(terms_url)
-        )
+
+@user_router.callback_query(F.data == "show_info")
+async def show_info_handler(callback: types.CallbackQuery):
+    await callback.answer()
+    await _present_info_menu(callback.message, edit=True)
+
+
+async def _present_info_menu(message: types.Message, *, edit: bool = False):
+    from shop_bot.info_copy import info_block
+
+    ib = info_block()
+    title = ib.get("menu_title") or "ℹ️ Информация"
+    lead = (
+        ib.get("menu_lead")
+        or "FAQ, правила, документы и статус — в разделе кабинета, не в чате бота."
+    )
+    text = f"<b>{title}</b>\n\n{lead}"
+    kb = keyboards.create_info_menu_keyboard()
+    if edit:
+        try:
+            await message.edit_text(text, parse_mode="HTML", reply_markup=kb)
+        except TelegramBadRequest:
+            await message.answer(text, parse_mode="HTML", reply_markup=kb)
     else:
-        await callback.message.edit_text(
-        about_text,
-        reply_markup=keyboards.create_about_keyboard(terms_url, privacy_url)
-        )
+        await message.answer(text, parse_mode="HTML", reply_markup=kb)
+
+
+@user_router.callback_query(F.data == "info_faq")
+@user_router.callback_query(F.data.startswith("info_faq_page:"))
+@user_router.callback_query(F.data.startswith("info_faq_item:"))
+@user_router.callback_query(F.data == "info_rules")
+@user_router.callback_query(F.data == "info_privacy")
+@user_router.callback_query(F.data == "info_offer")
+@user_router.callback_query(F.data == "info_status")
+async def info_legacy_redirect_handler(callback: types.CallbackQuery):
+    """Legacy inline info callbacks → portal hub (§15)."""
+    await callback.answer()
+    await _present_info_menu(callback.message, edit=True)
 
 @user_router.callback_query(F.data == "show_traffic")
 async def traffic_status_handler(callback: types.CallbackQuery):
@@ -778,54 +758,55 @@ async def traffic_status_handler(callback: types.CallbackQuery):
     user_id = callback.from_user.id
     keys = get_user_keys(user_id)
     if not keys:
-        await callback.message.edit_text("У вас нет ключей для отображения трафика.", reply_markup=keyboards.create_back_to_menu_keyboard())
+        await callback.message.edit_text(
+            "Доступа пока нет. Активируйте бесплатный период или пополните баланс — статус появится здесь.",
+            reply_markup=keyboards.create_back_to_menu_keyboard(),
+        )
         return
-    from shop_bot.modules.remnawave_api import get_user_by_telegram_id
-    from shop_bot.config import build_progress_bar
+    from shop_bot.modules.remnawave_api import get_user_by_telegram_id, get_nodes_health
+
+    lines = ["<b>📊 Статус</b>", ""]
     async with remnawave_api.remna_client_session() as session:
-        lines = ["<b>📊 Использование трафика</b>"]
-        
-        # Получаем общую информацию о пользователе (теперь все ключи в одном профиле)
-        remote = await get_user_by_telegram_id(session, str(user_id))
-        if not remote:
-            lines.append("❌ " + user_messages.ERR_TRAFFIC_REMOTE)
+        # Серверы — только агрегат, без отдельных локаций (канон §8.2).
+        health = await get_nodes_health(session)
+        if health is None:
+            lines.append("🌍 Серверы: статус временно недоступен")
         else:
-            used = remote.get('usedTrafficBytes', 0)
-            base_limit = remote.get('trafficLimitBytes', 0)
-            
-            # Суммируем дополнительный трафик из всех ключей
-            total_extra = sum(key.get('traffic_extra_bytes', 0) or 0 for key in keys)
-            limit = base_limit + total_extra
-            
-            if limit > 0:
-                percent = min(100, (used/limit)*100)
-                bar = build_progress_bar(percent)
-                used_gb = used / (1024**3)
-                limit_gb = limit / (1024**3)
-                
-                lines.append(f"📊 Общее использование:")
-                lines.append(f"{bar} {percent:.1f}%")
-                lines.append(f"📈 {used_gb:.2f} ГБ из {limit_gb:.1f} ГБ")
-                
-                if total_extra > 0:
-                    extra_gb = total_extra / (1024**3)
-                    lines.append(f"➕ Доп. трафик: {extra_gb:.1f} ГБ")
+            up, total = health
+            if total and up >= total:
+                lines.append(f"🌍 Серверы: все в норме · {up}/{total}")
+            elif total:
+                lines.append(f"🌍 Серверы: {up}/{total} в норме")
             else:
-                lines.append("♾️ Безлимитный трафик")
-        
-        # Показываем информацию о ключах
-        lines.append(f"\n🔑 Активных ключей: {len(keys)}")
-        for idx, key in enumerate(keys, start=1):
-            expiry_date = datetime.fromisoformat(key['expiry_date'])
-            status = "✅" if expiry_date > datetime.now() else "❌"
-            lines.append(f"{status} Ключ #{idx}: до {expiry_date.strftime('%d.%m.%Y')}")
-    
-    # Добавляем timestamp для уникальности сообщения
-    from datetime import datetime
-    current_time = datetime.now().strftime("%H:%M:%S")
-    lines.append(f"\nОбновлено: {current_time}")
-    lines.append("Нажмите 'Обновить' для актуализации.")
-    
+                lines.append("🌍 Серверы: нет данных")
+
+        # Трафик: канон K4 — без лимита; цифры показываем только если лимит реально задан.
+        remote = await get_user_by_telegram_id(session, str(user_id))
+        total_extra = sum(key.get('traffic_extra_bytes', 0) or 0 for key in keys)
+        limit = ((remote or {}).get('trafficLimitBytes', 0) or 0) + total_extra
+        if remote and limit > 0:
+            used = remote.get('usedTrafficBytes', 0) or 0
+            percent = min(100, (used / limit) * 100)
+            lines.append(
+                f"📈 Трафик: {used / 1024**3:.1f} из {limit / 1024**3:.1f} ГБ · {percent:.0f}%"
+            )
+        else:
+            lines.append("📈 Трафик: без лимита")
+
+    # Доступ — по ключам пользователя.
+    now = datetime.now()
+    active = sum(1 for k in keys if datetime.fromisoformat(k['expiry_date']) > now)
+    latest = max(datetime.fromisoformat(k['expiry_date']) for k in keys)
+    lines.append("")
+    if active:
+        lines.append(f"🔑 Доступ активен · устройств: {active}")
+        lines.append(f"📅 Действует до {latest.strftime('%d.%m.%Y')}")
+    else:
+        lines.append("🔑 Доступ истёк — пополните баланс, чтобы продолжить")
+
+    lines.append("")
+    lines.append(f"<i>Обновлено в {now.strftime('%H:%M')}</i>")
+
     await safe_edit_message(callback.message, "\n".join(lines), keyboards.create_traffic_keyboard())
 
 @user_router.callback_query(F.data == "refresh_traffic")
@@ -1015,13 +996,11 @@ async def trial_period_handler(callback: types.CallbackQuery, state: FSMContext)
 
         # Показываем созданный ключ пользователю
         expiry_str = expiry_dt.strftime("%d.%m.%Y")
+        from shop_bot.onboarding_copy import t as ob_t
+
         message_text = (
-            f"Доступ активирован до <b>{expiry_str}</b>.\n\n"
-            "Три шага:\n\n"
-            "1. Скачай приложение — кнопка ниже.\n"
-            "2. Нажми «📷 Показать QR» и отсканируй код.\n"
-            "3. Нажми Connect.\n\n"
-            "Если не получается — напиши, разберёмся."
+            f"<b>{ob_t('trial_activated')}</b>\n\n"
+            f"Доступ активен до <b>{expiry_str}</b>."
         )
         
         await callback.message.edit_text(
@@ -1031,6 +1010,9 @@ async def trial_period_handler(callback: types.CallbackQuery, state: FSMContext)
                 sub_url or uri, telegram_id=user_id
             ),
         )
+        from shop_bot.onboarding_flow import prompt_email_after_trial
+
+        await prompt_email_after_trial(callback.message, state)
     except Exception as e:
         logger.error(f"Error creating trial key for user {user_id}: {e}", exc_info=True)
         # TRIAL-GRANT-ATOMIC-001: trial_used is set only after a key is persisted,
@@ -1080,14 +1062,13 @@ async def my_account_handler(callback: types.CallbackQuery):
         trial_available = not (user_db_data and user_db_data.get("trial_used"))
         if trial_available:
             text = (
-                "Попробовать можно бесплатно — на 90 дней.\n\n"
-                "Чтобы остаться после пробного периода, понадобится приглашение от участника. "
-                "Так мы растём постепенно и не превращаем сервис в массовый поток."
+                "Попробовать можно бесплатно — 90 дней, 1 устройство, без лимита трафика.\n\n"
+                "Нажми «Получить бесплатный VPN» или «Активировать бесплатно» в меню."
             )
         else:
             text = (
                 "Пробный период завершился.\n\n"
-                "Пополни баланс, чтобы продолжить — 6,67 ₽ в день. "
+                f"Пополни баланс, чтобы продолжить — {format_daily_rate_ru()} ₽ в день. "
                 "Конфигурация сохранена, заново настраивать ничего не нужно."
             )
         await callback.message.edit_text(
@@ -1157,6 +1138,12 @@ async def contact_support_handler(callback: types.CallbackQuery):
 @user_router.callback_query(F.data == "invite_friend")
 async def invite_friend_handler(callback: types.CallbackQuery):
     await callback.answer()
+    if not REFERRAL_UI_ENABLED:
+        await callback.message.edit_text(
+            "Раздел приглашений пока недоступен.",
+            reply_markup=keyboards.create_back_to_menu_keyboard(),
+        )
+        return
     await present_referral_invite(
         callback.message, callback.bot, callback.from_user.id, edit=True
     )
@@ -1164,6 +1151,12 @@ async def invite_friend_handler(callback: types.CallbackQuery):
 
 @user_router.message(Command("invite"))
 async def invite_command_handler(message: types.Message):
+    if not REFERRAL_UI_ENABLED:
+        await message.answer(
+            "Раздел приглашений пока недоступен.",
+            reply_markup=keyboards.create_back_to_menu_keyboard(),
+        )
+        return
     await present_referral_invite(
         message, message.bot, message.chat.id, edit=False
     )
@@ -1561,18 +1554,32 @@ async def show_topup_handler(callback: types.CallbackQuery, state: FSMContext):
         return
     await callback.answer()
     user_id = callback.from_user.id
+    from shop_bot.onboarding_flow import prompt_email_before_payment, user_needs_contact_email
+
+    if user_needs_contact_email(user_id):
+        await prompt_email_before_payment(callback.message, state, edit=True)
+        return
+    await present_topup_screen(callback.message, user_id, edit=True)
+
+
+async def present_topup_screen(
+    message: types.Message, user_id: int, *, edit: bool = False
+) -> None:
     balance = get_balance(user_id)
     days_left = balance_to_days(balance)
     text = (
         f"<b>Баланс: {balance:.0f} ₽</b> — примерно {days_left} дней доступа.\n"
-        "Списание: 6,67 ₽ в день, пока есть деньги на балансе.\n\n"
+        f"Списание: {format_daily_rate_ru()} ₽ в день, пока есть деньги на балансе.\n\n"
         "Выбери сумму пополнения:"
     )
-    await callback.message.edit_text(
-        text,
-        reply_markup=keyboards.create_topup_keyboard(),
-        parse_mode="HTML",
-    )
+    kb = keyboards.create_topup_keyboard()
+    if edit:
+        try:
+            await message.edit_text(text, reply_markup=kb, parse_mode="HTML")
+            return
+        except Exception:
+            pass
+    await message.answer(text, reply_markup=kb, parse_mode="HTML")
 
 
 @user_router.callback_query(F.data == "topup_custom")
@@ -1583,8 +1590,8 @@ async def topup_custom_handler(callback: types.CallbackQuery, state: FSMContext)
     await state.set_state(CustomTopup.waiting_for_amount)
     await callback.message.edit_text(
         "Введи любую сумму — от 50 до 20 000 ₽.\n\n"
-        "Деньги зачислятся на баланс, а доступ будет списываться по 6,67 ₽ в день.\n\n"
-        "200 ₽ — около месяца, 2 000 ₽ — примерно 10 месяцев.",
+        f"Деньги зачислятся на баланс, а доступ будет списываться по {format_daily_rate_ru()} ₽ в день.\n\n"
+        "200 ₽ — 30 дней, 2 000 ₽ — примерно 10 месяцев.",
         reply_markup=keyboards.create_back_to_menu_keyboard(),
         parse_mode="HTML",
     )

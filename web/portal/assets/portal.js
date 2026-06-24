@@ -15,6 +15,8 @@
   const API_CAPACITY = "/setup/api/capacity";
   const API_TELEGRAM_SETUP = "/setup/api/telegram-setup";
   const REF_KEY = "bvpn_ref_code";
+  const REF_FORMAT_RE = /^[A-Za-z0-9_-]{4,64}$/;
+  const DAILY_RATE_RUB = 6.66;
   const ACK_KEY = "bvpn_vpn_config_ack";
   const SUB_URL_KEY = "bvpn_subscription_url";
   const CID_KEY = "bvpn_customer_id";
@@ -24,6 +26,562 @@
 
   function $(id) {
     return document.getElementById(id);
+  }
+
+  function referralUiEnabled() {
+    return !!(content && content.meta && content.meta.referral_ui_enabled);
+  }
+
+  // K7: нарратив дефицита (набор ограничен / закрытие доступа / «растём по приглашениям»)
+  // показываем только в target-режиме — за тем же флагом, что счётчик 300-cap.
+  // Интерим: вход открыт, ничего про закрытость не обещаем.
+  function scarcityNarrativeEnabled() {
+    return !!(content && content.meta && content.meta.capacity_api_enabled);
+  }
+
+  function resolveCabinetStateKey(doc) {
+    if (!doc || !doc.ok) return "no_subscription";
+    var configs = doc.configurations || [];
+    var activeCount =
+      typeof doc.active_config_count === "number"
+        ? doc.active_config_count
+        : configs.filter(function (c) {
+            return c.active || c.status === "active";
+          }).length;
+    if (
+      doc.billing_profile === "expired" ||
+      (doc.days_left <= 0 && doc.balance_rub <= 0 && doc.billing_profile !== "legacy" && doc.billing_profile !== "trial")
+    ) {
+      return "expired";
+    }
+    if (doc.billing_profile === "wallet" && typeof doc.days_left === "number" && doc.days_left <= 3) {
+      return "expiring_soon";
+    }
+    if (doc.billing_profile === "trial") {
+      return activeCount >= 1 ? "trial_connected" : "trial_no_device";
+    }
+    if (doc.billing_profile === "wallet") {
+      return activeCount >= 1 ? "paid_active" : "trial_no_device";
+    }
+    return "no_subscription";
+  }
+
+  // §4: посостоянийная копь карточки «Мой доступ». Legacy (ручной доступ) — своя ветка.
+  function homeStateCopy(doc) {
+    var cab = (content && content.cabinet) || {};
+    var states = cab.states || {};
+    if (!doc || !doc.ok) return states.no_subscription || null;
+    if (doc.billing_profile === "legacy") return null;
+    return states[resolveCabinetStateKey(doc)] || null;
+  }
+
+  function formatDateInDays(days) {
+    var d = new Date();
+    d.setDate(d.getDate() + (parseInt(days, 10) || 0));
+    var dd = ("0" + d.getDate()).slice(-2);
+    var mm = ("0" + (d.getMonth() + 1)).slice(-2);
+    return dd + "." + mm + "." + d.getFullYear();
+  }
+
+  // K1/D3: длительность триала — из entitlement API, не хардкод вёрстки. Интерим-дефолт 90.
+  function trialDays(doc) {
+    var v = doc && (doc.trial_entitlement_days != null ? doc.trial_entitlement_days : doc.trial_days);
+    var n = parseInt(v, 10);
+    return n > 0 ? n : 90;
+  }
+
+  // {name} → ", Имя"/"" · {days} → дни остатка · {date} → today+days (D12) · {trial_days} → entitlement
+  function fillStateText(str, doc) {
+    if (!str) return "";
+    var name = getTelegramUserFirstName();
+    var raw = doc && (doc.trial_days_left != null ? doc.trial_days_left : doc.days_left);
+    var days = typeof raw === "number" && raw >= 0 ? raw : parseInt(raw, 10) || 0;
+    return str
+      .replace("{name}", name ? ", " + name : "")
+      .replace(/\{trial_days\}/g, String(trialDays(doc)))
+      .replace(/\{days\}/g, String(days))
+      .replace(/\{date\}/g, formatDateInDays(days));
+  }
+
+  function cabinetPrimaryCtaLabel(doc) {
+    var cab = (content && content.cabinet) || {};
+    var map = cab.cta_by_state || {};
+    var key = resolveCabinetStateKey(doc);
+    return fillStateText(map[key] || cab.action_setup || "Получить настройку", doc);
+  }
+
+  function cabinetTabsEnabled() {
+    return !!$("cabinet-bottom-nav");
+  }
+
+  function cabinetPrimaryCtaHref(doc) {
+    var key = resolveCabinetStateKey(doc);
+    // D6: пополнение — на вкладку Баланс (там сумма + «Пополнить в боте»), не молча в TG.
+    if (key === "expiring_soon" || key === "expired") {
+      return "#tab=balance";
+    }
+    if (key === "slot_full") {
+      return botUrlWithReferral();
+    }
+    if (key === "trial_connected" || key === "paid_active") {
+      if (isCabinetDedicatedPage() || isTelegramMiniApp()) return "#devices";
+      return SETUP_PATH + "#devices";
+    }
+    if (key === "trial_no_device" || key === "no_subscription") {
+      if (isCabinetDedicatedPage() || isTelegramMiniApp()) return "#devices";
+      return SETUP_PATH;
+    }
+    if (isCabinetDedicatedPage() || isTelegramMiniApp()) return "#devices";
+    return SETUP_PATH;
+  }
+
+  function wizardCopy() {
+    return (content && content.wizard) || {};
+  }
+
+  function goWizardStep(n) {
+    if (n <= 1) {
+      openConnectWizard();
+      return;
+    }
+    var dev = window.BVPN_WIZARD_DEVICE;
+    if (dev) {
+      showDeviceDetail(dev);
+    } else {
+      openConnectWizard();
+    }
+  }
+
+  function renderWizardProgress(activeStep) {
+    var wz = wizardCopy();
+    var labels = wz.steps || [];
+    [ $("wizard-progress"), $("wizard-progress-detail") ].forEach(function (mount) {
+      if (!mount) return;
+      mount.innerHTML = "";
+      mount.setAttribute("aria-label", wz.progress_aria || "Шаги подключения VPN");
+      labels.forEach(function (label, idx) {
+        var stepNum = idx + 1;
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "wizard-progress__item";
+        if (stepNum === activeStep) btn.classList.add("wizard-progress__item--active");
+        if (stepNum < activeStep) btn.classList.add("wizard-progress__item--done");
+        btn.textContent = label;
+        btn.addEventListener("click", function () {
+          goWizardStep(stepNum);
+        });
+        mount.appendChild(btn);
+      });
+      // активный таб виден при горизонтальном скролле
+      var act = mount.querySelector(".wizard-progress__item--active");
+      if (act && act.scrollIntoView) {
+        try {
+          act.scrollIntoView({ inline: "center", block: "nearest" });
+        } catch (e) {}
+      }
+    });
+  }
+
+  function openConnectWizard() {
+    renderDevices();
+    renderWizardProgress(1);
+    show("devices");
+    trackFunnel("portal_view_devices");
+  }
+
+  function showWizardVerifyPanel(mode, message) {
+    var wz = wizardCopy();
+    var panel = $("wizard-step-verify");
+    var trouble = $("wizard-step-trouble");
+    var title = $("wizard-verify-title");
+    var body = $("wizard-verify-body");
+    var retry = $("btn-wizard-verify-retry");
+    var skip = $("btn-wizard-verify-skip");
+    if (trouble) trouble.classList.add("hidden");
+    if (panel) panel.classList.remove("hidden");
+    renderWizardProgress(mode === "ok" ? 5 : 5);
+    if (title) title.textContent = wz.verify_title || "Проверка подключения";
+    if (body) body.textContent = message || wz.verify_pending || "";
+    if (retry) {
+      retry.textContent = wz.verify_retry || "Проверить снова";
+      retry.classList.toggle("hidden", mode === "ok");
+    }
+    if (skip) {
+      skip.textContent = wz.verify_skip || "Пропустить проверку";
+      skip.classList.toggle("hidden", mode === "ok");
+    }
+    if (mode === "fail") {
+      if (trouble) trouble.classList.remove("hidden");
+      renderWizardProgress(6);
+    }
+  }
+
+  function showWizardTrouble() {
+    var wz = wizardCopy();
+    var panel = $("wizard-step-trouble");
+    if ($("wizard-trouble-title")) {
+      $("wizard-trouble-title").textContent = wz.trouble_title || "Не получилось подключить?";
+    }
+    if ($("wizard-trouble-lead")) {
+      $("wizard-trouble-lead").textContent = wz.trouble_lead || "";
+    }
+    var list = $("wizard-trouble-steps");
+    if (list) {
+      list.innerHTML = "";
+      (wz.trouble_steps || []).forEach(function (step) {
+        var li = document.createElement("li");
+        li.textContent = step;
+        list.appendChild(li);
+      });
+    }
+    var sup = $("btn-wizard-trouble-support");
+    if (sup) {
+      sup.textContent = wz.trouble_support || "Написать в поддержку";
+      sup.href = SUPPORT_URL;
+      bindExternalLink(sup);
+    }
+    var err = $("btn-wizard-trouble-errors");
+    if (err) {
+      err.textContent = wz.trouble_errors_link || "Частые ошибки";
+    }
+    if (panel) panel.classList.remove("hidden");
+    renderWizardProgress(6);
+  }
+
+  function renderWizardConfigActions(subUrl) {
+    var wz = wizardCopy();
+    if ($("wizard-step-config-title")) {
+      $("wizard-step-config-title").textContent = wz.step_config_title || "Импортируй настройку";
+    }
+    if ($("wizard-step-config-lead")) {
+      $("wizard-step-config-lead").textContent = wz.step_config_lead || "";
+    }
+    if ($("wizard-connected-lead")) {
+      $("wizard-connected-lead").textContent = wz.connected_lead || "";
+    }
+    var copyBtn = $("btn-wizard-copy");
+    if (copyBtn) {
+      copyBtn.textContent = wz.copy_link || "Скопировать ссылку";
+      copyBtn.disabled = !subUrl;
+    }
+    var happBtn = $("btn-wizard-happ");
+    if (happBtn) {
+      happBtn.textContent = wz.open_happ || "Открыть в Happ";
+      happBtn.href = subUrl || "#";
+      if (subUrl) bindExternalLink(happBtn);
+    }
+    var connectedBtn = $("btn-wizard-connected");
+    if (connectedBtn) {
+      connectedBtn.textContent = wz.connected_cta || "Я подключился";
+    }
+  }
+
+  function verifyWizardConnection() {
+    var wz = wizardCopy();
+    showWizardVerifyPanel("pending", wz.verify_pending || "Проверяем…");
+    var payload = {};
+    var tgId = getTelegramUserId();
+    if (tgId > 0) payload.telegram_user_id = tgId;
+    try {
+      var cid = localStorage.getItem(CID_KEY) || "";
+      var em = localStorage.getItem(EMAIL_KEY) || "";
+      if (cid) payload.customer_id = cid;
+      if (em) payload.email = em;
+    } catch (e) {
+      /* ignore */
+    }
+    if (!payload.telegram_user_id && !payload.customer_id && !payload.email) {
+      showWizardVerifyPanel("fail", wz.verify_api_fail || wz.no_sub_hint || "");
+      showWizardTrouble();
+      return;
+    }
+    fetch(API_CABINET, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (doc) {
+        window.BVPN_CABINET_DOC = doc;
+        var active =
+          doc && doc.ok &&
+          ((typeof doc.active_config_count === "number" && doc.active_config_count >= 1) ||
+            (doc.configurations || []).some(function (c) {
+              return c.active || c.status === "active";
+            }));
+        if (active) {
+          showWizardVerifyPanel("ok", wz.verify_ok || "Настройка активна.");
+          if ($("wizard-verify-body") && wz.verify_ok_hint) {
+            $("wizard-verify-body").textContent =
+              (wz.verify_ok || "") + " " + wz.verify_ok_hint;
+          }
+          trackFunnel("portal_wizard_verify_ok");
+        } else {
+          showWizardVerifyPanel("fail", wz.verify_pending || "");
+          showWizardTrouble();
+          trackFunnel("portal_wizard_verify_pending");
+        }
+      })
+      .catch(function () {
+        showWizardVerifyPanel("fail", wz.verify_api_fail || "");
+        showWizardTrouble();
+      });
+  }
+
+  function bindWizardActions() {
+    var copyBtn = $("btn-wizard-copy");
+    if (copyBtn && copyBtn.dataset.bvpnWizardBound !== "1") {
+      copyBtn.dataset.bvpnWizardBound = "1";
+      copyBtn.addEventListener("click", function () {
+        var url = readStoredSubscriptionUrl();
+        if (!url) {
+          showToast(wizardCopy().no_sub_hint || "Сначала получи настройку в боте.", "error");
+          return;
+        }
+        copyTextWithInlineFallback(url, {
+          onSuccess: function () {
+            showToast(wizardCopy().copy_ok || "Ссылка скопирована");
+            trackFunnel("portal_wizard_copy_link");
+          },
+        });
+      });
+    }
+    var connectedBtn = $("btn-wizard-connected");
+    if (connectedBtn && connectedBtn.dataset.bvpnWizardBound !== "1") {
+      connectedBtn.dataset.bvpnWizardBound = "1";
+      connectedBtn.addEventListener("click", function () {
+        trackFunnel("portal_wizard_connected");
+        verifyWizardConnection();
+      });
+    }
+    var retryBtn = $("btn-wizard-verify-retry");
+    if (retryBtn && retryBtn.dataset.bvpnWizardBound !== "1") {
+      retryBtn.dataset.bvpnWizardBound = "1";
+      retryBtn.addEventListener("click", verifyWizardConnection);
+    }
+    var skipBtn = $("btn-wizard-verify-skip");
+    if (skipBtn && skipBtn.dataset.bvpnWizardBound !== "1") {
+      skipBtn.dataset.bvpnWizardBound = "1";
+      skipBtn.addEventListener("click", function () {
+        if (cabinetTabsEnabled()) {
+          show("home");
+          setCabinetTab("access");
+        } else {
+          show("home");
+        }
+      });
+    }
+  }
+
+  function renderWizardStaticCopy() {
+    var wz = wizardCopy();
+    if ($("wizard-step-app-title")) {
+      $("wizard-step-app-title").textContent = wz.step_app_title || "Установи Happ";
+    }
+    if ($("wizard-step-app-lead")) {
+      $("wizard-step-app-lead").textContent = wz.step_app_lead || "";
+    }
+    if ($("wizard-verify-title")) {
+      $("wizard-verify-title").textContent = wz.verify_title || "Проверка подключения";
+    }
+  }
+
+
+  function setCabinetTab(tab) {
+    if (!cabinetTabsEnabled()) return;
+    tab = tab || "home";
+    document.querySelectorAll("[data-cabinet-tab]").forEach(function (el) {
+      el.classList.toggle("hidden", el.getAttribute("data-cabinet-tab") !== tab);
+    });
+    document.querySelectorAll("[data-cabinet-tab-btn]").forEach(function (btn) {
+      var active = btn.getAttribute("data-cabinet-tab-btn") === tab;
+      btn.classList.toggle("cabinet-bottom-nav__item--active", active);
+      btn.setAttribute("aria-current", active ? "page" : "false");
+    });
+    try {
+      history.replaceState(null, "", "#tab=" + tab);
+    } catch (e) {
+      window.location.hash = "tab=" + tab;
+    }
+    trackFunnel("portal_cabinet_tab_" + tab);
+  }
+
+  function applyCabinetTabFromHash() {
+    if (!cabinetTabsEnabled()) return;
+    var raw = (window.location.hash || "").replace(/^#/, "");
+    var m = raw.match(/^tab=(home|access|balance|support)$/);
+    if (m) {
+      setCabinetTab(m[1]);
+      return;
+    }
+    // Non-tab deep-links (devices/connect/device) are owned by applyRouteFromHash —
+    // don't clobber the hash back to #tab=home here.
+    if (/^(devices|connect|device)/.test(raw)) return;
+    setCabinetTab("home");
+  }
+
+  function renderCabinetBottomNav() {
+    if (!cabinetTabsEnabled()) return;
+    var nav = (content.cabinet && content.cabinet.nav) || {};
+    var ids = {
+      home: "cab-nav-home",
+      access: "cab-nav-access",
+      balance: "cab-nav-balance",
+      support: "cab-nav-support",
+    };
+    Object.keys(ids).forEach(function (key) {
+      var btn = $(ids[key]);
+      if (!btn) return;
+      var labelEl = btn.querySelector(".cabinet-bottom-nav__label");
+      var text = nav[key] || key;
+      if (labelEl) labelEl.textContent = text;
+      else btn.textContent = text;
+    });
+  }
+
+  function bindCabinetQuickTiles() {
+    document.querySelectorAll("[data-cabinet-tab-jump]").forEach(function (btn) {
+      if (btn.dataset.bvpnQuickBound === "1") return;
+      btn.dataset.bvpnQuickBound = "1";
+      btn.addEventListener("click", function () {
+        setCabinetTab(btn.getAttribute("data-cabinet-tab-jump"));
+      });
+    });
+  }
+
+  function updateCabinetWelcome(doc) {
+    var cab = (content && content.cabinet) || {};
+    var welcome = $("cabinet-welcome");
+    var sub = $("cabinet-welcome-sub");
+    if (!welcome) return;
+    var st = homeStateCopy(doc);
+    var name = getTelegramUserFirstName();
+    if (st && st.greet) {
+      welcome.textContent = fillStateText(st.greet, doc);
+    } else {
+      var tpl = cab.home_welcome || "Добро пожаловать{name}!";
+      welcome.textContent = tpl.replace("{name}", name ? ", " + name : "");
+    }
+    if (sub) {
+      if (st && st.lead) {
+        sub.textContent = fillStateText(st.lead, doc);
+      } else {
+        sub.textContent =
+          (doc && doc.ok && doc.billing_profile === "trial"
+            ? cab.home_welcome_trial
+            : cab.home_welcome_sub) ||
+          cab.lead_subline_tg ||
+          "Баланс, устройства и настройка — в одном кабинете.";
+      }
+    }
+  }
+
+  function updateCabinetMetrics(doc) {
+    var cab = (content && content.cabinet) || {};
+    var ma = $("cabinet-metric-a");
+    var mb = $("cabinet-metric-b");
+    var mc = $("cabinet-metric-c");
+    var la = $("cabinet-metric-a-label");
+    var lb = $("cabinet-metric-b-label");
+    var lc = $("cabinet-metric-c-label");
+    var lead = $("cabinet-access-card-lead");
+    if (la) la.textContent = cab.metric_days_label || "дней";
+    if (lb) lb.textContent = cab.metric_device_label || "устройство";
+    if (lc) lc.textContent = cab.metric_trial_extra_label || "без лимита";
+    if ($("cabinet-access-card-title")) {
+      $("cabinet-access-card-title").textContent = cab.access_card_title || "Мой доступ";
+    }
+    if (!doc || !doc.ok) {
+      if (ma) ma.textContent = "90";
+      if (mb) mb.textContent = "1";
+      if (mc) mc.textContent = "∞";
+      if (lead) lead.textContent = cab.access_card_lead_trial || cab.home_hint || "";
+      return;
+    }
+    var activeCfg =
+      typeof doc.active_config_count === "number"
+        ? doc.active_config_count
+        : (doc.configurations || []).filter(function (c) {
+            return c.active || c.status === "active";
+          }).length;
+    var slotLimit = doc.device_slot_limit || doc.slot_limit || 1;
+    if (resolveCabinetStateKey(doc) === "no_subscription") {
+      // §4 A — новичок: тройка {trial_days} · 1 · ∞ (без баланса/списания). Дни — из entitlement.
+      if (ma) ma.textContent = String(trialDays(doc));
+      if (mb) mb.textContent = "1";
+      if (mc) mc.textContent = "∞";
+    } else if (doc.billing_profile === "trial") {
+      if (ma) ma.textContent = String(doc.trial_days_left || doc.days_left || "90");
+      if (mb) mb.textContent = activeCfg + "/" + slotLimit;
+      if (mc) mc.textContent = "∞";
+      if (lead) lead.textContent = cab.access_card_lead_trial || cab.balance_hint_trial || "";
+    } else {
+      if (ma) ma.textContent = String(doc.days_left || "0");
+      if (mb) mb.textContent = activeCfg + "/" + slotLimit;
+      if (mc) mc.textContent = "6,66₽";
+      if (la) la.textContent = cab.metric_balance_days_label || "дней по балансу";
+      if (lc) lc.textContent = cab.metric_rate_label || "в день";
+      if (lead) lead.textContent = cab.access_card_lead_paid || cab.balance_hint || "";
+    }
+    var stLead = homeStateCopy(doc);
+    if (lead && stLead && stLead.text) {
+      lead.textContent = fillStateText(stLead.text, doc);
+    }
+    var qb = $("cabinet-quick-balance-value");
+    if (qb) qb.textContent = Math.round(doc.balance_rub || 0) + " ₽";
+    var qa = $("cabinet-quick-access-value");
+    if (qa) qa.textContent = activeCfg + "/" + slotLimit;
+  }
+
+  function bindCabinetTabNav() {
+    if (!cabinetTabsEnabled()) return;
+    document.querySelectorAll("[data-cabinet-tab-btn]").forEach(function (btn) {
+      if (btn.dataset.bvpnTabBound === "1") return;
+      btn.dataset.bvpnTabBound = "1";
+      btn.addEventListener("click", function () {
+        setCabinetTab(btn.getAttribute("data-cabinet-tab-btn"));
+      });
+    });
+    bindCabinetQuickTiles();
+  }
+
+  function updateCabinetPrimaryCta(doc) {
+    var primary = $("btn-cabinet-primary");
+    if (!primary) return;
+    var cab = (content && content.cabinet) || {};
+    var label = cabinetPrimaryCtaLabel(doc || {});
+    var href = cabinetPrimaryCtaHref(doc || {});
+    primary.textContent = label;
+    primary.href = href;
+    if (/^https?:\/\//i.test(href)) {
+      bindExternalLink(primary);
+      primary.onclick = null;
+    } else if (href.indexOf("#devices") >= 0) {
+      delete primary.dataset.bvpnBound;
+      primary.onclick = function (ev) {
+        ev.preventDefault();
+        openConnectWizard();
+      };
+    } else if (href.indexOf("#tab=balance") >= 0) {
+      delete primary.dataset.bvpnBound;
+      primary.onclick = function (ev) {
+        ev.preventDefault();
+        setCabinetTab("balance");
+      };
+    } else {
+      delete primary.dataset.bvpnBound;
+      primary.onclick = null;
+    }
+    var hint = $("cabinet-home-hint");
+    if (hint) {
+      if (doc && doc.ok && doc.billing_profile === "trial" && cab.balance_hint_trial) {
+        hint.textContent = cab.balance_hint_trial;
+      } else {
+        hint.textContent = cab.home_hint || cab.lead_subline_tg || "";
+      }
+    }
   }
 
   function show(viewId) {
@@ -56,6 +614,15 @@
     var tid = parseInt(params.get("tid") || "0", 10);
     if (tid > 0) return tid;
     return 0;
+  }
+
+  function getTelegramUserFirstName() {
+    var tg = getTelegramWebApp();
+    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+      var name = (tg.initDataUnsafe.user.first_name || "").trim();
+      if (name) return name;
+    }
+    return "";
   }
 
   /** True only inside a real Telegram Mini App session (not bare telegram-web-app.js in a browser). */
@@ -527,14 +1094,79 @@
     if (sepTopup) sepTopup.classList.add("hidden");
   }
 
-  function preserveReferralFromUrl() {
+  function refFromUrl() {
     try {
       var params = new URLSearchParams(window.location.search || "");
       var ref = (params.get("ref") || "").trim();
       if (!ref && window.location.hash.indexOf("ref_") >= 0) {
         ref = window.location.hash.replace(/^#/, "").replace(/^ref_/, "");
       }
-      if (ref) {
+      return ref;
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function isRefFormatValid(ref) {
+    return !!ref && REF_FORMAT_RE.test(ref);
+  }
+
+  function renderInvalidRef() {
+    var panel = $("invalid-ref-panel");
+    var paths = $("landing-paths");
+    var refWelcome = $("referral-welcome");
+    var inv = (content && content.invalid_ref) || {};
+    var rawRef = refFromUrl();
+    if (!panel || !rawRef || isRefFormatValid(rawRef)) {
+      if (panel) panel.classList.add("hidden");
+      return false;
+    }
+    if ($("invalid-ref-title") && inv.title) {
+      $("invalid-ref-title").textContent = inv.title;
+    }
+    if ($("invalid-ref-lead") && inv.lead) {
+      $("invalid-ref-lead").textContent = inv.lead;
+    }
+    var sup = $("btn-invalid-ref-support");
+    if (sup) {
+      sup.textContent = inv.cta_support || "Написать в поддержку";
+      sup.href = SUPPORT_URL;
+      bindExternalLink(sup);
+    }
+    var home = $("btn-invalid-ref-home");
+    if (home && inv.cta_home) home.textContent = inv.cta_home;
+    panel.classList.remove("hidden");
+    if (paths) paths.classList.add("hidden");
+    if (refWelcome) refWelcome.classList.add("hidden");
+    return true;
+  }
+
+  function renderTopupPresets() {
+    var mount = $("cabinet-topup-chips");
+    var cab = (content && content.cabinet) || {};
+    var presets = cab.topup_presets || [];
+    if (!mount || !presets.length) return;
+    mount.innerHTML = "";
+    presets.forEach(function (preset) {
+      var days = parseInt(preset.days, 10) || 0;
+      var amount = Math.round(days * DAILY_RATE_RUB);
+      var chip = document.createElement("a");
+      chip.className = "cabinet-chip";
+      chip.href = botUrlWithReferral();
+      chip.setAttribute("data-topup", String(amount));
+      chip.textContent =
+        (preset.label || days + " дн.") + " (≈ " + amount + " ₽)";
+      mount.appendChild(chip);
+    });
+    mount.querySelectorAll(".cabinet-chip").forEach(function (chip) {
+      bindExternalLink(chip);
+    });
+  }
+
+  function preserveReferralFromUrl() {
+    try {
+      var ref = refFromUrl();
+      if (ref && isRefFormatValid(ref)) {
         localStorage.setItem(REF_KEY, ref);
       }
     } catch (e) {
@@ -711,6 +1343,64 @@
     panel.classList.remove("hidden");
   }
 
+  function renderHeroStats(home, tg) {
+    var card = $("hero-stats");
+    var row = $("hero-stats-row");
+    if (!card || !row) return;
+    var stats = home.hero_stats || [];
+    if (tg || !stats.length) {
+      card.classList.add("hidden");
+      return;
+    }
+    if ($("hero-stats-title")) $("hero-stats-title").textContent = home.hero_stats_title || "";
+    row.innerHTML = "";
+    stats.forEach(function (s) {
+      var item = document.createElement("div");
+      item.className = "hero-stats__item";
+      var v = document.createElement("span");
+      v.className = "hero-stats__value";
+      v.textContent = s.value;
+      var u = document.createElement("span");
+      u.className = "hero-stats__unit";
+      u.textContent = s.unit;
+      item.appendChild(v);
+      item.appendChild(u);
+      row.appendChild(item);
+    });
+    card.classList.remove("hidden");
+  }
+
+  function renderBenefits(home, tg) {
+    var wrap = $("landing-benefits");
+    var grid = $("benefit-tiles");
+    if (!wrap || !grid) return;
+    var items = home.benefits || [];
+    if (tg || !items.length) {
+      wrap.classList.add("hidden");
+      return;
+    }
+    if ($("benefits-title")) $("benefits-title").textContent = home.benefits_title || "";
+    grid.innerHTML = "";
+    items.forEach(function (b) {
+      var tile = document.createElement("div");
+      tile.className = "benefit-tile glass";
+      var ic = document.createElement("span");
+      ic.className = "benefit-tile__icon";
+      ic.textContent = b.icon || "•";
+      var t = document.createElement("p");
+      t.className = "benefit-tile__title";
+      t.textContent = b.title || "";
+      var d = document.createElement("p");
+      d.className = "benefit-tile__text muted";
+      d.textContent = b.text || "";
+      tile.appendChild(ic);
+      tile.appendChild(t);
+      tile.appendChild(d);
+      grid.appendChild(tile);
+    });
+    wrap.classList.remove("hidden");
+  }
+
   function renderLandingPaths() {
     var panel = $("landing-paths");
     var home = content.home || {};
@@ -841,11 +1531,14 @@
     var title = $("fold-about-title");
     if (!pos || !body) return;
     if (title) title.textContent = content.home.about_fold_title || "О сервисе";
-    var blocks = [
-      ["invite_title", "invite_body"],
-      ["limit_title", "limit_body"],
-      ["support_title", "support_body"],
-    ];
+    // K7: invite/limit — нарратив дефицита, только в target-режиме. Интерим — нейтральный support-блок.
+    var blocks = scarcityNarrativeEnabled()
+      ? [
+          ["invite_title", "invite_body"],
+          ["limit_title", "limit_body"],
+          ["support_title", "support_body"],
+        ]
+      : [["support_title", "support_body"]];
     body.innerHTML = "";
     blocks.forEach(function (pair) {
       if (!pos[pair[0]]) return;
@@ -890,6 +1583,8 @@
     } else if (eyebrow) {
       eyebrow.classList.add("hidden");
     }
+    renderHeroStats(home, tg);
+    renderBenefits(home, tg);
     if ($("devices-note") && home.devices_note) {
       $("devices-note").textContent = home.devices_note;
     }
@@ -949,8 +1644,10 @@
     }
     preserveReferralFromUrl();
     loadCapacity();
-    renderLandingPaths();
-    renderReferralWelcome();
+    if (!renderInvalidRef()) {
+      renderLandingPaths();
+      renderReferralWelcome();
+    }
     renderJourney();
     renderWhyLimited();
     renderExistingUserEntry();
@@ -1060,20 +1757,29 @@
       return d.id === deviceId;
     });
     if (!dev) return;
-    renderDeviceSubscriptionQr(readStoredSubscriptionUrl());
-    var screens = content.screens || {};
-    if ($("install-steps-title") && screens.install_steps_title) {
-      $("install-steps-title").textContent = screens.install_steps_title;
-    }
-    if ($("after-title") && screens.after_title) {
-      $("after-title").textContent = screens.after_title;
-    }
+    window.BVPN_WIZARD_DEVICE = deviceId;
+    var subUrl = readStoredSubscriptionUrl();
+    renderDeviceSubscriptionQr(subUrl);
+    renderWizardConfigActions(subUrl);
+    renderWizardStaticCopy();
+    renderWizardProgress(2);
+    var wz = wizardCopy();
     $("device-detail-title").textContent = dev.install_title;
     var list = $("device-install-steps");
     list.innerHTML = "";
     var storeKey = dev.install_store_key || dev.id;
     var stores = content.happ_install || {};
     var store = stores[storeKey] || stores.generic;
+    var storeLink = $("wizard-store-link");
+    if (storeLink) {
+      if (store && store.url) {
+        storeLink.textContent = "↓ " + (store.label || "Скачать Happ");
+        storeLink.href = store.url;
+        storeLink.classList.remove("hidden");
+      } else {
+        storeLink.classList.add("hidden");
+      }
+    }
     var tunCallout = $("device-tun-callout");
     if (tunCallout) {
       if (dev.tun_callout) {
@@ -1084,19 +1790,9 @@
       }
     }
     var steps = dev.install_steps || [];
-    steps.forEach(function (step, idx) {
+    steps.forEach(function (step) {
       var li = document.createElement("li");
       li.textContent = step;
-      if (idx === 0 && store) {
-        var a = document.createElement("a");
-        a.className = "store-link";
-        a.href = store.url;
-        a.target = "_blank";
-        a.rel = "noopener";
-        a.textContent = "↓ " + store.label;
-        li.appendChild(document.createElement("br"));
-        li.appendChild(a);
-      }
       list.appendChild(li);
     });
     if (dev.alt_client && dev.id === "windows") {
@@ -1105,13 +1801,10 @@
       note.textContent = dev.alt_client;
       list.parentElement.appendChild(note);
     }
-    var after = $("after-device-steps");
-    after.innerHTML = "";
-    (content.steps.after_device || []).slice(0, 2).forEach(function (step) {
-      var li = document.createElement("li");
-      li.textContent = step;
-      after.appendChild(li);
-    });
+    var verifyPanel = $("wizard-step-verify");
+    var troublePanel = $("wizard-step-trouble");
+    if (verifyPanel) verifyPanel.classList.add("hidden");
+    if (troublePanel) troublePanel.classList.add("hidden");
     show("device");
   }
 
@@ -1126,7 +1819,7 @@
   function renderWhyLimited() {
     var panel = $("why-limited");
     var home = content.home || {};
-    if (!panel || isTelegramMiniApp()) {
+    if (!panel || isTelegramMiniApp() || !scarcityNarrativeEnabled()) {
       if (panel) panel.classList.add("hidden");
       return;
     }
@@ -1166,6 +1859,10 @@
       list.appendChild(det);
     });
     if (isTelegramMiniApp() || isCabinetDedicatedPage()) {
+      if (cabinetTabsEnabled()) {
+        fold.classList.add("hidden");
+        return;
+      }
       fold.classList.remove("hidden");
     }
   }
@@ -1204,6 +1901,11 @@
     var cab = content.cabinet || {};
     var wrap = $("cabinet-actions");
     if (!wrap) return;
+    if (cabinetTabsEnabled() && (isTelegramMiniApp() || isCabinetDedicatedPage())) {
+      wrap.classList.add("hidden");
+      wrap.innerHTML = "";
+      return;
+    }
     if (!isTelegramMiniApp() && !isCabinetDedicatedPage()) {
       wrap.classList.add("hidden");
       return;
@@ -1218,10 +1920,15 @@
           { label: cab.action_setup || "Получить настройку", href: "/setup/" },
           { label: cab.action_guide || "Инструкция", href: "/portal/guide.html" },
           { label: cab.action_topup || "Пополнить баланс", href: SUPPORT_URL },
-          { label: cab.action_invite || "Пригласить друга", href: botUrlWithReferral() },
-          { label: cab.action_support || "Поддержка", href: SUPPORT_URL },
         ]
       : browserCabinetUtilityItems();
+    if (referralUiEnabled()) {
+      items.splice(3, 0, {
+        label: cab.action_invite || "Пригласить друга",
+        href: botUrlWithReferral(),
+      });
+    }
+    items.push({ label: cab.action_support || "Поддержка", href: SUPPORT_URL });
     if (!items.length) {
       wrap.classList.add("hidden");
       return;
@@ -1247,14 +1954,17 @@
   }
 
   function updateCabinetChrome() {
-    if (!isCabinetDedicatedPage()) return;
-    document.body.classList.add("cabinet-page");
+    if (!isCabinetDedicatedPage() && !isTelegramMiniApp()) return;
+    if (isCabinetDedicatedPage()) document.body.classList.add("cabinet-page");
     var cab = content.cabinet || {};
     var grace = $("cabinet-grace");
     var sheet = $("account-sheet");
+    var shell = $("cabinet-account-shell");
+    var bottomNav = $("cabinet-bottom-nav");
     var recover = $("cabinet-recover-fold");
     var tg = isTelegramMiniApp();
     var showAccount = shouldShowCabinetAccountPanel();
+    var tabs = cabinetTabsEnabled();
 
     if ($("cabinet-grace-title")) {
       $("cabinet-grace-title").textContent = cab.grace_title || "Открой ЛК из Telegram-бота";
@@ -1290,10 +2000,18 @@
 
     if (showAccount) {
       if (grace) grace.classList.add("hidden");
-      if (sheet) sheet.classList.remove("hidden");
+      if (tabs) {
+        if (shell) shell.classList.remove("hidden");
+        if (bottomNav) bottomNav.classList.remove("hidden");
+        applyCabinetTabFromHash();
+      } else if (sheet) {
+        sheet.classList.remove("hidden");
+      }
     } else {
       if (grace) grace.classList.remove("hidden");
-      if (sheet) sheet.classList.add("hidden");
+      if (shell) shell.classList.add("hidden");
+      if (bottomNav) bottomNav.classList.add("hidden");
+      if (sheet && !tabs) sheet.classList.add("hidden");
     }
     if (recover) {
       if (!tg || isCabinetDedicatedPage()) recover.classList.remove("hidden");
@@ -1368,6 +2086,104 @@
     };
   }
 
+  function renderCabinetProfile() {
+    var fold = $("cabinet-profile-fold");
+    var prof = ((content && content.cabinet) || {}).profile || {};
+    if (!fold || !prof.title) return;
+    if ($("cabinet-profile-title")) $("cabinet-profile-title").textContent = prof.title;
+    if ($("cabinet-profile-lead")) $("cabinet-profile-lead").textContent = prof.lead || "";
+    if ($("cabinet-profile-stub")) {
+      $("cabinet-profile-stub").textContent = prof.stub_note || "";
+      $("cabinet-profile-stub").classList.toggle("hidden", !prof.stub_note);
+    }
+    if ($("cabinet-profile-manage-hint")) {
+      $("cabinet-profile-manage-hint").textContent = prof.manage_hint || "";
+    }
+    var logout = $("cabinet-profile-logout");
+    if (logout) {
+      logout.textContent = prof.logout_label || "Выйти из кабинета";
+      logout.onclick = cabinetLogout;
+    }
+    if ($("cabinet-profile-logout-hint")) {
+      $("cabinet-profile-logout-hint").textContent = prof.logout_hint || "";
+    }
+    var del = $("cabinet-profile-delete");
+    if (del) {
+      del.textContent = prof.delete_request_label || "Запросить удаление данных";
+      del.href = SUPPORT_URL;
+      bindExternalLink(del);
+    }
+    if ($("cabinet-profile-delete-hint")) {
+      $("cabinet-profile-delete-hint").textContent = prof.delete_request_hint || "";
+    }
+    if (isTelegramMiniApp() && cabinetTabsEnabled()) {
+      fold.classList.remove("hidden");
+    }
+  }
+
+  function profileRow(label, value, muted) {
+    var row = document.createElement("div");
+    row.className = "profile-list__row";
+    var dt = document.createElement("dt");
+    dt.textContent = label;
+    var dd = document.createElement("dd");
+    if (muted) dd.classList.add("muted");
+    dd.textContent = value;
+    row.appendChild(dt);
+    row.appendChild(dd);
+    return row;
+  }
+
+  function renderCabinetProfileData(doc) {
+    var list = $("cabinet-profile-list");
+    var prof = ((content && content.cabinet) || {}).profile || {};
+    if (!list) return;
+    list.innerHTML = "";
+    var p = (doc && doc.profile) || {};
+    var empty = prof.value_empty || "не указан";
+    list.appendChild(profileRow(prof.email_label || "Email", p.email || empty, !p.email));
+    list.appendChild(profileRow(prof.phone_label || "Телефон", p.phone || empty, !p.phone));
+    var langLabel = p.language === "en" ? prof.lang_en || "English" : prof.lang_ru || "Русский";
+    list.appendChild(profileRow(prof.language_label || "Язык", langLabel, false));
+    var notif = p.notifications || {};
+    var on = prof.notif_on || "включены";
+    var off = prof.notif_off || "выкл.";
+    var notifVal =
+      (prof.notif_telegram || "Telegram") + ": " + (notif.telegram ? on : off) +
+      " · " + (prof.notif_email || "Email") + ": " + (notif.email ? on : off);
+    list.appendChild(profileRow(prof.notifications_label || "Уведомления", notifVal, true));
+    var consents = p.consents || [];
+    var verPrefix = prof.consent_version_prefix || "версия";
+    var accepted = prof.consent_accepted || "принято";
+    if (!consents.length) {
+      list.appendChild(profileRow(prof.consents_label || "Согласия", prof.consent_none || "нет", true));
+    } else {
+      consents.forEach(function (c) {
+        var name = c.doc === "privacy"
+          ? prof.consent_privacy || "Политика конфиденциальности"
+          : prof.consent_rules || "Правила сервиса";
+        var val = accepted + " · " + verPrefix + " " + (c.version || "1");
+        list.appendChild(profileRow(name, val, true));
+      });
+    }
+  }
+
+  function cabinetLogout() {
+    try {
+      localStorage.removeItem(CID_KEY);
+      localStorage.removeItem(EMAIL_KEY);
+    } catch (e) {
+      /* ignore */
+    }
+    window.BVPN_CABINET_ACCOUNT_VISIBLE = false;
+    var tg = isTelegramMiniApp() ? getTelegramWebApp() : null;
+    if (tg && typeof tg.close === "function") {
+      tg.close();
+      return;
+    }
+    window.location.href = "/portal/";
+  }
+
   function renderCabinet() {
     var cab = content.cabinet || {};
     var tg = isTelegramMiniApp();
@@ -1391,6 +2207,70 @@
         $("cabinet-lead-inline").textContent = tg ? cab.lead_tg : cab.lead_web;
       }
     }
+    if ($("cabinet-access-heading")) {
+      $("cabinet-access-heading").textContent = cab.access_title || (cab.nav && cab.nav.access) || "Доступ";
+    }
+    if ($("account-heading") && cabinetTabsEnabled()) {
+      $("account-heading").textContent = cab.balance_title || (cab.nav && cab.nav.balance) || "Баланс";
+    }
+    if ($("cabinet-support-heading")) {
+      $("cabinet-support-heading").textContent =
+        cab.support_title || (cab.nav && cab.nav.support) || "Поддержка";
+    }
+    var supportBtn = $("btn-cabinet-support");
+    if (supportBtn) {
+      supportBtn.textContent = cab.action_support || "Поддержка";
+      supportBtn.href = SUPPORT_URL;
+      bindExternalLink(supportBtn);
+    }
+    var topupBtn = $("btn-cabinet-topup");
+    if (topupBtn) {
+      topupBtn.textContent = cab.action_topup || "Пополнить баланс";
+      topupBtn.href = botUrlWithReferral();
+      bindExternalLink(topupBtn);
+    }
+    if ($("cabinet-balance-label")) {
+      $("cabinet-balance-label").textContent = cab.balance_hero_label || cab.balance_label || "Текущий баланс";
+    }
+    if ($("cabinet-topup-title")) {
+      $("cabinet-topup-title").textContent = cab.topup_title || "Пополнение баланса";
+    }
+    if ($("cabinet-topup-lead")) {
+      $("cabinet-topup-lead").textContent =
+        cab.topup_lead || "Выберите сумму — пополнение откроется в Telegram-боте.";
+    }
+    var topupNote = $("cabinet-topup-payment-note");
+    var topupMeta = (content && content.topup) || {};
+    if (topupNote && topupMeta.payment_note) {
+      topupNote.textContent = topupMeta.payment_note;
+    }
+    renderCabinetProfile();
+    if ($("cabinet-support-lead")) {
+      $("cabinet-support-lead").textContent = cab.support_lead || content.support.message_hint || "";
+    }
+    if ($("cabinet-support-info-title")) {
+      $("cabinet-support-info-title").textContent = cab.home_info_link || "Информация и документы";
+    }
+    if ($("cabinet-support-info-sub")) {
+      $("cabinet-support-info-sub").textContent = cab.support_info_sub || "FAQ · правила · оферта";
+    }
+    if ($("cabinet-quick-balance-label")) {
+      $("cabinet-quick-balance-label").textContent = cab.quick_balance || (cab.nav && cab.nav.balance) || "Баланс";
+    }
+    if ($("cabinet-quick-access-label")) {
+      $("cabinet-quick-access-label").textContent = cab.quick_access || (cab.nav && cab.nav.access) || "Доступ";
+    }
+    if ($("cabinet-quick-info-label")) {
+      $("cabinet-quick-info-label").textContent = cab.quick_info || "Информация";
+    }
+    if ($("cabinet-quick-support-label")) {
+      $("cabinet-quick-support-label").textContent = cab.quick_support || (cab.nav && cab.nav.support) || "Поддержка";
+    }
+    renderTopupPresets();
+    updateCabinetWelcome(window.BVPN_CABINET_DOC || null);
+    updateCabinetMetrics(window.BVPN_CABINET_DOC || null);
+    renderCabinetBottomNav();
+    updateCabinetPrimaryCta(window.BVPN_CABINET_DOC || null);
     if ($("cabinet-configs-title")) {
       $("cabinet-configs-title").textContent = cab.configs_title || "Конфигурации";
     }
@@ -1415,14 +2295,31 @@
         billingFuture.classList.add("hidden");
       }
     }
+    // §3.7/§9.6: «Добавить устройство» — через поддержку (платный мульти-девайс gated).
     var addDev = $("btn-add-device");
     if (addDev) {
-      addDev.textContent = cab.add_device_cta || cab.new_device_cta || "Добавить устройство";
+      addDev.textContent = cab.add_device_cta || cab.new_device_cta || "Добавить устройство через поддержку";
       addDev.href = botUrlWithReferral();
       bindExternalLink(addDev);
     }
     var addHint = $("add-device-hint");
     if (addHint) addHint.textContent = cab.add_device_hint || "";
+    if ($("cabinet-device-rule-more")) {
+      $("cabinet-device-rule-more").textContent = cab.configs_device_rule_more || "";
+    }
+    if ($("cabinet-location-line")) {
+      $("cabinet-location-line").textContent = cab.location_line || "";
+    }
+    // D5: три действия разведены в коде; «Удалить слот» inert/скрыт до платного мульти-девайса.
+    var delSlot = $("btn-delete-slot");
+    if (delSlot) {
+      delSlot.textContent = cab.delete_slot_cta || "Удалить слот";
+      delSlot.href = botUrlWithReferral();
+      bindExternalLink(delSlot);
+      delSlot.classList.add("hidden");
+    }
+    var delSlotHint = $("delete-slot-hint");
+    if (delSlotHint) delSlotHint.textContent = cab.delete_slot_hint || "";
     var replaceDev = $("btn-replace-device");
     if (replaceDev) {
       replaceDev.textContent = cab.replace_device_cta || "Заменить устройство";
@@ -1431,6 +2328,14 @@
     }
     var replaceHint = $("replace-device-hint");
     if (replaceHint) replaceHint.textContent = cab.replace_device_hint || "";
+    var unbindDev = $("btn-unbind-device");
+    if (unbindDev) {
+      unbindDev.textContent = cab.unbind_device_cta || "Отвязать устройство";
+      unbindDev.href = botUrlWithReferral();
+      bindExternalLink(unbindDev);
+    }
+    var unbindHint = $("unbind-device-hint");
+    if (unbindHint) unbindHint.textContent = cab.unbind_device_hint || "";
     if ($("cabinet-page-title")) {
       $("cabinet-page-title").textContent = cab.title || "Личный кабинет BenderVPN";
     }
@@ -1501,7 +2406,77 @@
     }
   }
 
+  function updateCabinetServerHealth() {
+    // Агрегат серверов из публичного статуса (без отдельных локаций — канон §8.2).
+    var wrap = $("cabinet-server-health");
+    var dot = $("cabinet-server-health-dot");
+    var txt = $("cabinet-server-health-text");
+    if (!wrap || !txt) return;
+    fetch(STATUS_JSON, { cache: "no-cache" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("status json");
+        return r.json();
+      })
+      .then(function (doc) {
+        var vpn = ((doc || {}).components || {}).vpn || {};
+        var summary = vpn.summary || "";
+        if (!summary) {
+          wrap.hidden = true;
+          return;
+        }
+        txt.textContent = summary;
+        if (dot) {
+          dot.className = "cabinet-server-health__dot";
+          var state = vpn.state || doc.overall || "ok";
+          if (state === "ok") dot.classList.add("cabinet-server-health__dot--ok");
+          else if (state === "degraded")
+            dot.classList.add("cabinet-server-health__dot--warn");
+          else dot.classList.add("cabinet-server-health__dot--unknown");
+        }
+        wrap.hidden = false;
+      })
+      .catch(function () {
+        wrap.hidden = true;
+      });
+  }
+
+  // §5: однострочники под сгибом home. Статичная копь из home_facts.
+  function renderHomeFacts() {
+    var f = (content && content.cabinet && content.cabinet.home_facts) || {};
+    function set(id, val) {
+      var el = $(id);
+      if (el && val != null) el.textContent = val;
+    }
+    set("fact-nolimit-title", f.nolimit_title);
+    set("fact-nolimit-text", f.nolimit_text);
+    set("fact-private-title", f.private_title);
+    set("fact-private-text", f.private_text);
+    set("fact-devices-title", f.devices_title);
+    set("fact-devices-text", f.devices_text);
+    set("fact-devices-more", f.devices_more);
+    set("fact-devices-more-text", f.devices_more_text);
+    set("fact-connect-title", f.connect_title);
+    set("fact-connect-text", f.connect_text);
+    set("fact-connect-cta", f.connect_cta);
+    set("fact-help-title", f.help_title);
+    set("fact-help-text", f.help_text);
+    set("fact-help-cta", f.help_cta);
+    var connect = $("fact-connect");
+    if (connect && !connect.dataset.bvpnBound) {
+      connect.dataset.bvpnBound = "1";
+      connect.addEventListener("click", function () {
+        openConnectWizard();
+      });
+    }
+    var help = $("fact-help");
+    if (help) {
+      help.href = SUPPORT_URL;
+      bindExternalLink(help);
+    }
+  }
+
   function applyCabinetData(doc) {
+    window.BVPN_CABINET_DOC = doc || null;
     var cab = content.cabinet || {};
     var balEl = $("cabinet-balance");
     var err = $("cabinet-load-error");
@@ -1533,54 +2508,55 @@
       return;
     }
     var amount = String(Math.round(doc.balance_rub));
-    var days = String(doc.days_left);
-    var daysSuffix = (cab.balance_days_suffix || "хватит ~{days} дн.").replace(
-      "{days}",
-      days
-    );
-    balEl.innerHTML =
-      '<span class="cabinet-balance__amount">' +
-      amount +
-      " ₽</span>" +
-      '<span class="cabinet-balance__days">' +
-      daysSuffix +
-      "</span>";
+    var lowBalance =
+      doc.billing_profile === "wallet" &&
+      typeof doc.days_left === "number" &&
+      doc.days_left <= 3;
+    var balEl = $("cabinet-balance");
+    if (balEl) {
+      balEl.textContent = amount + " ₽";
+      balEl.classList.toggle("cabinet-balance--low", lowBalance);
+    }
     var hint = $("cabinet-balance-hint");
     if (hint) {
+      var daysSuffix = (cab.balance_days_suffix || "хватит ~{days} дн.").replace(
+        "{days}",
+        String(doc.days_left)
+      );
       if (doc.billing_note || doc.billing_note_text) {
         hint.textContent = doc.billing_note || doc.billing_note_text;
       } else if (doc.billing_profile === "trial" && cab.balance_hint_trial) {
         hint.textContent = cab.balance_hint_trial;
       } else {
-        hint.textContent = cab.balance_hint || "";
+        hint.textContent = (cab.balance_hint || "") + (daysSuffix ? " · " + daysSuffix : "");
       }
-    }
-    var lowBalance =
-      doc.billing_profile === "wallet" &&
-      typeof doc.days_left === "number" &&
-      doc.days_left <= 3;
-    if (lowBalance) {
-      balEl.classList.add("cabinet-balance--low");
-    } else {
-      balEl.classList.remove("cabinet-balance--low");
     }
     var accessEl = $("cabinet-access-state");
     if (accessEl) {
-      if (doc.billing_profile === "trial") {
-        accessEl.textContent = cab.access_trial || "Бесплатный период";
-      } else if (doc.billing_profile === "legacy") {
+      accessEl.classList.add("cabinet-status-pill");
+      if (doc.billing_profile === "legacy") {
         accessEl.textContent = cab.access_legacy || "Ручной доступ";
-      } else if (
-        doc.billing_profile === "expired" ||
-        (doc.days_left <= 0 && doc.balance_rub <= 0 && doc.billing_profile !== "legacy")
-      ) {
-        accessEl.textContent = cab.access_expired || "Доступ завершён";
-      } else if (doc.billing_profile === "wallet") {
-        accessEl.textContent = cab.access_active || "Доступ активен";
+        accessEl.dataset.status = "legacy";
       } else {
-        accessEl.textContent = cab.access_active || "Доступ активен";
+        // §4: текст пилюли + тон по состоянию (фикс «оранжевого овала»).
+        var pillKey = resolveCabinetStateKey(doc);
+        var pillTone = {
+          no_subscription: "inactive",
+          trial_no_device: "trial",
+          trial_connected: "active",
+          paid_active: "active",
+          expiring_soon: "warn",
+          expired: "paused",
+          slot_full: "warn",
+        };
+        var pillCopy = (cab.states && cab.states[pillKey]) || {};
+        accessEl.textContent = pillCopy.pill || cab.access_active || "Доступ";
+        accessEl.dataset.status = pillTone[pillKey] || "active";
       }
     }
+    updateCabinetWelcome(doc);
+    updateCabinetMetrics(doc);
+    updateCabinetServerHealth();
     var cfgPanel = $("cabinet-configs-panel");
     var cfgList = $("cabinet-configs-list");
     var cfgSummary = $("cabinet-configs-summary");
@@ -1665,6 +2641,7 @@
       if (doc.ok) window.BVPN_CABINET_ACCOUNT_VISIBLE = true;
       updateCabinetChrome();
     }
+    updateCabinetPrimaryCta(doc);
     var botBtn = $("btn-cabinet-bot");
     if (botBtn && doc.bot_url) {
       botBtn.href = doc.bot_url;
@@ -1686,6 +2663,7 @@
         bindBtn.classList.add("hidden");
       }
     }
+    renderCabinetProfileData(doc);
     try {
       if (doc.customer_id) localStorage.setItem(CID_KEY, doc.customer_id);
     } catch (e) {
@@ -1785,13 +2763,13 @@
     if (window.BVPN_INITIAL_VIEW) {
       return String(window.BVPN_INITIAL_VIEW).trim();
     }
-    var path = (window.location.pathname || "").toLowerCase();
-    if (path.indexOf("cabinet.html") >= 0) return "cabinet";
     var params = new URLSearchParams(window.location.search || "");
     var view = (params.get("view") || "").trim();
     if (view) return view;
     var raw = (window.location.hash || "").replace(/^#/, "").trim();
     if (raw) return raw;
+    var path = (window.location.pathname || "").toLowerCase();
+    if (path.indexOf("cabinet.html") >= 0) return "cabinet";
     var tg = isTelegramMiniApp() ? getTelegramWebApp() : null;
     if (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
       return String(tg.initDataUnsafe.start_param).trim();
@@ -1813,18 +2791,26 @@
 
   function applyRouteFromHash() {
     var raw = resolveRouteView();
+    if (/^tab=(home|access|balance|support)$/.test(raw)) {
+      show("home");
+      if (shouldShowCabinetAccountPanel()) applyCabinetTabFromHash();
+      return;
+    }
     if (raw === "cabinet") {
       show("home");
       if (isCabinetDedicatedPage()) {
         if (isTelegramMiniApp()) loadCabinetBalance();
+        var tabHash = (window.location.hash || "").replace(/^#/, "");
+        if (/^tab=(home|access|balance|support)$/.test(tabHash) && shouldShowCabinetAccountPanel()) {
+          applyCabinetTabFromHash();
+        }
       } else {
         openCabinetView();
       }
       return;
     }
     if (raw === "devices" || raw === "connect") {
-      show("devices");
-      trackFunnel("portal_view_devices");
+      openConnectWizard();
       return;
     }
     var dm = raw.match(/^device=(iphone|android|windows|mac)$/);
@@ -1872,13 +2858,7 @@
           window.location.href = "/portal/guide.html";
           return;
         }
-        try {
-          history.replaceState(null, "", "#devices");
-        } catch (e) {
-          window.location.hash = "devices";
-        }
-        show("devices");
-        trackFunnel("portal_view_devices");
+        openConnectWizard();
       });
     }
     var btnSetup = $("btn-setup");
@@ -1891,13 +2871,7 @@
         }
         if (hasStoredSetup()) {
           ev.preventDefault();
-          try {
-            history.replaceState(null, "", "#devices");
-          } catch (e2) {
-            window.location.hash = "devices";
-          }
-          show("devices");
-          trackFunnel("portal_view_devices");
+          openConnectWizard();
         }
       });
     }
@@ -1908,7 +2882,12 @@
     var btnBackHome = $("btn-back-home");
     if (btnBackHome) {
       btnBackHome.addEventListener("click", function () {
-        show("home");
+        if (cabinetTabsEnabled()) {
+          show("home");
+          setCabinetTab("home");
+        } else {
+          show("home");
+        }
       });
     }
     var btnBackDevices = $("btn-back-devices");
@@ -1955,26 +2934,79 @@
 
   window.bvpnCopyText = copyToClipboard;
 
-  fetch(CONTENT_URL)
-    .then(function (r) {
-      if (!r.ok) throw new Error("content load failed");
-      return r.json();
-    })
+  // ЛОКАЛЬНЫЙ предпросмотр состояний home (§4) — только localhost, ?qa_state=KEY.
+  // Не влияет на прод: гейт isLocalQaPreview(); мок-doc вместо API кабинета.
+  function maybeApplyQaStateFixture() {
+    if (!isLocalQaPreview()) return false;
+    var key = (new URLSearchParams(window.location.search || "").get("qa_state") || "").trim();
+    if (!key) return false;
+    var active = [{ active: true, status: "active" }];
+    var presets = {
+      no_subscription: { ok: true, billing_profile: null, balance_rub: 0, days_left: 0, active_config_count: 0, device_slot_limit: 1 },
+      trial_no_device: { ok: true, billing_profile: "trial", trial_days_left: 87, days_left: 87, balance_rub: 0, active_config_count: 0, device_slot_limit: 1 },
+      trial_connected: { ok: true, billing_profile: "trial", trial_days_left: 87, days_left: 87, balance_rub: 0, active_config_count: 1, device_slot_limit: 1, configurations: active },
+      paid_active: { ok: true, billing_profile: "wallet", days_left: 24, balance_rub: 160, active_config_count: 1, device_slot_limit: 1, configurations: active },
+      expiring_soon: { ok: true, billing_profile: "wallet", days_left: 2, balance_rub: 13, active_config_count: 1, device_slot_limit: 1, configurations: active },
+      expired: { ok: true, billing_profile: "expired", days_left: 0, balance_rub: 0, active_config_count: 0, device_slot_limit: 1 },
+    };
+    var doc = presets[key];
+    if (!doc) return false;
+    window.BVPN_CABINET_ACCOUNT_VISIBLE = true;
+    show("home");
+    updateCabinetChrome();
+    applyCabinetData(doc);
+    return true;
+  }
+
+  function fetchContentWithRetry(attempts) {
+    return fetch(CONTENT_URL, { cache: "no-cache" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("content load failed: " + r.status);
+        return r.json();
+      })
+      .catch(function (e) {
+        if (attempts > 1) {
+          return new Promise(function (res) {
+            setTimeout(res, 600);
+          }).then(function () {
+            return fetchContentWithRetry(attempts - 1);
+          });
+        }
+        throw e;
+      });
+  }
+
+  fetchContentWithRetry(3)
     .then(function (data) {
       content = data;
       initTelegram();
       if ($("hero-badge")) renderHome();
       if ($("device-grid")) renderDevices();
       renderCabinet();
+      renderHomeFacts();
+      renderWizardStaticCopy();
       bindActions();
+      bindCabinetTabNav();
+      bindWizardActions();
       bindSetupEntryButtons();
       applyRouteFromHash();
+      maybeApplyQaStateFixture();
+      window.addEventListener("hashchange", function () {
+        var raw = (window.location.hash || "").replace(/^#/, "");
+        if (/^(devices|connect|device|cabinet)/.test(raw)) applyRouteFromHash();
+      });
       var route = resolveRouteView();
       if (route !== "cabinet" && route !== "devices" && !/^device=/.test(route)) {
         trackFunnel("portal_view_home");
       }
       if (isCabinetDedicatedPage()) {
-        show("home");
+        var initRoute = resolveRouteView();
+        var keepView =
+          initRoute === "devices" ||
+          initRoute === "connect" ||
+          initRoute === "device" ||
+          /^device=/.test(initRoute);
+        if (!keepView) show("home");
         if (shouldAutoLoadCabinet()) {
           loadCabinetBalance();
         }
@@ -1985,15 +3017,24 @@
       }
       var footMount = $("site-footer-mount");
       if (footMount && window.BenderPortalShared) {
-        BenderPortalShared.renderSiteFooter(footMount, content);
+        if (!isTelegramMiniApp()) {
+          BenderPortalShared.renderSiteFooter(footMount, content);
+        } else {
+          footMount.classList.add("hidden");
+        }
         BenderPortalShared.bindStatusLinks(document);
       }
-      mountSharedSupport();
-      configureSharedSupportVisibility();
+      if (isTelegramMiniApp()) {
+        var supMount = $("support-block-mount");
+        if (supMount) supMount.classList.add("hidden");
+      } else {
+        mountSharedSupport();
+        configureSharedSupportVisibility();
+      }
     })
     .catch(function () {
       showError(
-        "Не удалось загрузить тексты. Откройте страницу через веб-сервер или с продакшн-домена."
+        "Не удалось загрузить страницу. Проверьте интернет и обновите страницу."
       );
     });
 })();
