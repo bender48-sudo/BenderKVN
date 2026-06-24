@@ -13,10 +13,10 @@ def main() -> int:
     if not BOT_PAYMENTS_LIVE:
         print("FAIL: BOT_PAYMENTS_LIVE", file=sys.stderr)
         return 1
-    if float(DAILY_RATE) != 6.67:
+    if float(DAILY_RATE) != 6.66:
         print(f"FAIL: DAILY_RATE={DAILY_RATE}", file=sys.stderr)
         return 2
-    if balance_to_days(200) < 29:
+    if balance_to_days(200) != 30:
         print(f"FAIL: balance_to_days(200)={balance_to_days(200)}", file=sys.stderr)
         return 3
     print(f"OK: payments live, DAILY_RATE={DAILY_RATE}, presets={list(TOPUP_PRESETS.keys())}")

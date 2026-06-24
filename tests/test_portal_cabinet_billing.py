@@ -55,7 +55,7 @@ class TestBuildBillingFields(unittest.TestCase):
         self.assertTrue(doc["is_billable_now"])
         self.assertTrue(doc["next_charge_applicable"])
         self.assertEqual(doc["billable_config_count"], 1)
-        self.assertIn("6.67", doc["billing_note"])
+        self.assertIn("6.66", doc["billing_note"])
         self.assertEqual(doc["active_config_count"], 1)
 
     def test_trial_user(self) -> None:

@@ -47,6 +47,13 @@ REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_MONTHS = int(
     os.getenv("REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_MONTHS", "1")
 )
 
+# K6: referral/partner UI hidden until bonuses are implemented and approved.
+REFERRAL_UI_ENABLED = os.getenv("REFERRAL_UI_ENABLED", "").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
 
 def referral_invitee_first_purchase_bonus_days(referred_by: str | None) -> int:
     """Legacy invitee bonus gate (P1-REF-002). Returns 0 unless explicitly enabled — default OFF."""
@@ -62,8 +69,12 @@ def referral_invitee_first_purchase_bonus_days(referred_by: str | None) -> int:
 # пробного периода без кнопки пополнения, только поддержка.
 BOT_PAYMENTS_LIVE = os.getenv("BOT_PAYMENTS_LIVE", "").strip().lower() in ("1", "true", "yes")
 
-# Тарификация: пополнение баланса, списание 6.67 ₽/день (не привязка к «месяцам»).
-DAILY_RATE = 6.67  # ₽/день за одно устройство
+# Тарификация: пополнение баланса (BILL-BALANCE-KOPEKS-001).
+# 200 ₽ = ровно 30 дней в целых копейках; display/charge 6,66 ₽/день.
+DAYS_PER_REFERENCE_TOPUP = 30
+REFERENCE_TOPUP_KOPEKS = 20_000  # 200 ₽
+DAILY_RATE_KOPEKS = REFERENCE_TOPUP_KOPEKS // DAYS_PER_REFERENCE_TOPUP  # 666
+DAILY_RATE = DAILY_RATE_KOPEKS / 100.0  # 6.66 ₽/день за одно устройство
 
 TOPUP_PRESETS = {
     "topup_200": ("200 ₽", "200.00", 200),
@@ -81,11 +92,34 @@ PLANS = {
 }
 
 
+def rub_to_kopeks(rub: float) -> int:
+    return int(round(float(rub) * 100))
+
+
+def kopeks_to_rub(kopeks: int) -> float:
+    return kopeks / 100.0
+
+
+def daily_charge_rub() -> float:
+    """Rubles deducted per UTC day (wallet profile)."""
+    return DAILY_RATE
+
+
+def format_daily_rate_ru() -> str:
+    """User-facing ₽/day string (Russian decimal comma)."""
+    return f"{DAILY_RATE:.2f}".replace(".", ",")
+
+
+def balance_covers_one_day(balance: float) -> bool:
+    return rub_to_kopeks(balance) >= DAILY_RATE_KOPEKS
+
+
 def balance_to_days(balance: float) -> int:
     """Whole days of VPN left at current balance (floor; 0 if below one day rate)."""
-    if balance < DAILY_RATE:
+    kopeks = rub_to_kopeks(balance)
+    if kopeks < DAILY_RATE_KOPEKS:
         return 0
-    return int(balance / DAILY_RATE)
+    return kopeks // DAILY_RATE_KOPEKS
 
 
 def topup_button_label(amount_rub: float) -> str:
@@ -128,6 +162,11 @@ def telegram_guide_webapp_url(platform: str | None = None) -> str:
     elif key == "android":
         query["device"] = "android"
     return portal_page_url("guide.html", query=query)
+
+
+def telegram_info_webapp_url() -> str:
+    """Mini App deep-link to /portal/info.html (§15 information hub)."""
+    return portal_page_url("info.html", query={"wv": "35"})
 
 
 _PORTAL_DEVICE_IDS = frozenset({"iphone", "android", "windows", "mac"})

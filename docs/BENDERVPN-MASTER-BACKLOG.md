@@ -162,9 +162,9 @@ Source: [`CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`](CODERABBIT-AUDIT-TRIAGE-2026-0
 | 1 | **BILL-TERMS-GUARD-001** | P0 | OPEN | Automated paid pilot; legal on money/trial paths |
 | 2 | **TRIAL-GRANT-ATOMIC-001** | P1 | OPEN | Paid beta scale; trial retry after crash |
 | 3 | **BILL-AUTOPAY-LIVE-GUARD-001** | P1 | OPEN | Autopay hardening (**PAY-AUTO-001**) |
-| 4 | **BILL-BALANCE-KOPEKS-001** | P1 | OPEN | Honest 200 ₽ ≈ 30 days copy |
-| 5 | **BILL-UT-001** | P0 | OPEN | Offline debit/day-rate tests |
-| 5 | **BILL-UT-002** | P0 | OPEN | Offline webhook/idempotency/autopay tests |
+| 4 | **BILL-BALANCE-KOPEKS-001** | P1 | **DONE** (repo) | Honest 200 ₽ = 30 days |
+| 5 | **BILL-UT-001** | P0 | **DONE** (repo) | Offline debit tests |
+| 5 | **BILL-UT-002** | P0 | **DONE** (repo) | Offline webhook/idempotency tests |
 | — | **BILL-WEBHOOK-CLAIM-TOCTOU-001** | P1 | OPEN | Atomic webhook claim |
 | — | **BOT-QR-MISSING-KEY-UX-001** | P2 | OPEN | `show_qr_handler` silent returns |
 | — | **BILL-LEGACY-PAYMENT-FLOW-GATE-001** | P2 | OPEN | Legacy `buy_*_month` sunset |
@@ -376,8 +376,22 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 | **SUPPORT-ADMIN-001** | P2 | OPEN | Open | No | Operator queue |
 | **SUPPORT-SMOKE-001** | P2 | OPEN | Auto gate | No | Simulated cases |
 | **SUPPORT-AUTO-001** | P2 | OPEN | User bot | **Yes** | After smokes only |
+| **SUPPORT-AI-AGENT-001** | P3→P4 | **TODO** | Paid partial | **Yes** each stage | Infra-aware support agent; **owner-gated stages S1→S4** — see below |
 
 **Rule:** AI support does not replace P1-ADM-001 or LAUNCH-004 runbooks.
+
+### SUPPORT-AI-AGENT-001 (future — NOT in active work)
+
+**Status:** backlog only · **do not implement** until explicit owner OK per stage.
+
+| Stage | Mode | Capability |
+|-------|------|------------|
+| **S1** | read-only | Sees metrics, node status, logs; replies to user in human tone; escalates if unsure («минутку, проверяем»). **No prod actions.** |
+| **S2** | suggest | Prepares fix (command/PR for Cursor); **human executes** after confirm. |
+| **S3** | limited whitelist | e.g. service restart; audit-log + rollback; rest via human. |
+| **S4** | autonomous node reboot | **Only after long S1–S3 proof**; rate-limit, blast-radius cap, kill-switch. |
+
+**Principle:** prod access = outage risk; trust earned by stages. **First integration point:** TG support ticket bridge (**SUPPORT-TICKET-001**). Builds on **SUPPORT-AI-ARCH-001** (arch done).
 
 ---
 
@@ -469,9 +483,9 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 | **LIVE-TERMS-UX-SMOKE-001** | P0 | Billing/legal | Live Telegram terms UX + offline harness | Owner taps not run 2026-06-16; offline cases 1–6 PASS | **Accepted** | 1 | Paid pilot gate | POSTDEPLOY-2026-06-15 | `ops/smoke_terms_guard_ux_offline.py`, `ops/smoke_live_terms_guard_ams.py` | Owner live matrix PASS; offline PASS | harness + owner | Yes | No | BILL-TERMS-GUARD-* | **PARTIAL** — offline PASS; live owner taps **OPEN** |
 | **TRIAL-GRANT-ATOMIC-001** | P1 | Billing/trial | Atomic trial grant | `set_trial_used` before `provision_key`; crash blocks retry | **Accepted** | 1 | Trial abuse UX | CodeRabbit triage CB-2 | `handlers.py` | Flag after key row or idempotent reconcile | unit test | Yes | No | — | **DONE** — deployed AMS 2026-06-15 (marker smoke; no live trial soak) |
 | **BILL-AUTOPAY-LIVE-GUARD-001** | P1 | Billing/autopay | Autopay batch live guard | `run_yookassa_autopay_batch` lacks internal guard; scheduler gated | **Accepted** partial | 1 | Defense-in-depth | CodeRabbit triage CB-3 | `yookassa_autopay_scheduler.py` | Early return if not `BOT_PAYMENTS_LIVE` | unit test | Yes | No | PAY-AUTO-001 | **DONE** — deployed AMS 2026-06-15 |
-| **BILL-BALANCE-KOPEKS-001** | P1 | Billing/topup | Kopeks/Decimal day rate | `DAILY_RATE=6.67` float → 200 ₽ = 29 days | **Accepted** | 1 | Copy truth | CodeRabbit triage CB-4 | `config.py`, billing | Integer kopeks; preset labels match | BILL-UT-001 | Yes | No | — | **OPEN** |
-| **BILL-UT-001** | P0 | Billing/tests | Offline daily debit tests | No `test_balance_billing.py` | **Accepted** | 1 | Automated paid pilot | BILL-001; CodeRabbit triage | `tests/` | `charge_daily_balance_if_due` edge cases | pytest CI | No | No | — | **OPEN** |
-| **BILL-UT-002** | P0 | Billing/tests | Offline webhook/idempotency tests | Payment path gaps in CI | **Accepted** | 1 | Automated paid pilot | BILL-001; CodeRabbit triage | `tests/`, `database.py` | Topup idempotency + webhook claim | pytest CI | No | No | BILL-WEBHOOK-CLAIM-TOCTOU-001 | **OPEN** |
+| **BILL-BALANCE-KOPEKS-001** | P1 | OPEN | Honest 200 ₽ ≈ 30 days copy | **Accepted** | 1 | Copy truth | CodeRabbit triage CB-4 | `config.py`, billing | Integer kopeks; preset labels match | BILL-UT-001 | Yes | No | — | **DONE** (repo) |
+| **BILL-UT-001** | P0 | Billing/tests | Offline daily debit tests | **Accepted** | 1 | Automated paid pilot | BILL-001; CodeRabbit triage | `tests/` | `charge_daily_balance_if_due` edge cases | pytest CI | No | No | — | **DONE** (repo) |
+| **BILL-UT-002** | P0 | Billing/tests | Offline webhook/idempotency tests | **Accepted** | 1 | Automated paid pilot | BILL-001; CodeRabbit triage | `tests/`, `database.py` | Topup idempotency + webhook claim | pytest CI | No | No | BILL-WEBHOOK-CLAIM-TOCTOU-001 | **DONE** (repo) |
 | **BILL-WEBHOOK-CLAIM-TOCTOU-001** | P1 | Billing/webhook | Harden webhook claim | `claim_webhook_delivery` SELECT-then-INSERT race | **Accepted** | 1 | Double-credit risk | CodeRabbit triage | `database.py` | INSERT OR IGNORE / txn; test concurrent claim | BILL-UT-002 | Yes | No | — | **DONE** — deployed AMS 2026-06-15 (offline claim smoke) |
 | **BILL-LEGACY-PAYMENT-FLOW-GATE-001** | P2 | Billing/legacy | Gate legacy plan purchase | `buy_*_month` parallel to wallet model | **Accepted** | 2 | UX confusion | BILL-001 §3; CodeRabbit triage | `handlers.py`, `config.py` | Remove UI entry or gate behind flag | copy review | Yes | **Yes** | OD-10 | **OPEN** |
 | **BOT-QR-MISSING-KEY-UX-001** | P2 | Bot UX | QR silent failure UX | `show_qr_handler` bare return on missing inbound/URI | **Accepted** | 1 | Support load | CodeRabbit triage | `handlers.py` | User-visible error on all paths | manual smoke | Yes | No | — | **OPEN** |

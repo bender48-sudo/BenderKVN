@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 from datetime import datetime, timezone
 
-from shop_bot.config import DAILY_RATE, balance_to_days
+from shop_bot.config import balance_covers_one_day, balance_to_days
 from shop_bot.data_manager.database import get_balance, get_user, has_action
 
 # Panel expiry farther than this = ручной «вечный» доступ, не трогаем.
@@ -34,7 +34,7 @@ def panel_days_left(expire_iso: str | None) -> int:
 def is_paid_wallet_user(user_id: int, user_profile: dict | None = None) -> bool:
     """Пополнял баланс / платил — тарификация по кошельку."""
     profile = user_profile if user_profile is not None else get_user(user_id)
-    if get_balance(user_id) >= DAILY_RATE:
+    if balance_covers_one_day(get_balance(user_id)):
         return True
     if has_action(user_id, "topup"):
         return True

@@ -33,10 +33,10 @@ def main() -> int:
         print("BALANCE_DAILY_FAIL: balance_to_days still uses max(1,...)", file=sys.stderr)
         return 1
 
-    daily = 6.67
-    days_200 = int(200 / daily) if 200 >= daily else 0
-    days_low = int(6.66 / daily) if 6.66 >= daily else 0
-    if days_200 != 29 or days_low != 0:
+    daily_kopeks = 666
+    days_200 = 20_000 // daily_kopeks
+    days_low = 6_65 // daily_kopeks
+    if days_200 != 30 or days_low != 0:
         print(f"BALANCE_DAILY_FAIL: days_200={days_200} days_low={days_low}", file=sys.stderr)
         return 1
 

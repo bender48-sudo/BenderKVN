@@ -1,10 +1,10 @@
-"""Balance wallet: daily 6.67 ₽ charge + panel expireAt sync (P2-COM-BALANCE-DAILY-01)."""
+"""Balance wallet: daily kopeks charge + panel expireAt sync (P2-COM-BALANCE-DAILY-01)."""
 from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
 
-from shop_bot.config import BOT_PAYMENTS_LIVE, DAILY_RATE, balance_to_days
+from shop_bot.config import BOT_PAYMENTS_LIVE, balance_to_days, daily_charge_rub
 from shop_bot.data_manager.database import (
     get_balance,
     get_user_keys,
@@ -41,15 +41,16 @@ def charge_daily_balance_if_due(user_id: int) -> str:
     if has_action(user_id, action):
         return "already"
     # waived_topup logged without deduct — treat as already handled for the day
-    if not try_deduct_balance(user_id, DAILY_RATE):
+    charge = daily_charge_rub()
+    if not try_deduct_balance(user_id, charge):
         log_action(user_id, action, "insufficient")
         return "insufficient"
-    log_action(user_id, action, f"{DAILY_RATE:.2f}")
+    log_action(user_id, action, f"{charge:.2f}")
     return "charged"
 
 
 async def sync_panel_from_balance(user_id: int) -> bool:
-    """Set Remna expireAt = now + floor(balance / DAILY_RATE) days (absolute, not additive)."""
+    """Set Remna expireAt = now + floor(balance / daily rate) days (absolute, not additive)."""
     balance = get_balance(user_id)
     days = balance_to_days(balance)
     keys = get_user_keys(user_id)

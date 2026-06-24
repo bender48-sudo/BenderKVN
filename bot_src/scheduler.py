@@ -11,7 +11,7 @@ from shop_bot.data_manager import database
 from shop_bot.modules import remnawave_api
 from shop_bot.background_tasks import create_background_task
 from shop_bot.modules.remnawave_api import remna_client_session
-from shop_bot.config import BOT_PAYMENTS_LIVE, DAILY_RATE, SCHEDULER_CONCURRENT_API_CALLS
+from shop_bot.config import BOT_PAYMENTS_LIVE, DAILY_RATE, SCHEDULER_CONCURRENT_API_CALLS, format_daily_rate_ru
 from shop_bot.auto_renew_billing import balance_covers_renew, plan_renew_cost
 from shop_bot.utils.logger import bot_logger
 from shop_bot.bot.subscription_refresh import run_sub_refresh_notify_batch
@@ -388,7 +388,7 @@ async def _poll_vpn_user(bot: Bot, session, user_entry: dict) -> tuple[int, bool
                         txt = (
                             f"Пробный период заканчивается через {days_left} дней.\n\n"
                             "Чтобы продолжить — пополни баланс. "
-                            "Стоимость — 6,67 ₽ в день, и всё работает дальше как было."
+                            f"Стоимость — {format_daily_rate_ru()} ₽ в день, и всё работает дальше как было."
                         )
                     else:
                         txt = (
