@@ -1,0 +1,2 @@
+# Minimal deps for GitHub Actions offline gates (P2-CI-001 billing job).
+pytest>=8.0,<9

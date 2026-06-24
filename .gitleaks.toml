@@ -1,0 +1,19 @@
+# Gitleaks config (P2-CI-002). Default rules + repo allowlists.
+title = "BenderVPN gitleaks"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "ignored paths and known placeholders"
+paths = [
+  '''(?i)\.local/''',
+  '''(?i)\.secrets/''',
+  '''(?i)\.playwright-review/''',
+  '''(?i)\.playwright-mcp/''',
+  '''(?i)archive/''',
+  '''(?i)docs/templates/''',
+  '''(?i)\.env\.example''',
+  '''(?i)vault\.env\.example''',
+  '''(?i)site\.env\.example''',
+]

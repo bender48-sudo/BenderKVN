@@ -351,7 +351,7 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 | **Profile integrity alert** | P1 | NOT_STARTED | ops cron | G9 — scheduled probe + TG (see CLOSEOUT TRACK 5) |
 | **Payment callback monitor** | P1 | NOT_STARTED | ops | G9 webhook path |
 | **BILL-MON-001** | P2 | NOT_STARTED | ops | Billing job alert |
-| **P2-CI-001/002** | P1 | NOT_STARTED | CI | G11 gitleaks / secret scan |
+| **P2-CI-001/002** | P1 | **PARTIAL** | CI | G11 gitleaks / secret scan | **DONE (repo):** `.github/workflows/ci.yml` — billing-offline job + gitleaks |
 | **LAUNCH-004** | P1 | NOT_STARTED | docs | Support/incident runbooks |
 
 **Prerequisite for node readiness decisions:** **MONITOR-FLAP-001** + **OPS-ALERT-HYGIENE-001** — noisy alerts must be cleaned before monitoring is used as node-quality source of truth (otherwise real degradation vs false positives is indistinguishable).
