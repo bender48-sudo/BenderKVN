@@ -52,7 +52,8 @@ def initialize_db():
                     referred_by TEXT,
                     auto_renew BOOLEAN DEFAULT 0,
                     last_expiry_notified_days INTEGER DEFAULT 999,
-                    sub_refresh_notified_generation INTEGER DEFAULT 0
+                    sub_refresh_notified_generation INTEGER DEFAULT 0,
+                    contact_email TEXT
                 );
                 CREATE TABLE IF NOT EXISTS vpn_keys (
                     key_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -367,6 +368,31 @@ def lookup_telegram_ids_by_hint(hint: str, *, limit: int = 5) -> list[dict]:
         logging.error(f"lookup_telegram_ids_by_hint failed: {e}")
         return []
 
+
+def set_user_contact_email(telegram_id: int, email: str) -> bool:
+    """Backup contact email (CLIENT-JOURNEY §5.4) — outreach when Telegram unavailable."""
+    em = normalize_contact_email(email)
+    if not is_valid_contact_email(em):
+        return False
+    try:
+        with db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE users SET contact_email = ? WHERE telegram_id = ?",
+                (em, telegram_id),
+            )
+            if cursor.rowcount == 0:
+                cursor.execute(
+                    "INSERT INTO users (telegram_id, contact_email) VALUES (?, ?)",
+                    (telegram_id, em),
+                )
+            conn.commit()
+            return True
+    except sqlite3.Error as e:
+        logging.error(f"set_user_contact_email failed for {telegram_id}: {e}")
+        return False
+
+
 def set_terms_agreed(telegram_id: int):
     try:
         with db_connection() as conn:
@@ -606,6 +632,33 @@ def count_referrals(ref_code: str) -> int:
             return c.fetchone()[0]
     except sqlite3.Error as e:
         logging.error(f"Failed to count referrals for {ref_code}: {e}"); return 0
+
+def get_referral_invitees(ref_code: str, limit: int = 100) -> list[dict]:
+    """Referred users for a code (Mini App referral, read-only).
+
+    Returns referred_user_id, joined_at, username, and first_topup_at (MIN created_at
+    of the invitee's 'topup' actions, NULL if never paid) — newest first. No reward
+    fields: referral accrual is not implemented, so the snapshot must not fabricate
+    earned amounts. Paid-vs-registered is derived from first_topup_at, a real fact.
+    """
+    try:
+        with db_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+            c.execute(
+                "SELECT r.referred_user_id AS referred_user_id, "
+                "       r.created_at AS joined_at, "
+                "       u.username AS username, "
+                "       (SELECT MIN(a.created_at) FROM user_actions a "
+                "          WHERE a.user_id = r.referred_user_id AND a.action = 'topup') "
+                "       AS first_topup_at "
+                "FROM referrals r LEFT JOIN users u ON u.telegram_id = r.referred_user_id "
+                "WHERE r.referrer_code = ? ORDER BY r.created_at DESC, r.id DESC LIMIT ?",
+                (ref_code, max(1, min(int(limit or 100), 500))),
+            )
+            return [dict(row) for row in c.fetchall()]
+    except sqlite3.Error as e:
+        logging.error(f"Failed to list invitees for {ref_code}: {e}"); return []
 
 # -------------------- Auto renew & expiry notifications --------------------
 def set_auto_renew(user_id: int, enabled: bool):
@@ -852,6 +905,23 @@ def has_action(user_id: int, action: str) -> bool:
         logging.error(f"Failed to check action {action} for {user_id}: {e}"); return False
 
 
+def get_latest_action_meta(user_id: int, action: str) -> str | None:
+    """Most recent meta value for an action (e.g. language, consent version). §7.4/D15."""
+    try:
+        with db_connection() as conn:
+            c = conn.cursor()
+            c.execute(
+                "SELECT meta FROM user_actions WHERE user_id = ? AND action = ? "
+                "ORDER BY id DESC LIMIT 1",
+                (user_id, action),
+            )
+            row = c.fetchone()
+            return row[0] if row else None
+    except sqlite3.Error as e:
+        logging.error(f"Failed to read action meta {action} for {user_id}: {e}")
+        return None
+
+
 def get_balance_ledger(user_id: int, limit: int = 50) -> list[dict]:
     """Read-only balance history from user_actions (MINI-APP balance, Phase A).
 
@@ -873,6 +943,135 @@ def get_balance_ledger(user_id: int, limit: int = 50) -> list[dict]:
     except sqlite3.Error as e:
         logging.error(f"Failed to read balance ledger for {user_id}: {e}")
         return []
+
+
+# -------------------- balance_ledger (Phase B journal, REF-LEDGER-001) --------------------
+def credit_ledger(
+    user_id: int, kind: str, amount_kopeks: int, ref: str, meta: str | None = None
+) -> bool:
+    """Atomically append a balance_ledger row AND apply it to users.balance, once per (user, ref).
+
+    Returns True if newly credited; False if this event was already recorded (idempotent), the
+    user is missing, or on error. ``amount_kopeks`` is signed (+credit / -debit). This is the
+    single place that both journals and mutates balance — used by referral/partner rewards.
+    Top-ups and daily charges keep their existing balance path; they are not journaled here.
+    """
+    amt = int(amount_kopeks)
+    if not ref:
+        logging.error("credit_ledger requires a ref (user=%s kind=%s)", user_id, kind)
+        return False
+    try:
+        with db_connection() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT 1 FROM balance_ledger WHERE user_id = ? AND ref = ? LIMIT 1",
+                (user_id, ref),
+            )
+            if cur.fetchone():
+                conn.rollback()
+                return False
+            cur.execute(
+                "SELECT COALESCE(balance, 0) FROM users WHERE telegram_id = ?", (user_id,)
+            )
+            row = cur.fetchone()
+            if row is None:
+                conn.rollback()
+                return False
+            new_balance = float(row[0]) + amt / 100.0
+            cur.execute(
+                "INSERT INTO balance_ledger "
+                "(user_id, kind, amount_kopeks, balance_after_kopeks, ref, meta) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (user_id, kind, amt, round(new_balance * 100), ref, meta),
+            )
+            cur.execute(
+                "UPDATE users SET balance = ? WHERE telegram_id = ?",
+                (new_balance, user_id),
+            )
+            conn.commit()
+            return True
+    except sqlite3.Error as e:
+        logging.error("credit_ledger failed user=%s ref=%s: %s", user_id, ref, e)
+        return False
+
+
+def get_ledger_entries(user_id: int, limit: int = 50) -> list[dict]:
+    """Newest-first balance_ledger rows for a user (Phase B history source)."""
+    try:
+        with db_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+            c.execute(
+                "SELECT id, kind, amount_kopeks, balance_after_kopeks, ref, meta, created_at_utc "
+                "FROM balance_ledger WHERE user_id = ? ORDER BY id DESC LIMIT ?",
+                (user_id, max(1, min(int(limit or 50), 500))),
+            )
+            return [dict(r) for r in c.fetchall()]
+    except sqlite3.Error as e:
+        logging.error("get_ledger_entries %s: %s", user_id, e)
+        return []
+
+
+def sum_ledger_kinds(user_id: int, kinds: tuple[str, ...]) -> int:
+    """Sum of signed amount_kopeks for the given kinds (e.g. referral earnings)."""
+    klist = list(kinds)
+    if not klist:
+        return 0
+    placeholders = ",".join("?" * len(klist))
+    try:
+        with db_connection() as conn:
+            c = conn.cursor()
+            c.execute(
+                f"SELECT COALESCE(SUM(amount_kopeks), 0) FROM balance_ledger "
+                f"WHERE user_id = ? AND kind IN ({placeholders})",
+                (user_id, *klist),
+            )
+            return int(c.fetchone()[0])
+    except sqlite3.Error as e:
+        logging.error("sum_ledger_kinds %s: %s", user_id, e)
+        return 0
+
+
+def get_referral_rewards_by_invitee(referrer_id: int) -> dict[int, int]:
+    """Map invitee_id → credited kopeks from this referrer's reward rows.
+
+    Refs are 'ref_first:<invitee>' / 'pt_first:<invitee>' / 'pt_recur:<payment_id>'. Only the
+    per-invitee refs (numeric tail) are attributed; recurring-by-payment rows are skipped here.
+    """
+    out: dict[int, int] = {}
+    try:
+        with db_connection() as conn:
+            c = conn.cursor()
+            c.execute(
+                "SELECT ref, amount_kopeks FROM balance_ledger "
+                "WHERE user_id = ? AND kind IN ('referral_reward', 'partner_reward') "
+                "AND ref IS NOT NULL AND ref != 'ref_welcome'",
+                (referrer_id,),
+            )
+            for ref, amt in c.fetchall():
+                tail = str(ref).split(":", 1)
+                if len(tail) == 2 and tail[1].isdigit():
+                    inv = int(tail[1])
+                    out[inv] = out.get(inv, 0) + int(amt)
+    except sqlite3.Error as e:
+        logging.error("get_referral_rewards_by_invitee %s: %s", referrer_id, e)
+    return out
+
+
+def count_actions(user_id: int, action: str) -> int:
+    """Count user_actions rows for (user, action) — e.g. to detect a first top-up."""
+    try:
+        with db_connection() as conn:
+            c = conn.cursor()
+            c.execute(
+                "SELECT COUNT(*) FROM user_actions WHERE user_id = ? AND action = ?",
+                (user_id, action),
+            )
+            return int(c.fetchone()[0])
+    except sqlite3.Error as e:
+        logging.error("count_actions %s/%s: %s", user_id, action, e)
+        return 0
 
 
 def try_acquire_topup_idempotency(user_id: int, idempotency_key: str) -> bool:

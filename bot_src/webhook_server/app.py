@@ -283,6 +283,31 @@ def create_webhook_app(bot, payment_processor):
             logger.error("portal-create-payment: %s", e, exc_info=True)
             return jsonify({"ok": False, "error": "server_error"}), 500
 
+    @flask_app.route("/portal-referral", methods=["POST"])
+    def portal_referral_handler():
+        """Read-only referral snapshot (link, counts, invitees, partner block) for Mini App."""
+        try:
+            if not _portal_service_auth():
+                return _reject_auth()
+            data = request.get_json(silent=True) or {}
+            from shop_bot.portal_referral import referral_snapshot
+
+            raw_tid = data.get("telegram_id")
+            try:
+                tid = int(raw_tid) if raw_tid is not None else 0
+            except (TypeError, ValueError):
+                tid = 0
+            doc = referral_snapshot(
+                telegram_id=tid if tid > 0 else None,
+                customer_id=(data.get("customer_id") or "").strip(),
+                email=(data.get("email") or "").strip(),
+            )
+            code = 200 if doc.get("ok") else 404
+            return jsonify(doc), code
+        except Exception as e:
+            logger.error("portal-referral: %s", e, exc_info=True)
+            return jsonify({"ok": False, "error": "server_error"}), 500
+
     def _health_authorized() -> bool:
         secret = os.getenv("HEALTH_CHECK_SECRET", "").strip()
         bind = os.getenv("WEBHOOK_BIND_HOST", "127.0.0.1").strip() or "127.0.0.1"

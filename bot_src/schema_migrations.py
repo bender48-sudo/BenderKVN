@@ -6,7 +6,7 @@ import sqlite3
 
 logger = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 8
 
 
 def _table_has_column(conn: sqlite3.Connection, table: str, column: str) -> bool:
@@ -208,6 +208,51 @@ def _migrate_v6(conn: sqlite3.Connection) -> None:
                 raise
 
 
+def _migrate_v7(conn: sqlite3.Connection) -> None:
+    """User contact email for backup outreach (CLIENT-JOURNEY §5.4)."""
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN contact_email TEXT")
+    except sqlite3.OperationalError as exc:
+        if "duplicate column" not in str(exc).lower():
+            raise
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_users_contact_email "
+        "ON users(contact_email) WHERE contact_email IS NOT NULL"
+    )
+
+
+def _migrate_v8(conn: sqlite3.Connection) -> None:
+    """Append-only balance ledger (REF-LEDGER-001).
+
+    Journal alongside users.balance (which stays authoritative). Additive only — CREATE,
+    no ALTER, no data move. Amounts are signed kopeks. Idempotency: one row per (user, ref)
+    where ref is set; ref=NULL rows are manual adjustments and not deduplicated.
+    """
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS balance_ledger (
+            id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id               INTEGER NOT NULL,
+            kind                  TEXT    NOT NULL,
+            amount_kopeks         INTEGER NOT NULL,
+            balance_after_kopeks  INTEGER,
+            ref                   TEXT,
+            meta                  TEXT,
+            created_at_utc        TEXT    NOT NULL
+                                  DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+        )
+        """
+    )
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_ledger_user_ref "
+        "ON balance_ledger(user_id, ref) WHERE ref IS NOT NULL"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_ledger_user_id "
+        "ON balance_ledger(user_id, id DESC)"
+    )
+
+
 _MIGRATORS = {
     1: _migrate_v1,
     2: _migrate_v2,
@@ -215,6 +260,8 @@ _MIGRATORS = {
     4: _migrate_v4,
     5: _migrate_v5,
     6: _migrate_v6,
+    7: _migrate_v7,
+    8: _migrate_v8,
 }
 
 

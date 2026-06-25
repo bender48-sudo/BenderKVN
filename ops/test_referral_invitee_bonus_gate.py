@@ -42,14 +42,18 @@ def _static_checks() -> None:
     for needle, label in (
         ("REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_ENABLED", "invitee bonus flag"),
         ("REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_DAYS", "invitee bonus days"),
-        ("REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_ENABLED", "referrer reward flag"),
-        ("REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_MONTHS", "referrer reward months"),
         ("def referral_invitee_first_purchase_bonus_days", "invitee bonus gate helper"),
-        ("referral_invitee_first_purchase_bonus_days(referrer_code)", "handlers uses invitee gate"),
-        ("REF-BONUS-001", "target referrer reward documented"),
     ):
         if needle not in (cfg_src + handlers_src):
             raise AssertionError(f"static check failed: {label} ({needle!r})")
+
+    # The dead "+1 month to referrer" model must stay deleted (replaced by REF-LEDGER-001 ₽/%).
+    for gone in (
+        "REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_ENABLED",
+        "REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_MONTHS",
+    ):
+        if gone in cfg_src:
+            raise AssertionError(f"dead referrer-reward constant must be removed: {gone!r}")
 
     if 'days_to_add += 3' in handlers_src:
         raise AssertionError("handlers.py must not hardcode days_to_add += 3")
@@ -62,15 +66,11 @@ def _gate_tests() -> None:
     from shop_bot.config import (
         REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_DAYS,
         REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_ENABLED,
-        REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_ENABLED,
-        REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_MONTHS,
         referral_invitee_first_purchase_bonus_days,
     )
 
     assert REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_ENABLED is False
     assert REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_DAYS == 3
-    assert REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_ENABLED is False
-    assert REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_MONTHS == 1
     assert referral_invitee_first_purchase_bonus_days("abc123") == 0
     assert referral_invitee_first_purchase_bonus_days(None) == 0
     assert referral_invitee_first_purchase_bonus_days("") == 0

@@ -37,15 +37,10 @@ REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_DAYS = int(
     os.getenv("REFERRAL_INVITEE_FIRST_PURCHASE_BONUS_DAYS", "3")
 )
 
-# REF-BONUS-001 (future): +1 calendar month to referrer after invitee first confirmed payment.
-# Not implemented — no balance/subscription mutation. Requires REF-ADMIN-001, REF-METRICS-001,
-# anti-abuse, hold/qualification window, G4 bind confidence, idempotency, and user-facing copy.
-REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_ENABLED = os.getenv(
-    "REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_ENABLED", ""
-).strip().lower() in ("1", "true", "yes")
-REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_MONTHS = int(
-    os.getenv("REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_MONTHS", "1")
-)
+# Referrer reward model is the ₽/% one below (REF-LEDGER-001): +30% of the invitee's first
+# top-up to the referrer, credited via balance_ledger. The dead "+1 month" model
+# (REFERRAL_REFERRER_FIRST_PAYMENT_REWARD_*) was removed — it was never implemented and
+# contradicted canon.
 
 # K6: referral/partner UI hidden until bonuses are implemented and approved.
 REFERRAL_UI_ENABLED = os.getenv("REFERRAL_UI_ENABLED", "").strip().lower() in (
@@ -53,6 +48,27 @@ REFERRAL_UI_ENABLED = os.getenv("REFERRAL_UI_ENABLED", "").strip().lower() in (
     "true",
     "yes",
 )
+
+# P3 Mini App referral — ADVERTISED program terms shown on the Referral screen.
+# Display-only: no balance accrual is wired (referral_rewards_active() default OFF), so the
+# snapshot reports rewards_active=false and earned_rub=0 — never a fabricated number. These
+# values are the product intent from MINI-APP-MIGRATION-PLAN-2026-06-25 (P3); real accrual
+# (+₽ to friend on register, % to referrer on first payment) is a separate owner OK + ledger
+# task (REF-BONUS-001, see DEC-IMPL-006/007). All overridable via env without a code change.
+REFERRAL_FRIEND_BONUS_RUB = int(os.getenv("REFERRAL_FRIEND_BONUS_RUB", "100"))
+REFERRAL_REFERRER_PCT = int(os.getenv("REFERRAL_REFERRER_PCT", "30"))
+REFERRAL_PARTNER_FIRST_PCT = int(os.getenv("REFERRAL_PARTNER_FIRST_PCT", "50"))
+REFERRAL_PARTNER_RECURRING_PCT = int(os.getenv("REFERRAL_PARTNER_RECURRING_PCT", "10"))
+REFERRAL_PARTNER_MIN_WITHDRAW_RUB = int(os.getenv("REFERRAL_PARTNER_MIN_WITHDRAW_RUB", "5000"))
+
+
+def referral_rewards_active() -> bool:
+    """True only when real referral balance accrual is wired (REF-BONUS-001). Default OFF.
+
+    While OFF the Mini App shows the program terms and real invitee facts (who paid /
+    who only registered) but never an earned ₽ figure — there is no reward ledger yet.
+    """
+    return os.getenv("REFERRAL_REWARDS_ACTIVE", "").strip().lower() in ("1", "true", "yes")
 
 
 def referral_invitee_first_purchase_bonus_days(referred_by: str | None) -> int:

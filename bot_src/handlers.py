@@ -155,6 +155,17 @@ async def process_topup_payment(
     if idempotency_key and webhook_key:
         log_action(user_id, idempotency_key, f"{amount_rub}")
 
+    # Referral: on the invitee's FIRST top-up, credit the referrer its % (idempotent, gated OFF).
+    try:
+        from shop_bot.data_manager.database import count_actions
+
+        if count_actions(user_id, "topup") == 1:
+            from shop_bot.referral_rewards import credit_referrer_first_topup
+
+            credit_referrer_first_topup(user_id, amount_rub)
+    except Exception as e:
+        logger.error("referral first-topup reward failed user=%s: %s", user_id, e)
+
     if notify:
         sync_note = "" if synced else (
             "\n\n⚠️ Баланс зачислен; синхронизация с панелью не удалась — напишите в поддержку."
