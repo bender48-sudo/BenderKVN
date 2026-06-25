@@ -243,6 +243,11 @@ def build_billing_fields(
         "next_charge_applicable": next_charge_applicable,
         "access_expires_at": expiry_display,
         "access_expires_at_iso": expiry_iso,
+        # Runway «хватит до {дата}» for Mini App balance — alias of server-synced
+        # access expiry (sync_panel_from_balance sets expireAt = now + balance/rate days).
+        # Server-side UTC; UI must not recompute from balance/rate.
+        "runway_until": expiry_display,
+        "runway_until_iso": expiry_iso,
         "billing_note_code": billing_note_code,
         "billing_note": billing_note,
         "billing_note_text": billing_note,
