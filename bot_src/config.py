@@ -62,6 +62,19 @@ REFERRAL_PARTNER_RECURRING_PCT = int(os.getenv("REFERRAL_PARTNER_RECURRING_PCT",
 REFERRAL_PARTNER_MIN_WITHDRAW_RUB = int(os.getenv("REFERRAL_PARTNER_MIN_WITHDRAW_RUB", "5000"))
 
 
+# Home «ёмкость» widget — soft cap on active subscriptions (product policy). Display-only:
+# the live active-subscription counter is not wired yet, so /portal-home reports
+# counter_available=false and the UI shows «счётчик скоро» — never a fabricated fill.
+CAPACITY_SOFT_LIMIT = int(os.getenv("CAPACITY_SOFT_LIMIT", "30000"))
+
+# Home «Фортуна» banner — shown in an "in development" state until GAME-FORTUNE-001 ships.
+FORTUNE_BANNER_ENABLED = os.getenv("FORTUNE_BANNER_ENABLED", "1").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+
 def referral_rewards_active() -> bool:
     """True only when real referral balance accrual is wired (REF-BONUS-001). Default OFF.
 
