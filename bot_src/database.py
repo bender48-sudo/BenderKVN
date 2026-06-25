@@ -852,6 +852,29 @@ def has_action(user_id: int, action: str) -> bool:
         logging.error(f"Failed to check action {action} for {user_id}: {e}"); return False
 
 
+def get_balance_ledger(user_id: int, limit: int = 50) -> list[dict]:
+    """Read-only balance history from user_actions (MINI-APP balance, Phase A).
+
+    Returns top-ups (action='topup') and daily charges (action LIKE 'daily_balance:%'),
+    newest first. No schema change; no mutation. Idempotency rows ('yk:'/'crypto:') are
+    excluded by the action filter so each top-up appears once.
+    """
+    try:
+        with db_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+            c.execute(
+                "SELECT action, meta, created_at FROM user_actions "
+                "WHERE user_id = ? AND (action = 'topup' OR action LIKE 'daily_balance:%') "
+                "ORDER BY id DESC LIMIT ?",
+                (user_id, int(limit)),
+            )
+            return [dict(r) for r in c.fetchall()]
+    except sqlite3.Error as e:
+        logging.error(f"Failed to read balance ledger for {user_id}: {e}")
+        return []
+
+
 def try_acquire_topup_idempotency(user_id: int, idempotency_key: str) -> bool:
     """Atomically claim topup idempotency before balance change (P2-RED-BOT-INTEGRITY-01)."""
     key = (idempotency_key or "").strip()

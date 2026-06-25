@@ -83,6 +83,12 @@ TOPUP_PRESETS = {
     "topup_2000": ("2000 ₽", "2000.00", 2000),
 }
 
+# In-app Mini App balance presets (MINI-APP-BUILD-001). Round ₽ amounts — пользователь
+# платит круглую сумму, дни считает сервер от ставки (без фейк-скидок). UI ставку не хардкодит.
+PORTAL_TOPUP_PRESETS_RUB = (200, 600, 1200, 2400)
+PORTAL_TOPUP_MIN_RUB = 200
+PORTAL_TOPUP_MAX_RUB = 10_000
+
 # Legacy: периодные планы (старые webhook / YooKassa metadata); UI — только TOPUP.
 PLANS = {
     "buy_1_month": ("Подписка 1 месяц", "200.00", 1),
