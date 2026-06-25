@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>BenderVPN — Доступ · деталка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0E14; --surface:#141A22; --elevated:#1C242E; --border:rgba(255,255,255,.06);
+    --accent:#FF6B1A; --accent-hover:#FF8340; --accent-press:#E0550C;
+    --accent-tint:rgba(255,107,26,.10); --accent-glow:rgba(255,107,26,.45);
+    --text:#F2F4F7; --text-dim:#9AA4B2; --text-mute:#5B6573;
+    --success:#2FBF71; --warning:#F5B33C; --error:#E5484D; --error-tint:rgba(229,72,77,.10);
+    --font:'Onest',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:#05070b;font-family:var(--font);color:var(--text);display:flex;justify-content:center;padding:20px;-webkit-font-smoothing:antialiased}
+  .phone{width:400px;height:820px;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column;border-radius:22px;border:1px solid var(--border)}
+  #bgfx{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+  .scroll{flex:1;overflow-y:auto;position:relative;z-index:1}
+
+  .topbar{display:flex;align-items:center;gap:12px;padding:16px 18px;position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--bg) 70%,transparent)}
+  .back{width:34px;height:34px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text-dim);cursor:pointer}
+  .back svg{width:18px;height:18px}
+  .tb-title{font-weight:700;font-size:18px}
+
+  .content{padding:4px 18px 24px;display:flex;flex-direction:column;gap:14px}
+  .h1{font-weight:700;font-size:23px;letter-spacing:-.02em;margin:4px 2px 2px}
+
+  .card{background:rgba(20,26,34,.9);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:18px;padding:18px}
+
+  /* статус */
+  .status-card{position:relative;overflow:hidden}
+  .status-card::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 100% 0,var(--accent-tint),transparent 55%);pointer-events:none}
+  .st-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .st-name{font-weight:700;font-size:19px}
+  .st-sub{color:var(--text-dim);font-size:13px;margin-top:2px}
+  .pill{font-size:11px;font-weight:600;letter-spacing:.02em;padding:5px 11px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;text-transform:uppercase;white-space:nowrap;flex:none}
+  .pill.active{background:rgba(47,191,113,.12);color:var(--success);border:1px solid rgba(47,191,113,.25)}
+  .pill .pdot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+  .st-meta{display:grid;grid-template-columns:repeat(3,1fr);margin-top:16px;text-align:center}
+  .st-meta .m{position:relative}
+  .st-meta .m + .m::before{content:"";position:absolute;left:0;top:12%;height:76%;width:1px;background:var(--border)}
+  .st-meta .m .v{font-weight:700;font-size:22px}
+  .st-meta .m .v.accent{color:var(--accent)}
+  .st-meta .m .l{color:var(--text-mute);font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-top:4px}
+  .auto-line{display:flex;align-items:center;gap:8px;color:var(--text-dim);font-size:13px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+  .auto-line svg{width:15px;height:15px;flex:none;color:var(--accent)}
+
+  /* подключить устройство */
+  .connect{display:flex;align-items:center;gap:14px;cursor:pointer;transition:.18s}
+  .connect:hover{border-color:rgba(255,107,26,.3)}
+  .connect .ci{width:44px;height:44px;border-radius:12px;background:var(--accent-tint);display:grid;place-items:center;flex:none}
+  .connect .ci svg{width:22px;height:22px;color:var(--accent)}
+  .connect .ch{font-weight:600;font-size:15px}
+  .connect .cs{color:var(--text-dim);font-size:13px;margin-top:2px}
+  .connect .carr{margin-left:auto;color:var(--text-mute)}
+
+  /* sub-ссылка */
+  .sublink{display:flex;align-items:center;gap:10px}
+  .sublink .url{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:12px 14px;color:var(--text-dim);font-size:13px;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .copy-btn{width:44px;height:44px;border-radius:11px;background:var(--accent-tint);border:1px solid rgba(255,107,26,.25);display:grid;place-items:center;color:var(--accent);cursor:pointer;flex:none}
+  .copy-btn svg{width:18px;height:18px}
+
+  .label-sm{color:var(--text-mute);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:6px 2px 0}
+
+  /* устройства */
+  .dev-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .dev-head .dh{font-weight:700;font-size:16px}
+  .dev-head .dc{color:var(--text-mute);font-size:13px}
+  .device{display:flex;flex-wrap:wrap;align-items:flex-start;gap:13px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:14px}
+  .manage-row.compact > div:nth-child(2){min-width:0;flex:1}
+  .device .di{width:40px;height:40px;border-radius:11px;background:var(--elevated);display:grid;place-items:center;flex:none;color:var(--text-dim)}
+  .device .di svg{width:20px;height:20px}
+  .device .dn{font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:8px}
+  .device .online{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 7px var(--success)}
+  .device .dmeta{color:var(--text-mute);font-size:12.5px;margin-top:3px;line-height:1.45}
+  .device .dmeta b{color:var(--text-dim);font-weight:600}
+  .client-tag{display:inline-flex;align-items:center;gap:5px;background:var(--accent-tint);color:var(--accent);font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;margin-top:6px}
+
+  /* действия устройства */
+  .dev-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;width:100%;flex-basis:100%}
+  .da{background:var(--surface);border:1px solid var(--border);color:var(--text-dim);font-family:var(--font);font-weight:500;
+    font-size:13px;padding:11px 10px;border-radius:11px;cursor:pointer;transition:.16s;display:flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap}
+  .da:hover{color:var(--text);border-color:rgba(255,255,255,.14)}
+  .da svg{width:15px;height:15px;flex:none}
+  .da.wide{grid-column:1 / -1}
+  .da.danger:hover{color:var(--error);border-color:rgba(229,72,77,.3)}
+
+  /* строки управления */
+  .manage-row{display:flex;align-items:center;gap:14px;cursor:pointer;transition:.18s}
+  .manage-row:hover{border-color:rgba(255,255,255,.13)}
+  .manage-row .mi{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none;background:var(--elevated);color:var(--text-dim)}
+  .manage-row .mi svg{width:20px;height:20px}
+  .manage-row .mh{font-weight:600;font-size:15px}
+  .manage-row .ms{color:var(--text-dim);font-size:13px;margin-top:2px}
+  .manage-row .marr{margin-left:auto;color:var(--text-mute)}
+  .manage-row .soon-tag{margin-left:auto;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-mute);background:var(--elevated);padding:3px 8px;border-radius:999px}
+  .manage-row.compact{padding:13px 14px;gap:12px}
+  .manage-row.compact > div:nth-child(2){min-width:0;flex:1;overflow:hidden}
+  .manage-row.compact .mh{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .manage-row.compact .ms{font-size:12.5px;white-space:nowrap}
+  .manage-row .soon-tag{flex:none}
+  .manage-row .mi.sm{width:34px;height:34px;border-radius:10px}
+  .manage-row .mi.sm svg{width:17px;height:17px}
+
+  .cta{width:100%;border:none;cursor:pointer;font-family:var(--font);font-weight:700;font-size:16px;color:#1a0c02;background:var(--accent);border-radius:14px;padding:16px;transition:.18s}
+  .cta:hover{background:var(--accent-hover);box-shadow:0 6px 24px var(--accent-glow)}
+
+  .nav{flex:none;position:relative;z-index:2;background:rgba(10,14,20,.95);backdrop-filter:blur(16px);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);padding:9px 4px 18px}
+  .nav a{display:flex;flex-direction:column;align-items:center;gap:5px;text-decoration:none;color:var(--text-mute);font-size:10px;font-weight:500;padding:6px 0;position:relative}
+  .nav a svg{width:22px;height:22px}
+  .nav a.active{color:var(--accent)}
+  .nav a.active::before{content:"";position:absolute;top:-9px;width:26px;height:3px;border-radius:0 0 3px 3px;background:var(--accent);box-shadow:0 2px 10px var(--accent-glow)}
+</style>
+</head>
+<body>
+<div class="phone">
+  <canvas id="bgfx"></canvas>
+  <div class="scroll">
+    <div class="topbar">
+      <div class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="tb-title">BenderVPN</div>
+    </div>
+
+    <div class="content">
+      <div class="h1">Управление доступом</div>
+
+      <!-- СТАТУС -->
+      <div class="card status-card">
+        <div class="st-top">
+          <div><div class="st-name">Триал активен</div><div class="st-sub">Списывается ежедневно, когда триал закончится</div></div>
+          <span class="pill active"><span class="pdot"></span>Активен</span>
+        </div>
+        <div class="st-meta">
+          <div class="m"><div class="v accent">87</div><div class="l">дней</div></div>
+          <div class="m"><div class="v">1 / 1</div><div class="l">устройство</div></div>
+          <div class="m"><div class="v">∞</div><div class="l">трафик</div></div>
+        </div>
+        <div class="auto-line">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke-linecap="round"/><circle cx="12" cy="12" r="4"/></svg>
+          BenderVPN Auto — сервер подбирается автоматически.
+        </div>
+      </div>
+
+      <!-- ПОДКЛЮЧИТЬ -->
+      <div class="card connect">
+        <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4" stroke-linecap="round"/></svg></div>
+        <div><div class="ch">Подключить устройство</div><div class="cs">Покажем по шагам — займёт минуту</div></div>
+        <div class="carr"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+
+      <!-- SUB-ССЫЛКА -->
+      <div>
+        <div class="label-sm">Ссылка настройки</div>
+        <div class="sublink" style="margin-top:8px">
+          <div class="url">https://sub.bendervpn.io/9cbmgkZvs1FZ0Kup</div>
+          <button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
+        </div>
+      </div>
+
+      <!-- МОИ УСТРОЙСТВА (с распознаванием клиента) -->
+      <div class="card">
+        <div class="dev-head"><span class="dh">Мои устройства</span><span class="dc">1 / 1</span></div>
+        <div class="device">
+          <div class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18" stroke-linecap="round"/></svg></div>
+          <div style="flex:1;min-width:0">
+            <div class="dn">Настройка #1 <span class="online" title="активна"></span></div>
+            <div class="dmeta">Активна до <b>12.08.2026</b> · обновлена 24.06</div>
+            <span class="client-tag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/></svg>Последний клиент: INCY · iOS</span>
+          </div>
+        </div>
+        <div class="dev-actions">
+          <button class="da"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8" stroke-linecap="round"/></svg>Отвязать</button>
+          <button class="da"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" stroke-linecap="round" stroke-linejoin="round"/></svg>Перевыпустить</button>
+          <button class="da danger wide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" stroke-linecap="round" stroke-linejoin="round"/></svg>Удалить устройство</button>
+        </div>
+        <div style="color:var(--text-mute);font-size:11.5px;margin-top:12px;line-height:1.4">Клиент — по последнему запросу подписки, не активное VPN-соединение.</div>
+      </div>
+
+      <!-- ДОБАВИТЬ УСТРОЙСТВО (gated — самовыдача скоро) -->
+      <div class="card manage-row compact">
+        <div class="mi sm" style="background:var(--accent-tint);color:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg></div>
+        <div><div class="mh">Добавить устройство</div><div class="ms">+6,66 ₽/день</div></div>
+        <span class="soon-tag">скоро</span>
+      </div>
+
+      <!-- ПАУЗА (deferred) -->
+      <div class="card manage-row compact">
+        <div class="mi sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg></div>
+        <div><div class="mh">Пауза доступа</div><div class="ms">Приостановить списание</div></div>
+        <span class="soon-tag">скоро</span>
+      </div>
+
+      <button class="cta">Пополнить баланс</button>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10" stroke-linecap="round" stroke-linejoin="round"/></svg>Главная</a>
+    <a class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>Доступ</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Баланс</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6M19 20a6 6 0 0 0-3-5"/></svg>Рефералы</a><a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Поддержка</a>
+  </nav>
+</div>
+
+<script>
+const bg=document.getElementById('bgfx'),bx=bg.getContext('2d');
+let DPR=Math.min(devicePixelRatio||1,2),BW,BH,drops;
+function s(){BW=bg.clientWidth;BH=bg.clientHeight;bg.width=BW*DPR;bg.height=BH*DPR;bx.setTransform(DPR,0,0,DPR,0,0);
+  const st=16,c=Math.ceil(BW/st);drops=[];for(let i=0;i<c;i++)drops.push({x:i*st+4,y:Math.random()*BH,sp:.6+Math.random()*1.2,ch:Math.random()<.5?'0':'1',flip:Math.random()*100});}
+s();bx.textAlign='center';bx.textBaseline='middle';
+(function f(){bx.clearRect(0,0,BW,BH);bx.font='13px Onest, monospace';
+  for(const d of drops){d.y+=d.sp;if(d.y>BH+8){d.y=-8;}d.flip++;if(d.flip>30){d.flip=0;d.ch=Math.random()<.5?'0':'1';}
+    for(let k=0;k<5;k++){const yy=d.y-k*16;if(yy<0||yy>BH)continue;const a=(1-k/5)*0.08;bx.fillStyle='rgba(200,210,225,'+a+')';bx.fillText(k===0?d.ch:(Math.random()<.5?'0':'1'),d.x,yy);}}
+  requestAnimationFrame(f);})();
+</script>
+</body>
+</html>

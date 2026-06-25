@@ -83,6 +83,24 @@ screenshots/qa-preview/
 ops/qa_portal_preview_index.json
 ops/qa_scenario_manifest.json
 
+# --- Local owner / agent workspace (never commit) ---
+.local/
+.playwright-mcp/
+.playwright-review/
+data/
+
+# Ad-hoc live screenshots and dumps at repo root
+/live-*.png
+/k9x2m1-*.png
+legacy.zip
+/PROMPT_*.md
+
+# One-off private ops probes (promote to ops/ without underscore to track)
+ops/_*.py
+
+# Cyrillic scratch folders (local TZ exports)
+/ТЗ*/
+
 # --- Logs ---
 *.log
 

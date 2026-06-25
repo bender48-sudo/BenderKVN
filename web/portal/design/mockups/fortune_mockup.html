@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>BenderVPN — Фортуна</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0E14; --surface:#141A22; --elevated:#1C242E; --border:rgba(255,255,255,.06);
+    --accent:#FF6B1A; --accent-hover:#FF8340; --accent-press:#E0550C;
+    --accent-tint:rgba(255,107,26,.10); --accent-glow:rgba(255,107,26,.45);
+    --text:#F2F4F7; --text-dim:#9AA4B2; --text-mute:#5B6573;
+    --success:#2FBF71; --gold:#E8B84B;
+    --font:'Onest',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:#05070b;font-family:var(--font);color:var(--text);display:flex;justify-content:center;padding:20px;-webkit-font-smoothing:antialiased}
+  .phone{width:400px;height:820px;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column;border-radius:22px;border:1px solid var(--border)}
+  #bgfx{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+  .scroll{flex:1;overflow-y:auto;position:relative;z-index:1}
+
+  .topbar{display:flex;align-items:center;gap:12px;padding:16px 18px;position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--bg) 70%,transparent)}
+  .back{width:34px;height:34px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text-dim);cursor:pointer;flex:none}
+  .back svg{width:18px;height:18px}
+  .tb-title{font-weight:700;font-size:18px}
+
+  .content{padding:4px 18px 24px;display:flex;flex-direction:column;gap:16px}
+
+  /* колесо */
+  .wheel-wrap{position:relative;width:300px;height:300px;margin:8px auto 0}
+  .pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:5;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}
+  .pointer svg{width:34px;height:34px}
+  .wheel-ring{position:absolute;inset:0;border-radius:50%;background:
+    radial-gradient(circle,transparent 62%, #0d1118 63%, #0d1118 70%, transparent 71%);z-index:3;pointer-events:none}
+  .wheel-dots{position:absolute;inset:0;z-index:4;pointer-events:none}
+  .wheel-dots span{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent-glow);top:50%;left:50%}
+  #wheel{position:absolute;inset:6px;border-radius:50%;transition:none;z-index:2;box-shadow:0 0 0 8px #0d1118, 0 12px 40px rgba(0,0,0,.5)}
+  .hub{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),#ff9248);display:grid;place-items:center;z-index:6;
+    box-shadow:0 4px 16px var(--accent-glow), inset 0 2px 6px rgba(255,255,255,.3);cursor:pointer}
+  .hub canvas{display:block}
+
+  .spin-info{text-align:center}
+  .spins-left{font-weight:700;font-size:17px}
+  .spins-left b{color:var(--accent)}
+  .next-spin{color:var(--text-dim);font-size:13px;margin-top:4px}
+  .next-spin b{color:var(--text)}
+
+  .spin-btn{width:100%;border:none;cursor:pointer;font-family:var(--font);font-weight:700;font-size:17px;color:#1a0c02;
+    background:var(--accent);border-radius:14px;padding:17px;transition:.18s;display:flex;align-items:center;justify-content:center;gap:9px}
+  .spin-btn:hover{background:var(--accent-hover);box-shadow:0 6px 24px var(--accent-glow)}
+  .spin-btn:active{transform:scale(.985)}
+  .spin-btn:disabled{background:var(--elevated);color:var(--text-mute);cursor:not-allowed;box-shadow:none}
+  .spin-btn svg{width:19px;height:19px}
+
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;text-align:center}
+  .stat .v{font-weight:700;font-size:26px}
+  .stat .v.gold{color:var(--gold)}
+  .stat .v.accent{color:var(--accent)}
+  .stat .l{color:var(--text-dim);font-size:12.5px;margin-top:3px}
+
+  .label-sm{color:var(--text-mute);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:2px 2px -4px}
+  .hist{display:flex;flex-direction:column;gap:1px;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .hrow{display:flex;align-items:center;gap:12px;background:var(--surface);padding:13px 15px;font-size:14px}
+  .hrow .hi{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:none;font-size:14px}
+  .hrow .hi.win{background:rgba(47,191,113,.12);color:var(--success)}
+  .hrow .hi.miss{background:var(--elevated);color:var(--text-mute)}
+  .hrow .hd{color:var(--text-mute);font-size:12px;margin-left:auto}
+  .hrow .hv{font-weight:600}
+  .hrow .hv.win{color:var(--success)}
+  .hrow .hv.miss{color:var(--text-mute)}
+
+  /* toast результата */
+  .toast{position:absolute;left:50%;bottom:100px;transform:translateX(-50%) translateY(20px);z-index:40;
+    background:var(--elevated);border:1px solid var(--accent);border-radius:16px;padding:16px 24px;text-align:center;
+    opacity:0;pointer-events:none;transition:.3s;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast .tw{font-weight:700;font-size:20px;color:var(--accent)}
+  .toast .ts{color:var(--text-dim);font-size:13px;margin-top:3px}
+
+  .nav{flex:none;position:relative;z-index:2;background:rgba(10,14,20,.95);backdrop-filter:blur(16px);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);padding:9px 4px 18px}
+  .nav a{display:flex;flex-direction:column;align-items:center;gap:5px;text-decoration:none;color:var(--text-mute);font-size:10px;font-weight:500;padding:6px 0;position:relative}
+  .nav a svg{width:22px;height:22px}
+  .nav a.active{color:var(--accent)}
+  .nav a.active::before{content:"";position:absolute;top:-9px;width:26px;height:3px;border-radius:0 0 3px 3px;background:var(--accent);box-shadow:0 2px 10px var(--accent-glow)}
+</style>
+</head>
+<body>
+<div class="phone">
+  <canvas id="bgfx"></canvas>
+  <div class="scroll">
+    <div class="topbar"><div class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="tb-title">Фортуна</div></div>
+
+    <div class="content">
+      <div class="wheel-wrap">
+        <div class="pointer"><svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 22L4 8h16z"/></svg></div>
+        <canvas id="wheel" width="300" height="300"></canvas>
+        <div class="wheel-dots" id="dots"></div>
+        <div class="hub" id="hub"><canvas id="robot" width="34" height="34"></canvas></div>
+      </div>
+
+      <div class="spin-info">
+        <div class="spins-left">У тебя <b id="cnt">3</b> прокрутки</div>
+        <div class="next-spin">Следующая через <b>4 активных дня</b></div>
+      </div>
+
+      <button class="spin-btn" id="spin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8" stroke-linecap="round" stroke-linejoin="round"/></svg>Крутить</button>
+
+      <div class="stats">
+        <div class="stat"><div class="v accent" id="totalwin">+18 ₽</div><div class="l">выиграно всего</div></div>
+        <div class="stat"><div class="v" id="spins">12</div><div class="l">прокруток сделано</div></div>
+      </div>
+
+      <div class="label-sm">История</div>
+      <div class="hist" id="hist">
+        <div class="hrow"><div class="hi win">₽</div><div class="hv win">+5 ₽</div><div class="hd">сегодня</div></div>
+        <div class="hrow"><div class="hi miss">—</div><div class="hv miss">мимо</div><div class="hd">вчера</div></div>
+        <div class="hrow"><div class="hi win">↻</div><div class="hv win">доп. прокрутка</div><div class="hd">2 дня назад</div></div>
+        <div class="hrow"><div class="hi win">₽</div><div class="hv win">+2 ₽</div><div class="hd">3 дня назад</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"><div class="tw" id="toastWin">+5 ₽</div><div class="ts" id="toastSub">упало на баланс</div></div>
+
+  <nav class="nav">
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10" stroke-linecap="round" stroke-linejoin="round"/></svg>Главная</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>Доступ</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Баланс</a>
+    <a class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3" stroke-linecap="round"/></svg>Фортуна</a>
+    <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Поддержка</a>
+  </nav>
+</div>
+
+<script>
+/* ====== СЕКТОРА (по согласованной математике) ======
+   6 видимых секторов на колесе, веса = реальные шансы.
+   Визуально 6 равных сегментов, но выпадение по весам (как в реальной рулетке). */
+const SECTORS = [
+  {label:'Мимо',   sub:'',                color:'#1C242E', text:'#9AA4B2', weight:55, kind:'miss'},
+  {label:'+2 ₽',   sub:'на баланс',       color:'#FF6B1A', text:'#1a0c02', weight:14, kind:'win', amount:'+2 ₽'},
+  {label:'Ещё спин',sub:'крути снова',    color:'#243040', text:'#F2F4F7', weight:25, kind:'spin'},
+  {label:'+5 ₽',   sub:'на баланс',       color:'#FF8340', text:'#1a0c02', weight:5,  kind:'win', amount:'+5 ₽'},
+  {label:'+20 ₽',  sub:'на баланс',       color:'#E8B84B', text:'#1a0c02', weight:0.9,kind:'win', amount:'+20 ₽'},
+  {label:'ДЖЕКПОТ',sub:'+50 ₽',          color:'#2FBF71', text:'#06210f', weight:0.1,kind:'jackpot', amount:'+50 ₽'},
+];
+const N=SECTORS.length, seg=360/N;
+const cv=document.getElementById('wheel'), ctx=cv.getContext('2d');
+const R=150, cx=150, cy=150;
+
+function drawWheel(){
+  ctx.clearRect(0,0,300,300);
+  for(let i=0;i<N;i++){
+    const a0=(i*seg-90)*Math.PI/180, a1=((i+1)*seg-90)*Math.PI/180;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,a0,a1);ctx.closePath();
+    ctx.fillStyle=SECTORS[i].color;ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=2;ctx.stroke();
+    // текст
+    ctx.save();
+    const mid=(a0+a1)/2;
+    ctx.translate(cx+Math.cos(mid)*R*0.62, cy+Math.sin(mid)*R*0.62);
+    ctx.rotate(mid+Math.PI/2);
+    ctx.fillStyle=SECTORS[i].text;ctx.textAlign='center';
+    ctx.font='700 15px Onest, sans-serif';
+    ctx.fillText(SECTORS[i].label,0,0);
+    if(SECTORS[i].sub){ctx.font='500 10px Onest, sans-serif';ctx.globalAlpha=.85;ctx.fillText(SECTORS[i].sub,0,14);ctx.globalAlpha=1;}
+    ctx.restore();
+  }
+}
+drawWheel();
+
+// точки по ободу
+const dots=document.getElementById('dots');
+for(let i=0;i<24;i++){const d=document.createElement('span');const a=i/24*Math.PI*2;
+  d.style.transform=`translate(-50%,-50%) translate(${Math.cos(a)*146}px,${Math.sin(a)*146}px)`;
+  d.style.opacity=(i%2?0.4:1);dots.appendChild(d);}
+
+// робот в ступице
+const rb=document.getElementById('robot'),rx=rb.getContext('2d');
+const G=["0000011000000","0000011000000","0000111100000","0001111110000","0011111111000","0011111111000","0011011011000","0011111111000","0011000011000","0011111111000","0011111111000","0001111110000","0000000000000"];
+for(let y=0;y<G.length;y++)for(let x=0;x<G[y].length;x++)if(G[y][x]==='1'){rx.fillStyle='#1a0c02';rx.fillRect(x*2.6+1,y*2.6+1,2.6,2.6);}
+
+/* ====== ЛОГИКА ВРАЩЕНИЯ ====== */
+let spinning=false, rot=0, spins=parseInt(document.getElementById('cnt').textContent);
+const wheelEl=document.getElementById('wheel'), spinBtn=document.getElementById('spin'), hub=document.getElementById('hub');
+
+function pickWeighted(){
+  const total=SECTORS.reduce((s,x)=>s+x.weight,0);
+  let r=Math.random()*total;
+  for(let i=0;i<N;i++){if(r<SECTORS[i].weight)return i;r-=SECTORS[i].weight;}
+  return 0;
+}
+
+function spin(){
+  if(spinning||spins<=0)return;
+  spinning=true;spins--;document.getElementById('cnt').textContent=spins;
+  if(spins<=0){spinBtn.disabled=true;}
+  const idx=pickWeighted();
+  // целевой угол: указатель сверху (-90°), сектор idx центр = idx*seg+seg/2
+  const targetMid=idx*seg+seg/2;
+  const spinsFull=5*360;
+  const finalRot=spinsFull + (360 - targetMid) - (rot%360) + rot;
+  const dur=4200;
+  const start=performance.now(), from=rot, delta=finalRot-rot;
+  function ease(t){return 1-Math.pow(1-t,3.4);} // плавное замедление
+  function frame(now){
+    const t=Math.min((now-start)/dur,1);
+    rot=from+delta*ease(t);
+    wheelEl.style.transform=`rotate(${rot}deg)`;
+    if(t<1)requestAnimationFrame(frame);
+    else{spinning=false;result(SECTORS[idx]);}
+  }
+  requestAnimationFrame(frame);
+}
+spinBtn.addEventListener('click',spin);
+hub.addEventListener('click',spin);
+
+function result(s){
+  const toast=document.getElementById('toast');
+  const tw=document.getElementById('toastWin'), ts=document.getElementById('toastSub');
+  if(s.kind==='miss'){tw.textContent='Мимо';tw.style.color='var(--text-mute)';ts.textContent='в следующий раз повезёт';}
+  else if(s.kind==='spin'){tw.textContent='Ещё прокрутка!';tw.style.color='var(--accent)';ts.textContent='крути снова';spins++;document.getElementById('cnt').textContent=spins;spinBtn.disabled=false;}
+  else if(s.kind==='jackpot'){tw.textContent='ДЖЕКПОТ +50 ₽';tw.style.color='var(--gold)';ts.textContent='упало на баланс!';}
+  else{tw.textContent=s.amount;tw.style.color=(s.label==='+20 ₽'?'var(--gold)':'var(--accent)');ts.textContent='упало на баланс';}
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2200);
+  // дописать в историю
+  const hist=document.getElementById('hist');
+  const row=document.createElement('div');row.className='hrow';
+  const win=(s.kind==='win'||s.kind==='jackpot'||s.kind==='spin');
+  row.innerHTML=`<div class="hi ${win?'win':'miss'}">${s.kind==='spin'?'↻':(win?'₽':'—')}</div>`+
+    `<div class="hv ${win?'win':'miss'}">${s.kind==='miss'?'мимо':(s.kind==='spin'?'доп. прокрутка':(s.amount||s.label))}</div>`+
+    `<div class="hd">только что</div>`;
+  hist.insertBefore(row,hist.firstChild);
+}
+
+/* фон-код */
+const bg=document.getElementById('bgfx'),bx=bg.getContext('2d');
+let DPR=Math.min(devicePixelRatio||1,2),BW,BH,drops;
+function bs(){BW=bg.clientWidth;BH=bg.clientHeight;bg.width=BW*DPR;bg.height=BH*DPR;bx.setTransform(DPR,0,0,DPR,0,0);
+  const st=16,c=Math.ceil(BW/st);drops=[];for(let i=0;i<c;i++)drops.push({x:i*st+4,y:Math.random()*BH,sp:.6+Math.random()*1.2,ch:Math.random()<.5?'0':'1',flip:Math.random()*100});}
+bs();bx.textAlign='center';bx.textBaseline='middle';
+(function f(){bx.clearRect(0,0,BW,BH);bx.font='13px Onest, monospace';
+  for(const d of drops){d.y+=d.sp;if(d.y>BH+8){d.y=-8;}d.flip++;if(d.flip>30){d.flip=0;d.ch=Math.random()<.5?'0':'1';}
+    for(let k=0;k<5;k++){const yy=d.y-k*16;if(yy<0||yy>BH)continue;const a=(1-k/5)*0.06;bx.fillStyle='rgba(200,210,225,'+a+')';bx.fillText(k===0?d.ch:(Math.random()<.5?'0':'1'),d.x,yy);}}
+  requestAnimationFrame(f);})();
+</script>
+</body>
+</html>

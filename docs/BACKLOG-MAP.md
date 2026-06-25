@@ -11,6 +11,9 @@
 | **1. Исполнение** | **`docs/BACKLOG-QUEUE.md`** | Линейная очередь **Q001…**; единственный **`NEXT`** |
 | **2. Задачи и журнал** | **`docs/COMMERCIAL-BACKLOG.md`** | ID, Done when, §7.1 P3-FLOW, **§12** прогресс на проде |
 | **2b. Canonical master** | **`docs/BENDERVPN-MASTER-BACKLOG.md`** | All product/VPN/billing IDs incl. CodeRabbit remediation (`c03f638`) |
+| **2d. Session sync** | **`docs/BENDERVPN-SESSION-BACKLOG-2026-06-24.md`** | Owner decisions 2026-06-24/25 — invite, iOS, support, referral, design |
+| **2e. Mini App build** | **`docs/MINI-APP-BUILD-SPEC.md`** | Pixel-accurate rebuild spec; mockups `web/portal/design/mockups/` |
+| **2f. Policy amendment** | **`docs/BENDERVPN-PRODUCT-POLICY-AMENDMENT-2026-06-24.md`** | Deltas vs policy v1 (hard invite, 6,66 ₽, soft device, referral/partner) |
 | **2c. CodeRabbit triage** | **`docs/CODERABBIT-AUDIT-TRIAGE-2026-06-14.md`** | Accepted/rejected findings; remediation order |
 | **3. Флоу (продукт)** | **`docs/USER-FLOW-BACKLOG.md`** | Принципы, MVP/Comfort, бабушка-тест |
 | **4. Агент — VPN аудит** | **`docs/BACKLOG-VPN-FULL-AUDIT-2026-05-28.md`** | Полный бэклог Claude 28.05 + gate |
@@ -49,7 +52,7 @@
 | **17** | 188–195 | **Закрыта** | help_connect, BBR, P4-DNS docs, observatory staging, DNS cron |
 | **12** | 172–173 (VPN-AUD-210/220) | **210 REVERTED, 220 DONE (historical)** | geosite:ru NO-GO; NL :443×4 was live stealth split — **not current** (Candidate D relay-only×6 per PROOF-001) |
 
-**Сейчас:** **NEXT=—** (фазы 16–17 закрыты **2026-06-04**). **Product/capacity track:** [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) + implementation backlog in [`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md). Владелец: **Q032**, **O-VPN-002**, **O-VPN-009**, **P4-DNS-05**, live **P4-DNS-01** VPS.
+**Сейчас:** **NEXT=—** (фазы 16–17 закрыты **2026-06-04**). **Product/capacity track:** [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) + [`BENDERVPN-MASTER-BACKLOG.md`](BENDERVPN-MASTER-BACKLOG.md) §1.1 (session 2026-06-24). **Mini App redesign:** [`MINI-APP-BUILD-SPEC.md`](MINI-APP-BUILD-SPEC.md). Владелец: **Q032**, **O-VPN-002**, **O-VPN-009**, **G1-H1-SMOKE-001**, **P4-DNS-05**, live **P4-DNS-01** VPS.
 
 **Gate после каждой VPN-правки:** `python ops/vpn_verify_gate.py`
 
@@ -95,7 +98,10 @@
 | **MONITOR-FLAP-001** | **DEPLOYED LV + soak PASS** | Extended soak 2026-06-24 — CHECKPOINT §10 |
 | **MONITOR-FLAP-TUNE-001** | **DEPLOYED LV + soak PASS** | `quorum_fail_cdn=0` ~10d; microsoft sustained accepted |
 | **OPS-ALERT-HYGIENE-001** | **DEPLOYED LV + soak PASS** | Cert digest batched; per-target cert spam stopped |
-| **ACQ-*** / **REF-*** | OPEN | См. MASTER; не дублировать OPS-CAPACITY-300 / NODE-RELAY-ADD |
+| **ACQ-*** / **REF-*** | OPEN | См. MASTER §1.1 + `REF-PROGRAM-001` / `PARTNER-PROGRAM-001` |
+| **MINI-APP-BUILD-001** | OPEN | 8 mockups → API-driven Mini App — [`MINI-APP-BUILD-SPEC.md`](MINI-APP-BUILD-SPEC.md) |
+| **G1-H1-SMOKE-001** | **BLOCKED** (owner) | Friend iPhone — `.local/FRIEND-G1-H1-SMOKE-PACKAGE.md` |
+| **HONEST-GATE-PAID-001** | OPEN | Paid launch: mobile + delivery_path≥2 + hot-spare + INCY auto-update |
 | **VPN-ARCH-001** | AWAITING APPROVAL | **QUALITY-PROOF-001 DONE**: NL pre-qualified; A2/A4 smoke after soak; not active capacity |
 | **VPN-ARCH-30K-CAPACITY-PACK-001** | **DOCS DONE** | [`VPN-ARCH-30K-CAPACITY-PLAN.md`](VPN-ARCH-30K-CAPACITY-PLAN.md) + runbook + routing strategy + registry example — impl OPEN |
 | **VPN-NODE-RUNBOOK-001** | **DOCS DONE / IMPL OPEN** | [`VPN-NODE-RUNBOOK.md`](VPN-NODE-RUNBOOK.md) + acceptance checklist |

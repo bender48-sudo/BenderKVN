@@ -31,6 +31,9 @@
 | [`VPN-NODE-ACCEPTANCE-CHECKLIST.md`](VPN-NODE-ACCEPTANCE-CHECKLIST.md) | Operational node acceptance checklist |
 | [`VPN-ROUTING-PROFILE-STRATEGY.md`](VPN-ROUTING-PROFILE-STRATEGY.md) | Happ routing strategy; SafeVPN reference boundaries |
 | [`examples/node-registry.example.yaml`](examples/node-registry.example.yaml) | Node registry schema v1 (redacted example) |
+| [`BENDERVPN-SESSION-BACKLOG-2026-06-24.md`](BENDERVPN-SESSION-BACKLOG-2026-06-24.md) | Owner session sync 2026-06-24/25 — invite, iOS, support, referral, design |
+| [`BENDERVPN-PRODUCT-POLICY-AMENDMENT-2026-06-24.md`](BENDERVPN-PRODUCT-POLICY-AMENDMENT-2026-06-24.md) | Policy v1 deltas (hard invite, soft device, 6,66 ₽, referral/partner) |
+| [`MINI-APP-BUILD-SPEC.md`](MINI-APP-BUILD-SPEC.md) | Pixel-accurate Mini App build spec; mockups `web/portal/design/mockups/` |
 
 ---
 
@@ -61,7 +64,9 @@
 | **VPN reconnect instability** | P0/P1 | Direct user pain; may be routing/sub/Happ — patch without audit risks repeat of gen-13→20 incidents |
 | **TG bind / referral migration** | P0 | G4 BLOCKED; web attr fixed but bind unproven |
 | **Same-sub URL reuse undetected** | P0 | DEVICE-ENFORCE-001; bypasses billing × N |
-| **Policy vs code gaps** | P1 | Invite-only, 30k cap, one-device are copy-only |
+| **Policy vs code gaps** | P1 | Hard invite-only + soft 2nd device approved 2026-06-24 — not implemented; 30k cap copy-only |
+| **G1+H1 iOS smoke** | P0 | Blocks client matrix, UA-map, NL promotion, paid honest-gate — owner/friend iPhone |
+| **Mini App redesign** | P1 | 8 mockups ready; `MINI-APP-BUILD-001` not started — see build spec |
 | **No admin visibility** | P1/P2 | Cannot scale invites, detect fraud, or hit 300-config threshold safely |
 | **REG-001 not designed** | P2 | Recovery, fraud, legal reconciliation deferred |
 | **Legal/privacy final review** | P2 | REG-001 and support visibility not reconciled |
@@ -83,6 +88,29 @@
 | **TRACK 4** | VPN stability + **node capacity readiness** — INCIDENT-003/004, **VPN-ARCH-001**, **VPN-ARCH-30K pack**, NL revalidation AC | Owner-led; before growth |
 | **TRACK 5** | Monitoring / CI / runbooks — **MONITOR-FLAP-001**, **OPS-ALERT-HYGIENE-001**, G9/G11 | After soft blockers; before acquisition scale |
 | **TRACK 6** | Support AI / technical triage | After P1-ADM + runbooks; not F&F blocker |
+| **TRACK 7** | Mini App redesign + growth UX | After TRACK 0 copy; parallel to VPN smoke — [`MINI-APP-BUILD-SPEC.md`](MINI-APP-BUILD-SPEC.md) |
+
+### 1.1 Session sync 2026-06-24/25 (owner decisions)
+
+**Source:** [`BENDERVPN-SESSION-BACKLOG-2026-06-24.md`](BENDERVPN-SESSION-BACKLOG-2026-06-24.md) · **Policy deltas:** [`BENDERVPN-PRODUCT-POLICY-AMENDMENT-2026-06-24.md`](BENDERVPN-PRODUCT-POLICY-AMENDMENT-2026-06-24.md)
+
+| Area | Owner decision | Backlog ID | Status |
+|------|----------------|------------|--------|
+| Access | **Hard invite-only** (bot gate; no mini-app wall) | `INVITE-GATE-HARD-001` | OPEN — supersedes soft `PROD-001` |
+| Device | **Soft limit:** 2nd device +6,66 ₽/day, separate config | `DEVICE-SOFT-LIMIT-001` | OPEN — supersedes `OD-03` |
+| Billing | 6,66 ₽/day kopeks; BILL-UT 001–004 | `BILL-BALANCE-KOPEKS-001` | **DONE** repo |
+| iOS clients | INCY + V2Ray+/Изи; UA edge branch (G13) | `CLIENT-IOS-MATRIX-001` | OPEN — blocked `G1-H1-SMOKE-001` |
+| NL / capacity | Paid launch needs delivery_path≥2 + hot-spare + INCY auto-update | `HONEST-GATE-PAID-001` | OPEN |
+| IP rotation | Multi-provider N+1; ≤60 min node conveyor target | `IP-ROTATE-NPLUS1-001` | OPEN |
+| Support | TG ticket bridge; help@bendervpn.io | `SUPPORT-TICKET-BRIDGE-001` | OPEN |
+| Referral | 30% first topup + 100 ₽ friend | `REF-PROGRAM-001` | OPEN — owner approved economics |
+| Partner | 50%+10%; withdrawal from 5000 ₽ | `PARTNER-PROGRAM-001` | OPEN |
+| Fortune / game | Weighted wheel; GAME-2D later | `GAME-FORTUNE-001`, `GAME-2D` | P4 deferred |
+| Mini App UI | 8 pixel mockups → API-driven app | `MINI-APP-BUILD-001` | OPEN — mockups in repo |
+
+**Unified owner blocker:** `G1-H1-SMOKE-001` (friend iPhone) — G1 client import + H1 NL exit; unlocks UA-map, HWID track, NL A2/A4, rotation e2e. Package: `.local/FRIEND-G1-H1-SMOKE-PACKAGE.md`.
+
+**Parallel (no prod):** `SUPPORT-TICKET-001`, `SUPPORT-DIAG-001`, `DEC-IMPL-006`/`007`, `SUBSCRIPTION-RESOLVE-TZ`, `ROUTING-PROFILE-RU-DIRECT` impl, `MONITOR-CAPACITY-001` design, `BOT-QR-MISSING-KEY-UX-001`.
 
 ### Tomorrow queue (TRACK 0 + prep)
 
@@ -429,7 +457,7 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 | ID | Sev | Area | Title | Problem | Decision | Phase | Impact | Evidence | Files/modules | Acceptance | Checks | Deploy? | Owner? | Blocked by | Status |
 |----|-----|------|-------|---------|----------|-------|--------|----------|---------------|------------|--------|---------|--------|------------|--------|
 | DEC-IMPL-001 | P1 | Product policy | Policy v1 sign-off | Informal truths scattered | **Accepted** | — | Canonical rules | Workshop 2026-06-09 | `BENDERVPN-PRODUCT-POLICY.md` | Doc published; team uses PT-01…12 | — | No | Done | — | **DONE** |
-| PROD-001 | P1 | Invite-only / waitlist | Invite-only not enforced | Copy says invite-only; `/start` allows organic 90d trial | **Accepted:** soft pilot; waitlist after 300 active configs | 4 | Trust + growth control | Full Product Audit | `handlers.py`, portal copy | Organic flagged; no hard gate until Phase 4 | Manual review flag spec | No | No | DEC-IMPL-008 | OPEN |
+| PROD-001 | P1 | Invite-only / waitlist | Invite-only not enforced | Copy says invite-only; `/start` allows organic 90d trial | **Superseded 2026-06-24:** hard invite-only at bot — `INVITE-GATE-HARD-001` | 4 | Trust + growth control | Session 2026-06-24 | `handlers.py`, portal copy | No entry without invite/ref | E2E bot | Yes | No | INVITE-GATE-HARD-001 | OPEN |
 | PROD-002 | P2 | Capacity / 30k | 30k cap not enforced | Positioning only; no counter or stop | **Accepted:** active configs; grandfather; waitlist at cap | 4 | Overload risk | Audit; UX-207 | `capacity_snapshot.py`, bot | Internal count matches policy §3.4 | ops snapshot | No | Yes at cap | DEC-IMPL-009 | OPEN |
 | DEC-IMPL-008 | P2 | Invite-only / waitlist | Waitlist flow | No waitlist UX or data model | **Accepted** Phase 4 | 4 | Controlled growth | Policy §3.3 | portal, bot, DB (later) | No-ref after 300 → waitlist state | UX + admin | Yes | Yes | 300 config metric | DEFERRED |
 | DEC-IMPL-009 | P2 | Capacity / 30k | Internal capacity dashboard | No admin view of active configs | **Accepted** | 4 | Threshold decisions | Policy §10.4 | ops, admin | Dashboard shows active configs vs 30k | ops snapshot | No | No | — | OPEN |
@@ -483,7 +511,7 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 | **LIVE-TERMS-UX-SMOKE-001** | P0 | Billing/legal | Live Telegram terms UX + offline harness | Owner taps not run 2026-06-16; offline cases 1–6 PASS | **Accepted** | 1 | Paid pilot gate | POSTDEPLOY-2026-06-15 | `ops/smoke_terms_guard_ux_offline.py`, `ops/smoke_live_terms_guard_ams.py` | Owner live matrix PASS; offline PASS | harness + owner | Yes | No | BILL-TERMS-GUARD-* | **PARTIAL** — offline PASS; live owner taps **OPEN** |
 | **TRIAL-GRANT-ATOMIC-001** | P1 | Billing/trial | Atomic trial grant | `set_trial_used` before `provision_key`; crash blocks retry | **Accepted** | 1 | Trial abuse UX | CodeRabbit triage CB-2 | `handlers.py` | Flag after key row or idempotent reconcile | unit test | Yes | No | — | **DONE** — deployed AMS 2026-06-15 (marker smoke; no live trial soak) |
 | **BILL-AUTOPAY-LIVE-GUARD-001** | P1 | Billing/autopay | Autopay batch live guard | `run_yookassa_autopay_batch` lacks internal guard; scheduler gated | **Accepted** partial | 1 | Defense-in-depth | CodeRabbit triage CB-3 | `yookassa_autopay_scheduler.py` | Early return if not `BOT_PAYMENTS_LIVE` | unit test | Yes | No | PAY-AUTO-001 | **DONE** — deployed AMS 2026-06-15 |
-| **BILL-BALANCE-KOPEKS-001** | P1 | OPEN | Honest 200 ₽ ≈ 30 days copy | **Accepted** | 1 | Copy truth | CodeRabbit triage CB-4 | `config.py`, billing | Integer kopeks; preset labels match | BILL-UT-001 | Yes | No | — | **DONE** (repo) |
+| **BILL-BALANCE-KOPEKS-001** | P1 | **DONE** | Honest 200 ₽ = 30 days (6,66 ₽/day, 666 kopeks) | **Accepted** | 1 | Copy truth | Session 2026-06-24; commits 4bccad1, 301da2e | `config.py`, billing | Integer kopeks; preset labels match | BILL-UT-001..004 | Yes | No | — | **DONE** (repo) |
 | **BILL-UT-001** | P0 | Billing/tests | Offline daily debit tests | **Accepted** | 1 | Automated paid pilot | BILL-001; CodeRabbit triage | `tests/` | `charge_daily_balance_if_due` edge cases | pytest CI | No | No | — | **DONE** (repo) |
 | **BILL-UT-002** | P0 | Billing/tests | Offline webhook/idempotency tests | **Accepted** | 1 | Automated paid pilot | BILL-001; CodeRabbit triage | `tests/`, `database.py` | Topup idempotency + webhook claim | pytest CI | No | No | BILL-WEBHOOK-CLAIM-TOCTOU-001 | **DONE** (repo) |
 | **BILL-WEBHOOK-CLAIM-TOCTOU-001** | P1 | Billing/webhook | Harden webhook claim | `claim_webhook_delivery` SELECT-then-INSERT race | **Accepted** | 1 | Double-credit risk | CodeRabbit triage | `database.py` | INSERT OR IGNORE / txn; test concurrent claim | BILL-UT-002 | Yes | No | — | **DONE** — deployed AMS 2026-06-15 (offline claim smoke) |
@@ -579,16 +607,33 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 
 | ID | Sev | Area | Title | Problem | Decision | Phase | Impact | Evidence | Blocked by | Status |
 |----|-----|------|-------|---------|----------|-------|--------|----------|------------|--------|
-| OD-01 | P3 | Partner channel | Partner program structure | Channel vs user referral | **Deferred** | 5 | GTM | Policy §11 | Owner | BLOCKED |
-| OD-02 | P3 | Referral | Referral bonus economics | +1 month to **referrer** after invitee paid conversion | **Deferred** | 3 | Cost | Policy §5.3; ACQUISITION-JOURNEY-001 | REF-BONUS-001 | BLOCKED |
-| OD-03 | P3 | Device/config | Second device paid SKU | Pricing, self-serve | **Deferred** | 3+ | Revenue | Policy §11 | Owner | BLOCKED |
+| OD-01 | P3 | Partner channel | Partner program structure | Channel vs user referral | **Accepted 2026-06-24** — see `PARTNER-PROGRAM-001` | 5 | GTM | Session §5 | `PARTNER-PROGRAM-001` | Owner | **RESOLVED** (spec; impl OPEN) |
+| OD-02 | P3 | Referral | Referral bonus economics | 30% first topup + 100 ₽ friend (not +1 month) | **Accepted 2026-06-24** — see `REF-PROGRAM-001` | 3 | Cost | Amendment 2026-06-24 | REF-PROGRAM-001 | Owner | **RESOLVED** (spec; impl OPEN) |
+| OD-03 | P3 | Device/config | Second device paid SKU | +6,66 ₽/day soft limit, separate config | **Accepted 2026-06-24** — `DEVICE-SOFT-LIMIT-001` | 3+ | Revenue | Amendment PT-06 | DEVICE-SOFT-LIMIT-001 | Owner | **RESOLVED** (spec; impl OPEN) |
 | OD-04 | P3 | Anti-fraud | Email verification timing | Signup vs topup | **Deferred** | 3 | Abuse | Policy §11 | Owner | BLOCKED |
 | OD-05 | P2 | Registration | Mandatory phone before topup | Hard vs soft | **Deferred** | 2 | Fraud | Policy §11 | Owner | BLOCKED |
 | OD-06 | P3 | Capacity / 30k | Public capacity API shape | Endpoint design | **Deferred** | 4 | UX | Policy §11 | Owner | BLOCKED |
-| OD-07 | P2 | Support/recovery | Support email + SLA | Address, response time | **Deferred** | 5 | Trust | Policy §11 | Owner | BLOCKED |
+| OD-07 | P2 | Support/recovery | Support email + SLA | **help@bendervpn.io** (session 2026-06-24) | **Accepted** | 5 | Trust | Session §4 | portal, bot | Publish in footer/offer | — | Yes | **Yes** | SUPPORT-TICKET-BRIDGE-001 | **RESOLVED** (address; impl OPEN) |
 | OD-08 | P2 | Support/recovery | Emergency comms channel | Status vs email list | **Deferred** | 4 | Incidents | Policy §11 | Owner | BLOCKED |
 | OD-09 | P2 | Legal/privacy | Privacy revision for REG-001 | Minimization conflict | **Deferred** | 2 | Legal | Policy §11 | Owner | BLOCKED |
 | OD-10 | P4 | Billing/topup | Wallet vs calendar subscription | Product model | **Deferred** | Future | Billing | Policy §11 | Owner | BLOCKED |
+
+### 4.12 Session 2026-06-24 — Mini App, growth, iOS (new IDs)
+
+| ID | Sev | Area | Title | Status | Blocked by | Notes |
+|----|-----|------|-------|--------|------------|-------|
+| **MINI-APP-BUILD-001** | P1 | Mini App | Pixel-accurate 8-screen rebuild from mockups + API | OPEN | — | [`MINI-APP-BUILD-SPEC.md`](MINI-APP-BUILD-SPEC.md); `web/portal/design/mockups/` |
+| **INVITE-GATE-HARD-001** | P1 | Access | Bot-level invite-only gate | OPEN | owner deploy | No mini-app wall; supersedes soft pilot |
+| **DEVICE-SOFT-LIMIT-001** | P1 | Device | 2nd device +6,66 ₽/day separate config | OPEN | DEVICE-ENFORCE design | HWID gap on INCY — post G1 |
+| **CLIENT-IOS-MATRIX-001** | P0 | Client | INCY / V2Ray+ / Изи + UA edge (G13) | OPEN | G1-H1-SMOKE-001 | Happ removed RU App Store |
+| **G1-H1-SMOKE-001** | P0 | Client / VPN | Friend iPhone G1 import + H1 NL exit smoke | **BLOCKED** | owner iPhone | `.local/FRIEND-G1-H1-SMOKE-PACKAGE.md` |
+| **HONEST-GATE-PAID-001** | P0 | Launch | Paid launch: mobile + delivery_path≥2 + hot-spare + INCY auto-update | OPEN | G1-H1, VPN-ARCH | kopeks gate **DONE** |
+| **IP-ROTATE-NPLUS1-001** | P1 | VPN ops | Multi-provider N+1; hot-spare; ≤60 min conveyor | OPEN | H1 PASS | Detect stage 0 SUSPECT-ONLY OK |
+| **SUPPORT-TICKET-BRIDGE-001** | P1 | Support | In-app ↔ TG ticket bridge + statuses | OPEN | — | Extends SUPPORT-TICKET-001 |
+| **REF-PROGRAM-001** | P1 | Referral | 30% first topup + 100 ₽ friend | OPEN | billing impl | Owner approved 2026-06-24 |
+| **PARTNER-PROGRAM-001** | P2 | Partner | 50%+10%; withdrawal flow | OPEN | SUPPORT bridge | Separate from user ref |
+| **GAME-FORTUNE-001** | P4 | Gamification | Weighted fortune wheel | DEFERRED | post-launch | ~2,3 ₽/user/mo COGS |
+| **GAME-2D** | P4 | Gamification | Phaser platformer (open-source) | DEFERRED | post-launch | After fortune |
 
 ### 4.11 Severity summary (open items only)
 
@@ -610,7 +655,9 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 
 **Do:** web ref attribution · bot/Mini App labels · remove NL/LV user copy · post-trial invite copy · referral ledger · admin user lookup · cabinet API trial/wallet fields · support runbook draft
 
-**Do not:** schema-heavy REG-001 · hard invite gate · device HWID · capacity enforcement · referral bonus · VPN routing PATCH
+**Do not:** schema-heavy REG-001 · device HWID enforcement · capacity enforcement · referral/partner **impl** until spec smoke · VPN routing PATCH
+
+**Amendment 2026-06-24:** hard invite gate (`INVITE-GATE-HARD-001`) and referral economics (`REF-PROGRAM-001`) are **approved** — implement after TRACK 0 copy truth.
 
 **Unlock:** AUDIT-003 product policy implementation audit → then implement
 
@@ -671,7 +718,8 @@ Without **explicit owner approval**, do not change:
 - **Mark DONE** when acceptance criteria met + verify recorded in execution log.
 - **Do not duplicate** `BACKLOG-QUEUE.md` infra Q items — link to `BACKLOG-VPN-FULL-AUDIT` for VPN infra.
 - **Review** at 300 active configs or when policy v2 triggered.
+- **Session sync:** add owner decisions to §1.1 + §4.12; link [`BENDERVPN-SESSION-BACKLOG-2026-06-24.md`](BENDERVPN-SESSION-BACKLOG-2026-06-24.md).
 
 ---
 
-**Version:** 1.0 · **Next:** AUDIT-001 VPN reliability diagnostic
+**Version:** 1.1 · **Session sync:** 2026-06-25 · **Next:** `G1-H1-SMOKE-001` (owner) · `MINI-APP-BUILD-001` (agent, portal-only)
