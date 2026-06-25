@@ -277,7 +277,7 @@
     $("drawer").addEventListener("click", function (e) { if (e.target === $("drawer")) closeDrawer(); });
 
     // CTA → setup wizard
-    $("btn-connect").addEventListener("click", function () { go("/portal/setup.html"); });
+    $("btn-connect").addEventListener("click", function () { go("/portal/wizard.html"); });
     $("link-manage").addEventListener("click", function () { toast("Скоро — управление доступом"); });
 
     // nav (bottom + drawer)
