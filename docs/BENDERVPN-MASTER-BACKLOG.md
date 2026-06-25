@@ -108,9 +108,9 @@
 | Fortune / game | Weighted wheel; GAME-2D later | `GAME-FORTUNE-001`, `GAME-2D` | P4 deferred |
 | Mini App UI | 8 pixel mockups → API-driven app | `MINI-APP-BUILD-001` | OPEN — mockups in repo |
 
-**Unified owner blocker:** `G1-H1-SMOKE-001` (friend iPhone) — G1 client import + H1 NL exit; unlocks UA-map, HWID track, NL A2/A4, rotation e2e. Package: `.local/FRIEND-G1-H1-SMOKE-PACKAGE.md`.
+**Unified owner blocker:** `G1-H1-SMOKE-001` (friend iPhone) — G1 client import + H1 NL exit; unlocks UA-map, HWID track, NL A2/A4, rotation e2e. Package: [`G1-H1-SMOKE-PACKAGE.md`](G1-H1-SMOKE-PACKAGE.md).
 
-**Parallel (no prod):** `SUPPORT-TICKET-001`, `SUPPORT-DIAG-001`, `DEC-IMPL-006`/`007`, `SUBSCRIPTION-RESOLVE-TZ`, `ROUTING-PROFILE-RU-DIRECT` impl, `MONITOR-CAPACITY-001` design, `BOT-QR-MISSING-KEY-UX-001`.
+**Parallel (no prod):** `SUPPORT-TICKET-001`, `SUPPORT-DIAG-001`, `DEC-IMPL-006`/`007`, `SUBSCRIPTION-RESOLVE-TZ`, `ROUTING-PROFILE-RU-DIRECT` impl, `MONITOR-CAPACITY-001` + `MONITOR-CONNECTION-HEALTH-001` design, `CONNECTION-HEALTH-P1P2-001` (after G1), `BOT-QR-MISSING-KEY-UX-001`.
 
 ### Tomorrow queue (TRACK 0 + prep)
 
@@ -176,10 +176,12 @@ Source: owner decision — stop isolated client smoke loops; prepare **backend-c
 | — | **RU-NODE-CANARY-ENABLE-001** | P1 | OPEN | OPEN | ru-relay-2 reachable/healthy candidate; relay-1 stays suspect; canary needs owner approval |
 | — | **ROLLOUT-CANARY-DRAIN-001** | P1 | **DONE** (in runbook + plan) | OPEN | Safe rollout |
 | — | **MONITOR-CAPACITY-001** | P1 | OPEN | OPEN | Capacity dashboard/alerts |
+| — | **MONITOR-CONNECTION-HEALTH-001** | P1 | **DESIGN DONE** | OPEN | L1–L4 — [`CONNECTION-HEALTH-DASHBOARD-DESIGN.md`](CONNECTION-HEALTH-DASHBOARD-DESIGN.md) |
+| — | **CONNECTION-HEALTH-P1P2-001** | P1 | **DESIGN DONE** | OPEN | REALITY RU+EU — after G1-H1 — [`CONNECTION-HEALTH-P1P2-DESIGN.md`](CONNECTION-HEALTH-P1P2-DESIGN.md) |
 
 **Architecture decision:** relay2-only = **`LAB_OWNER`** evidence only — **not** production default. **`delivery_path_nodes < 2`** remains blocker for 300/30k. **UX:** one-button BenderVPN Auto — users do not pick servers. **Procurement:** monthly trial first; no long prepaid before acceptance.
 
-**Implementation order after pack:** ~~VPN-NODE-REGISTRY-001~~ **DONE** → ~~**SUB-GEN-SELECTOR-STRATEGY-001**~~ **DONE (dry-run)** → ~~**VPN-NODE-PROCUREMENT-POLICY-001**~~ **DONE** → ~~**UX-AUTO-CONNECT-PRINCIPLE-001**~~ **DONE** → **SUB-GEN-SELECTOR-INTEGRATION-001** → runbook automation → NODE-SMOKE-MATRIX runner → MONITOR-CAPACITY-001 → ROLLOUT-CANARY-DRAIN-001 → NL A2/A4 / relay #1 paths.
+**Implementation order after pack:** ~~VPN-NODE-REGISTRY-001~~ **DONE** → … → **G1-H1-SMOKE-001** (owner) → **CONNECTION-HEALTH-P1P2-001** (impl) → **MONITOR-CONNECTION-HEALTH-001** → **MONITOR-CAPACITY-001** → ROLLOUT-CANARY-DRAIN-001 → NL A2/A4 / relay #1 paths.
 
 ### CodeRabbit remediation order (2026-06-15)
 
@@ -570,6 +572,8 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 | NODE-SMOKE-MATRIX-001 | P1 | VPN ops | Unified per-node smoke matrix | Scattered probes | N/A | **Now** | Node quality gate | [`VPN-NODE-ACCEPTANCE-CHECKLIST.md`](VPN-NODE-ACCEPTANCE-CHECKLIST.md) | checklist **DONE** | Runner script/CI | vpn_verify_gate | No | No | VPN-NODE-RUNBOOK | **DOCS DONE / IMPL OPEN** |
 | ROLLOUT-CANARY-DRAIN-001 | P1 | VPN ops | Canary / drain / rollback automation | Manual PATCH risk | N/A | **Now** | Safe node intro | runbook §7–8 | process **DONE** | Weight + cohort automation | postmortem | Yes | **Yes** | SUB-GEN-SELECTOR | **DOCS DONE / IMPL OPEN** |
 | MONITOR-CAPACITY-001 | P1 | Monitoring | Capacity metrics + alerts | No dashboard for delivery_path_nodes / load | N/A | **Now** | 1k/10k/30k gates | capacity plan §6 | OPEN | Metrics + TG/dashboard | capacity_snapshot | No | No | OPS-ALERT-HYGIENE | **OPEN** |
+| MONITOR-CONNECTION-HEALTH-001 | P1 | Monitoring | Connection health dashboard L1–L4 | Infra visible; per-user phone errors not | N/A | **After P1/P2** | Early handshake/burn signal | [`CONNECTION-HEALTH-DASHBOARD-DESIGN.md`](CONNECTION-HEALTH-DASHBOARD-DESIGN.md) | **DESIGN DONE** | Dashboard + status JSON block | no-log review | No | No | CONNECTION-HEALTH-P1P2-001 | **DESIGN DONE / IMPL OPEN** |
+| CONNECTION-HEALTH-P1P2-001 | P1 | Monitoring / VPN ops | REALITY probe RU+EU differential | TCP ok + VPN dead undetected | N/A | **After G1-H1** | Burn detect + handshake health | [`CONNECTION-HEALTH-P1P2-DESIGN.md`](CONNECTION-HEALTH-P1P2-DESIGN.md) | **DESIGN DONE** | suspect-only; no auto-PATCH | staging dry-run | No | **Yes** | G1-H1-SMOKE-001 | **DESIGN DONE / IMPL OPEN** |
 | VPN-STAB-005 | P2 | VPN reliability | xhttp Happ batch risk (historical) | xhttp causes «0 servers» in Happ | Partially done | — | Happ UX | `AUDIT-2026-05-VPN-STABILITY-RESOLUTION` | sub-page, template | batch_risk=LOW on Happ UA | diagnose_happ_import | Yes | No | — | **DONE** |
 | VPN-INC-001 | P1 | VPN reliability | Incident guardrails enforcement | Repeat PATCH without probe caused gen 13→20 outages | N/A | ongoing | Prod stability | `VPN-INCIDENT-LESSONS` | ops patches | One PATCH → probe → smoke | verify gate | No | **Yes** | — | OPEN |
 | **CLIENT-STABILITY-001** | P0 | VPN reliability | Windows Happ TUN recovery | Track D DirectIp **fixed**; relay2 report(7) **SOFT PASS** + report(8) repeat **PASS**; relay #1 strong suspect; sleep/wake **OPEN** | N/A | **Now** | Desktop launch gate | [relay2 lab](CLIENT-STABILITY-HAPP-RELAY2-LAB.md) · [report(8)](CLIENT-STABILITY-HAPP-RELAY2-LAB.md#report8--repeat-active-soak-evidence-2026-06-15) | docs, analyzer, guard | PROD-SELECTOR-CONTROLLED eligible (owner approval) | CLIENT-SMOKE-001..003 | No | **Yes** | sleep/wake | **OPEN** |
@@ -626,9 +630,12 @@ Parent gates: **G9** (launch audit), **OBS-001** (§4.9). Repo implementation by
 | **INVITE-GATE-HARD-001** | P1 | Access | Bot-level invite-only gate | OPEN | owner deploy | No mini-app wall; supersedes soft pilot |
 | **DEVICE-SOFT-LIMIT-001** | P1 | Device | 2nd device +6,66 ₽/day separate config | OPEN | DEVICE-ENFORCE design | HWID gap on INCY — post G1 |
 | **CLIENT-IOS-MATRIX-001** | P0 | Client | INCY / V2Ray+ / Изи + UA edge (G13) | OPEN | G1-H1-SMOKE-001 | Happ removed RU App Store |
-| **G1-H1-SMOKE-001** | P0 | Client / VPN | Friend iPhone G1 import + H1 NL exit smoke | **BLOCKED** | owner iPhone | `.local/FRIEND-G1-H1-SMOKE-PACKAGE.md` |
+| **G1-H1-SMOKE-001** | P0 | Client / VPN | Friend iPhone G1 import + H1 NL exit smoke | **BLOCKED** | owner iPhone | [`G1-H1-SMOKE-PACKAGE.md`](G1-H1-SMOKE-PACKAGE.md) · `ops/tail_owner_canary_ua_log.sh` |
 | **HONEST-GATE-PAID-001** | P0 | Launch | Paid launch: mobile + delivery_path≥2 + hot-spare + INCY auto-update | OPEN | G1-H1, VPN-ARCH | kopeks gate **DONE** |
-| **IP-ROTATE-NPLUS1-001** | P1 | VPN ops | Multi-provider N+1; hot-spare; ≤60 min conveyor | OPEN | H1 PASS | Detect stage 0 SUSPECT-ONLY OK |
+| **IP-ROTATE-NPLUS1-001** | P1 | VPN ops | Multi-provider N+1; hot-spare; ≤60 min conveyor | OPEN | H1 PASS | P1/P2 via `CONNECTION-HEALTH-P1P2-001` suspect-only |
+| **CONNECTION-HEALTH-P1P2-001** | P1 | Monitoring | REALITY handshake probe RU+EU | DPI burn hole | N/A | **After G1-H1** | Detect + connection health | [`CONNECTION-HEALTH-P1P2-DESIGN.md`](CONNECTION-HEALTH-P1P2-DESIGN.md) | **DESIGN DONE** | suspect-only impl | staging probe | No | **Yes** | G1-H1-SMOKE-001 | **DESIGN DONE / IMPL OPEN** |
+| **MONITOR-CONNECTION-HEALTH-001** | P1 | Monitoring | Dashboard L1–L4 | No unified health view | N/A | **After P1/P2** | Ops visibility | [`CONNECTION-HEALTH-DASHBOARD-DESIGN.md`](CONNECTION-HEALTH-DASHBOARD-DESIGN.md) | **DESIGN DONE** | no paging on L4 | design verify | No | No | P1/P2 impl | **DESIGN DONE / IMPL OPEN** |
+| **CLIENT-OWN-DIAG-001** | P4 | Client | Opt-in per-user diagnostics upload | Server cannot see phone-side errors | N/A | **Post-launch** | Individual error visibility | — | — | Consent flow; no destinations | privacy review | No | **Yes** | paid launch | **OPEN** |
 | **SUPPORT-TICKET-BRIDGE-001** | P1 | Support | In-app ↔ TG ticket bridge + statuses | OPEN | — | Extends SUPPORT-TICKET-001 |
 | **REF-PROGRAM-001** | P1 | Referral | 30% first topup + 100 ₽ friend | OPEN | billing impl | Owner approved 2026-06-24 |
 | **PARTNER-PROGRAM-001** | P2 | Partner | 50%+10%; withdrawal flow | OPEN | SUPPORT bridge | Separate from user ref |
@@ -722,4 +729,4 @@ Without **explicit owner approval**, do not change:
 
 ---
 
-**Version:** 1.1 · **Session sync:** 2026-06-25 · **Next:** `G1-H1-SMOKE-001` (owner) · `MINI-APP-BUILD-001` (agent, portal-only)
+**Version:** 1.2 · **Session sync:** 2026-06-25 · **Next:** `G1-H1-SMOKE-001` (owner) → `CONNECTION-HEALTH-P1P2-001` (impl) · `MINI-APP-BUILD-001` (agent, portal-only)
