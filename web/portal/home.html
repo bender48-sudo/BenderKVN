@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0E14">
+<title>BenderVPN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#0A0E14; --surface:#141A22; --elevated:#1C242E; --border:rgba(255,255,255,.06);
+    --accent:#FF6B1A; --accent-hover:#FF8340; --accent-press:#E0550C;
+    --accent-tint:rgba(255,107,26,.10); --accent-glow:rgba(255,107,26,.45);
+    --text:#F2F4F7; --text-dim:#9AA4B2; --text-mute:#5B6573;
+    --success:#2FBF71; --error:#E5484D;
+    --font:'Onest',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:#05070b;font-family:var(--font);color:var(--text);display:flex;justify-content:center;-webkit-font-smoothing:antialiased}
+  .phone{width:100%;max-width:430px;background:var(--bg);position:relative;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+  @media(min-width:480px){body{padding:20px}.phone{height:min(880px,calc(100vh - 40px));border-radius:22px;border:1px solid var(--border)}}
+  #bgfx{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+  .scroll{flex:1;overflow-y:auto;position:relative;z-index:1}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--bg) 70%,transparent)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;letter-spacing:-.01em}
+  .badge{width:34px;height:34px;border-radius:9px;background:#0d1118;border:1px solid rgba(255,107,26,.3);display:grid;place-items:center;box-shadow:0 4px 16px var(--accent-glow)}
+  .top-actions{display:flex;align-items:center;gap:8px}
+  .ic-btn{position:relative;display:flex;align-items:center;justify-content:center;gap:4px;width:38px;height:38px;border-radius:11px;background:var(--surface);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;transition:.18s;font-family:var(--font);font-size:13px;font-weight:600}
+  .ic-btn:hover{color:var(--text);border-color:rgba(255,255,255,.14)}
+  .ic-btn svg{width:19px;height:19px}
+  .ic-btn.lang{width:auto;padding:0 11px}
+  .ic-btn.lang svg{width:12px;height:12px}
+  .ic-dot{position:absolute;top:7px;right:8px;min-width:15px;height:15px;padding:0 3px;border-radius:999px;background:var(--accent);color:#1a0c02;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;border:2px solid var(--bg);box-shadow:0 0 8px var(--accent-glow)}
+  .ic-dot.show{display:flex}
+  .lang-wrap{position:relative}
+  .lang-menu{position:absolute;top:46px;right:0;background:var(--elevated);border:1px solid var(--border);border-radius:12px;padding:5px;min-width:140px;display:none;flex-direction:column;gap:2px;z-index:40;box-shadow:0 12px 32px rgba(0,0,0,.5)}
+  .lang-wrap.open .lang-menu{display:flex}
+  .lang-menu button{font-family:var(--font);text-align:left;background:none;border:none;color:var(--text-dim);font-size:14px;font-weight:500;padding:10px 12px;border-radius:8px;cursor:pointer;transition:.15s}
+  .lang-menu button:hover{background:var(--surface);color:var(--text)}
+  .lang-menu button.active{color:var(--accent);background:var(--accent-tint)}
+
+  .content{padding:6px 18px 28px}
+  .greeting{font-weight:700;font-size:28px;letter-spacing:-.02em}
+  .grow{margin:8px 0 2px}
+  .pill{font-size:11.5px;font-weight:600;letter-spacing:.03em;padding:5px 11px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;text-transform:uppercase}
+  .pill.trial{background:var(--accent-tint);color:var(--accent);border:1px solid rgba(255,107,26,.25)}
+  .pill.active{background:rgba(47,191,113,.12);color:var(--success);border:1px solid rgba(47,191,113,.25)}
+  .pill.paused{background:var(--elevated);color:var(--text-dim);border:1px solid var(--border)}
+  .pill .pdot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+  .section-row{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 10px}
+  .section-row .lbl{color:var(--text-dim);font-size:13px;font-weight:500;letter-spacing:.02em}
+  .section-row a{color:var(--accent);font-size:13px;font-weight:600;text-decoration:none;cursor:pointer}
+
+  .card-base{background:rgba(20,26,34,.88);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:18px}
+  .access{display:block;padding:18px;text-decoration:none;color:var(--text);position:relative;overflow:hidden;transition:.18s;cursor:pointer}
+  .access::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 100% 0,var(--accent-tint),transparent 55%);pointer-events:none}
+  .access:hover{border-color:rgba(255,255,255,.12)}
+  .access .a-top{display:flex;align-items:center;justify-content:space-between}
+  .access .a-name{font-weight:600;font-size:18px}
+  .access .a-days{font-weight:700;font-size:15px;color:var(--accent)}
+  .access .a-meta{display:flex;align-items:center;gap:14px;margin-top:12px;color:var(--text-dim);font-size:13px;flex-wrap:wrap}
+  .access .a-meta span{display:flex;align-items:center;gap:6px}
+
+  .cta{width:100%;display:block;text-align:center;border:none;cursor:pointer;font-family:var(--font);font-weight:700;font-size:16px;color:#1a0c02;background:var(--accent);border-radius:14px;padding:17px;margin-top:12px;transition:.18s}
+  .cta:hover{background:var(--accent-hover);box-shadow:0 6px 24px var(--accent-glow)}
+  .cta:active{background:var(--accent-press);transform:scale(.985)}
+
+  .tiles2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  .tile{padding:18px;text-decoration:none;color:var(--text);transition:.18s;position:relative;cursor:pointer}
+  .tile:hover{border-color:rgba(255,255,255,.12);transform:translateY(-2px)}
+  .tile .t-head{display:flex;align-items:center;justify-content:space-between;color:var(--text-dim);font-size:14px;font-weight:500}
+  .tile .t-head svg{width:18px;height:18px}
+  .tile .t-val{font-weight:700;font-size:26px;margin-top:14px;letter-spacing:-.01em}
+  .tile .t-val.accent{color:var(--accent)}
+  .tile .t-sub{color:var(--text-mute);font-size:12px;margin-top:2px}
+
+  .capacity{margin-top:14px;padding:18px}
+  .cap-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .cap-h{font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px}
+  .cap-h svg{width:17px;height:17px;color:var(--accent)}
+  .soon-tag{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-mute);background:var(--elevated);padding:3px 8px;border-radius:999px}
+  .cap-bar{height:7px;border-radius:999px;background:var(--elevated);overflow:hidden;position:relative}
+  /* honest: no live counter → indeterminate shimmer, never a fabricated fill width */
+  .cap-bar.indet::after{content:"";position:absolute;top:0;bottom:0;width:38%;border-radius:999px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.5;animation:slide 1.8s ease-in-out infinite}
+  @keyframes slide{0%{left:-38%}100%{left:100%}}
+  .cap-note{color:var(--text-dim);font-size:12.5px;margin-top:10px;line-height:1.4}
+  .cap-note b{color:var(--text);font-weight:600}
+
+  .banner{display:flex;align-items:center;gap:16px;background:linear-gradient(120deg,rgba(20,26,34,.88),rgba(255,107,26,.06));backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:18px;padding:18px;margin-top:14px;text-decoration:none;color:var(--text);transition:.18s;cursor:pointer}
+  .banner:hover{border-color:rgba(255,107,26,.3)}
+  .banner .b-ico{width:42px;height:42px;border-radius:12px;background:var(--accent-tint);display:grid;place-items:center;flex:none}
+  .banner .b-ico svg{width:22px;height:22px;color:var(--accent)}
+  .banner .b-h{font-weight:600;font-size:15px}
+  .banner .b-b{color:var(--text-dim);font-size:13px;margin-top:2px;line-height:1.35}
+  .banner .b-arr{margin-left:auto;color:var(--text-mute)}
+
+  .nav{flex:none;position:relative;z-index:2;background:rgba(10,14,20,.95);backdrop-filter:blur(16px);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);padding:9px 4px 20px}
+  .nav a{display:flex;flex-direction:column;align-items:center;gap:5px;text-decoration:none;color:var(--text-mute);font-size:10px;font-weight:500;padding:6px 0;position:relative;transition:.18s;cursor:pointer}
+  .nav a svg{width:22px;height:22px}
+  .nav a.active{color:var(--accent)}
+  .nav a.active::before{content:"";position:absolute;top:-9px;width:26px;height:3px;border-radius:0 0 3px 3px;background:var(--accent);box-shadow:0 2px 10px var(--accent-glow)}
+  @media (prefers-reduced-motion:reduce){#bgfx{opacity:.4}.cap-bar.indet::after{animation:none}}
+
+  .drawer-scrim{position:absolute;inset:0;z-index:50;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);opacity:0;visibility:hidden;transition:.22s}
+  .drawer-scrim.open{opacity:1;visibility:visible}
+  .drawer{position:absolute;top:0;right:0;height:100%;width:84%;max-width:340px;background:#0d1219;border-left:1px solid var(--border);transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;padding:16px 14px}
+  .drawer-scrim.open .drawer{transform:translateX(0)}
+  .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:6px 6px 16px;border-bottom:1px solid var(--border);margin-bottom:10px}
+  .dh-user{display:flex;align-items:center;gap:11px}
+  .dh-ava{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#ff9248);display:grid;place-items:center;font-weight:700;color:#1a0c02;font-size:17px}
+  .dh-name{font-weight:600;font-size:15px}
+  .dh-uname{color:var(--text-mute);font-size:12.5px;margin-top:1px}
+  .drawer-list{display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+  .dl{display:flex;align-items:center;gap:13px;padding:13px 14px;border-radius:12px;text-decoration:none;color:var(--text-dim);font-size:15px;font-weight:500;cursor:pointer;transition:.16s}
+  .dl svg{width:20px;height:20px;flex:none}
+  .dl:hover{background:var(--surface);color:var(--text)}
+  .dl.active{background:var(--accent-tint);color:var(--accent)}
+  .dl.soon{opacity:.6}
+  .dl .soon-tag{margin-left:auto}
+  .dl.logout{color:var(--error);margin-top:6px}
+  .dl-sep{color:var(--text-mute);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:14px 14px 6px}
+
+  .toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(20px);background:var(--elevated);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:12px 18px;font-size:13px;font-weight:500;opacity:0;transition:.25s;z-index:60;pointer-events:none;max-width:90%;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .skeleton{color:transparent;background:linear-gradient(90deg,var(--elevated),var(--surface),var(--elevated));background-size:200% 100%;animation:sk 1.2s infinite;border-radius:6px}
+  @keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+</style>
+</head>
+<body>
+<div class="phone">
+  <canvas id="bgfx"></canvas>
+
+  <div class="scroll">
+    <div class="topbar">
+      <div class="brand"><span class="badge"><canvas id="robot" width="26" height="26"></canvas></span>BenderVPN</div>
+      <div class="top-actions">
+        <button class="ic-btn" id="btn-bell" title="Оповещения"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ic-dot" id="bell-dot"></span></button>
+        <div class="lang-wrap" id="lang-wrap">
+          <button class="ic-btn lang" id="btn-lang" title="Язык"><span id="langLabel">RU</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="lang-menu">
+            <button data-lang="ru">Русский</button>
+            <button data-lang="en">English</button>
+          </div>
+        </div>
+        <button class="ic-btn" id="btn-burger" title="Меню"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="greeting" id="greeting">Привет<span id="greet-name"></span>.</div>
+      <div class="grow"><span class="pill trial" id="status-pill" hidden><span class="pdot"></span><span id="status-text"></span></span></div>
+
+      <div class="section-row"><span class="lbl">Мой доступ</span><a id="link-manage">Управление →</a></div>
+
+      <a class="access card-base" id="access-card">
+        <div class="a-top"><div class="a-name" id="access-name"><span class="skeleton">Загрузка</span></div><div class="a-days" id="access-days"></div></div>
+        <div class="a-meta" id="access-meta"></div>
+      </a>
+
+      <button class="cta" id="btn-connect">Подключить устройство</button>
+
+      <div class="tiles2">
+        <a class="tile card-base" id="tile-balance">
+          <div class="t-head">Баланс<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+          <div class="t-val accent" id="bal-val"><span class="skeleton">0 ₽</span></div><div class="t-sub" id="bal-sub"></div>
+        </a>
+        <a class="tile card-base" id="tile-referral">
+          <div class="t-head">Рефералы<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6M19 20a6 6 0 0 0-3-5"/></svg></div>
+          <div class="t-val" id="ref-val"><span class="skeleton">0</span></div><div class="t-sub" id="ref-sub"></div>
+        </a>
+      </div>
+
+      <div class="capacity card-base" id="capacity" hidden>
+        <div class="cap-top">
+          <div class="cap-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>Ограниченный набор</div>
+          <span class="soon-tag" id="cap-tag">счётчик скоро</span>
+        </div>
+        <div class="cap-bar indet" id="cap-bar"></div>
+        <div class="cap-note" id="cap-note"></div>
+      </div>
+
+      <a class="banner" id="banner-referral" hidden style="background:linear-gradient(120deg,rgba(255,107,26,.14),rgba(20,26,34,.88));border-color:rgba(255,107,26,.3)">
+        <div class="b-ico" style="background:var(--accent);color:#1a0c02"><svg viewBox="0 0 24 24" fill="#1a0c02" stroke="none"><circle cx="9" cy="7" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0z"/><circle cx="17" cy="8" r="2.5"/><path d="M15 14.5a5 5 0 0 1 6.5 4.5H18"/></svg></div>
+        <div><div class="b-h">Зови друзей — получай ₽</div><div class="b-b" id="banner-referral-sub"></div></div>
+        <div class="b-arr"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </a>
+
+      <a class="banner" id="banner-fortune" hidden>
+        <div class="b-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg></div>
+        <div><div class="b-h">Фортуна <span class="soon-tag" id="fortune-tag" style="margin-left:6px;vertical-align:middle">в доработке</span></div><div class="b-b">Крути колесо и забирай дни доступа и баланс.</div></div>
+        <div class="b-arr"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- бургер-меню -->
+  <div class="drawer-scrim" id="drawer">
+    <aside class="drawer">
+      <div class="drawer-head">
+        <div class="dh-user">
+          <div class="dh-ava" id="dh-ava">?</div>
+          <div><div class="dh-name" id="dh-name">Пользователь</div><div class="dh-uname" id="dh-uname"></div></div>
+        </div>
+        <button class="ic-btn" id="drawer-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg></button>
+      </div>
+      <nav class="drawer-list">
+        <a class="dl active" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10" stroke-linecap="round" stroke-linejoin="round"/></svg>Главная</a>
+        <a class="dl" data-nav="access"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>Доступ</a>
+        <a class="dl" data-nav="balance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Баланс</a>
+        <a class="dl" data-nav="referral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6"/></svg>Рефералы</a>
+        <a class="dl" data-nav="support"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Поддержка</a>
+        <a class="dl" data-nav="info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M12 11v5" stroke-linecap="round"/></svg>Информация</a>
+        <a class="dl" data-nav="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>Профиль</a>
+        <div class="dl-sep">Скоро</div>
+        <a class="dl soon" data-nav="fortune"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3" stroke-linecap="round"/></svg>Фортуна<span class="soon-tag">скоро</span></a>
+        <a class="dl logout" data-nav="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/></svg>Выйти</a>
+      </nav>
+    </aside>
+  </div>
+
+  <nav class="nav">
+    <a class="active" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10" stroke-linecap="round" stroke-linejoin="round"/></svg>Главная</a>
+    <a data-nav="access"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>Доступ</a>
+    <a data-nav="balance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Баланс</a>
+    <a data-nav="referral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6M19 20a6 6 0 0 0-3-5"/></svg>Рефералы</a>
+    <a data-nav="support"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Поддержка</a>
+  </nav>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+// binary code-rain background (presentational, from mockup)
+const bg=document.getElementById('bgfx'),bx=bg.getContext('2d');
+let DPR=Math.min(devicePixelRatio||1,2),BW,BH,drops;
+function bsize(){BW=bg.clientWidth;BH=bg.clientHeight;bg.width=BW*DPR;bg.height=BH*DPR;bx.setTransform(DPR,0,0,DPR,0,0);
+  const step=16,cols=Math.ceil(BW/step);drops=[];for(let i=0;i<cols;i++)drops.push({x:i*step+4,y:Math.random()*BH,sp:.6+Math.random()*1.2,flip:Math.random()*100,ch:Math.random()<.5?'0':'1'});}
+bsize();addEventListener('resize',bsize);bx.textAlign='center';bx.textBaseline='middle';
+(function bframe(){bx.clearRect(0,0,BW,BH);bx.font='13px Onest, monospace';
+  for(const d of drops){d.y+=d.sp;if(d.y>BH+8){d.y=-8;d.sp=.6+Math.random()*1.2;}d.flip++;if(d.flip>30){d.flip=0;d.ch=Math.random()<.5?'0':'1';}
+    for(let k=0;k<5;k++){const yy=d.y-k*16;if(yy<0||yy>BH)continue;const a=(1-k/5)*0.10;bx.fillStyle='rgba(200,210,225,'+a+')';bx.fillText(k===0?d.ch:(Math.random()<.5?'0':'1'),d.x,yy);}}
+  requestAnimationFrame(bframe);})();
+
+// pixel robot badge (from mockup)
+const rb=document.getElementById('robot'),rx=rb.getContext('2d');
+const G=["0000011000000","0000011000000","0000111100000","0001111110000","0011111111000","0011111111000","0011011011000","0011111111000","0011000011000","0011111111000","0011111111000","0001111110000","0000000000000"];
+for(let y=0;y<G.length;y++)for(let x=0;x<G[y].length;x++)if(G[y][x]==='1'){rx.fillStyle='#FF8340';rx.fillRect(x*2,y*2,2,2);}
+</script>
+<script src="/portal/assets/home.js?v=1" defer></script>
+</body>
+</html>
