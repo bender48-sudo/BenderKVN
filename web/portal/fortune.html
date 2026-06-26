@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0E14">
+<title>BenderVPN — Фортуна</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#0A0E14; --surface:#141A22; --elevated:#1C242E; --border:rgba(255,255,255,.06);
+    --accent:#FF6B1A; --accent-hover:#FF8340; --accent-press:#E0550C;
+    --accent-tint:rgba(255,107,26,.10); --accent-glow:rgba(255,107,26,.45);
+    --text:#F2F4F7; --text-dim:#9AA4B2; --text-mute:#5B6573;
+    --success:#2FBF71; --gold:#E8B84B;
+    --font:'Onest',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:#05070b;font-family:var(--font);color:var(--text);display:flex;justify-content:center;-webkit-font-smoothing:antialiased}
+  .phone{width:100%;max-width:430px;height:100vh;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column}
+  @media(min-width:480px){body{padding:20px}.phone{height:min(880px,calc(100vh - 40px));border-radius:22px;border:1px solid var(--border)}}
+  #bgfx{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+  .scroll{flex:1;overflow-y:auto;position:relative;z-index:1}
+
+  .topbar{display:flex;align-items:center;gap:12px;padding:16px 18px;position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--bg) 70%,transparent)}
+  .back{width:34px;height:34px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text-dim);cursor:pointer;flex:none}
+  .back svg{width:18px;height:18px}
+  .tb-title{font-weight:700;font-size:18px}
+  .soon-chip{margin-left:auto;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-mute);background:var(--elevated);padding:4px 10px;border-radius:999px}
+
+  .content{padding:4px 18px 24px;display:flex;flex-direction:column;gap:16px}
+  [hidden]{display:none!important}
+
+  .wheel-wrap{position:relative;width:300px;height:300px;margin:8px auto 0}
+  .pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:5;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}
+  .pointer svg{width:34px;height:34px}
+  .wheel-dots{position:absolute;inset:0;z-index:4;pointer-events:none}
+  .wheel-dots span{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent-glow);top:50%;left:50%}
+  #wheel{position:absolute;inset:6px;border-radius:50%;transition:none;z-index:2;box-shadow:0 0 0 8px #0d1118, 0 12px 40px rgba(0,0,0,.5)}
+  .hub{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#ff9248);display:grid;place-items:center;z-index:6;box-shadow:0 4px 16px var(--accent-glow), inset 0 2px 6px rgba(255,255,255,.3);cursor:pointer}
+  .hub canvas{display:block}
+
+  .spin-info{text-align:center}
+  .spins-left{font-weight:700;font-size:17px}
+  .spins-left b{color:var(--accent)}
+  .next-spin{color:var(--text-dim);font-size:13px;margin-top:4px}
+  .next-spin b{color:var(--text)}
+
+  .spin-btn{width:100%;border:none;cursor:pointer;font-family:var(--font);font-weight:700;font-size:17px;color:#1a0c02;background:var(--accent);border-radius:14px;padding:17px;transition:.18s;display:flex;align-items:center;justify-content:center;gap:9px}
+  .spin-btn:hover{background:var(--accent-hover);box-shadow:0 6px 24px var(--accent-glow)}
+  .spin-btn:active{transform:scale(.985)}
+  .spin-btn:disabled{background:var(--elevated);color:var(--text-mute);cursor:not-allowed;box-shadow:none}
+  .spin-btn svg{width:19px;height:19px}
+
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;text-align:center}
+  .stat .v{font-weight:700;font-size:26px}
+  .stat .v.accent{color:var(--accent)}
+  .stat .l{color:var(--text-dim);font-size:12.5px;margin-top:3px}
+
+  .label-sm{color:var(--text-mute);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:2px 2px -4px}
+  .hist{display:flex;flex-direction:column;gap:1px;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .hrow{display:flex;align-items:center;gap:12px;background:var(--surface);padding:13px 15px;font-size:14px}
+  .hrow .hi{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:none;font-size:14px}
+  .hrow .hi.win{background:rgba(47,191,113,.12);color:var(--success)}
+  .hrow .hi.miss{background:var(--elevated);color:var(--text-mute)}
+  .hrow .hd{color:var(--text-mute);font-size:12px;margin-left:auto}
+  .hrow .hv{font-weight:600}
+  .hrow .hv.win{color:var(--success)}
+  .hrow .hv.miss{color:var(--text-mute)}
+  .hist-empty{color:var(--text-mute);font-size:13px;padding:16px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:14px}
+
+  .toast{position:absolute;left:50%;bottom:100px;transform:translateX(-50%) translateY(20px);z-index:40;background:var(--elevated);border:1px solid var(--accent);border-radius:16px;padding:16px 24px;text-align:center;opacity:0;pointer-events:none;transition:.3s;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast .tw{font-weight:700;font-size:20px;color:var(--accent)}
+  .toast .ts{color:var(--text-dim);font-size:13px;margin-top:3px}
+
+  .nav{flex:none;position:relative;z-index:2;background:rgba(10,14,20,.95);backdrop-filter:blur(16px);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);padding:9px 4px 18px}
+  .nav a{display:flex;flex-direction:column;align-items:center;gap:5px;text-decoration:none;color:var(--text-mute);font-size:10px;font-weight:500;padding:6px 0;position:relative;cursor:pointer}
+  .nav a svg{width:22px;height:22px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <canvas id="bgfx"></canvas>
+  <div class="scroll">
+    <div class="topbar">
+      <div class="back" id="btn-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="tb-title">Фортуна</div>
+      <span class="soon-chip" id="soon-chip" hidden>в доработке</span>
+    </div>
+
+    <div class="content">
+      <div class="wheel-wrap">
+        <div class="pointer"><svg viewBox="0 0 24 24" fill="#FF6B1A"><path d="M12 22L4 8h16z"/></svg></div>
+        <canvas id="wheel" width="300" height="300"></canvas>
+        <div class="wheel-dots" id="dots"></div>
+        <div class="hub" id="hub"><canvas id="robot" width="34" height="34"></canvas></div>
+      </div>
+
+      <div class="spin-info">
+        <div class="spins-left">У тебя <b id="cnt">0</b> <span id="cnt-word">прокруток</span></div>
+        <div class="next-spin" id="next-spin"></div>
+      </div>
+
+      <button class="spin-btn" id="spin" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="spin-label">Крутить</span></button>
+
+      <div class="stats">
+        <div class="stat"><div class="v accent" id="totalwin">0 ₽</div><div class="l">выиграно всего</div></div>
+        <div class="stat"><div class="v" id="spins-done">0</div><div class="l">прокруток сделано</div></div>
+      </div>
+
+      <div class="label-sm">История</div>
+      <div id="hist-mount"><div class="hist-empty">Пока пусто</div></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"><div class="tw" id="toastWin"></div><div class="ts" id="toastSub"></div></div>
+
+  <nav class="nav">
+    <a data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10" stroke-linecap="round" stroke-linejoin="round"/></svg>Главная</a>
+    <a data-nav="access"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>Доступ</a>
+    <a data-nav="balance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Баланс</a>
+    <a data-nav="referral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6M19 20a6 6 0 0 0-3-5"/></svg>Рефералы</a>
+    <a data-nav="support"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Поддержка</a>
+  </nav>
+</div>
+<script>
+// bg code-rain + dots + hub robot (presentational, from mockup)
+const bg=document.getElementById('bgfx'),bx=bg.getContext('2d');
+let DPR=Math.min(devicePixelRatio||1,2),BW,BH,drops;
+function bs(){BW=bg.clientWidth;BH=bg.clientHeight;bg.width=BW*DPR;bg.height=BH*DPR;bx.setTransform(DPR,0,0,DPR,0,0);
+  const st=16,c=Math.ceil(BW/st);drops=[];for(let i=0;i<c;i++)drops.push({x:i*st+4,y:Math.random()*BH,sp:.6+Math.random()*1.2,ch:Math.random()<.5?'0':'1',flip:Math.random()*100});}
+bs();addEventListener('resize',bs);bx.textAlign='center';bx.textBaseline='middle';
+(function f(){bx.clearRect(0,0,BW,BH);bx.font='13px Onest, monospace';
+  for(const d of drops){d.y+=d.sp;if(d.y>BH+8){d.y=-8;}d.flip++;if(d.flip>30){d.flip=0;d.ch=Math.random()<.5?'0':'1';}
+    for(let k=0;k<5;k++){const yy=d.y-k*16;if(yy<0||yy>BH)continue;const a=(1-k/5)*0.06;bx.fillStyle='rgba(200,210,225,'+a+')';bx.fillText(k===0?d.ch:(Math.random()<.5?'0':'1'),d.x,yy);}}
+  requestAnimationFrame(f);})();
+const dots=document.getElementById('dots');
+for(let i=0;i<24;i++){const d=document.createElement('span');const a=i/24*Math.PI*2;
+  d.style.transform=`translate(-50%,-50%) translate(${Math.cos(a)*146}px,${Math.sin(a)*146}px)`;d.style.opacity=(i%2?0.4:1);dots.appendChild(d);}
+const rb=document.getElementById('robot'),rx=rb.getContext('2d');
+const G=["0000011000000","0000011000000","0000111100000","0001111110000","0011111111000","0011111111000","0011011011000","0011111111000","0011000011000","0011111111000","0011111111000","0001111110000","0000000000000"];
+for(let y=0;y<G.length;y++)for(let x=0;x<G[y].length;x++)if(G[y][x]==='1'){rx.fillStyle='#1a0c02';rx.fillRect(x*2.6+1,y*2.6+1,2.6,2.6);}
+</script>
+<script src="/portal/assets/fortune.js?v=1" defer></script>
+</body>
+</html>

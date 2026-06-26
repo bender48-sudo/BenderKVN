@@ -199,7 +199,7 @@
     fBan.hidden = !f.show;
     if (f.show) {
       $("fortune-tag").textContent = f.state === "in_development" ? "в доработке" : "скоро";
-      fBan.onclick = function () { toast("Фортуна в доработке — скоро запустим"); };
+      fBan.onclick = function () { go("/portal/fortune.html"); };
     }
   }
 
