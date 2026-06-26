@@ -285,8 +285,9 @@
       a.addEventListener("click", function () {
         var nav = a.getAttribute("data-nav");
         if (nav === "referral") return;
-        if (nav === "balance") { window.location.href = "/portal/balance.html"; return; }
-        toast("Скоро"); // other screens not migrated yet (Variant 1, per-screen)
+        var routes = { home: "/portal/home.html", access: "/portal/access.html", balance: "/portal/balance.html" };
+        if (routes[nav]) { window.location.href = routes[nav]; return; }
+        toast("Скоро"); // support not migrated yet (Variant 1, per-screen)
       });
     });
   }

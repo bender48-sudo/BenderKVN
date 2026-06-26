@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0E14">
+<title>BenderVPN — Доступ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#0A0E14; --surface:#141A22; --elevated:#1C242E; --border:rgba(255,255,255,.06);
+    --accent:#FF6B1A; --accent-hover:#FF8340; --accent-press:#E0550C;
+    --accent-tint:rgba(255,107,26,.10); --accent-glow:rgba(255,107,26,.45);
+    --text:#F2F4F7; --text-dim:#9AA4B2; --text-mute:#5B6573;
+    --success:#2FBF71; --warning:#F5B33C; --error:#E5484D; --error-tint:rgba(229,72,77,.10);
+    --font:'Onest',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:#05070b;font-family:var(--font);color:var(--text);display:flex;justify-content:center;-webkit-font-smoothing:antialiased}
+  .phone{width:100%;max-width:430px;height:100vh;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column}
+  @media(min-width:480px){body{padding:20px}.phone{height:min(880px,calc(100vh - 40px));border-radius:22px;border:1px solid var(--border)}}
+  #bgfx{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+  .scroll{flex:1;overflow-y:auto;position:relative;z-index:1}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--bg) 70%,transparent)}
+  .tb-left{display:flex;align-items:center;gap:12px}
+  .back{width:34px;height:34px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text-dim);cursor:pointer;flex:none}
+  .back svg{width:18px;height:18px}
+  .tb-title{font-weight:700;font-size:18px}
+
+  .content{padding:6px 18px 20px}
+  [hidden]{display:none!important}
+  .head-row{display:flex;align-items:center;justify-content:space-between;margin:8px 0 18px}
+  .h1{font-weight:700;font-size:24px;letter-spacing:-.02em}
+  .add-btn{display:flex;align-items:center;gap:7px;background:var(--accent-tint);color:var(--accent);border:1px solid rgba(255,107,26,.25);font-family:var(--font);font-weight:600;font-size:13px;padding:9px 14px;border-radius:12px;cursor:pointer}
+  .add-btn svg{width:15px;height:15px}
+
+  .acard{display:block;background:rgba(20,26,34,.9);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:18px;padding:18px;text-decoration:none;color:var(--text);position:relative;overflow:hidden;cursor:pointer;transition:.18s;margin-bottom:14px;width:100%;text-align:left;font-family:var(--font)}
+  .acard:hover{border-color:rgba(255,255,255,.14)}
+  .acard.expired{border-color:rgba(229,72,77,.3);background:linear-gradient(180deg,var(--error-tint),rgba(20,26,34,.9))}
+  .acard .row1{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .acard .name{font-weight:600;font-size:18px}
+  .chevron{margin-left:auto;color:var(--text-mute)}
+  .pill{font-size:11px;font-weight:600;letter-spacing:.02em;padding:5px 11px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;text-transform:uppercase;white-space:nowrap;flex:none}
+  .pill.active{background:rgba(47,191,113,.12);color:var(--success);border:1px solid rgba(47,191,113,.25)}
+  .pill.exp{background:var(--error-tint);color:var(--error);border:1px solid rgba(229,72,77,.3)}
+  .pill .pdot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+  .acard .meta{display:flex;align-items:center;gap:16px;margin-top:14px;color:var(--text-dim);font-size:13px;flex-wrap:wrap}
+  .acard .meta span{display:flex;align-items:center;gap:6px}
+  .acard .meta svg{width:14px;height:14px;flex:none;opacity:.85}
+  .acard .meta .ok{color:var(--success)}
+  .acard .days{color:var(--accent);font-weight:600}
+  .acard .days.red{color:var(--error)}
+  .empty-note{color:var(--text-mute);font-size:13px;text-align:center;padding:30px 10px;line-height:1.5}
+
+  .nav{flex:none;position:relative;z-index:2;background:rgba(10,14,20,.95);backdrop-filter:blur(16px);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);padding:9px 4px 18px}
+  .nav a{display:flex;flex-direction:column;align-items:center;gap:5px;text-decoration:none;color:var(--text-mute);font-size:10px;font-weight:500;padding:6px 0;position:relative;cursor:pointer}
+  .nav a svg{width:22px;height:22px}
+  .nav a.active{color:var(--accent)}
+  .nav a.active::before{content:"";position:absolute;top:-9px;width:26px;height:3px;border-radius:0 0 3px 3px;background:var(--accent);box-shadow:0 2px 10px var(--accent-glow)}
+
+  .toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(20px);background:var(--elevated);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:12px 18px;font-size:13px;font-weight:500;opacity:0;transition:.25s;z-index:60;pointer-events:none;max-width:90%;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .skeleton{color:transparent;background:linear-gradient(90deg,var(--elevated),var(--surface),var(--elevated));background-size:200% 100%;animation:sk 1.2s infinite;border-radius:6px}
+  @keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+</style>
+</head>
+<body>
+<div class="phone">
+  <canvas id="bgfx"></canvas>
+  <div class="scroll">
+    <div class="topbar"><div class="tb-left"><div class="back" id="btn-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="tb-title">BenderVPN</div></div></div>
+    <div class="content">
+      <div class="head-row">
+        <div class="h1">Мой доступ</div>
+        <button class="add-btn" id="btn-add-device"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>Устройство</button>
+      </div>
+      <div id="access-mount">
+        <button class="acard" disabled><div class="row1"><span class="name skeleton">Загрузка…</span></div><div class="meta"><span class="skeleton">— дней</span></div></button>
+      </div>
+      <div class="empty-note" id="empty-note" hidden></div>
+    </div>
+  </div>
+  <nav class="nav">
+    <a data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10" stroke-linecap="round" stroke-linejoin="round"/></svg>Главная</a>
+    <a class="active" data-nav="access"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>Доступ</a>
+    <a data-nav="balance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Баланс</a>
+    <a data-nav="referral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6M19 20a6 6 0 0 0-3-5"/></svg>Рефералы</a>
+    <a data-nav="support"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Поддержка</a>
+  </nav>
+  <div class="toast" id="toast"></div>
+</div>
+<script>
+const bg=document.getElementById('bgfx'),bx=bg.getContext('2d');
+let DPR=Math.min(devicePixelRatio||1,2),BW,BH,drops;
+function s(){BW=bg.clientWidth;BH=bg.clientHeight;bg.width=BW*DPR;bg.height=BH*DPR;bx.setTransform(DPR,0,0,DPR,0,0);
+  const st=16,c=Math.ceil(BW/st);drops=[];for(let i=0;i<c;i++)drops.push({x:i*st+4,y:Math.random()*BH,sp:.6+Math.random()*1.2,ch:Math.random()<.5?'0':'1',flip:Math.random()*100});}
+s();addEventListener('resize',s);bx.textAlign='center';bx.textBaseline='middle';
+(function f(){bx.clearRect(0,0,BW,BH);bx.font='13px Onest, monospace';
+  for(const d of drops){d.y+=d.sp;if(d.y>BH+8){d.y=-8;}d.flip++;if(d.flip>30){d.flip=0;d.ch=Math.random()<.5?'0':'1';}
+    for(let k=0;k<5;k++){const yy=d.y-k*16;if(yy<0||yy>BH)continue;const a=(1-k/5)*0.08;bx.fillStyle='rgba(200,210,225,'+a+')';bx.fillText(k===0?d.ch:(Math.random()<.5?'0':'1'),d.x,yy);}}
+  requestAnimationFrame(f);})();
+</script>
+<script src="/portal/assets/access.js?v=1" defer></script>
+</body>
+</html>

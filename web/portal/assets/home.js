@@ -85,7 +85,7 @@
 
   var ROUTES = {
     home: "/portal/home.html",
-    access: "/portal/cabinet.html",
+    access: "/portal/access.html",
     balance: "/portal/balance.html",
     referral: "/portal/referral.html",
   };
