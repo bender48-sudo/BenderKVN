@@ -75,6 +75,20 @@ FORTUNE_BANNER_ENABLED = os.getenv("FORTUNE_BANNER_ENABLED", "1").strip().lower(
 )
 
 
+# P4 in-app support tickets (SUPPORT-TICKET-BRIDGE-001). Gated OFF until the bridge is ready;
+# flipping it live creates per-ticket TG forum topics and accepts in-app tickets. Auto-close
+# after N days of silence (spec: 3). Allowed subjects (partner_* unblock P3 partner flows).
+SUPPORT_TICKET_AUTOCLOSE_DAYS = int(os.getenv("SUPPORT_TICKET_AUTOCLOSE_DAYS", "3"))
+SUPPORT_TICKET_SUBJECTS = (
+    "connection", "payment", "devices", "other", "partner_apply", "partner_withdraw",
+)
+
+
+def support_tickets_live() -> bool:
+    """Gate for the in-app ticket system. Default OFF (legacy per-user DM bridge stays)."""
+    return os.getenv("SUPPORT_TICKETS_LIVE", "").strip().lower() in ("1", "true", "yes")
+
+
 def referral_rewards_active() -> bool:
     """True only when real referral balance accrual is wired (REF-BONUS-001). Default OFF.
 

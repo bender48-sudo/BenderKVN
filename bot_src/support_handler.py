@@ -246,6 +246,34 @@ async def admin_reply_in_topic(message: types.Message, bot: Bot):
         )
         return
 
+    # In-app ticket bridge (P4, SUPPORT-TICKET-BRIDGE-001) — gated. If this topic maps to a
+    # ticket, route the staff reply into that ticket and stop (legacy per-user path below is
+    # untouched when SUPPORT_TICKETS_LIVE is off, since no ticket topics exist).
+    from shop_bot.config import support_tickets_live
+
+    if support_tickets_live():
+        from shop_bot import support_tickets
+        from shop_bot.support_ticket_bridge import deliver_email
+
+        tk = support_tickets.get_ticket_by_topic(thread_id)
+        if tk:
+            text = (message.text or message.caption or "").strip()
+            if text.lower().startswith("/close") or text.lower().startswith("/закрыть"):
+                support_tickets.close_ticket(tk["id"])
+                await message.reply("Тикет закрыт ✅")
+                return
+            _, is_first = support_tickets.add_staff_message(tk["id"], text, message.message_id)
+            num = support_tickets.format_number(tk["id"])
+            # First staff reply is duplicated to TG-DM + email so the user notices; later
+            # replies are in-app + the bell badge (unread). Email is a stub hook for now (Q2).
+            if is_first and text:
+                try:
+                    await bot.send_message(chat_id=tk["user_id"], text=f"Ответ по обращению {num}:\n\n{text}")
+                except Exception as e:
+                    logger.error("ticket %s first-reply DM failed user=%s: %s", num, tk["user_id"], e)
+                deliver_email(tk.get("contact_email"), f"Ответ по обращению {num}", text)
+            return
+
     user_id = _find_user_by_topic(thread_id)
     if not user_id:
         user_id = _user_id_from_reply(message)

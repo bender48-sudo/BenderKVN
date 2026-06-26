@@ -6,7 +6,7 @@ import sqlite3
 
 logger = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 
 
 def _table_has_column(conn: sqlite3.Connection, table: str, column: str) -> bool:
@@ -253,6 +253,60 @@ def _migrate_v8(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_v9(conn: sqlite3.Connection) -> None:
+    """In-app support tickets + bridge (SUPPORT-TICKET-BRIDGE-001, P4).
+
+    Additive only — CREATE, no ALTER, no data move. One forum topic per ticket bridges to TG;
+    status is who-wrote-last (waiting/answered) + manual/3-day close. Reversible (drop tables).
+    """
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tickets (
+            id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id              INTEGER NOT NULL,
+            subject              TEXT    NOT NULL,
+            status               TEXT    NOT NULL DEFAULT 'waiting',
+            tg_topic_id          INTEGER,
+            contact_email        TEXT,
+            last_message_at      TEXT,
+            last_sender          TEXT,
+            first_staff_reply_at TEXT,
+            unread_user          INTEGER NOT NULL DEFAULT 0,
+            created_at_utc       TEXT    NOT NULL,
+            closed_at_utc        TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS ticket_messages (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticket_id      INTEGER NOT NULL,
+            sender         TEXT    NOT NULL,
+            body           TEXT,
+            channel        TEXT,
+            tg_message_id  INTEGER,
+            created_at_utc TEXT    NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_tickets_user "
+        "ON tickets(user_id, last_message_at DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_tickets_topic "
+        "ON tickets(tg_topic_id) WHERE tg_topic_id IS NOT NULL"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_tickets_openset "
+        "ON tickets(status, last_message_at)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_ticket_msgs ON ticket_messages(ticket_id, id)"
+    )
+
+
 _MIGRATORS = {
     1: _migrate_v1,
     2: _migrate_v2,
@@ -262,6 +316,7 @@ _MIGRATORS = {
     6: _migrate_v6,
     7: _migrate_v7,
     8: _migrate_v8,
+    9: _migrate_v9,
 }
 
 
