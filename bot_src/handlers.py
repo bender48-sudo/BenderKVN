@@ -1505,21 +1505,34 @@ async def show_key_handler(callback: types.CallbackQuery):
         logger.error(f"Error showing key {key_id_to_show}: {e}")
         await callback.message.edit_text("❌ " + user_messages.ERR_KEY_FETCH)
 
+def _legacy_key_qr_error(inbound, connection_string: str | None) -> str | None:
+    """User-visible error when legacy per-key QR cannot be built (BOT-QR-MISSING-KEY-UX-001)."""
+    if not inbound:
+        return user_messages.ERR_INBOUND
+    if not connection_string:
+        return user_messages.ERR_VLESS_BUILD
+    return None
+
+
 @user_router.callback_query(F.data.startswith("show_qr_"))
 async def show_qr_handler(callback: types.CallbackQuery):
     await callback.answer("Генерирую QR-код...")
     key_id = int(callback.data.split("_")[2])
     key_data = get_key_by_id(key_id)
-    if not key_data or key_data['user_id'] != callback.from_user.id: return
-    
+    if not key_data or key_data['user_id'] != callback.from_user.id:
+        await callback.message.answer("❌ " + user_messages.ERR_KEY_WRONG_USER)
+        return
+
     try:
         from shop_bot.modules.remnawave_api import get_inbound, build_vless_uri
         import aiohttp
         async with remnawave_api.remna_client_session() as session:
             inbound = await get_inbound(session)
-            if not inbound: return
             connection_string = build_vless_uri(inbound, key_data['vless_uuid'], key_data['key_email'])
-            if not connection_string: return
+            qr_err = _legacy_key_qr_error(inbound, connection_string)
+            if qr_err:
+                await callback.message.answer("❌ " + qr_err)
+                return
 
         qr_img = qrcode.make(connection_string)
         bio = BytesIO(); qr_img.save(bio, "PNG"); bio.seek(0)

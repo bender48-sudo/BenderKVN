@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 from shop_bot.data_manager.database import get_user, get_user_keys
 from shop_bot.modules.remnawave_api import (
@@ -14,6 +14,14 @@ from shop_bot.modules.remnawave_api import (
 from shop_bot.public_urls import normalize_subscription_url
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_expiry_utc(value: str) -> datetime:
+    """DB stores naive UTC timestamps; compare in UTC to avoid local-TZ skew."""
+    dt = datetime.fromisoformat((value or "").replace("Z", "+00:00"))
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
 
 
 def _bot_open_url() -> str:
@@ -69,11 +77,11 @@ def subscription_unavailable(telegram_id: int) -> dict:
             "bot_url": bot_url,
         }
     trial_used = bool(user and user.get("trial_used"))
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     active = [
         k
         for k in keys
-        if datetime.fromisoformat(k["expiry_date"]) > now
+        if _parse_expiry_utc(k["expiry_date"]) > now
     ]
 
     if active:
