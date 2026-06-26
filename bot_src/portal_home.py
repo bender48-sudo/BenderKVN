@@ -77,7 +77,7 @@ def _build_referral_summary(ref: dict) -> dict:
     }
 
 
-def _compose(cab: dict, ref: dict) -> dict:
+def _compose(cab: dict, ref: dict, unread: int = 0) -> dict:
     access = _build_access(cab)
     profile = cab.get("profile") or {}
     return {
@@ -89,7 +89,7 @@ def _compose(cab: dict, ref: dict) -> dict:
             "username": profile.get("username"),
             "language": profile.get("language") or "ru",
         },
-        "unread": 0,  # bell badge — 0 until tickets (P4)
+        "unread": int(unread or 0),  # bell badge — real ticket unread (0 while support gated off)
         "access": access,
         "balance": {
             "balance_rub": float(cab.get("balance_rub") or 0.0),
@@ -117,4 +117,8 @@ def home_snapshot(
         # Entry point: surface the same actionable error/bot_url the cabinet returns.
         return cab
     ref = referral_snapshot(telegram_id=telegram_id, customer_id=customer_id, email=email)
-    return _compose(cab, ref)
+    # Bell badge from the ticket system (gated → 0 when SUPPORT_TICKETS_LIVE off).
+    from shop_bot.portal_support import unread as support_unread
+
+    unread = support_unread(telegram_id=telegram_id, customer_id=customer_id, email=email).get("count", 0)
+    return _compose(cab, ref, unread)

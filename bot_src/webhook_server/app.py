@@ -333,6 +333,107 @@ def create_webhook_app(bot, payment_processor):
             logger.error("portal-home: %s", e, exc_info=True)
             return jsonify({"ok": False, "error": "server_error"}), 500
 
+    def _portal_identity(data: dict):
+        raw_tid = data.get("telegram_id")
+        try:
+            tid = int(raw_tid) if raw_tid is not None else 0
+        except (TypeError, ValueError):
+            tid = 0
+        return {
+            "telegram_id": tid if tid > 0 else None,
+            "customer_id": (data.get("customer_id") or "").strip(),
+            "email": (data.get("email") or "").strip(),
+        }
+
+    def _support_code(doc: dict) -> int:
+        if doc.get("ok"):
+            return 200
+        err = doc.get("error")
+        if err == "not_found":
+            return 404
+        if err in ("support_disabled", "needs_telegram_bind"):
+            return 403
+        if err in ("empty_text",):
+            return 400
+        return 400
+
+    @flask_app.route("/portal-tickets", methods=["POST"])
+    def portal_tickets_handler():
+        """List the user's support tickets (empty while SUPPORT_TICKETS_LIVE off)."""
+        try:
+            if not _portal_service_auth():
+                return _reject_auth()
+            from shop_bot.portal_support import list_tickets
+
+            doc = list_tickets(**_portal_identity(request.get_json(silent=True) or {}))
+            return jsonify(doc), 200 if doc.get("ok") else 400
+        except Exception as e:
+            logger.error("portal-tickets: %s", e, exc_info=True)
+            return jsonify({"ok": False, "error": "server_error"}), 500
+
+    @flask_app.route("/portal-unread", methods=["POST"])
+    def portal_unread_handler():
+        """Unread support messages count for the home bell (0 while gated off)."""
+        try:
+            if not _portal_service_auth():
+                return _reject_auth()
+            from shop_bot.portal_support import unread
+
+            doc = unread(**_portal_identity(request.get_json(silent=True) or {}))
+            return jsonify(doc), 200
+        except Exception as e:
+            logger.error("portal-unread: %s", e, exc_info=True)
+            return jsonify({"ok": False, "error": "server_error"}), 500
+
+    @flask_app.route("/portal-ticket-get", methods=["POST"])
+    def portal_ticket_get_handler():
+        """One ticket + its message thread; marks it read."""
+        try:
+            if not _portal_service_auth():
+                return _reject_auth()
+            data = request.get_json(silent=True) or {}
+            from shop_bot.portal_support import ticket_get
+
+            doc = ticket_get(data.get("ticket_id"), **_portal_identity(data))
+            return jsonify(doc), _support_code(doc)
+        except Exception as e:
+            logger.error("portal-ticket-get: %s", e, exc_info=True)
+            return jsonify({"ok": False, "error": "server_error"}), 500
+
+    @flask_app.route("/portal-ticket", methods=["POST"])
+    def portal_ticket_create_handler():
+        """Create a ticket (subject/text/email) → bridge to TG. Gated by SUPPORT_TICKETS_LIVE."""
+        try:
+            if not _portal_service_auth():
+                return _reject_auth()
+            data = request.get_json(silent=True) or {}
+            from shop_bot.portal_support import create_ticket
+
+            doc = create_ticket(
+                subject=(data.get("subject") or "other"),
+                text=(data.get("text") or ""),
+                **_portal_identity(data),
+            )
+            return jsonify(doc), _support_code(doc)
+        except Exception as e:
+            logger.error("portal-ticket: %s", e, exc_info=True)
+            return jsonify({"ok": False, "error": "server_error"}), 500
+
+    @flask_app.route("/portal-ticket-message", methods=["POST"])
+    def portal_ticket_message_handler():
+        """Append a user message to a ticket → bridge to TG; status → waiting."""
+        try:
+            if not _portal_service_auth():
+                return _reject_auth()
+            data = request.get_json(silent=True) or {}
+            from shop_bot.portal_support import ticket_message
+
+            doc = ticket_message(data.get("ticket_id"), (data.get("text") or ""), **_portal_identity(data))
+            return jsonify(doc), _support_code(doc)
+        except Exception as e:
+            logger.error("portal-ticket-message: %s", e, exc_info=True)
+            return jsonify({"ok": False, "error": "server_error"}), 500
+
     def _health_authorized() -> bool:
         secret = os.getenv("HEALTH_CHECK_SECRET", "").strip()
         bind = os.getenv("WEBHOOK_BIND_HOST", "127.0.0.1").strip() or "127.0.0.1"
