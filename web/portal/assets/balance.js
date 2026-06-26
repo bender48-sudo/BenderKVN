@@ -277,9 +277,9 @@
       a.addEventListener("click", function () {
         var nav = a.getAttribute("data-nav");
         if (nav === "balance") return;
-        var routes = { home: "/portal/home.html", access: "/portal/access.html", referral: "/portal/referral.html" };
+        var routes = { home: "/portal/home.html", access: "/portal/access.html", referral: "/portal/referral.html", support: "/portal/support.html" };
         if (routes[nav]) { window.location.href = routes[nav]; return; }
-        toast("Скоро"); // support not migrated yet (Variant 1)
+        toast("Скоро");
       });
     });
   }

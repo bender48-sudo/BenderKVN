@@ -88,6 +88,7 @@
     access: "/portal/access.html",
     balance: "/portal/balance.html",
     referral: "/portal/referral.html",
+    support: "/portal/support.html",
   };
   function navTo(nav) {
     if (nav === "home") { closeDrawer(); return; }
@@ -258,7 +259,7 @@
       .catch(function () { render(null); });
 
     // header
-    $("btn-bell").addEventListener("click", function () { toast("Уведомлений пока нет"); });
+    $("btn-bell").addEventListener("click", function () { go(ROUTES.support); });
     $("btn-lang").addEventListener("click", function (e) {
       e.stopPropagation();
       $("lang-wrap").classList.toggle("open");

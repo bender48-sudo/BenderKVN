@@ -111,7 +111,7 @@
       a.addEventListener("click", function () {
         var nav = a.getAttribute("data-nav");
         if (nav === "access") return;
-        var routes = { home: "/portal/home.html", balance: "/portal/balance.html", referral: "/portal/referral.html" };
+        var routes = { home: "/portal/home.html", balance: "/portal/balance.html", referral: "/portal/referral.html", support: "/portal/support.html" };
         if (routes[nav]) go(routes[nav]); else toast("Скоро");
       });
     });
