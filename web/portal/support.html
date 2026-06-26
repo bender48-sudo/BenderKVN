@@ -34,7 +34,8 @@
   .tb-title{font-weight:700;font-size:18px}
   .tb-sub{font-size:12px;color:var(--text-mute);font-weight:500}
   .brand-mini{display:flex;align-items:center;gap:10px}
-  .badge-mini{width:30px;height:30px;border-radius:8px;background:#0d1118;border:1px solid rgba(255,107,26,.3);display:grid;place-items:center;box-shadow:0 3px 12px var(--accent-glow)}
+  .badge-mini{width:30px;height:30px;border-radius:8px;background:#0d1118;border:1px solid rgba(255,107,26,.3);display:grid;place-items:center;box-shadow:0 3px 12px var(--accent-glow);overflow:hidden}
+  .badge-img{height:24px;width:auto;display:block;object-fit:contain;image-rendering:pixelated}
   .top-actions{display:flex;align-items:center;gap:7px}
   .ic-btn{position:relative;display:flex;align-items:center;justify-content:center;gap:3px;width:36px;height:36px;border-radius:10px;background:var(--surface);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;font-family:var(--font);font-size:12px;font-weight:600}
   .ic-btn svg{width:18px;height:18px}
@@ -119,7 +120,7 @@
     <!-- ЭКРАН 1: список -->
     <div id="screen-list">
       <div class="topbar">
-        <div class="brand-mini"><span class="badge-mini"><canvas id="robot" width="22" height="22"></canvas></span><span class="tb-title">Поддержка</span></div>
+        <div class="brand-mini"><span class="badge-mini"><img class="badge-img" src="/portal/assets/mascot.png?v=1" alt="BenderVPN"/></span><span class="tb-title">Поддержка</span></div>
         <div class="top-actions">
           <button class="ic-btn" id="btn-bell" title="Оповещения"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ic-dot" id="bell-dot"></span></button>
           <button class="ic-btn" id="btn-home" title="На главную"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -188,9 +189,7 @@ s();addEventListener('resize',s);bx.textAlign='center';bx.textBaseline='middle';
   for(const d of drops){d.y+=d.sp;if(d.y>BH+8){d.y=-8;}d.flip++;if(d.flip>30){d.flip=0;d.ch=Math.random()<.5?'0':'1';}
     for(let k=0;k<5;k++){const yy=d.y-k*16;if(yy<0||yy>BH)continue;const a=(1-k/5)*0.07;bx.fillStyle='rgba(200,210,225,'+a+')';bx.fillText(k===0?d.ch:(Math.random()<.5?'0':'1'),d.x,yy);}}
   requestAnimationFrame(f);})();
-const G=["0000011000000","0000011000000","0000111100000","0001111110000","0011111111000","0011111111000","0011011011000","0011111111000","0011000011000","0011111111000","0011111111000","0001111110000","0000000000000"];
-const rbc=document.getElementById('robot');
-if(rbc){const rx=rbc.getContext('2d');for(let y=0;y<G.length;y++)for(let x=0;x<G[y].length;x++)if(G[y][x]==='1'){rx.fillStyle='#FF8340';rx.fillRect(x*1.7,y*1.7,1.7,1.7);}}
+// mascot badge is now an <img> (assets/mascot.png)
 </script>
 <script src="/portal/assets/support.js?v=1" defer></script>
 </body>

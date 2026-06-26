@@ -41,7 +41,8 @@
   .wheel-dots{position:absolute;inset:0;z-index:4;pointer-events:none}
   .wheel-dots span{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent-glow);top:50%;left:50%}
   #wheel{position:absolute;inset:6px;border-radius:50%;transition:none;z-index:2;box-shadow:0 0 0 8px #0d1118, 0 12px 40px rgba(0,0,0,.5)}
-  .hub{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#ff9248);display:grid;place-items:center;z-index:6;box-shadow:0 4px 16px var(--accent-glow), inset 0 2px 6px rgba(255,255,255,.3);cursor:pointer}
+  .hub{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#ff9248);display:grid;place-items:center;z-index:6;box-shadow:0 4px 16px var(--accent-glow), inset 0 2px 6px rgba(255,255,255,.3);cursor:pointer;overflow:hidden}
+  .hub-img{height:46px;width:auto;display:block;object-fit:contain;image-rendering:pixelated;pointer-events:none}
   .hub canvas{display:block}
 
   .spin-info{text-align:center}
@@ -99,7 +100,7 @@
         <div class="pointer"><svg viewBox="0 0 24 24" fill="#FF6B1A"><path d="M12 22L4 8h16z"/></svg></div>
         <canvas id="wheel" width="300" height="300"></canvas>
         <div class="wheel-dots" id="dots"></div>
-        <div class="hub" id="hub"><canvas id="robot" width="34" height="34"></canvas></div>
+        <div class="hub" id="hub"><img class="hub-img" src="/portal/assets/mascot_dark.png?v=1" alt="BenderVPN"/></div>
       </div>
 
       <div class="spin-info">
@@ -143,9 +144,7 @@ bs();addEventListener('resize',bs);bx.textAlign='center';bx.textBaseline='middle
 const dots=document.getElementById('dots');
 for(let i=0;i<24;i++){const d=document.createElement('span');const a=i/24*Math.PI*2;
   d.style.transform=`translate(-50%,-50%) translate(${Math.cos(a)*146}px,${Math.sin(a)*146}px)`;d.style.opacity=(i%2?0.4:1);dots.appendChild(d);}
-const rb=document.getElementById('robot'),rx=rb.getContext('2d');
-const G=["0000011000000","0000011000000","0000111100000","0001111110000","0011111111000","0011111111000","0011011011000","0011111111000","0011000011000","0011111111000","0011111111000","0001111110000","0000000000000"];
-for(let y=0;y<G.length;y++)for(let x=0;x<G[y].length;x++)if(G[y][x]==='1'){rx.fillStyle='#1a0c02';rx.fillRect(x*2.6+1,y*2.6+1,2.6,2.6);}
+// mascot hub is now an <img> (assets/mascot.png)
 </script>
 <script src="/portal/assets/fortune.js?v=1" defer></script>
 </body>
