@@ -434,6 +434,42 @@ def create_webhook_app(bot, payment_processor):
             logger.error("portal-ticket-message: %s", e, exc_info=True)
             return jsonify({"ok": False, "error": "server_error"}), 500
 
+    @flask_app.route("/portal-fortune", methods=["POST"])
+    def portal_fortune_handler():
+        """Wheel status: available spins, sectors, history (honest zeros while gated off)."""
+        try:
+            if not _portal_service_auth():
+                return _reject_auth()
+            from shop_bot.portal_fortune import status
+
+            doc = status(**_portal_identity(request.get_json(silent=True) or {}))
+            return jsonify(doc), 200 if doc.get("ok") else _support_code(doc)
+        except Exception as e:
+            logger.error("portal-fortune: %s", e, exc_info=True)
+            return jsonify({"ok": False, "error": "server_error"}), 500
+
+    @flask_app.route("/portal-fortune-spin", methods=["POST"])
+    def portal_fortune_spin_handler():
+        """Server-authoritative spin (gated by FORTUNE_LIVE); credits rub rewards via ledger."""
+        try:
+            if not _portal_service_auth():
+                return _reject_auth()
+            from shop_bot.portal_fortune import spin
+
+            doc = spin(**_portal_identity(request.get_json(silent=True) or {}))
+            if doc.get("ok"):
+                return jsonify(doc), 200
+            err = doc.get("error")
+            code = 400
+            if err == "not_found":
+                code = 404
+            elif err in ("fortune_disabled", "needs_telegram_bind", "no_spins"):
+                code = 403
+            return jsonify(doc), code
+        except Exception as e:
+            logger.error("portal-fortune-spin: %s", e, exc_info=True)
+            return jsonify({"ok": False, "error": "server_error"}), 500
+
     def _health_authorized() -> bool:
         secret = os.getenv("HEALTH_CHECK_SECRET", "").strip()
         bind = os.getenv("WEBHOOK_BIND_HOST", "127.0.0.1").strip() or "127.0.0.1"

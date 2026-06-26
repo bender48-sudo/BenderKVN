@@ -89,6 +89,17 @@ def support_tickets_live() -> bool:
     return os.getenv("SUPPORT_TICKETS_LIVE", "").strip().lower() in ("1", "true", "yes")
 
 
+# P5 Fortune wheel (GAME-FORTUNE-001). One earned spin per N paid active days (accumulating);
+# server-authoritative outcome by weights; rub rewards credited via balance_ledger. Gated OFF
+# (like referral rewards) until owner OK — spins only happen when live.
+FORTUNE_SPIN_PER_DAYS = int(os.getenv("FORTUNE_SPIN_PER_DAYS", "10"))
+
+
+def fortune_live() -> bool:
+    """Gate for the wheel. Default OFF — no spins / no credits until flipped (owner OK)."""
+    return os.getenv("FORTUNE_LIVE", "").strip().lower() in ("1", "true", "yes")
+
+
 def referral_rewards_active() -> bool:
     """True only when real referral balance accrual is wired (REF-BONUS-001). Default OFF.
 

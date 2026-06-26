@@ -6,7 +6,7 @@ import sqlite3
 
 logger = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 
 def _table_has_column(conn: sqlite3.Connection, table: str, column: str) -> bool:
@@ -307,6 +307,29 @@ def _migrate_v9(conn: sqlite3.Connection) -> None:
     )
 
 
+def _migrate_v10(conn: sqlite3.Connection) -> None:
+    """Fortune wheel spins (GAME-FORTUNE-001, P5).
+
+    Additive only. One row per server-authoritative spin; rub rewards are credited via
+    balance_ledger (kind='fortune', ref='fortune:<spin_id>'). Earned spins derive from paid
+    active days; this table is the spend/extra-spin record. Reversible (drop table).
+    """
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS fortune_spins (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id        INTEGER NOT NULL,
+            sector_key     TEXT    NOT NULL,
+            kind           TEXT    NOT NULL,        -- nothing | extra_spin | rub
+            amount_kopeks  INTEGER NOT NULL DEFAULT 0,
+            ledger_ref     TEXT,
+            created_at_utc TEXT    NOT NULL
+        )
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_fortune_user ON fortune_spins(user_id, id DESC)")
+
+
 _MIGRATORS = {
     1: _migrate_v1,
     2: _migrate_v2,
@@ -317,6 +340,7 @@ _MIGRATORS = {
     7: _migrate_v7,
     8: _migrate_v8,
     9: _migrate_v9,
+    10: _migrate_v10,
 }
 
 
