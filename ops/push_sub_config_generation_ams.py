@@ -16,6 +16,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+AMS_HOST = os.environ.get("AMS_OPS_HOST", os.environ.get("BVPN_AMS_HOST", "168.100.11.52")).strip()
+AMS_PORT = os.environ.get("AMS_OPS_SSH_PORT", "22").strip()
 
 
 def _ams_ssh_base() -> list[str]:
@@ -45,7 +47,7 @@ def _ams_ssh_base() -> list[str]:
                 "-i",
                 str(key),
                 "-p",
-                "3344",
+                AMS_PORT,
                 "-o",
                 "BatchMode=yes",
                 "-o",
@@ -54,7 +56,7 @@ def _ams_ssh_base() -> list[str]:
                 "StrictHostKeyChecking=accept-new",
                 "-o",
                 "IdentitiesOnly=yes",
-                "root@168.100.11.140",
+                f"root@{AMS_HOST}",
             ]
 
     raise SystemExit(

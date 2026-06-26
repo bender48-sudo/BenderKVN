@@ -48,8 +48,8 @@ def _funnel_log(event: str, meta: dict | None = None) -> None:
     except OSError:
         pass
 _AMS_KEY = Path.home() / ".ssh" / "bvpn_ams_ed25519"
-_AMS_HOST = os.environ.get("AMS_OPS_HOST", "168.100.11.140")
-_AMS_PORT = os.environ.get("AMS_OPS_SSH_PORT", "3344")
+_AMS_HOST = os.environ.get("AMS_OPS_HOST", "168.100.11.52")
+_AMS_PORT = os.environ.get("AMS_OPS_SSH_PORT", "22")
 
 
 def _client_ip(handler: BaseHTTPRequestHandler) -> str:

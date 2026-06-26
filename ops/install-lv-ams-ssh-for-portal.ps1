@@ -13,7 +13,7 @@ if ($LASTEXITCODE -ne 0) { throw "scp key failed" }
 $remote = @'
 set -e
 chmod 600 /root/.ssh/bvpn_ams_ed25519
-ssh -i /root/.ssh/bvpn_ams_ed25519 -p 3344 -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new root@168.100.11.140 "echo LV_AMS_SSH_OK"
+ssh -i /root/.ssh/bvpn_ams_ed25519 -p 22 -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new root@168.100.11.52 "echo LV_AMS_SSH_OK"
 '@
 & ssh -i $KeyLv -o BatchMode=yes root@bvpn-lv $remote
 if ($LASTEXITCODE -ne 0) { throw "LV->AMS ssh test failed" }

@@ -8,9 +8,10 @@ Host bvpn-lv
     IdentityFile ~/.ssh/bvpn_lv_ed25519
     IdentitiesOnly yes
 
+# AMS panel (BitLaunch private VPC). Legacy public: 168.100.11.140:3344
 Host bvpn-ams
-    HostName 168.100.11.140
-    Port 3344
+    HostName 168.100.11.52
+    Port 22
     User root
     IdentityFile ~/.ssh/bvpn_ams_ed25519
     IdentitiesOnly yes

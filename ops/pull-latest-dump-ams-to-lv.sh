@@ -1,8 +1,12 @@
 #!/bin/bash
 # Run ON Latvia (or any host with SSH+scp to AMS and local /opt/backups).
-# From Windows: scp ops/pull-latest-dump-ams-to-lv.sh bvpn-lv:/tmp/ && ssh bvpn-lv "sed -i 's/\r$//' /tmp/pull-latest-dump-ams-to-lv.sh; bash /tmp/pull-latest-dump-ams-to-lv.sh"
+# From Windows: pwsh -File ops/deploy_ams_ops_private_to_lv.ps1
 # Pulls latest /opt/backups/remnawave-*.sql.gz from AMS and verifies SHA256.
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/ams_ops_env.sh"
 
 _notify_pull_fail() {
   local msg="$1"
@@ -22,23 +26,25 @@ _notify_pull_fail() {
 }
 
 trap '_notify_pull_fail "exit code $? (see /var/log/remnawave-pull.log)"' ERR
-AMS_IP="${AMS_IP:-168.100.11.140}"
-AMS_PORT="${AMS_PORT:-3344}"
-SSH=(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=20 -p "${AMS_PORT}" "root@${AMS_IP}")
-SCP=(scp -o StrictHostKeyChecking=no -o ConnectTimeout=20 -P "${AMS_PORT}")
+
+mapfile -t _SSH_BASE < <(ams_ops_ssh_base)
+SSH=(ssh "${_SSH_BASE[@]}")
+mapfile -t _SCP_BASE < <(ams_ops_scp_base)
+SCP=(scp "${_SCP_BASE[@]}")
+
 LOCAL_DIR="${LOCAL_DIR:-/opt/backups}"
 mkdir -p "${LOCAL_DIR}"
 REMOTE="$("${SSH[@]}" 'ls -1t /opt/backups/remnawave-*.sql.gz 2>/dev/null | head -1' | tr -d '\r')"
 if [[ -z "${REMOTE}" ]]; then
-  echo "ERROR: no remnawave-*.sql.gz on ${AMS_IP}" >&2
+  echo "ERROR: no remnawave-*.sql.gz on ${AMS_OPS_IP}" >&2
   exit 1
 fi
 BASE="$(basename "${REMOTE}")"
 LOCAL="${LOCAL_DIR}/${BASE}"
-echo "Remote: ${AMS_IP}:${REMOTE}"
+echo "Remote: ${AMS_OPS_IP}:${REMOTE}"
 EXP="$("${SSH[@]}" "sha256sum \"$REMOTE\"" | tr -d '\r' | cut -d' ' -f1)"
 echo "Expected SHA256: ${EXP}"
-"${SCP[@]}" "root@${AMS_IP}:${REMOTE}" "${LOCAL}.partial"
+"${SCP[@]}" "root@${AMS_OPS_IP}:${REMOTE}" "${LOCAL}.partial"
 mv -f "${LOCAL}.partial" "${LOCAL}"
 GOT="$(sha256sum "${LOCAL}" | cut -d' ' -f1)"
 echo "Local file:  ${LOCAL}"

@@ -31,7 +31,7 @@
   ],
   "hosts": {
     "bvpn_lv": { "ip": "176.126.162.158", "ssh_port": 3333 },
-    "bvpn_ams": { "ip": "168.100.11.140", "ssh_port": 3344 }
+    "bvpn_ams": { "ip": "168.100.11.52", "ssh_port": 22, "legacy_public": "168.100.11.140:3344" }
   },
   "critical_fqdn": ["k9x2m1.conntest.xyz", "p4n7q.conntest.xyz"],
   "payment_channels": ["YooKassa", "Telegram Stars", "crypto"]
